@@ -1,8 +1,8 @@
 use std::future::Future;
 use std::pin::Pin;
-use bson::{doc, Document};
 use chrono::Utc;
 use futures::StreamExt;
+use mongodb::bson::{doc, Document};
 use mongodb::options::FindOptions;
 use mongodb::Collection;
 use uuid::Uuid;
@@ -106,7 +106,7 @@ impl OrderRepo {
         Box::pin(async move {
             let mut d=Document::new();
             if let Some(v)=dto.label{d.insert("label",v);}
-            if let Some(v)=dto.status{d.insert("status",bson::to_bson(&v).unwrap());}
+            if let Some(v)=dto.status{d.insert("status",mongodb::bson::to_bson(&v).unwrap());}
             if let Some(v)=dto.results{d.insert("results",v);}
             if let Some(v)=dto.is_active{d.insert("is_active",v);}
             if d.is_empty(){return Self::find_by_id(&Self{c},tid,id).await;}

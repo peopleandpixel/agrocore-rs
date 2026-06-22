@@ -4,7 +4,7 @@ pub use repositories::{SiteRepo, OrderRepo, UserRepo, TaskDataRepo};
 
 use mongodb::options::{ClientOptions, IndexOptions};
 use mongodb::{Client, Collection, IndexModel};
-use bson::doc;
+use mongodb::bson::doc;
 
 #[derive(Clone)]
 pub struct Database {

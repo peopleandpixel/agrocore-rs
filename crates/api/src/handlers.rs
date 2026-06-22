@@ -209,11 +209,11 @@ async fn delete_site(
     }
 }
 
-async fn list_orders(state: web::Data<AppState>, _query: web::Query<agrocore_shared::Pagination>) -> impl Responder {
+async fn list_orders(_state: web::Data<AppState>, _query: web::Query<agrocore_shared::Pagination>) -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({"orders": []}))
 }
 
-async fn get_order(state: web::Data<AppState>, _path: web::Path<uuid::Uuid>) -> impl Responder {
+async fn get_order(_state: web::Data<AppState>, _path: web::Path<uuid::Uuid>) -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({"order": {}}))
 }
 
@@ -233,11 +233,11 @@ async fn my_tasks(_state: web::Data<AppState>) -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({"tasks": []}))
 }
 
-async fn list_users(state: web::Data<AppState>, _query: web::Query<agrocore_shared::Pagination>) -> impl Responder {
+async fn list_users(_state: web::Data<AppState>, _query: web::Query<agrocore_shared::Pagination>) -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({"users": []}))
 }
 
-async fn get_user(state: web::Data<AppState>, _path: web::Path<uuid::Uuid>) -> impl Responder {
+async fn get_user(_state: web::Data<AppState>, _path: web::Path<uuid::Uuid>) -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({"user": {}}))
 }
 
@@ -253,11 +253,11 @@ async fn delete_user(_state: web::Data<AppState>, _path: web::Path<uuid::Uuid>) 
     HttpResponse::Ok().json(serde_json::json!({"deleted": true}))
 }
 
-async fn list_tasks(state: web::Data<AppState>, _query: web::Query<agrocore_shared::Pagination>) -> impl Responder {
+async fn list_tasks(_state: web::Data<AppState>, _query: web::Query<agrocore_shared::Pagination>) -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({"tasks": []}))
 }
 
-async fn get_task(state: web::Data<AppState>, _path: web::Path<uuid::Uuid>) -> impl Responder {
+async fn get_task(_state: web::Data<AppState>, _path: web::Path<uuid::Uuid>) -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({"task": {}}))
 }
 

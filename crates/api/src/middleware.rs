@@ -34,7 +34,7 @@ impl FromRequest for AuthExtractor {
                     Some(t) => t,
                     None => return ready(Err(actix_web::error::ErrorUnauthorized("No Bearer prefix"))),
                 };
-                let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "dev-secret".into());
+                let _secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "dev-secret".into());
                 let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "dev-secret".into());
                 match decode::<Claims>(token, &DecodingKey::from_secret(secret.as_bytes()), &Validation::new(Algorithm::HS256)) {
                     Ok(token_data) => match (parse_uuid(&token_data.claims.sub), parse_uuid(&token_data.claims.tenant_id)) {
