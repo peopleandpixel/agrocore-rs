@@ -1,0 +1,18 @@
+[package]
+name = "agrocore-infrastructure"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+agrocore-domain = { path = "../domain" }
+agrocore-shared = { path = "../shared" }
+mongodb = { workspace = true }
+bson = { workspace = true }
+serde = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+anyhow = { workspace = true }
+futures = { workspace = true }
+jsonwebtoken = { workspace = true }
+argon2 = { workspace = true }

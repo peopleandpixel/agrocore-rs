@@ -1,0 +1,36 @@
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["Jens Reinemuth <jens@reinemuth.pt>"]
+license = "MIT"
+
+[workspace.dependencies]
+tokio = { version = "1", features = ["full"] }
+actix-web = "4"
+actix-cors = "0.7"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+mongodb = "3"
+bson = { version = "3.1.0", features = ["chrono-0_4"] }
+jsonwebtoken = "10.4.0"
+argon2 = "0.6.0-rc.8"
+rand = "0.10.1"
+validator = { version = "0.20", features = ["derive"] }
+thiserror = "2"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+config = "0.15"
+dotenvy = "0.15"
+geo = "0.33"
+geojson = "1.0"
+rust_xlsxwriter = "0.95.0"
+# utoipa = { version = "5", features = ["axum_extras", "chrono", "uuid"] }
+# utoipa-swagger-ui = { version = "9", features = ["axum"] }
+futures = "0.3"
