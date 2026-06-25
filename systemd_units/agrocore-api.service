@@ -1,0 +1,17 @@
+[Unit]
+Description=AgroCore REST API & Admin UI Service
+After=network.target mongodb.service nats-server.service
+
+[Service]
+Type=simple
+User=agrocore
+Group=agrocore
+WorkingDirectory=/etc/agrocore
+ExecStart=/usr/local/bin/agrocore-api
+Restart=always
+RestartSec=5
+Environment=RUST_LOG=info
+EnvironmentFile=-/etc/agrocore/.env
+
+[Install]
+WantedBy=multi-user.target

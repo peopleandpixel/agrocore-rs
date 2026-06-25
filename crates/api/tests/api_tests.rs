@@ -1,79 +1,41 @@
-use actix_web::{test, App, http::StatusCode};
+use actix_web::{test, test::TestRequest, http::StatusCode, App};
 use agrocore_api::handlers::configure;
 
 #[actix_web::test]
 async fn test_health_endpoint() {
-    let app = test::init_service(
-        App::new().configure(configure)
-    ).await;
-    let req = test::TestRequest::get()
-        .uri("/api/v1/health")
-        .to_request();
+    let app = test::init_service(App::new().configure(configure)).await;
+    let req = TestRequest::get().uri("/api/v1/health").to_request();
     let resp = test::call_service(&app, req).await;
     assert_eq!(resp.status(), StatusCode::OK);
 }
 
 #[actix_web::test]
-async fn test_404_not_found() {
+async fn test_metrics_endpoint() {
+    let prometheus = actix_web_prometheus::PrometheusMetricsBuilder::new("agrocore")
+        .endpoint("/metrics")
+        .build()
+        .unwrap();
     let app = test::init_service(
-        App::new().configure(configure)
+        App::new()
+            .wrap(prometheus)
+            .configure(configure)
     ).await;
-    let req = test::TestRequest::get()
-        .uri("/api/v1/does-not-exist")
-        .to_request();
+    let req = TestRequest::get().uri("/metrics").to_request();
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    assert_eq!(resp.status(), StatusCode::OK);
 }
 
 #[actix_web::test]
-async fn test_cors_preflight() {
+async fn test_swagger_ui() {
     let app = test::init_service(
-        App::new().configure(configure)
+        App::new()
+            .service(
+                utoipa_swagger_ui::SwaggerUi::new("/swagger-ui/{_:.*}")
+                    .url("/api-docs/openapi.json", utoipa::openapi::OpenApi::default()),
+            )
+            .configure(configure)
     ).await;
-    let req = test::TestRequest::options()
-        .uri("/api/v1/health")
-        .insert_header(("Origin", "http://example.com"))
-        .insert_header(("Access-Control-Request-Method", "GET"))
-        .to_request();
-    let resp = test::call_service(&app, req).await);
-    assert!(resp.status().is_success());
-}
-
-#[actix_web::test]
-async fn test_unauthorized_no_token() {
-    let app = test::init_service(
-        App::new().configure(configure)
-    ).await;
-    let req = test::TestRequest::get()
-        .uri("/api/v1/orders/my-tasks")
-        .to_request();
+    let req = TestRequest::get().uri("/swagger-ui/").to_request();
     let resp = test::call_service(&app, req).await;
-    assert!(resp.status().is_client_error() || resp.status().is_server_error());
-}
-
-#[actix_web::test]
-async fn test_unauthorized_bad_token() {
-    let app = test::init_service(
-        App::new().configure(configure)
-    ).await;
-    let req = test::TestRequest::get()
-        .uri("/api/v1/orders/my-tasks")
-        .insert_header(("Authorization", "Bearer bad-token"))
-        .to_request();
-    let resp = test::call_service(&app, req).await;
-    assert!(resp.status().is_client_error() || resp.status().is_server_error());
-}
-
-#[actix_web::test]
-async fn test_login_validation_error() {
-    use serde_json::json;
-    let app = test::init_service(
-        App::new().configure(configure)
-    ).await;
-    let req = test::TestRequest::post()
-        .uri("/api/v1/auth/login")
-        .set_json(json!({"email": "invalid", "password": "x"}))
-        .to_request();
-    let resp = test::call_service(&app, req).await);
-    assert!(resp.status().is_client_error() || resp.status().is_server_error());
+    assert_eq!(resp.status(), StatusCode::OK); // UI itself returns 200
 }

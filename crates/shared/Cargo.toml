@@ -10,3 +10,5 @@ chrono = { workspace = true }
 uuid = { workspace = true }
 thiserror = { workspace = true }
 validator = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

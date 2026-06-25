@@ -4,9 +4,9 @@ resolver = "2"
 
 [workspace.package]
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 authors = ["Jens Reinemuth <jens@reinemuth.pt>"]
-license = "MIT"
+license = "GPL-3.0-or-later"
 
 [workspace.dependencies]
 tokio = { version = "1", features = ["full"] }
@@ -24,6 +24,10 @@ thiserror = "2"
 anyhow = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-actix-web = "0.7"
+utoipa = { version = "5", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "8", features = ["actix-web"] }
+actix-web-prometheus = "0.1"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 config = "0.15"
@@ -31,4 +35,7 @@ dotenvy = "0.15"
 geo = "0.33"
 geojson = "1.0"
 rust_xlsxwriter = "0.95.0"
+actix-files = "0.6"
 futures = "0.3"
+async-nats = "0.38"
+mockall = "0.13"

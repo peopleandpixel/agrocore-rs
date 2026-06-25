@@ -7,6 +7,7 @@ use std::future::{ready, Ready};
 pub struct Claims {
     pub sub: String,
     pub tenant_id: String,
+    pub roles: Vec<String>,
     pub exp: usize,
 }
 
@@ -14,6 +15,7 @@ pub struct Claims {
 pub struct AuthenticatedUser {
     pub user_id: uuid::Uuid,
     pub tenant_id: uuid::Uuid,
+    pub roles: Vec<String>,
 }
 
 pub struct AuthExtractor(pub AuthenticatedUser);
@@ -38,7 +40,11 @@ impl FromRequest for AuthExtractor {
                 let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "dev-secret".into());
                 match decode::<Claims>(token, &DecodingKey::from_secret(secret.as_bytes()), &Validation::new(Algorithm::HS256)) {
                     Ok(token_data) => match (parse_uuid(&token_data.claims.sub), parse_uuid(&token_data.claims.tenant_id)) {
-                        (Ok(user_id), Ok(tenant_id)) => ready(Ok(AuthExtractor(AuthenticatedUser { user_id, tenant_id }))),
+                        (Ok(user_id), Ok(tenant_id)) => ready(Ok(AuthExtractor(AuthenticatedUser { 
+                            user_id, 
+                            tenant_id, 
+                            roles: token_data.claims.roles 
+                        }))),
                         _ => ready(Err(actix_web::error::ErrorUnauthorized("Invalid UUID"))),
                     },
                     Err(_) => ready(Err(actix_web::error::ErrorUnauthorized("Invalid token"))),

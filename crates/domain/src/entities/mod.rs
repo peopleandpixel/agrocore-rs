@@ -1,12 +1,22 @@
+pub mod compliance;
+pub mod finance;
+pub mod harvest;
+pub mod olive;
 pub mod order;
+pub mod plant_protection;
 pub mod site;
 pub mod task;
 pub mod tenant;
 pub mod user;
+pub mod vineyard;
+pub mod water;
+pub mod weather;
+pub mod workforce;
 
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum SiteType {
     #[serde(rename = "vineyard")]
     Vineyard,
@@ -22,7 +32,7 @@ pub enum SiteType {
     Other(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum CropType {
     #[serde(rename = "grape")]
     Grape,
@@ -40,7 +50,7 @@ pub enum CropType {
     Other(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum BbchStage {
     #[serde(rename = "0")] Dormancy,
     #[serde(rename = "1")] BudSwelling,
@@ -63,7 +73,7 @@ pub enum BbchStage {
     Custom(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum OrderStatus {
     #[serde(rename = "draft")] Draft,
     #[serde(rename = "planned")] Planned,
@@ -72,7 +82,7 @@ pub enum OrderStatus {
     #[serde(rename = "cancelled")] Cancelled,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum OrderType {
     #[serde(rename = "plant_protection")] PlantProtection,
     #[serde(rename = "fertilization")] Fertilization,

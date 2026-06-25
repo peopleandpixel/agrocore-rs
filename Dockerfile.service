@@ -1,0 +1,21 @@
+# To speed up builds, we use a custom base image: agrocore-build-base
+# If you haven't built it yet, run: docker build -t agrocore-build-base -f Dockerfile.base-build .
+FROM agrocore-build-base AS chef
+WORKDIR /app
+
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+COPY . .
+ARG SERVICE_NAME
+RUN cargo build --release -p ${SERVICE_NAME}
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
+ARG SERVICE_NAME
+COPY --from=builder /app/target/release/${SERVICE_NAME} /usr/local/bin/service
+ENTRYPOINT ["/usr/local/bin/service"]

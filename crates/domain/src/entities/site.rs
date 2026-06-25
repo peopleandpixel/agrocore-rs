@@ -5,8 +5,21 @@ use validator::Validate;
 
 use crate::entities::{BbchStage, CropType, SiteType};
 use crate::entities::tenant::TenantId;
+use utoipa::ToSchema;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+pub struct SigpacData {
+    pub province: u8,
+    pub municipality: u16,
+    pub aggregate: u16,
+    pub zone: u16,
+    pub polygon: u16,
+    pub parcel: u16,
+    pub enclosure: u16,
+    pub usage_code: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct GeoPoint {
     #[validate(range(min = -180.0, max = 180.0))]
     pub lng: f64,
@@ -14,7 +27,7 @@ pub struct GeoPoint {
     pub lat: f64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct Plot {
     pub id: Uuid,
     pub label: String,
@@ -63,6 +76,8 @@ pub struct Site {
     pub organic: Option<bool>,
     pub organic_eligible: Option<bool>,
     pub center: Option<GeoPoint>,
+    pub sigpac_data: Option<SigpacData>,
+    pub regepac_id: Option<String>,
     pub boundary: Option<Vec<GeoPoint>>,
     pub custom_fields: Option<serde_json::Value>,
     pub note1: Option<String>,
@@ -94,6 +109,8 @@ pub struct CreateSiteDto {
     pub altitude: Option<f64>,
     pub organic: Option<bool>,
     pub center: Option<GeoPoint>,
+    pub sigpac_data: Option<SigpacData>,
+    pub regepac_id: Option<String>,
     pub boundary: Option<Vec<GeoPoint>>,
     pub custom_fields: Option<serde_json::Value>,
     pub note1: Option<String>,
@@ -116,6 +133,8 @@ pub struct UpdateSiteDto {
     pub altitude: Option<f64>,
     pub organic: Option<bool>,
     pub center: Option<GeoPoint>,
+    pub sigpac_data: Option<SigpacData>,
+    pub regepac_id: Option<String>,
     pub boundary: Option<Vec<GeoPoint>>,
     pub custom_fields: Option<serde_json::Value>,
     pub note1: Option<String>,

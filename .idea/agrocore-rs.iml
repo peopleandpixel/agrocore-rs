@@ -7,6 +7,10 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/domain/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/infrastructure/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/shared/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/admin-ui/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/messaging/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/reporting-service/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/weather-service/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

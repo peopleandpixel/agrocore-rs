@@ -1,0 +1,17 @@
+[Unit]
+Description=AgroCore Weather Service
+After=network.target mongodb.service nats-server.service
+
+[Service]
+Type=simple
+User=agrocore
+Group=agrocore
+WorkingDirectory=/etc/agrocore
+ExecStart=/usr/local/bin/agrocore-weather
+Restart=always
+RestartSec=5
+Environment=RUST_LOG=info
+EnvironmentFile=-/etc/agrocore/.env
+
+[Install]
+WantedBy=multi-user.target

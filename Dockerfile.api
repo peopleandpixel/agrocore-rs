@@ -1,0 +1,55 @@
+# Multi-stage build for AgroCore API and Admin UI
+# To speed up builds, we use a custom base image: agrocore-build-base
+FROM agrocore-build-base AS chef
+WORKDIR /app
+
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+# Build dependencies - this is the caching layer
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/app/target \
+    cargo chef cook --release --recipe-path recipe.json
+
+COPY . .
+
+# Build API Service
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/app/target \
+    cargo build --release -p agrocore-api && \
+    cp target/release/agrocore-api /usr/local/bin/agrocore-api
+
+# UI Build Stage (separate to allow parallelization if needed, but here as a stage)
+FROM chef AS ui-builder
+COPY . .
+WORKDIR /app/crates/admin-ui
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/app/target \
+    trunk build --release
+
+# Final Stage
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y \
+    libssl3 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create directory for Admin UI
+RUN mkdir -p /var/lib/agrocore/admin-ui
+
+# Copy API binary
+COPY --from=builder /usr/local/bin/agrocore-api /usr/local/bin/agrocore-api
+
+# Copy compiled Admin UI assets
+COPY --from=ui-builder /app/crates/admin-ui/dist/* /var/lib/agrocore/admin-ui/
+
+# Set environment variables
+ENV RUST_LOG=info
+ENV LISTEN_ADDR=0.0.0.0:3000
+
+EXPOSE 3000
+
+ENTRYPOINT ["/usr/local/bin/agrocore-api"]

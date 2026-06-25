@@ -2,6 +2,9 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
+
+pub mod telemetry;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Id(pub Uuid);
@@ -110,6 +113,8 @@ pub enum SharedError {
     Forbidden(String),
     #[error("Conflict: {0}")]
     Conflict(String),
+    #[error("Database error: {0}")]
+    Database(String),
     #[error("Internal error: {0}")]
     Internal(String),
 }

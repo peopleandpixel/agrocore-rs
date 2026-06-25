@@ -48,4 +48,7 @@ pub struct CreateTenantDto {
     pub config: Option<TenantConfig>,
 }
 
-pub type TenantId = Uuid;
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct TenantIdWrapper(uuid::Uuid);
+
+pub type TenantId = uuid::Uuid;

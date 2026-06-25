@@ -1,0 +1,24 @@
+# Base build image for AgroCore Rust services
+FROM rust:1.91-slim-bookworm
+
+# Install common build dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    pkg-config \
+    libssl-dev \
+    nodejs \
+    npm \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install cargo-chef
+RUN cargo install cargo-chef --locked
+
+# Install WASM toolchain and trunk for Leptos UI
+RUN rustup target add wasm32-unknown-unknown
+RUN curl -L --proto '=https' --tlsv1.2 -sSf https://github.com/trunk-rs/trunk/releases/latest/download/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf- -C /usr/local/bin
+
+# Pre-install tailwindcss as it's used in the UI build
+RUN npm install -g tailwindcss
+
+WORKDIR /app
