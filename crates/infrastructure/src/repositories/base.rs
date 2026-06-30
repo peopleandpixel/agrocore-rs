@@ -5,7 +5,7 @@ use mongodb::bson::{doc, Document};
 use serde::{de::DeserializeOwned, Serialize};
 use uuid::Uuid;
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::repositories::{Repository, RepositoryFuture};
+use agrocore_domain::repositories::{Repository, RepositoryFuture, VisibilityAwareEntity};
 use agrocore_shared::{PaginatedResponse, Pagination, SharedError};
 
 pub struct MongoRepository<T> 
@@ -34,6 +34,66 @@ where T: Serialize + DeserializeOwned + Send + Sync
             collection,
             _marker: PhantomData,
         }
+    }
+
+    pub fn find_by_id_visible(&self, tid: TenantId, id: Uuid, user_id: Uuid, roles: &[agrocore_domain::entities::user::UserRole]) -> RepositoryFuture<Option<T>> 
+    where T: VisibilityAwareEntity + 'static
+    {
+        let c = self.collection.clone();
+        let visibility = T::visibility_filter(user_id, roles);
+        Box::pin(async move {
+            let mut filter = doc! { "tenant_id": tid.to_string(), "id": id.to_string() };
+            for (key, value) in visibility {
+                filter.insert(key, value);
+            }
+            c.find_one(filter)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))
+        })
+    }
+
+    pub fn find_all_visible(&self, tid: TenantId, p: Pagination, user_id: Uuid, roles: &[agrocore_domain::entities::user::UserRole]) -> RepositoryFuture<PaginatedResponse<T>>
+    where T: VisibilityAwareEntity + 'static
+    {
+        let c = self.collection.clone();
+        let page = p.page.unwrap_or(0);
+        let pp = p.per_page.unwrap_or(20);
+        let visibility = T::visibility_filter(user_id, roles);
+        
+        Box::pin(async move {
+            let mut filter = doc! { "tenant_id": tid.to_string() };
+            for (key, value) in visibility {
+                filter.insert(key, value);
+            }
+
+            let total = c.count_documents(filter.clone())
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
+            
+            let opts = FindOptions::builder()
+                .skip(page * pp)
+                .limit(pp as i64)
+                .sort(doc! { "updated_at": -1 })
+                .build();
+            
+            let mut cursor = c.find(filter)
+                .with_options(opts)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
+            
+            let mut data = Vec::new();
+            while let Some(res) = cursor.next().await {
+                data.push(res.map_err(|e| SharedError::Database(e.to_string()))?);
+            }
+            
+            Ok(PaginatedResponse {
+                data,
+                total,
+                page,
+                per_page: pp,
+                total_pages: (total as f64 / pp as f64).ceil() as u64,
+            })
+        })
     }
 }
 

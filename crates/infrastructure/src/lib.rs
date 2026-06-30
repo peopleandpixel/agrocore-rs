@@ -3,15 +3,17 @@ mod repositories;
 use std::sync::Arc;
 use agrocore_domain::repositories::SiteRepository;
 
-pub use repositories::{SiteRepo, OrderRepo, UserRepo, TaskDataRepo};
+pub use repositories::{SiteRepo, OrderRepo, UserRepo, TaskDataRepo, TenantRepo};
 pub use repositories::{AuditLogRepo, ComplianceChecklistRepo, FertilizerRecordRepo, PlantProtectionRecordRepo, ApplicatorLicenseRepo};
 pub use repositories::{OliveGroveRepo, OliveOilRecordRepo};
 pub use repositories::{VineyardRepo, KelterDeliveryRepo};
 pub use repositories::{WaterSourceRepo, WaterUsageRepo, WaterQuotaRepo};
 pub use repositories::{WeatherStationRepo, WeatherDataRepo, PhenologyRecordRepo};
-pub use repositories::{WorkerRepo, WorkLogRepo};
+pub use repositories::{WorkerRepo, WorkLogRepo, WorkerLocationRepo};
+pub use repositories::EquipmentRepo;
 pub use repositories::{PACApplicationRepo, CostCenterRepo, FinancialRecordRepo};
 pub use repositories::{HarvestSeasonRepo, HarvestLotRepo, HarvestDeliveryRepo, ColdChainLogRepo};
+pub use repositories::AnimalRepo;
 
 use mongodb::options::{ClientOptions, IndexOptions};
 use mongodb::{Client, Collection, IndexModel};
@@ -117,6 +119,10 @@ impl Database {
         UserRepo::new(self.collection("users"))
     }
 
+    pub fn tenant_repo(&self) -> TenantRepo {
+        TenantRepo::new(self.collection("tenants"))
+    }
+
     pub fn task_data_repo(&self) -> TaskDataRepo {
         TaskDataRepo::new(self.collection("task_data"))
     }
@@ -177,6 +183,10 @@ impl Database {
         WorkLogRepo::new(self.collection("work_logs"))
     }
 
+    pub fn worker_location_repo(&self) -> WorkerLocationRepo {
+        WorkerLocationRepo::new(self.collection("worker_locations"))
+    }
+
     pub fn weather_station_repo(&self) -> WeatherStationRepo {
         WeatherStationRepo::new(self.collection("weather_stations"))
     }
@@ -201,6 +211,10 @@ impl Database {
         FinancialRecordRepo::new(self.collection("financial_records"))
     }
 
+    pub fn equipment_repo(&self) -> EquipmentRepo {
+        EquipmentRepo::new(self.collection("equipment"))
+    }
+
     pub fn cold_chain_log_repo(&self) -> ColdChainLogRepo {
         ColdChainLogRepo::new(self.collection("cold_chain_logs"))
     }
@@ -215,5 +229,9 @@ impl Database {
 
     pub fn harvest_delivery_repo(&self) -> HarvestDeliveryRepo {
         HarvestDeliveryRepo::new(self.collection("harvest_deliveries"))
+    }
+
+    pub fn animal_repo(&self) -> AnimalRepo {
+        AnimalRepo::new(self.collection("animals"))
     }
 }

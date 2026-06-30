@@ -5,7 +5,7 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-agrocore-domain = { path = "../domain" }
+agrocore-domain = { path = "../domain", features = ["mongodb"] }
 agrocore-infrastructure = { path = "../infrastructure" }
 agrocore-shared = { path = "../shared" }
 agrocore-messaging = { path = "../messaging" }
@@ -15,6 +15,7 @@ actix-cors = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 uuid = { workspace = true }
+chrono = { workspace = true }
 jsonwebtoken = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }

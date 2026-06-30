@@ -11,6 +11,9 @@ fn test_api_site_dto_validation() {
         crop_type: CropType::Grape,
         variety: None,
         area: -1.0,
+        gross_area: None,
+        plots: None,
+        properties: None,
     };
     assert!(dto.validate().is_err());
 

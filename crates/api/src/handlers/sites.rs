@@ -25,7 +25,7 @@ pub async fn list_sites(
     query: web::Query<agrocore_shared::Pagination>,
 ) -> impl Responder {
     tracing::info!("Listing sites for tenant: {}", auth.0.tenant_id);
-    match state.db.site_repo().find_all(auth.0.tenant_id.into(), query.0).await {
+    match state.db.site_repo().find_all_visible(auth.0.tenant_id.into(), query.0, auth.0.user_id, &auth.roles()).await {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
             data: result.data.into_iter().map(SiteDto::from).collect(),
             total: result.total,
@@ -61,7 +61,7 @@ pub async fn get_site(
 ) -> impl Responder {
     let site_id = *path;
     tracing::info!("Getting site {} for tenant: {}", site_id, auth.0.tenant_id);
-    match state.db.site_repo().find_by_id(auth.0.tenant_id.into(), site_id).await {
+    match state.db.site_repo().find_by_id_visible(auth.0.tenant_id.into(), site_id, auth.0.user_id, &auth.roles()).await {
         Ok(Some(site)) => HttpResponse::Ok().json(SiteDto::from(site)),
         Ok(None) => HttpResponse::NotFound().json(ErrorResponse { error: "not_found".into(), message: "Site not found".into() }),
         Err(e) => {
@@ -88,6 +88,9 @@ pub async fn create_site(
     auth: AuthUser,
     dto: web::Json<CreateSiteDto>,
 ) -> impl Responder {
+    if let Err(e) = auth.require_manager() {
+        return HttpResponse::Forbidden().json(ErrorResponse { error: "forbidden".into(), message: e.to_string() });
+    }
     tracing::info!("Creating site for tenant: {}", auth.0.tenant_id);
     if let Err(e) = dto.0.validate() {
         tracing::warn!("Site validation failed: {}", e);
@@ -125,6 +128,9 @@ pub async fn update_site(
     path: web::Path<uuid::Uuid>,
     dto: web::Json<UpdateSiteDto>,
 ) -> impl Responder {
+    if let Err(e) = auth.require_manager() {
+        return HttpResponse::Forbidden().json(ErrorResponse { error: "forbidden".into(), message: e.to_string() });
+    }
     let site_id = *path;
     tracing::info!("Updating site {} for tenant: {}", site_id, auth.0.tenant_id);
     if let Err(e) = dto.0.validate() {
@@ -161,6 +167,9 @@ pub async fn delete_site(
     auth: AuthUser,
     path: web::Path<uuid::Uuid>,
 ) -> impl Responder {
+    if let Err(e) = auth.require_manager() {
+        return HttpResponse::Forbidden().json(ErrorResponse { error: "forbidden".into(), message: e.to_string() });
+    }
     let site_id = *path;
     tracing::info!("Deleting site {} for tenant: {}", site_id, auth.0.tenant_id);
     match state.db.site_repo().delete(auth.0.tenant_id.into(), site_id).await {

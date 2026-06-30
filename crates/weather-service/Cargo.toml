@@ -10,6 +10,7 @@ agrocore-infrastructure = { path = "../infrastructure" }
 agrocore-shared = { path = "../shared" }
 agrocore-messaging = { path = "../messaging" }
 tokio = { workspace = true }
+actix-web = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }

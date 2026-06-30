@@ -1,3 +1,4 @@
+mod tenant;
 mod base;
 mod site;
 mod order;
@@ -10,10 +11,13 @@ mod vineyard;
 mod water;
 mod weather;
 mod workforce;
+mod equipment;
 mod finance;
 mod harvest;
+mod livestock;
 
 pub use base::{MongoRepository, paginate};
+pub use tenant::TenantRepo;
 pub use site::SiteRepo;
 pub use order::OrderRepo;
 pub use user::UserRepo;
@@ -23,6 +27,8 @@ pub use olive::{OliveGroveRepo, OliveOilRecordRepo};
 pub use vineyard::{VineyardRepo, KelterDeliveryRepo};
 pub use water::{WaterSourceRepo, WaterUsageRepo, WaterQuotaRepo};
 pub use weather::{WeatherStationRepo, WeatherDataRepo, PhenologyRecordRepo};
-pub use workforce::{WorkerRepo, WorkLogRepo};
+pub use workforce::{WorkerRepo, WorkLogRepo, WorkerLocationRepo};
+pub use equipment::EquipmentRepo;
 pub use finance::{PACApplicationRepo, CostCenterRepo, FinancialRecordRepo};
 pub use harvest::{HarvestSeasonRepo, HarvestLotRepo, HarvestDeliveryRepo, ColdChainLogRepo};
+pub use livestock::AnimalRepo;

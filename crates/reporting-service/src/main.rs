@@ -2,6 +2,8 @@ use rust_xlsxwriter::*;
 use geojson::{Feature, FeatureCollection, Geometry, GeometryValue};
 use agrocore_shared::Pagination;
 use agrocore_infrastructure::Database;
+use agrocore_domain::repositories::AnimalRepository;
+use actix_web::{web, App, HttpServer, HttpResponse, Responder};
 use uuid::Uuid;
 
 pub struct ReportingService {
@@ -113,9 +115,45 @@ impl ReportingService {
         let buffer = workbook.save_to_buffer()?;
         Ok(buffer)
     }
+
+    pub async fn generate_veterinary_report(&self, tenant_id: Uuid) -> anyhow::Result<Vec<u8>> {
+        let pagination = Pagination { page: Some(1), per_page: Some(1000) };
+        let animals = self.db.animal_repo().find_all(tenant_id, pagination).await?.data;
+
+        let mut workbook = Workbook::new();
+        let worksheet = workbook.add_worksheet();
+        let header_format = Format::new().set_bold();
+
+        worksheet.write_with_format(0, 0, "Tier-ID", &header_format)?;
+        worksheet.write_with_format(0, 1, "Art", &header_format)?;
+        worksheet.write_with_format(0, 2, "Datum", &header_format)?;
+        worksheet.write_with_format(0, 3, "Behandlung", &header_format)?;
+        worksheet.write_with_format(0, 4, "Medikament", &header_format)?;
+        worksheet.write_with_format(0, 5, "Wartezeit (Tage)", &header_format)?;
+
+        let mut row = 1;
+        for animal in animals {
+            for treatment in animal.treatments {
+                worksheet.write(row, 0, &animal.identifier)?;
+                worksheet.write(row, 1, format!("{:?}", animal.species))?;
+                worksheet.write(row, 2, treatment.date.to_rfc3339())?;
+                worksheet.write(row, 3, &treatment.treatment_type)?;
+                worksheet.write(row, 4, treatment.medication.as_deref().unwrap_or("-"))?;
+                worksheet.write(row, 5, treatment.withdrawal_days.unwrap_or(0))?;
+                row += 1;
+            }
+        }
+
+        let buffer = workbook.save_to_buffer()?;
+        Ok(buffer)
+    }
 }
 
 pub mod worker;
+
+async fn health() -> impl Responder {
+    HttpResponse::Ok().json(serde_json::json!({"status": "ok", "service": "reporting"}))
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -124,19 +162,36 @@ async fn main() -> anyhow::Result<()> {
 
     let mongodb_uri = std::env::var("MONGODB_URI").unwrap_or_else(|_| "mongodb://192.168.1.69:27017".to_string());
     let nats_url = std::env::var("NATS_URL").unwrap_or_else(|_| "nats://192.168.1.44:4222".to_string());
+    let bind_addr = std::env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:3002".to_string());
 
     let db = Database::connect(&mongodb_uri, "agrocore").await?;
     let reporting_service = ReportingService::new(db.clone());
     
-    // In a real microservice, we would connect to NATS and listen for requests.
-    // For now, let's keep the structure ready for it.
-    println!("Reporting Service started...");
+    println!("Reporting Service starting on {}...", bind_addr);
     
-    // Placeholder for NATS worker
-    let reporting_handle = tokio::spawn(worker::start(reporting_service, nats_url.clone()));
-    let audit_handle = tokio::spawn(worker::start_audit_worker(db, nats_url));
+    // Start NATS workers in background
+    let nats_url_clone = nats_url.clone();
+    tokio::spawn(async move {
+        if let Err(e) = worker::start(reporting_service, nats_url_clone).await {
+            eprintln!("Reporting worker error: {}", e);
+        }
+    });
     
-    let _ = tokio::join!(reporting_handle, audit_handle);
+    let db_clone = db.clone();
+    tokio::spawn(async move {
+        if let Err(e) = worker::start_audit_worker(db_clone, nats_url).await {
+            eprintln!("Audit worker error: {}", e);
+        }
+    });
+
+    // Start HTTP server for health checks
+    HttpServer::new(|| {
+        App::new()
+            .route("/health", web::get().to(health))
+    })
+    .bind(bind_addr)?
+    .run()
+    .await?;
 
     Ok(())
 }

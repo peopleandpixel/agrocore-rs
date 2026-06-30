@@ -55,6 +55,12 @@ impl UserRepo {
     pub fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
         self.base.delete(tid, id)
     }
+    pub fn count_all(&self) -> Fut<u64> {
+        let c = self.base.collection.clone();
+        Box::pin(async move {
+            c.count_documents(doc! {}).await.map_err(|e| SharedError::Database(e.to_string()))
+        })
+    }
     pub fn authenticate(&self, dto: LoginDto) -> Fut<AuthResponse> {
         let c=self.base.collection.clone();
         Box::pin(async move {

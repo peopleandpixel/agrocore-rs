@@ -1,5 +1,3 @@
-# Multi-stage build for AgroCore API and Admin UI
-# To speed up builds, we use a custom base image: agrocore-build-base
 FROM agrocore-build-base AS chef
 WORKDIR /app
 
@@ -28,7 +26,7 @@ COPY . .
 WORKDIR /app/crates/admin-ui
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/app/target \
-    trunk build --release
+    trunk build --release --public-url /admin/
 
 # Final Stage
 FROM debian:bookworm-slim

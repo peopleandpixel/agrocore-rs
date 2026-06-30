@@ -1,12 +1,92 @@
 use agrocore_domain::entities::order::{Order, CreateOrderDto as DomainCreateOrderDto, UpdateOrderDto as DomainUpdateOrderDto};
-use agrocore_domain::entities::site::{Site, CreateSiteDto as DomainCreateSiteDto, UpdateSiteDto as DomainUpdateSiteDto};
+use agrocore_domain::entities::site::{Site, CreateSiteDto as DomainCreateSiteDto, UpdateSiteDto as DomainUpdateSiteDto, SiteProperty};
+use agrocore_domain::entities::equipment::{Equipment, CreateEquipmentDto as DomainCreateEquipmentDto, UpdateEquipmentDto as DomainUpdateEquipmentDto, EquipmentType};
 use agrocore_domain::entities::task::{TaskData, CreateTaskDataDto as DomainCreateTaskDataDto};
+use agrocore_domain::entities::plant_protection::PlantProtectionAreaMethod;
 use agrocore_domain::entities::user::User;
 use agrocore_domain::entities::{BbchStage, CropType, OrderStatus, OrderType, SiteType};
 use agrocore_domain::entities::user::UserRole;
 use serde::{Serialize, Deserialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PaginatedEquipmentResponse {
+    pub data: Vec<EquipmentDto>,
+    pub total: u64,
+    pub page: u64,
+    pub per_page: u64,
+    pub total_pages: u64,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct EquipmentDto {
+    pub id: Uuid,
+    pub tenant_id: Uuid,
+    pub label: String,
+    pub code: Option<String>,
+    pub equipment_type: EquipmentType,
+    pub in_usage: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+impl From<Equipment> for EquipmentDto {
+    fn from(e: Equipment) -> Self {
+        Self {
+            id: e.id,
+            tenant_id: e.tenant_id,
+            label: e.label,
+            code: e.code,
+            equipment_type: e.equipment_type,
+            in_usage: e.in_usage,
+            created_at: e.created_at.to_rfc3339(),
+            updated_at: e.updated_at.to_rfc3339(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
+pub struct CreateEquipmentDto {
+    #[validate(length(min = 1, max = 200))]
+    pub label: String,
+    pub code: Option<String>,
+    pub equipment_type: EquipmentType,
+}
+
+impl From<CreateEquipmentDto> for DomainCreateEquipmentDto {
+    fn from(dto: CreateEquipmentDto) -> Self {
+        Self {
+            label: dto.label,
+            code: dto.code,
+            equipment_type: dto.equipment_type,
+            maintenance_intervals: None,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
+pub struct UpdateEquipmentDto {
+    #[validate(length(min = 1, max = 200))]
+    pub label: Option<String>,
+    pub code: Option<String>,
+    pub equipment_type: Option<EquipmentType>,
+    pub in_usage: Option<bool>,
+}
+
+impl From<UpdateEquipmentDto> for DomainUpdateEquipmentDto {
+    fn from(dto: UpdateEquipmentDto) -> Self {
+        Self {
+            label: dto.label,
+            code: dto.code,
+            equipment_type: dto.equipment_type,
+            in_usage: dto.in_usage,
+            maintenance_intervals: None,
+            next_maintenance_date: None,
+            last_maintenance_hours: None,
+        }
+    }
+}
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct PaginatedSiteResponse {
@@ -108,6 +188,15 @@ pub struct PaginatedFinancialRecordResponse {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
+pub struct PaginatedAnimalResponse {
+    pub data: Vec<agrocore_domain::entities::livestock::Animal>,
+    pub total: u64,
+    pub page: u64,
+    pub per_page: u64,
+    pub total_pages: u64,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
 pub struct ErrorResponse {
     pub error: String,
     pub message: String,
@@ -132,11 +221,13 @@ pub struct SiteDto {
     pub crop_type: CropType,
     pub variety: Option<String>,
     pub area: f64,
+    pub gross_area: Option<f64>,
     pub bbch_stage: Option<BbchStage>,
     pub soil_type: Option<String>,
     pub slope: Option<f64>,
     pub altitude: Option<f64>,
     pub organic: Option<bool>,
+    pub properties: Option<Vec<SiteProperty>>,
     pub is_active: bool,
     pub created_at: String,
     pub updated_at: String,
@@ -152,11 +243,13 @@ impl From<Site> for SiteDto {
             crop_type: s.crop_type,
             variety: s.variety,
             area: s.area,
+            gross_area: s.gross_area,
             bbch_stage: s.bbch_stage,
             soil_type: s.soil_type,
             slope: s.slope,
             altitude: s.altitude,
             organic: s.organic,
+            properties: s.properties,
             is_active: s.is_active,
             created_at: s.created_at.to_rfc3339(),
             updated_at: s.updated_at.to_rfc3339(),
@@ -173,6 +266,9 @@ pub struct CreateSiteDto {
     pub variety: Option<String>,
     #[validate(range(min = 0.0))]
     pub area: f64,
+    pub gross_area: Option<f64>,
+    pub plots: Option<Vec<agrocore_domain::entities::site::Plot>>,
+    pub properties: Option<Vec<SiteProperty>>,
 }
 
 impl From<CreateSiteDto> for DomainCreateSiteDto {
@@ -183,7 +279,8 @@ impl From<CreateSiteDto> for DomainCreateSiteDto {
             crop_type: dto.crop_type,
             variety: dto.variety,
             area: dto.area,
-            plots: None,
+            gross_area: dto.gross_area,
+            plots: dto.plots,
             row_config: None,
             bbch_stage: None,
             planted_date: None,
@@ -196,6 +293,7 @@ impl From<CreateSiteDto> for DomainCreateSiteDto {
             sigpac_data: None,
             regepac_id: None,
             boundary: None,
+            properties: dto.properties,
             custom_fields: None,
             note1: None,
             note2: None,
@@ -210,6 +308,8 @@ pub struct UpdateSiteDto {
     pub variety: Option<String>,
     #[validate(range(min = 0.0))]
     pub area: Option<f64>,
+    pub gross_area: Option<f64>,
+    pub properties: Option<Vec<SiteProperty>>,
     pub is_active: Option<bool>,
 }
 
@@ -219,6 +319,8 @@ impl From<UpdateSiteDto> for DomainUpdateSiteDto {
             label: dto.label,
             variety: dto.variety,
             area: dto.area,
+            gross_area: dto.gross_area,
+            properties: dto.properties,
             is_active: dto.is_active,
             ..Default::default()
         }
@@ -286,6 +388,9 @@ impl From<CreateOrderDto> for DomainCreateOrderDto {
             articles: None,
             quantities: None,
             custom_fields: None,
+            parent_order_id: None,
+            workflow_config: None,
+            cost_center_id: None,
         }
     }
 }
@@ -314,7 +419,7 @@ impl From<UpdateOrderDto> for DomainUpdateOrderDto {
     }
 }
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Serialize, ToSchema, Clone)]
 pub struct UserDto {
     pub id: Uuid,
     pub tenant_id: Uuid,
@@ -349,7 +454,7 @@ impl From<User> for UserDto {
     }
 }
 
-#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
+#[derive(Debug, Deserialize, ToSchema, validator::Validate, Clone)]
 pub struct CreateUserDto {
     #[validate(length(min = 1, max = 100))]
     pub firstname: String,
@@ -461,6 +566,59 @@ impl From<CreateTaskDataDto> for DomainCreateTaskDataDto {
             observations: None,
             gps_track: None,
             photo_urls: None,
+            machine_id: None,
+            machine_hours: None,
+            cost_center_id: None,
         }
     }
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct MaterialCalculationRequestDto {
+    pub method: PlantProtectionAreaMethod,
+    pub site_id: Uuid,
+    pub dosage_per_ha: f64,
+    pub application_date: Option<String>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct MaterialCalculationResponseDto {
+    pub treated_area_ha: f64,
+    pub total_material_amount: f64,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct WaterRateCalculationRequestDto {
+    pub speed_kmh: f64,
+    pub nozzle_flow_lmin: f64,
+    pub lane_width: f64,
+    pub number_of_nozzles: u32,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct WaterRateCalculationResponseDto {
+    pub water_rate_lha: f64,
+}
+
+#[derive(Debug, serde::Deserialize, utoipa::ToSchema)]
+pub struct NutritionDemandRequestDto {
+    pub site_id: uuid::Uuid,
+    pub target_yield_t_ha: f64,
+    pub demand_per_t: agrocore_domain::services::nutrition::NutrientValues,
+}
+
+#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
+pub struct NutritionDemandResponseDto {
+    pub total_demand: agrocore_domain::services::nutrition::NutrientValues,
+}
+
+#[derive(Debug, serde::Deserialize, utoipa::ToSchema)]
+pub struct FertilizerCalculationRequestDto {
+    pub demand: agrocore_domain::services::nutrition::NutrientValues,
+    pub fertilizer: agrocore_domain::services::nutrition::Fertilizer,
+}
+
+#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
+pub struct FertilizerCalculationResponseDto {
+    pub fertilizer_amount_kg: f64,
 }

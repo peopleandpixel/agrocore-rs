@@ -2,6 +2,7 @@ use actix_web::{web, HttpResponse, Responder};
 use validator::Validate;
 use crate::dto::{UserDto, CreateUserDto, UpdateUserDto, ErrorResponse, PaginatedResponseDto, PaginatedUserResponse};
 use crate::middleware::AuthExtractor as AuthUser;
+use agrocore_messaging::{Event, GlobalEvent};
 use crate::AppState;
 
 #[utoipa::path(
@@ -23,6 +24,9 @@ pub async fn list_users(
     auth: AuthUser,
     query: web::Query<agrocore_shared::Pagination>,
 ) -> impl Responder {
+    if let Err(e) = auth.require_manager() {
+        return HttpResponse::Forbidden().json(ErrorResponse { error: "forbidden".into(), message: e.to_string() });
+    }
     tracing::info!("Listing users for tenant: {}", auth.0.tenant_id);
     match state.db.user_repo().find_all(auth.0.tenant_id.into(), query.0).await {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
@@ -87,13 +91,20 @@ pub async fn create_user(
     auth: AuthUser,
     dto: web::Json<CreateUserDto>,
 ) -> impl Responder {
+    if let Err(e) = auth.require_admin() {
+        return HttpResponse::Forbidden().json(ErrorResponse { error: "forbidden".into(), message: e.to_string() });
+    }
     tracing::info!("Creating user for tenant: {}", auth.0.tenant_id);
     if let Err(e) = dto.0.validate() {
         tracing::warn!("User validation failed: {}", e);
         return HttpResponse::BadRequest().json(ErrorResponse { error: "validation".into(), message: e.to_string() });
     }
     match state.db.user_repo().create(auth.0.tenant_id.into(), dto.0.into()).await {
-        Ok(u) => HttpResponse::Created().json(UserDto::from(u)),
+        Ok(u) => {
+            let event = Event::new("api".into(), GlobalEvent::UserCreated(u.clone()));
+            let _ = state.messaging.publish("events.users", &event).await;
+            HttpResponse::Created().json(UserDto::from(u))
+        },
         Err(e) => {
             tracing::error!("Failed to create user: {}", e);
             HttpResponse::InternalServerError().json(ErrorResponse { error: "internal".into(), message: e.to_string() })
@@ -121,13 +132,22 @@ pub async fn update_user(
     dto: web::Json<UpdateUserDto>,
 ) -> impl Responder {
     let user_id = *path;
+    if let Err(e) = auth.require_admin() {
+        if auth.0.user_id != user_id {
+            return HttpResponse::Forbidden().json(ErrorResponse { error: "forbidden".into(), message: e.to_string() });
+        }
+    }
     tracing::info!("Updating user {} for tenant: {}", user_id, auth.0.tenant_id);
     if let Err(e) = dto.0.validate() {
         tracing::warn!("User update validation failed: {}", e);
         return HttpResponse::BadRequest().json(ErrorResponse { error: "validation".into(), message: e.to_string() });
     }
     match state.db.user_repo().update(auth.0.tenant_id.into(), user_id, dto.0.into()).await {
-        Ok(Some(u)) => HttpResponse::Ok().json(UserDto::from(u)),
+        Ok(Some(u)) => {
+            let event = Event::new("api".into(), GlobalEvent::UserUpdated(u.clone()));
+            let _ = state.messaging.publish("events.users", &event).await;
+            HttpResponse::Ok().json(UserDto::from(u))
+        },
         Ok(None) => HttpResponse::NotFound().json(ErrorResponse { error: "not_found".into(), message: "User not found".into() }),
         Err(e) => {
             tracing::error!("Failed to update user {}: {}", user_id, e);
@@ -152,10 +172,17 @@ pub async fn delete_user(
     auth: AuthUser,
     path: web::Path<uuid::Uuid>,
 ) -> impl Responder {
+    if let Err(e) = auth.require_admin() {
+        return HttpResponse::Forbidden().json(ErrorResponse { error: "forbidden".into(), message: e.to_string() });
+    }
     let user_id = *path;
     tracing::info!("Deleting user {} for tenant: {}", user_id, auth.0.tenant_id);
     match state.db.user_repo().delete(auth.0.tenant_id.into(), user_id).await {
-        Ok(true) => HttpResponse::Ok().json(serde_json::json!({"deleted": true})),
+        Ok(true) => {
+            let event = Event::new("api".into(), GlobalEvent::UserDeleted(user_id));
+            let _ = state.messaging.publish("events.users", &event).await;
+            HttpResponse::Ok().json(serde_json::json!({"deleted": true}))
+        },
         Ok(false) => HttpResponse::NotFound().json(ErrorResponse { error: "not_found".into(), message: "User not found".into() }),
         Err(e) => {
             tracing::error!("Failed to delete user {}: {}", user_id, e);

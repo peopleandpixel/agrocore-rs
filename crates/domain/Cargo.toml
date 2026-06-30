@@ -12,6 +12,11 @@ utoipa = { version = "5", features = ["chrono", "uuid"] }
 chrono = { workspace = true }
 uuid = { workspace = true }
 validator = { workspace = true }
+mongodb = { workspace = true, optional = true }
+
+[features]
+default = []
+mongodb = ["dep:mongodb"]
 
 [dev-dependencies]
 mockall = { workspace = true }

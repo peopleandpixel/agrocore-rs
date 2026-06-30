@@ -1,4 +1,5 @@
 use actix_web::{web, HttpResponse, Responder};
+use agrocore_domain::entities::workforce::ReportLocationDto;
 use crate::dto::{ErrorResponse, PaginatedResponseDto};
 use crate::middleware::AuthExtractor as AuthUser;
 use crate::AppState;
@@ -10,6 +11,10 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     ).service(
         web::resource("/workers/logs")
             .route(web::get().to(list_work_logs))
+    ).service(
+        web::resource("/workers/locations")
+            .route(web::get().to(get_latest_locations))
+            .route(web::post().to(report_location))
     );
 }
 
@@ -43,6 +48,30 @@ pub async fn list_work_logs(
             per_page: result.per_page,
             total_pages: result.total_pages,
         }),
+        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse { error: "internal".into(), message: e.to_string() }),
+    }
+}
+
+pub async fn report_location(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    dto: web::Json<ReportLocationDto>,
+) -> impl Responder {
+    // Falls der User ein Worker ist, nutzen wir seine ID. Ansonsten müsste die ID im DTO sein,
+    // aber laut Anforderung "Arbeiter sollen permanent ihre positionen melden können" 
+    // gehen wir davon aus, dass der Request vom Arbeiter selbst kommt.
+    match state.db.worker_location_repo().report_location(auth.0.tenant_id.into(), auth.0.user_id, dto.into_inner()).await {
+        Ok(loc) => HttpResponse::Created().json(loc),
+        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse { error: "internal".into(), message: e.to_string() }),
+    }
+}
+
+pub async fn get_latest_locations(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+) -> impl Responder {
+    match state.db.worker_location_repo().get_latest_locations(auth.0.tenant_id.into()).await {
+        Ok(locations) => HttpResponse::Ok().json(locations),
         Err(e) => HttpResponse::InternalServerError().json(ErrorResponse { error: "internal".into(), message: e.to_string() }),
     }
 }

@@ -12,6 +12,8 @@ pub mod vineyard;
 pub mod water;
 pub mod weather;
 pub mod workforce;
+pub mod equipment;
+pub mod livestock;
 
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -71,6 +73,32 @@ pub enum BbchStage {
     #[serde(rename = "91")] AfterHarvest,
     #[serde(rename = "97")] WinterDormancy,
     Custom(String),
+}
+
+impl BbchStage {
+    pub fn to_u32(&self) -> u32 {
+        match self {
+            BbchStage::Dormancy => 0,
+            BbchStage::BudSwelling => 1,
+            BbchStage::WoolStage => 5,
+            BbchStage::BudBreak => 9,
+            BbchStage::FirstLeaf => 11,
+            BbchStage::LeafDevelopment => 15,
+            BbchStage::LeafFall => 19,
+            BbchStage::InflorescenceVisible => 53,
+            BbchStage::InflorescenceFullyDeveloped => 57,
+            BbchStage::FloweringBegins => 61,
+            BbchStage::FloweringEnds => 69,
+            BbchStage::PeaSizeBerries => 75,
+            BbchStage::FruitSet => 71,
+            BbchStage::BerriesTouching => 77,
+            BbchStage::VeraisonBegins => 81,
+            BbchStage::BerriesRipe => 89,
+            BbchStage::AfterHarvest => 91,
+            BbchStage::WinterDormancy => 97,
+            BbchStage::Custom(_) => 100, // Or whatever default
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]

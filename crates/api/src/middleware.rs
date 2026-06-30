@@ -55,6 +55,42 @@ impl FromRequest for AuthExtractor {
     }
 }
 
+impl AuthExtractor {
+    pub fn roles(&self) -> Vec<agrocore_domain::entities::user::UserRole> {
+        self.0.roles.iter()
+            .map(|r| match r.as_str() {
+                "Admin" => agrocore_domain::entities::user::UserRole::Admin,
+                "Manager" => agrocore_domain::entities::user::UserRole::Manager,
+                "Worker" => agrocore_domain::entities::user::UserRole::Worker,
+                _ => agrocore_domain::entities::user::UserRole::Viewer,
+            }).collect()
+    }
+
+    pub fn is_admin(&self) -> bool {
+        self.0.roles.iter().any(|r| r == "Admin")
+    }
+
+    pub fn is_manager(&self) -> bool {
+        self.0.roles.iter().any(|r| r == "Admin" || r == "Manager")
+    }
+
+    pub fn require_admin(&self) -> Result<(), actix_web::Error> {
+        if self.is_admin() {
+            Ok(())
+        } else {
+            Err(actix_web::error::ErrorForbidden("Admin role required"))
+        }
+    }
+
+    pub fn require_manager(&self) -> Result<(), actix_web::Error> {
+        if self.is_manager() {
+            Ok(())
+        } else {
+            Err(actix_web::error::ErrorForbidden("Manager or Admin role required"))
+        }
+    }
+}
+
 fn parse_uuid(s: &str) -> Result<uuid::Uuid, Error> {
     uuid::Uuid::parse_str(s).map_err(|_| actix_web::error::ErrorUnauthorized("Invalid UUID"))
 }

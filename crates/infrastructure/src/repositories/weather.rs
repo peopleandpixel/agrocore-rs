@@ -41,6 +41,8 @@ impl WeatherStationRepo {
                 serial_number: dto.serial_number,
                 api_key_config: dto.api_key_config,
                 is_active: true,
+                sensor_metadata: None,
+                firmware_version: None,
                 created_at: now,
                 updated_at: now,
             };

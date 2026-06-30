@@ -67,6 +67,13 @@ pub struct AppState {
         handlers::reporting::export_orders_excel,
         handlers::reporting::export_sites_geojson,
         handlers::reporting::export_pac_sip,
+        handlers::livestock::list_animals,
+        handlers::livestock::get_animal,
+        handlers::livestock::create_animal,
+        handlers::livestock::update_animal,
+        handlers::livestock::delete_animal,
+        handlers::livestock::add_treatment,
+        handlers::livestock::add_grazing,
     ),
     components(
         schemas(
@@ -94,6 +101,7 @@ pub struct AppState {
             dto::PaginatedPACApplicationResponse,
             dto::PaginatedCostCenterResponse,
             dto::PaginatedFinancialRecordResponse,
+            dto::PaginatedAnimalResponse,
             agrocore_domain::entities::order::MyTask,
             agrocore_domain::entities::user::UserRole,
             agrocore_domain::entities::SiteType,
@@ -135,6 +143,13 @@ pub struct AppState {
             agrocore_domain::entities::finance::FinancialRecordType,
             agrocore_domain::entities::finance::CreateFinancialRecordDto,
             agrocore_domain::entities::finance::EcoSchemeParticipation,
+            agrocore_domain::entities::livestock::Animal,
+            agrocore_domain::entities::livestock::AnimalSpecies,
+            agrocore_domain::entities::livestock::AnimalStatus,
+            agrocore_domain::entities::livestock::TreatmentRecord,
+            agrocore_domain::entities::livestock::GrazingRecord,
+            agrocore_domain::entities::livestock::CreateAnimalDto,
+            agrocore_domain::entities::livestock::UpdateAnimalDto,
         )
     ),
     modifiers(&SecurityAddon),
@@ -192,6 +207,9 @@ pub async fn run_server(db: Database, messaging: MessagingClient, bind_addr: &st
             .service(
                 fs::Files::new("/admin", "/var/lib/agrocore/admin-ui")
                     .index_file("index.html")
+                    .default_handler(web::to(|| async {
+                        fs::NamedFile::open("/var/lib/agrocore/admin-ui/index.html")
+                    }))
                     .show_files_listing()
             )
     })

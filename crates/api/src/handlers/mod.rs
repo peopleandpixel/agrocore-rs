@@ -5,6 +5,8 @@ pub mod sites;
 pub mod orders;
 pub mod users;
 pub mod tasks;
+pub mod system;
+pub mod equipment;
 pub mod compliance;
 pub mod specialized;
 pub mod water;
@@ -12,6 +14,8 @@ pub mod workforce;
 pub mod weather;
 pub mod finance;
 pub mod reporting;
+pub mod nutrition;
+pub mod livestock;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -44,6 +48,14 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route(web::delete().to(orders::delete_order))
             )
             .service(
+                web::resource("/orders/{id}/complete")
+                    .route(web::post().to(orders::complete_order))
+            )
+            .service(
+                web::resource("/orders/{id}/start")
+                    .route(web::post().to(orders::start_order))
+            )
+            .service(
                 web::resource("/users")
                     .route(web::get().to(users::list_users))
                     .route(web::post().to(users::create_user))
@@ -65,6 +77,22 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route(web::put().to(tasks::update_task))
                     .route(web::delete().to(tasks::delete_task))
             )
+            .service(
+                web::scope("/system")
+                    .route("/status", web::get().to(system::get_status))
+                    .route("/setup", web::post().to(system::initial_setup))
+            )
+            .service(
+                web::resource("/equipments")
+                    .route(web::get().to(equipment::list_equipments))
+                    .route(web::post().to(equipment::create_equipment))
+            )
+            .service(
+                web::resource("/equipments/{id}")
+                    .route(web::get().to(equipment::get_equipment))
+                    .route(web::put().to(equipment::update_equipment))
+                    .route(web::delete().to(equipment::delete_equipment))
+            )
             .configure(compliance::configure)
             .configure(specialized::configure)
             .configure(water::configure)
@@ -72,6 +100,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .configure(weather::configure)
             .configure(finance::configure)
             .configure(reporting::configure)
+            .configure(nutrition::configure)
+            .configure(livestock::configure)
     );
 }
 

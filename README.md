@@ -53,24 +53,24 @@ To significantly speed up the build process, we use a custom base image that con
    ```
 
 3. **Access the services:**
-   - **Admin UI:** [http://localhost:3000/admin](http://localhost:3000/admin)
-   - **API Swagger Docs:** [http://localhost:3000/swagger-ui/](http://localhost:3000/swagger-ui/)
+   - **Admin UI:** [http://localhost:<PORT>/admin](http://localhost:<PORT>/admin) (Find `<PORT>` with `docker compose ps`)
+   - **API Swagger Docs:** [http://localhost:<PORT>/swagger-ui/](http://localhost:<PORT>/swagger-ui/)
    - **Grafana Dashboards:** [http://localhost:3001](http://localhost:3001) (Default login: `admin` / `admin`)
 
 ## 🔧 Manual Development Setup
 
 ### Requirements
-- [Rust](https://www.rust-lang.org/tools/install) (latest stable)
+- [Rust](https://www.rust-lang.org/tools/install) (the latest stable)
 - [Trunk](https://trunkrs.dev/) (for UI development)
 - [MongoDB](https://www.mongodb.com/) running locally
 
 ### Environment Variables
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DATABASE_URL` | MongoDB connection string | `mongodb://localhost:27017` |
-| `DATABASE_NAME` | MongoDB database name | `agrocore` |
-| `LISTEN_ADDR` | API server listen address | `0.0.0.0:3000` |
-| `NATS_URL` | NATS server URL | `nats://localhost:4222` |
+| Variable        | Description               | Default                     |
+|-----------------|---------------------------|-----------------------------|
+| `DATABASE_URL`  | MongoDB connection string | `mongodb://localhost:27017` |
+| `DATABASE_NAME` | MongoDB database name     | `agrocore`                  |
+| `LISTEN_ADDR`   | API server listen address | `0.0.0.0:3000`              |
+| `NATS_URL`      | NATS server URL           | `nats://localhost:4222`     |
 
 ### Running the Project
 ```bash

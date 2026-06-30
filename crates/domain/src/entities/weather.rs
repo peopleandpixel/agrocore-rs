@@ -33,6 +33,8 @@ pub struct WeatherStation {
     pub serial_number: Option<String>,
     pub api_key_config: Option<String>, // Encrypted or reference
     pub is_active: bool,
+    pub sensor_metadata: Option<serde_json::Value>, // IoT Sensor Details (Battery, Signal, etc.)
+    pub firmware_version: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

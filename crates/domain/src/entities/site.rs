@@ -3,8 +3,12 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
 
-use crate::entities::{BbchStage, CropType, SiteType};
+use crate::entities::{BbchStage, CropType, SiteType, user::UserRole};
 use crate::entities::tenant::TenantId;
+use crate::repositories::VisibilityAwareEntity;
+
+#[cfg(feature = "mongodb")]
+use mongodb::bson::{doc, Document};
 use utoipa::ToSchema;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
@@ -52,6 +56,13 @@ pub struct RowConfig {
     pub number_of_vines: u32,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+pub struct SiteProperty {
+    pub key: String,
+    pub value: serde_json::Value,
+    pub group: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct Site {
     pub id: Uuid,
@@ -64,6 +75,8 @@ pub struct Site {
     pub variety: Option<String>,
     #[validate(range(min = 0.0))]
     pub area: f64,
+    #[validate(range(min = 0.0))]
+    pub gross_area: Option<f64>,
     pub plots: Vec<Plot>,
     pub row_config: Option<RowConfig>,
     pub bbch_stage: Option<BbchStage>,
@@ -79,6 +92,7 @@ pub struct Site {
     pub sigpac_data: Option<SigpacData>,
     pub regepac_id: Option<String>,
     pub boundary: Option<Vec<GeoPoint>>,
+    pub properties: Option<Vec<SiteProperty>>,
     pub custom_fields: Option<serde_json::Value>,
     pub note1: Option<String>,
     pub note2: Option<String>,
@@ -90,6 +104,38 @@ pub struct Site {
     pub updated_by: Option<Uuid>,
 }
 
+impl Site {
+    pub const PROP_GRAZING_QUALITY: &'static str = "grazing_quality";
+    pub const PROP_FORAGE_DEMAND: &'static str = "forage_demand";
+    pub const PROP_GRASS_SPECIES: &'static str = "grass_species";
+    pub const PROP_CROWN_DIAMETER: &'static str = "crown_diameter";
+    pub const PROP_TREE_HEIGHT: &'static str = "tree_height";
+
+    pub fn get_property(&self, key: &str) -> Option<&serde_json::Value> {
+        self.properties.as_ref()?.iter().find(|p| p.key == key).map(|p| &p.value)
+    }
+
+    pub fn get_property_as_f64(&self, key: &str) -> Option<f64> {
+        self.get_property(key)?.as_f64()
+    }
+
+    pub fn get_property_as_str(&self, key: &str) -> Option<&str> {
+        self.get_property(key)?.as_str()
+    }
+}
+
+impl VisibilityAwareEntity for Site {
+    #[cfg(feature = "mongodb")]
+    fn visibility_filter(user_id: Uuid, roles: &[UserRole]) -> Document {
+        if roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager) || roles.contains(&UserRole::Worker) {
+            doc! {}
+        } else {
+            // Viewer can only see sites assigned to them (if any)
+            doc! { "assigned_user_ids": user_id.to_string() }
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct CreateSiteDto {
     #[validate(length(min = 1, max = 200))]
@@ -99,6 +145,8 @@ pub struct CreateSiteDto {
     pub variety: Option<String>,
     #[validate(range(min = 0.0))]
     pub area: f64,
+    #[validate(range(min = 0.0))]
+    pub gross_area: Option<f64>,
     pub plots: Option<Vec<Plot>>,
     pub row_config: Option<RowConfig>,
     pub bbch_stage: Option<BbchStage>,
@@ -112,6 +160,7 @@ pub struct CreateSiteDto {
     pub sigpac_data: Option<SigpacData>,
     pub regepac_id: Option<String>,
     pub boundary: Option<Vec<GeoPoint>>,
+    pub properties: Option<Vec<SiteProperty>>,
     pub custom_fields: Option<serde_json::Value>,
     pub note1: Option<String>,
     pub note2: Option<String>,
@@ -122,6 +171,7 @@ pub struct UpdateSiteDto {
     pub label: Option<String>,
     pub variety: Option<String>,
     pub area: Option<f64>,
+    pub gross_area: Option<f64>,
     pub plots: Option<Vec<Plot>>,
     pub row_config: Option<RowConfig>,
     pub bbch_stage: Option<BbchStage>,
@@ -136,6 +186,7 @@ pub struct UpdateSiteDto {
     pub sigpac_data: Option<SigpacData>,
     pub regepac_id: Option<String>,
     pub boundary: Option<Vec<GeoPoint>>,
+    pub properties: Option<Vec<SiteProperty>>,
     pub custom_fields: Option<serde_json::Value>,
     pub note1: Option<String>,
     pub note2: Option<String>,

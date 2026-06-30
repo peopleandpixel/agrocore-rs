@@ -42,14 +42,14 @@ impl TaskDataRepo {
         let c=self.base.collection.clone();
         Box::pin(async move {
             let now=Utc::now();
-            let td=TaskData{id:Uuid::new_v4(),tenant_id:tid,order_id:dto.order_id,worker_id:wid,site_id:dto.site_id,description:dto.description,started_at:dto.started_at.unwrap_or(now),ended_at:dto.ended_at,duration_minutes:dto.duration_minutes,area_covered:dto.area_covered,materials_used:dto.materials_used,observations:dto.observations,gps_track:dto.gps_track,photo_urls:dto.photo_urls,created_at:now,updated_at:now};
+            let td=TaskData{id:Uuid::new_v4(),tenant_id:tid,order_id:dto.order_id,worker_id:wid,site_id:dto.site_id,description:dto.description,started_at:dto.started_at.unwrap_or(now),ended_at:dto.ended_at,duration_minutes:dto.duration_minutes,machine_id:dto.machine_id,machine_hours:dto.machine_hours,cost_center_id:dto.cost_center_id,area_covered:dto.area_covered,materials_used:dto.materials_used,observations:dto.observations,gps_track:dto.gps_track,photo_urls:dto.photo_urls,created_at:now,updated_at:now};
             c.insert_one(&td).await.map_err(|e|SharedError::Database(e.to_string()))?; Ok(td)
         })
     }
     pub fn update(&self, tid: TenantId, id: Uuid, dto: CreateTaskDataDto) -> Fut<Option<TaskData>> {
         let c=self.base.collection.clone();
         Box::pin(async move {
-            let d=doc!{"description":dto.description,"ended_at":dto.ended_at,"duration_minutes":dto.duration_minutes,"area_covered":dto.area_covered,"observations":dto.observations,"updated_at":Utc::now()};
+            let d=doc!{"description":dto.description,"ended_at":dto.ended_at,"duration_minutes":dto.duration_minutes,"machine_id":dto.machine_id.map(|u|u.to_string()),"machine_hours":dto.machine_hours,"cost_center_id":dto.cost_center_id.map(|u|u.to_string()),"area_covered":dto.area_covered,"observations":dto.observations,"updated_at":Utc::now()};
             c.update_one(doc!{"tenant_id":tid.to_string(),"id":id.to_string()},doc!{"$set":d}).await.map_err(|e|SharedError::Database(e.to_string()))?;
             Repository::find_by_id(&MongoRepository::new(c),tid,id).await
         })

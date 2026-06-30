@@ -1,4 +1,15 @@
 pub mod dashboard;
+pub mod setup;
 pub mod orders;
 pub mod sites;
 pub mod users;
+pub mod map;
+pub mod wizard;
+pub mod livestock;
+pub mod weather;
+pub mod finance;
+pub mod equipment;
+pub mod analytics;
+pub mod compliance;
+pub mod settings;
+pub mod resources;

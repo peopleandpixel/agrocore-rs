@@ -10,6 +10,7 @@ pub enum ReportingRequest {
     OrdersExcel { tenant_id: Uuid },
     SitesGeoJson { tenant_id: Uuid },
     PacSipExcel { tenant_id: Uuid },
+    VeterinaryExcel { tenant_id: Uuid },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -51,6 +52,12 @@ pub async fn start(service: ReportingService, nats_url: String) -> anyhow::Resul
             }
             ReportingRequest::PacSipExcel { tenant_id } => {
                 match service.generate_pac_sip_excel(tenant_id).await {
+                    Ok(data) => ReportingResponse::Excel(data),
+                    Err(e) => ReportingResponse::Error(e.to_string()),
+                }
+            }
+            ReportingRequest::VeterinaryExcel { tenant_id } => {
+                match service.generate_veterinary_report(tenant_id).await {
                     Ok(data) => ReportingResponse::Excel(data),
                     Err(e) => ReportingResponse::Error(e.to_string()),
                 }

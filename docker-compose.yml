@@ -1,4 +1,10 @@
 services:
+  build-base:
+    build:
+      context: .
+      dockerfile: Dockerfile.base-build
+    image: agrocore-build-base:latest
+
   mongodb:
     image: mongo:latest
     ports:
@@ -16,6 +22,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.api
+    depends_on:
+      - build-base
+      - mongodb
+      - nats
     ports:
       - "3000:3000"
     environment:
@@ -24,9 +34,6 @@ services:
       - NATS_URL=nats://nats:4222
       - LISTEN_ADDR=0.0.0.0:3000
       - JWT_SECRET=dev-secret
-    depends_on:
-      - mongodb
-      - nats
 
   reporting-service:
     build:
@@ -34,12 +41,13 @@ services:
       dockerfile: Dockerfile.service
       args:
         SERVICE_NAME: agrocore-reporting-service
+    depends_on:
+      - build-base
+      - mongodb
+      - nats
     environment:
       - MONGODB_URI=mongodb://mongodb:27017
       - NATS_URL=nats://nats:4222
-    depends_on:
-      - mongodb
-      - nats
 
   weather-service:
     build:
@@ -47,12 +55,13 @@ services:
       dockerfile: Dockerfile.service
       args:
         SERVICE_NAME: agrocore-weather-service
+    depends_on:
+      - build-base
+      - mongodb
+      - nats
     environment:
       - MONGODB_URI=mongodb://mongodb:27017
       - NATS_URL=nats://nats:4222
-    depends_on:
-      - mongodb
-      - nats
 
   prometheus:
     image: prom/prometheus:latest

@@ -2,11 +2,11 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
-use tracing_subscriber::{fmt, prelude::*, EnvFilter};
+use utoipa::ToSchema;
 
 pub mod telemetry;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema)]
 pub struct Id(pub Uuid);
 
 impl Id {
@@ -31,7 +31,7 @@ impl std::fmt::Display for Id {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, ToSchema)]
 pub struct Timestamp(pub DateTime<Utc>);
 
 impl Timestamp {
@@ -42,7 +42,7 @@ impl Default for Timestamp {
     fn default() -> Self { Self::now() }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, ToSchema)]
 pub struct Audit {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -50,7 +50,7 @@ pub struct Audit {
     pub updated_by: Option<Id>,
 }
 
-#[derive(Debug, Clone, Deserialize, Validate)]
+#[derive(Debug, Clone, Deserialize, Validate, ToSchema)]
 pub struct Pagination {
     #[validate(range(min = 0))]
     pub page: Option<u64>,
@@ -71,7 +71,7 @@ pub struct PaginatedResponse<T: Serialize> {
     pub total_pages: u64,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, ToSchema)]
 pub struct TenantId(pub Uuid);
 
 impl TenantId {
@@ -91,7 +91,7 @@ pub struct UserContext {
     pub roles: Vec<Role>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum Role {
     Admin,
     Manager,

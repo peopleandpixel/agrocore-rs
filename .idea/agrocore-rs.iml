@@ -11,6 +11,8 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/messaging/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/reporting-service/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/weather-service/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/asset-registry/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/geometry-service/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

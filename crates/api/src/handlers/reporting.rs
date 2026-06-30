@@ -14,6 +14,7 @@ pub mod worker {
         OrdersExcel { tenant_id: Uuid },
         SitesGeoJson { tenant_id: Uuid },
         PacSipExcel { tenant_id: Uuid },
+        VeterinaryExcel { tenant_id: Uuid },
     }
 
     #[derive(Debug, Serialize, Deserialize)]
@@ -30,6 +31,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(web::resource("/export/orders/excel").route(web::get().to(export_orders_excel)))
             .service(web::resource("/export/sites/geojson").route(web::get().to(export_sites_geojson)))
             .service(web::resource("/export/pac/sip").route(web::get().to(export_pac_sip)))
+            .service(web::resource("/export/veterinary").route(web::get().to(export_veterinary)))
     );
 }
 
@@ -114,6 +116,37 @@ pub async fn export_pac_sip(
                 ReportingResponse::Excel(buffer) => HttpResponse::Ok()
                     .content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                     .insert_header(("Content-Disposition", "attachment; filename=\"pac_sip_report.xlsx\""))
+                    .body(buffer),
+                ReportingResponse::Error(e) => HttpResponse::InternalServerError().json(ErrorResponse { error: "Reporting Service error".into(), message: e }),
+                _ => HttpResponse::InternalServerError().json(ErrorResponse { error: "Unexpected response".into(), message: "Wrong response type".into() }),
+            }
+        }
+        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse { error: "Messaging error".into(), message: e.to_string() }),
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/reporting/export/veterinary",
+    responses(
+        (status = 200, description = "Veterinary report in Excel format", body = Vec<u8>),
+        (status = 401, description = "Unauthorized", body = ErrorResponse)
+    ),
+    security(("bearer_auth" = []))
+)]
+pub async fn export_veterinary(
+    state: web::Data<AppState>,
+    auth: AuthExtractor,
+) -> impl Responder {
+    let request = ReportingRequest::VeterinaryExcel { tenant_id: auth.0.tenant_id };
+    let event = Event::new("api".into(), request);
+    
+    match state.messaging.request::<_, ReportingResponse>("reporting.request", &event).await {
+        Ok(response) => {
+            match response {
+                ReportingResponse::Excel(buffer) => HttpResponse::Ok()
+                    .content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    .insert_header(("Content-Disposition", "attachment; filename=\"veterinary_report.xlsx\""))
                     .body(buffer),
                 ReportingResponse::Error(e) => HttpResponse::InternalServerError().json(ErrorResponse { error: "Reporting Service error".into(), message: e }),
                 _ => HttpResponse::InternalServerError().json(ErrorResponse { error: "Unexpected response".into(), message: "Wrong response type".into() }),

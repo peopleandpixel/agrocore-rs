@@ -30,11 +30,68 @@ pub struct User {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+pub enum Resource {
+    Site,
+    Equipment,
+    Order,
+    User,
+    Tenant,
+    Finance,
+    Analytics,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+pub enum Action {
+    Create,
+    Read,
+    Update,
+    Delete,
+    Manage, // Abstract action
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct Permission {
+    pub resource: Resource,
+    pub action: Action,
+    pub scope: PermissionScope,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+pub enum PermissionScope {
+    All,
+    Own,
+    Tenant,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct Role {
+    pub id: Uuid,
+    pub name: String,
+    pub permissions: Vec<Permission>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum UserRole {
     Admin,
     Manager,
     Worker,
     Viewer,
+    Custom(Uuid),
+}
+
+impl UserRole {
+    pub fn has_permission(&self, _resource: Resource, _action: Action, _role_repo: Option<&Role>) -> bool {
+        match self {
+            UserRole::Admin => true,
+            UserRole::Manager => true,
+            UserRole::Worker => matches!(_action, Action::Read) || matches!(_action, Action::Update),
+            UserRole::Viewer => matches!(_action, Action::Read),
+            UserRole::Custom(_) => {
+                // Logic to check role_repo for permissions
+                false
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]

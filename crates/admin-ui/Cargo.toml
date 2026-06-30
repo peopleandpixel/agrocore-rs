@@ -9,6 +9,14 @@ license.workspace = true
 leptos = { version = "0.8.19", features = ["csr"] }
 leptos_meta = { version = "0.8" }
 leptos_router = { version = "0.8.13" }
-serde = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = "1.0"
+gloo-net = "0.6"
 leptos_icons = "0.6"
-icondata = { version = "0.6", features = ["lucide"] }
+icondata = { version = "0.6", features = ["lucide", "ico-moon-free"] }
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["HtmlDivElement", "Window"] }
+uuid = { workspace = true, features = ["v4", "serde", "js"] }
+chrono = { workspace = true, features = ["serde"] }
+tracing = "0.1"

@@ -69,6 +69,24 @@ pub struct CreateWorkerDto {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct WorkerLocation {
+    pub id: Uuid,
+    pub tenant_id: TenantId,
+    pub worker_id: Uuid,
+    pub lat: f64,
+    pub lng: f64,
+    pub current_task_id: Option<Uuid>,
+    pub timestamp: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct ReportLocationDto {
+    pub lat: f64,
+    pub lng: f64,
+    pub current_task_id: Option<Uuid>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct CreateWorkLogDto {
     pub worker_id: Uuid,
     pub date: DateTime<Utc>,

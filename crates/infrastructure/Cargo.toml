@@ -5,7 +5,7 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-agrocore-domain = { path = "../domain" }
+agrocore-domain = { path = "../domain", features = ["mongodb"] }
 agrocore-shared = { path = "../shared" }
 mongodb = { workspace = true }
 bson = { workspace = true }

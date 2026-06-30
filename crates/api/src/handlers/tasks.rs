@@ -23,6 +23,9 @@ pub async fn list_tasks(
     auth: AuthUser,
     query: web::Query<agrocore_shared::Pagination>,
 ) -> impl Responder {
+    if let Err(e) = auth.require_manager() {
+        return HttpResponse::Forbidden().json(ErrorResponse { error: "forbidden".into(), message: e.to_string() });
+    }
     tracing::info!("Listing tasks for tenant: {}", auth.0.tenant_id);
     match state.db.task_data_repo().find_by_worker(auth.0.tenant_id.into(), auth.0.user_id, query.0).await {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
@@ -87,6 +90,8 @@ pub async fn create_task(
     auth: AuthUser,
     dto: web::Json<CreateTaskDataDto>,
 ) -> impl Responder {
+    // Workers should be able to create tasks (log their own work), 
+    // but managers are definitely allowed.
     tracing::info!("Creating task for tenant: {}", auth.0.tenant_id);
     if let Err(e) = dto.0.validate() {
         tracing::warn!("Task validation failed: {}", e);
@@ -152,6 +157,9 @@ pub async fn delete_task(
     auth: AuthUser,
     path: web::Path<uuid::Uuid>,
 ) -> impl Responder {
+    if let Err(e) = auth.require_manager() {
+        return HttpResponse::Forbidden().json(ErrorResponse { error: "forbidden".into(), message: e.to_string() });
+    }
     let task_id = *path;
     tracing::info!("Deleting task {} for tenant: {}", task_id, auth.0.tenant_id);
     match state.db.task_data_repo().delete(auth.0.tenant_id.into(), task_id).await {

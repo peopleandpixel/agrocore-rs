@@ -1,14 +1,15 @@
 use std::future::Future;
 use std::pin::Pin;
 use chrono::Utc;
+use futures::StreamExt;
 use mongodb::bson::doc;
 use mongodb::Collection;
 use uuid::Uuid;
 
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::workforce::{
-    Worker, WorkLog,
-    CreateWorkerDto, CreateWorkLogDto,
+    Worker, WorkLog, WorkerLocation,
+    CreateWorkerDto, CreateWorkLogDto, ReportLocationDto,
 };
 use agrocore_domain::repositories::{Repository, RepositoryFuture};
 use agrocore_shared::{PaginatedResponse, Pagination, Result, SharedError};
@@ -84,6 +85,53 @@ impl WorkLogRepo {
             };
             c.insert_one(&log).await.map_err(|e| SharedError::Database(e.to_string()))?;
             Ok(log)
+        })
+    }
+}
+
+#[derive(Clone)]
+pub struct WorkerLocationRepo { base: MongoRepository<WorkerLocation> }
+impl WorkerLocationRepo {
+    pub fn new(c: Collection<WorkerLocation>) -> Self { Self { base: MongoRepository::new(c) } }
+
+    pub fn report_location(&self, tid: TenantId, worker_id: Uuid, dto: ReportLocationDto) -> Fut<WorkerLocation> {
+        let c = self.base.collection.clone();
+        Box::pin(async move {
+            let now = Utc::now();
+            let loc = WorkerLocation {
+                id: Uuid::new_v4(),
+                tenant_id: tid,
+                worker_id,
+                lat: dto.lat,
+                lng: dto.lng,
+                current_task_id: dto.current_task_id,
+                timestamp: now,
+            };
+            c.insert_one(&loc).await.map_err(|e| SharedError::Database(e.to_string()))?;
+            Ok(loc)
+        })
+    }
+
+    pub fn get_latest_locations(&self, tid: TenantId) -> Fut<Vec<WorkerLocation>> {
+        let c = self.base.collection.clone();
+        Box::pin(async move {
+            let pipeline = vec![
+                doc! { "$match": { "tenant_id": tid.to_string() } },
+                doc! { "$sort": { "timestamp": -1 } },
+                doc! { "$group": {
+                    "_id": "$worker_id",
+                    "latest": { "$first": "$$ROOT" }
+                }},
+                doc! { "$replaceRoot": { "newRoot": "$latest" } }
+            ];
+            let mut cursor = c.aggregate(pipeline).await.map_err(|e| SharedError::Database(e.to_string()))?;
+            let mut result = Vec::new();
+            while let Some(doc) = cursor.next().await {
+                let doc = doc.map_err(|e| SharedError::Database(e.to_string()))?;
+                let loc: WorkerLocation = mongodb::bson::from_document(doc).map_err(|e| SharedError::Database(e.to_string()))?;
+                result.push(loc);
+            }
+            Ok(result)
         })
     }
 }

@@ -24,6 +24,7 @@ fn test_site_label_validation() {
         crop_type: CropType::Grape,
         variety: None,
         area: 10.0,
+        gross_area: None,
         plots: None,
         row_config: None,
         bbch_stage: None,
@@ -37,6 +38,7 @@ fn test_site_label_validation() {
         sigpac_data: None,
         regepac_id: None,
         boundary: None,
+        properties: None,
         custom_fields: None,
         note1: None,
         note2: None,
@@ -93,6 +95,9 @@ fn test_order_validation() {
         articles: None,
         quantities: None,
         custom_fields: None,
+        parent_order_id: None,
+        workflow_config: None,
+        cost_center_id: None,
     };
     assert!(dto.validate().is_err());
 
@@ -121,5 +126,36 @@ fn test_user_validation() {
     let mut valid_dto = dto.clone();
     valid_dto.email = "john@example.com".to_string();
     valid_dto.password = "password123".to_string();
+    assert!(valid_dto.validate().is_ok());
+}
+
+#[test]
+fn test_worklog_validation() {
+    use crate::entities::workforce::CreateWorkLogDto;
+    use chrono::Utc;
+    use uuid::Uuid;
+
+    let dto = CreateWorkLogDto {
+        worker_id: Uuid::new_v4(),
+        date: Utc::now(),
+        hours_worked: 25.0, // Invalid: max 24
+        overtime_hours: -1.0, // Invalid: negative
+        rest_period_hours: 8.0,
+        task_description: "".to_string(), // Invalid: empty
+        site_id: None,
+        is_night_shift: false,
+        breaks_taken: 1,
+    };
+    let res = dto.validate();
+    assert!(res.is_err());
+    let errs = res.unwrap_err();
+    assert!(errs.field_errors().contains_key("hours_worked"));
+    assert!(errs.field_errors().contains_key("overtime_hours"));
+    assert!(errs.field_errors().contains_key("task_description"));
+
+    let mut valid_dto = dto.clone();
+    valid_dto.hours_worked = 8.0;
+    valid_dto.overtime_hours = 0.0;
+    valid_dto.task_description = "Pruning vines".to_string();
     assert!(valid_dto.validate().is_ok());
 }

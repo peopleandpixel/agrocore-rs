@@ -21,6 +21,9 @@ impl OrderRepo {
     pub fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Order>> {
         self.base.find_by_id(tid, id)
     }
+    pub fn find_by_id_visible(&self, tid: TenantId, id: Uuid, user_id: Uuid, roles: &[agrocore_domain::entities::user::UserRole]) -> RepositoryFuture<Option<Order>> {
+        self.base.find_by_id_visible(tid, id, user_id, roles)
+    }
     pub fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Order>> {
         let c=self.base.collection.clone();
         Box::pin(async move {
@@ -28,6 +31,9 @@ impl OrderRepo {
             let sort=doc!{"deadline_date":1};
             paginate(&c, f, p, Some(sort)).await
         })
+    }
+    pub fn find_all_visible(&self, tid: TenantId, p: Pagination, user_id: Uuid, roles: &[agrocore_domain::entities::user::UserRole]) -> RepositoryFuture<PaginatedResponse<Order>> {
+        self.base.find_all_visible(tid, p, user_id, roles)
     }
     pub fn find_my_tasks(&self, tid: TenantId, wid: Uuid) -> Fut<Vec<MyTask>> {
         let c=self.base.collection.clone();
@@ -45,7 +51,7 @@ impl OrderRepo {
         let c=self.base.collection.clone();
         Box::pin(async move {
             let now=Utc::now();
-            let o=Order{id:Uuid::new_v4(),tenant_id:tid,label:dto.label,order_type:dto.order_type,status:agrocore_domain::entities::OrderStatus::Draft,site_ids:dto.site_ids,assigned_worker_ids:dto.assigned_worker_ids.unwrap_or_default(),planned_date:dto.planned_date,deadline_date:dto.deadline_date,started_at:None,completed_at:None,articles:dto.articles,quantities:dto.quantities,results:None,weather:None,custom_fields:dto.custom_fields,is_active:true,created_at:now,updated_at:now,created_by:Some(by),updated_by:Some(by)};
+            let o=Order{id:Uuid::new_v4(),tenant_id:tid,label:dto.label,order_type:dto.order_type,status:agrocore_domain::entities::OrderStatus::Draft,site_ids:dto.site_ids,assigned_worker_ids:dto.assigned_worker_ids.unwrap_or_default(),planned_date:dto.planned_date,deadline_date:dto.deadline_date,started_at:None,completed_at:None,articles:dto.articles,quantities:dto.quantities,results:None,weather:None,custom_fields:dto.custom_fields,parent_order_id:dto.parent_order_id,workflow_config:dto.workflow_config,cost_center_id:dto.cost_center_id,is_active:true,created_at:now,updated_at:now,created_by:Some(by),updated_by:Some(by)};
             c.insert_one(&o).await.map_err(|e|SharedError::Database(e.to_string()))?; Ok(o)
         })
     }
@@ -56,6 +62,8 @@ impl OrderRepo {
             if let Some(v)=dto.label{d.insert("label",v);}
             if let Some(v)=dto.status{d.insert("status",mongodb::bson::to_bson(&v).unwrap());}
             if let Some(v)=dto.results{d.insert("results",v);}
+            if let Some(v)=dto.cost_center_id{d.insert("cost_center_id",v.to_string());}
+            if let Some(v)=dto.workflow_config{d.insert("workflow_config",mongodb::bson::to_bson(&v).unwrap());}
             if let Some(v)=dto.is_active{d.insert("is_active",v);}
             if d.is_empty(){return Repository::find_by_id(&MongoRepository::new(c),tid,id).await;}
             d.insert("updated_at",Utc::now()); d.insert("updated_by",by.to_string());

@@ -4,10 +4,14 @@ use icondata::*;
 
 #[component]
 pub fn OrderList() -> impl IntoView {
+    let i18n = use_context::<crate::i18n::I18n>().expect("i18n context");
+    let lang = use_context::<ReadSignal<crate::i18n::Language>>().expect("lang signal");
+    let t = move |key: &str| i18n.t(lang.get().as_str(), key);
+
     view! {
         <div class="flex flex-col gap-6">
             <div class="flex justify-between items-center">
-                <h1 class="text-3xl font-bold">"Aufträge"</h1>
+                <h1 class="text-3xl font-bold">{move || t("order_management")}</h1>
                 <button class="btn btn-primary">
                     <Icon icon=LuPlus width="20" height="20" />
                     "Neuer Auftrag"
@@ -49,67 +53,7 @@ pub fn OrderList() -> impl IntoView {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr class="hover">
-                                    <td>
-                                        <div class="badge badge-outline">"Bodenbearbeitung"</div>
-                                    </td>
-                                    <td class="font-medium">"Grunddüngung Frühjahr 2024"</td>
-                                    <td>
-                                        <div class="flex flex-wrap gap-1">
-                                            <div class="badge badge-sm badge-ghost">"Parzelle A1"</div>
-                                            <div class="badge badge-sm badge-ghost">"Parzelle A2"</div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="flex items-center gap-2">
-                                            <div class="avatar placeholder">
-                                                <div class="bg-neutral text-neutral-content rounded-full w-6">
-                                                    <span class="text-xs">"JR"</span>
-                                                </div>
-                                            </div>
-                                            <span>"Jens Reinemuth"</span>
-                                        </div>
-                                    </td>
-                                    <td>"28.06.2024"</td>
-                                    <td>
-                                        <div class="flex flex-col gap-1">
-                                            <progress class="progress progress-primary w-24" value="45" max="100"></progress>
-                                            <span class="text-xs">"45%"</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center">
-                                        <button class="btn btn-ghost btn-xs">"Bearbeiten"</button>
-                                    </td>
-                                </tr>
-                                <tr class="hover">
-                                    <td>
-                                        <div class="badge badge-outline text-info">"Pflanzenschutz"</div>
-                                    </td>
-                                    <td class="font-medium">"Mehltau-Prophylaxe"</td>
-                                    <td>
-                                        <div class="badge badge-sm badge-ghost">"Weinberg Süd"</div>
-                                    </td>
-                                    <td>
-                                        <div class="flex items-center gap-2">
-                                            <div class="avatar placeholder">
-                                                <div class="bg-neutral text-neutral-content rounded-full w-6">
-                                                    <span class="text-xs">"MS"</span>
-                                                </div>
-                                            </div>
-                                            <span>"Maria Santos"</span>
-                                        </div>
-                                    </td>
-                                    <td>"30.06.2024"</td>
-                                    <td>
-                                        <div class="flex flex-col gap-1">
-                                            <progress class="progress progress-info w-24" value="0" max="100"></progress>
-                                            <span class="text-xs">"0%"</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center">
-                                        <button class="btn btn-ghost btn-xs">"Bearbeiten"</button>
-                                    </td>
-                                </tr>
+                                // Data will be fetched from API
                             </tbody>
                         </table>
                     </div>

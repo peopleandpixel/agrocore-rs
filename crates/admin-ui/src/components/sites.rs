@@ -4,14 +4,19 @@ use icondata::*;
 
 #[component]
 pub fn SiteManagement() -> impl IntoView {
+    let i18n = use_context::<crate::i18n::I18n>().expect("i18n context");
+    let lang = use_context::<ReadSignal<crate::i18n::Language>>().expect("lang signal");
+    let t = move |key: &str| i18n.t(lang.get().as_str(), key);
+    let (show_add_modal, set_show_add_modal) = signal(false);
+
     view! {
         <div class="flex flex-col gap-6">
             <div class="flex justify-between items-center">
                 <div>
-                    <h1 class="text-3xl font-bold">"Standortverwaltung"</h1>
+                    <h1 class="text-3xl font-bold">{move || t("site_management")}</h1>
                     <p class="text-base-content/60">"Verwalten Sie Ihre Weinberge, Olivenhaine und andere Betriebsflächen."</p>
                 </div>
-                <button class="btn btn-primary">
+                <button class="btn btn-primary" on:click=move |_| set_show_add_modal.set(true)>
                     <Icon icon=LuPlus width="20" height="20" />
                     "Fläche hinzufügen"
                 </button>
@@ -67,79 +72,43 @@ pub fn SiteManagement() -> impl IntoView {
 
                 // Hauptinhalt: Karten/Liste der Flächen
                 <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
-                        <figure class="h-32 bg-primary/10">
-                            <Icon icon=LuMap width="48" height="48" attr:class="text-primary opacity-20" />
-                        </figure>
-                        <div class="card-body p-4">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h2 class="card-title text-sm">"Parzelle A1 - Schlossberg"</h2>
-                                    <p class="text-xs text-base-content/60">"Riesling | 2.4 ha"</p>
-                                </div>
-                                <div class="badge badge-primary">"Aktiv"</div>
-                            </div>
-                            <div class="divider my-2"></div>
-                            <div class="flex justify-between text-xs">
-                                <span>"Letzte Maßnahme:"</span>
-                                <span class="font-bold">"Düngung (vor 2 Tagen)"</span>
-                            </div>
-                            <div class="card-actions justify-end mt-4">
-                                <button class="btn btn-ghost btn-xs">"Details"</button>
-                                <button class="btn btn-primary btn-xs">"Karte"</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
-                        <figure class="h-32 bg-secondary/10">
-                            <Icon icon=LuMap width="48" height="48" attr:class="text-secondary opacity-20" />
-                        </figure>
-                        <div class="card-body p-4">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h2 class="card-title text-sm">"Olivenhain West"</h2>
-                                    <p class="text-xs text-base-content/60">"Arbequina | 5.0 ha"</p>
-                                </div>
-                                <div class="badge badge-secondary">"Aktiv"</div>
-                            </div>
-                            <div class="divider my-2"></div>
-                            <div class="flex justify-between text-xs">
-                                <span>"Status:"</span>
-                                <span class="font-bold">"Bewässerung OK"</span>
-                            </div>
-                            <div class="card-actions justify-end mt-4">
-                                <button class="btn btn-ghost btn-xs">"Details"</button>
-                                <button class="btn btn-secondary btn-xs">"Karte"</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
-                        <figure class="h-32 bg-primary/10">
-                            <Icon icon=LuMap width="48" height="48" attr:class="text-primary opacity-20" />
-                        </figure>
-                        <div class="card-body p-4">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h2 class="card-title text-sm">"Parzelle B3 - Sonnenhang"</h2>
-                                    <p class="text-xs text-base-content/60">"Spätburgunder | 1.8 ha"</p>
-                                </div>
-                                <div class="badge badge-warning">"Wartung"</div>
-                            </div>
-                            <div class="divider my-2"></div>
-                            <div class="flex justify-between text-xs">
-                                <span>"Status:"</span>
-                                <span class="font-bold">"Bodenanalyse fällig"</span>
-                            </div>
-                            <div class="card-actions justify-end mt-4">
-                                <button class="btn btn-ghost btn-xs">"Details"</button>
-                                <button class="btn btn-primary btn-xs">"Karte"</button>
-                            </div>
-                        </div>
+                    <div class="col-span-full p-12 text-center bg-base-100 rounded-box shadow">
+                         <Icon icon=LuMap attr:class="mx-auto opacity-10 mb-4" width="64" height="64" />
+                         <p class="text-base-content/50 italic">"Noch keine Flächen angelegt."</p>
                     </div>
                 </div>
             </div>
+
+            <Show when=move || show_add_modal.get()>
+                <div class="modal modal-open">
+                    <div class="modal-box">
+                        <h3 class="font-bold text-lg">"Neue Fläche anlegen"</h3>
+                        
+                        <div class="form-control w-full mt-4">
+                            <label class="label"><span class="label-text">"Name der Fläche"</span></label>
+                            <input type="text" placeholder="Parzelle A1" class="input input-bordered w-full" />
+                        </div>
+
+                        <div class="form-control w-full mt-4">
+                            <label class="label"><span class="label-text">"Typ"</span></label>
+                            <select class="select select-bordered">
+                                <option>"Weinberg"</option>
+                                <option>"Olivenhain"</option>
+                                <option>"Ackerland"</option>
+                                <option>"Wald"</option>
+                            </select>
+                        </div>
+
+                        <div class="divider">"Details"</div>
+                        <p class="text-xs text-base-content/60">"Je nach Typ können später unterschiedliche Aufgaben (z.B. Pflanzenschutz im Weinbau) definiert werden."</p>
+
+                        <div class="modal-action">
+                            <button class="btn" on:click=move |_| set_show_add_modal.set(false)>"Abbrechen"</button>
+                            <button class="btn btn-primary">"Speichern"</button>
+                        </div>
+                    </div>
+                </div>
+            </Show>
         </div>
     }
 }

@@ -8,6 +8,7 @@ use agrocore_domain::entities::compliance::AuditLog;
 use agrocore_domain::entities::weather::{WeatherStation, WeatherData, PhenologyRecord};
 use agrocore_domain::entities::site::Site;
 use agrocore_domain::entities::order::Order;
+use agrocore_domain::entities::user::User;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Event<T> {
@@ -31,6 +32,9 @@ pub enum GlobalEvent {
     OrderCreated(Order),
     OrderUpdated(Order),
     OrderDeleted(Uuid),
+    UserCreated(User),
+    UserUpdated(User),
+    UserDeleted(Uuid),
 }
 
 impl<T> Event<T> {
