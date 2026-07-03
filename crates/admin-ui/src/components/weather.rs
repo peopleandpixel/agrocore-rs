@@ -46,7 +46,8 @@ pub fn WeatherManagement() -> impl IntoView {
     let observation_note = i18n.t(lang.get().as_str(), "observation_note");
     let cancel = i18n.t(lang.get().as_str(), "cancel");
     let save = i18n.t(lang.get().as_str(), "save");
-    let weather_no_site_for_observation = i18n.t(lang.get().as_str(), "weather_no_site_for_observation");
+    let weather_no_site_for_observation =
+        i18n.t(lang.get().as_str(), "weather_no_site_for_observation");
     let weather_no_site_for_observation_label: &'static str =
         Box::leak(weather_no_site_for_observation.into_boxed_str());
     let sites = LocalResource::new(|| async move { api::fetch_sites().await.ok() });

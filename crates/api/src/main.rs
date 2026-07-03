@@ -1,10 +1,9 @@
 use agrocore_infrastructure::Database;
-use jsonwebtoken::crypto::CryptoProvider;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     agrocore_shared::telemetry::init_telemetry("agrocore_api");
-    CryptoProvider::install_default();
+    let _ = jsonwebtoken::crypto::rust_crypto::DEFAULT_PROVIDER.install_default();
 
     let database_url =
         std::env::var("DATABASE_URL").unwrap_or_else(|_| "mongodb://localhost:27017".into());

@@ -131,27 +131,60 @@ fn AuthenticatedShell(
 ) -> impl IntoView {
     let i18n = use_context::<i18n::I18n>().expect("i18n context");
     let lang = use_context::<ReadSignal<i18n::Language>>().expect("lang signal");
-    let role_simulate: &'static str = Box::leak(i18n.t(lang.get().as_str(), "role_simulate").into_boxed_str());
-    let simple_label: &'static str = Box::leak(i18n.t(lang.get().as_str(), "simple").into_boxed_str());
+    let role_simulate: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "role_simulate")
+            .into_boxed_str(),
+    );
+    let simple_label: &'static str =
+        Box::leak(i18n.t(lang.get().as_str(), "simple").into_boxed_str());
     let full_label: &'static str = Box::leak(i18n.t(lang.get().as_str(), "full").into_boxed_str());
-    let not_found_label: &'static str = Box::leak(i18n.t(lang.get().as_str(), "not_found").into_boxed_str());
-    let nav_dashboard: &'static str = Box::leak(i18n.t(lang.get().as_str(), "nav_dashboard").into_boxed_str());
-    let nav_wizard: &'static str = Box::leak(i18n.t(lang.get().as_str(), "nav_wizard").into_boxed_str());
-    let nav_sites: &'static str = Box::leak(i18n.t(lang.get().as_str(), "nav_sites").into_boxed_str());
-    let nav_tasks: &'static str = Box::leak(i18n.t(lang.get().as_str(), "nav_tasks").into_boxed_str());
+    let not_found_label: &'static str =
+        Box::leak(i18n.t(lang.get().as_str(), "not_found").into_boxed_str());
+    let nav_dashboard: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "nav_dashboard")
+            .into_boxed_str(),
+    );
+    let nav_wizard: &'static str =
+        Box::leak(i18n.t(lang.get().as_str(), "nav_wizard").into_boxed_str());
+    let nav_sites: &'static str =
+        Box::leak(i18n.t(lang.get().as_str(), "nav_sites").into_boxed_str());
+    let nav_tasks: &'static str =
+        Box::leak(i18n.t(lang.get().as_str(), "nav_tasks").into_boxed_str());
     let nav_map: &'static str = Box::leak(i18n.t(lang.get().as_str(), "nav_map").into_boxed_str());
-    let nav_livestock: &'static str = Box::leak(i18n.t(lang.get().as_str(), "nav_livestock").into_boxed_str());
-    let nav_weather: &'static str = Box::leak(i18n.t(lang.get().as_str(), "nav_weather").into_boxed_str());
-    let nav_resources: &'static str = Box::leak(i18n.t(lang.get().as_str(), "nav_resources").into_boxed_str());
-    let nav_equipment: &'static str = Box::leak(i18n.t(lang.get().as_str(), "nav_equipment").into_boxed_str());
-    let nav_finance: &'static str = Box::leak(i18n.t(lang.get().as_str(), "nav_finance").into_boxed_str());
-    let nav_analytics: &'static str = Box::leak(i18n.t(lang.get().as_str(), "nav_analytics").into_boxed_str());
-    let nav_compliance: &'static str = Box::leak(i18n.t(lang.get().as_str(), "nav_compliance").into_boxed_str());
-    let nav_users: &'static str = Box::leak(i18n.t(lang.get().as_str(), "nav_users").into_boxed_str());
-    let nav_settings: &'static str = Box::leak(i18n.t(lang.get().as_str(), "nav_settings").into_boxed_str());
-    let nav_grafana: &'static str = Box::leak(i18n.t(lang.get().as_str(), "nav_grafana").into_boxed_str());
-    let theme_label: &'static str = Box::leak(i18n.t(lang.get().as_str(), "theme").into_boxed_str());
-    let logout_label: &'static str = Box::leak(i18n.t(lang.get().as_str(), "logout").into_boxed_str());
+    let nav_livestock: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "nav_livestock")
+            .into_boxed_str(),
+    );
+    let nav_weather: &'static str =
+        Box::leak(i18n.t(lang.get().as_str(), "nav_weather").into_boxed_str());
+    let nav_resources: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "nav_resources")
+            .into_boxed_str(),
+    );
+    let nav_equipment: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "nav_equipment")
+            .into_boxed_str(),
+    );
+    let nav_finance: &'static str =
+        Box::leak(i18n.t(lang.get().as_str(), "nav_finance").into_boxed_str());
+    let nav_analytics: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "nav_analytics")
+            .into_boxed_str(),
+    );
+    let nav_compliance: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "nav_compliance")
+            .into_boxed_str(),
+    );
+    let nav_users: &'static str =
+        Box::leak(i18n.t(lang.get().as_str(), "nav_users").into_boxed_str());
+    let nav_settings: &'static str =
+        Box::leak(i18n.t(lang.get().as_str(), "nav_settings").into_boxed_str());
+    let nav_grafana: &'static str =
+        Box::leak(i18n.t(lang.get().as_str(), "nav_grafana").into_boxed_str());
+    let theme_label: &'static str =
+        Box::leak(i18n.t(lang.get().as_str(), "theme").into_boxed_str());
+    let logout_label: &'static str =
+        Box::leak(i18n.t(lang.get().as_str(), "logout").into_boxed_str());
     view! {
         <div class="drawer lg:drawer-open">
             <input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
