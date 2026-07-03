@@ -1,6 +1,6 @@
 use crate::dto::{CreateOrderDto, CreateSiteDto, CreateTaskDataDto, CreateUserDto};
-use agrocore_domain::entities::{CropType, OrderType, SiteType};
 use agrocore_domain::entities::site::GeoPoint;
+use agrocore_domain::entities::{CropType, OrderType, SiteType};
 use uuid::Uuid;
 use validator::Validate;
 
