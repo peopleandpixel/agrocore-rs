@@ -80,7 +80,10 @@ pub fn DashboardView() -> impl IntoView {
             .ok()
             .flatten()
     });
-    let weather_snapshot = weather_resource.read().as_ref().and_then(|snapshot| snapshot.clone());
+    let weather_snapshot = weather_resource
+        .read()
+        .as_ref()
+        .and_then(|snapshot| snapshot.clone());
 
     view! {
         <div class="flex flex-col gap-8">

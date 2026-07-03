@@ -77,13 +77,13 @@ pub struct AppState {
     ),
     components(
         schemas(
-            handlers::auth::LoginRequest, 
-            dto::AuthResponseDto, 
-            dto::SiteDto, 
-            dto::OrderDto, 
+            handlers::auth::LoginRequest,
+            dto::AuthResponseDto,
+            dto::SiteDto,
+            dto::OrderDto,
             dto::UserDto,
             dto::TaskDataDto,
-            dto::CreateSiteDto, 
+            dto::CreateSiteDto,
             dto::UpdateSiteDto,
             dto::CreateOrderDto,
             dto::UpdateOrderDto,

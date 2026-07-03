@@ -120,10 +120,7 @@ impl I18n {
         en.insert("version", "Version");
         en.insert("export_system_log", "Export system log");
         en.insert("danger_zone", "Danger zone");
-        en.insert(
-            "danger_zone_desc",
-            "These actions cannot be undone.",
-        );
+        en.insert("danger_zone_desc", "These actions cannot be undone.");
         en.insert("export_all_data", "Export all data");
         en.insert("delete_tenant", "Delete tenant");
         en.insert("profile_saved", "Profile saved locally.");
@@ -161,8 +158,14 @@ impl I18n {
         en.insert("theme_dark", "Dark");
         en.insert("theme_toggle", "Toggle Theme");
         en.insert("validation_required", "Please fill in all required fields.");
-        en.insert("validation_invalid_email", "Please enter a valid email address.");
-        en.insert("validation_invalid_phone", "Please enter a valid international phone number.");
+        en.insert(
+            "validation_invalid_email",
+            "Please enter a valid email address.",
+        );
+        en.insert(
+            "validation_invalid_phone",
+            "Please enter a valid international phone number.",
+        );
         en.insert("validation_invalid_slug", "Please enter a valid slug.");
         en.insert("starting_setup", "Starting setup...");
         en.insert("first_machine_placeholder", "Optional machine name");
@@ -200,12 +203,18 @@ impl I18n {
         en.insert("logout", "Logout");
         en.insert("not_found", "404 Not Found");
         en.insert("dashboard_welcome_prefix", "Welcome to");
-        en.insert("dashboard_simple_mode_text", "Use the guided assistants to finish complex work quickly.");
+        en.insert(
+            "dashboard_simple_mode_text",
+            "Use the guided assistants to finish complex work quickly.",
+        );
         en.insert("dashboard_tasks_desc", "Currently recorded");
         en.insert("dashboard_sites_desc", "Available parcels");
         en.insert("dashboard_users_desc", "Stored in the system");
         en.insert("dashboard_equipment_desc", "Available entries");
-        en.insert("dashboard_weather_setup_address", "The setup address is used when available.");
+        en.insert(
+            "dashboard_weather_setup_address",
+            "The setup address is used when available.",
+        );
         en.insert("active_tasks", "Active tasks");
         en.insert("no_active_tasks", "No active tasks.");
         en.insert("view_all", "View all");
@@ -213,9 +222,15 @@ impl I18n {
         en.insert("issue_report", "Report issue");
         en.insert("weather_forecast", "Weather forecast");
         en.insert("no_weather_data", "No weather data available.");
-        en.insert("no_sensor_weather", "No sensor available. The setup address is used when present.");
+        en.insert(
+            "no_sensor_weather",
+            "No sensor available. The setup address is used when present.",
+        );
         en.insert("weather_no_external_data", "No weather data available. If there is no sensor, the setup address is used for an external weather lookup.");
-        en.insert("weather_no_site_for_observation", "No site available for observation.");
+        en.insert(
+            "weather_no_site_for_observation",
+            "No site available for observation.",
+        );
         en.insert("weather_stations_title", "Weather stations");
         en.insert("no_weather_stations", "No weather stations available yet.");
         en.insert("phenology_title", "Phenology");
@@ -235,7 +250,10 @@ impl I18n {
         en.insert("weather_observation_title", "Record BBCH observation");
         en.insert("weather_bbch_desc", "Current BBCH stages for your crops.");
         en.insert("resource_management", "Resource management");
-        en.insert("resource_overview", "Overview of water, energy, supplies, and staff.");
+        en.insert(
+            "resource_overview",
+            "Overview of water, energy, supplies, and staff.",
+        );
         en.insert("history", "History");
         en.insert("add_inventory", "Add inventory");
         en.insert("water_irrigation", "Water & irrigation");
@@ -247,7 +265,10 @@ impl I18n {
         en.insert("workers_in_system", "Workers in the system");
         en.insert("inventory_stock", "Inventory stock");
         en.insert("inventory_available", "available equipment entries.");
-        en.insert("resource_assignments_desc", "Assignments are derived from tasks and roles.");
+        en.insert(
+            "resource_assignments_desc",
+            "Assignments are derived from tasks and roles.",
+        );
         en.insert("livestock_total", "Total herd");
         en.insert("animals_in_system", "Animals in the system");
         en.insert("under_treatment", "Under treatment");
@@ -271,7 +292,10 @@ impl I18n {
         en.insert("species_poultry", "Poultry");
         en.insert("species_horse", "Horse");
         en.insert("compliance_certification", "Compliance & certification");
-        en.insert("manage_requirements", "Manage legal requirements and certifications.");
+        en.insert(
+            "manage_requirements",
+            "Manage legal requirements and certifications.",
+        );
         en.insert("export_report", "Export report");
         en.insert("new_checklist", "New checklist");
         en.insert("compliance_score", "Compliance score");
@@ -287,12 +311,30 @@ impl I18n {
         en.insert("type", "Type");
         en.insert("score_from_checks", "Calculated from inspections.");
         en.insert("active_checks", "Active checks");
-        en.insert("next_audit_desc", "The date will be filled from audit data.");
-        en.insert("certification_status_desc", "Certificates will appear after the audit data is connected.");
-        en.insert("compliance_no_site_for_checklist", "No site available for a checklist.");
-        en.insert("analytics_no_site_for_prediction", "No site available for the prediction.");
-        en.insert("analytics_no_site_for_calculation", "No site available for the calculation.");
-        en.insert("profitability_chart_placeholder", "[Chart: profitability per site]");
+        en.insert(
+            "next_audit_desc",
+            "The date will be filled from audit data.",
+        );
+        en.insert(
+            "certification_status_desc",
+            "Certificates will appear after the audit data is connected.",
+        );
+        en.insert(
+            "compliance_no_site_for_checklist",
+            "No site available for a checklist.",
+        );
+        en.insert(
+            "analytics_no_site_for_prediction",
+            "No site available for the prediction.",
+        );
+        en.insert(
+            "analytics_no_site_for_calculation",
+            "No site available for the calculation.",
+        );
+        en.insert(
+            "profitability_chart_placeholder",
+            "[Chart: profitability per site]",
+        );
         en.insert("analytics_title", "Analytics & predictions");
         en.insert("harvest_prediction", "Harvest prediction");
         en.insert("based_on_weather", "Based on weather data and BBCH stage.");
@@ -312,11 +354,23 @@ impl I18n {
         en.insert("wizard_bbch", "BBCH observation");
         en.insert("wizard_title", "What would you like to do?");
         en.insert("wizard_more_tasks", "More tasks?");
-        en.insert("wizard_explore", "Select a section to be guided step by step.");
+        en.insert(
+            "wizard_explore",
+            "Select a section to be guided step by step.",
+        );
         en.insert("wizard_start", "Start");
-        en.insert("wizard_planting_desc", "Plan the next planting on your sites.");
-        en.insert("wizard_protection_desc", "Document fertilization or crop protection.");
-        en.insert("wizard_harvest_desc", "Record harvest quantities and quality.");
+        en.insert(
+            "wizard_planting_desc",
+            "Plan the next planting on your sites.",
+        );
+        en.insert(
+            "wizard_protection_desc",
+            "Document fertilization or crop protection.",
+        );
+        en.insert(
+            "wizard_harvest_desc",
+            "Record harvest quantities and quality.",
+        );
         en.insert("wizard_livestock_desc", "Document medical measures.");
         en.insert("wizard_finance_desc", "Quickly record income or expenses.");
         en.insert("wizard_bbch_desc", "Log current growth stages.");
@@ -442,11 +496,23 @@ impl I18n {
         de.insert("theme_dark", "Dunkel");
         de.insert("theme_toggle", "Farbmodus umschalten");
         de.insert("validation_required", "Bitte alle Pflichtfelder ausfüllen.");
-        de.insert("validation_invalid_email", "Bitte eine gültige E-Mail-Adresse eingeben.");
-        de.insert("validation_invalid_phone", "Bitte eine gültige internationale Telefonnummer eingeben.");
-        de.insert("validation_invalid_slug", "Bitte ein gültiges Kürzel eingeben.");
+        de.insert(
+            "validation_invalid_email",
+            "Bitte eine gültige E-Mail-Adresse eingeben.",
+        );
+        de.insert(
+            "validation_invalid_phone",
+            "Bitte eine gültige internationale Telefonnummer eingeben.",
+        );
+        de.insert(
+            "validation_invalid_slug",
+            "Bitte ein gültiges Kürzel eingeben.",
+        );
         de.insert("starting_setup", "Setup wird gestartet...");
-        de.insert("first_machine_placeholder", "Optionale Maschinenbezeichnung");
+        de.insert(
+            "first_machine_placeholder",
+            "Optionale Maschinenbezeichnung",
+        );
         de.insert("new_order_btn", "Neuer Auftrag");
         de.insert("new_order_form", "Auftrag anlegen");
         de.insert("order_type", "Auftragstyp");
@@ -481,12 +547,18 @@ impl I18n {
         de.insert("logout", "Abmelden");
         de.insert("not_found", "404 Nicht gefunden");
         de.insert("dashboard_welcome_prefix", "Willkommen bei");
-        de.insert("dashboard_simple_mode_text", "Nutzen Sie unsere Assistenten, um komplexe Aufgaben einfach und schnell zu erledigen.");
+        de.insert(
+            "dashboard_simple_mode_text",
+            "Nutzen Sie unsere Assistenten, um komplexe Aufgaben einfach und schnell zu erledigen.",
+        );
         de.insert("dashboard_tasks_desc", "Aktuell erfasst");
         de.insert("dashboard_sites_desc", "Verfügbare Parzellen");
         de.insert("dashboard_users_desc", "Im System hinterlegt");
         de.insert("dashboard_equipment_desc", "Verfügbare Einträge");
-        de.insert("dashboard_weather_setup_address", "Adresse aus dem Setup wird verwendet, wenn vorhanden.");
+        de.insert(
+            "dashboard_weather_setup_address",
+            "Adresse aus dem Setup wird verwendet, wenn vorhanden.",
+        );
         de.insert("active_tasks", "Aktive Aufträge");
         de.insert("no_active_tasks", "Keine aktiven Aufträge.");
         de.insert("view_all", "Alle ansehen");
@@ -494,11 +566,20 @@ impl I18n {
         de.insert("issue_report", "Störfall melden");
         de.insert("weather_forecast", "Wettervorhersage");
         de.insert("no_weather_data", "Keine Wetterdaten verfügbar.");
-        de.insert("no_sensor_weather", "Kein Sensor vorhanden. Wenn vorhanden, wird die Adresse aus dem Setup verwendet.");
+        de.insert(
+            "no_sensor_weather",
+            "Kein Sensor vorhanden. Wenn vorhanden, wird die Adresse aus dem Setup verwendet.",
+        );
         de.insert("weather_no_external_data", "Keine Wetterdaten verfügbar. Wenn keine Station vorhanden ist, wird die Adresse aus dem Setup für eine externe Wetterabfrage genutzt.");
-        de.insert("weather_no_site_for_observation", "Keine Fläche für die Beobachtung verfügbar.");
+        de.insert(
+            "weather_no_site_for_observation",
+            "Keine Fläche für die Beobachtung verfügbar.",
+        );
         de.insert("weather_stations_title", "Wetterstationen");
-        de.insert("no_weather_stations", "Noch keine Wetterstationen angelegt.");
+        de.insert(
+            "no_weather_stations",
+            "Noch keine Wetterstationen angelegt.",
+        );
         de.insert("phenology_title", "Phänologie");
         de.insert("observe", "Beobachtung");
         de.insert("last_report", "Letzte Meldung");
@@ -516,11 +597,17 @@ impl I18n {
         de.insert("weather_observation_title", "BBCH-Beobachtung erfassen");
         de.insert("weather_bbch_desc", "Aktuelle BBCH-Stadien Ihrer Kulturen.");
         de.insert("resource_management", "Ressourcenverwaltung");
-        de.insert("resource_overview", "Überblick über Wasser, Energie, Betriebsmittel und Personal.");
+        de.insert(
+            "resource_overview",
+            "Überblick über Wasser, Energie, Betriebsmittel und Personal.",
+        );
         de.insert("history", "Verlauf");
         de.insert("add_inventory", "Inventar hinzufügen");
         de.insert("water_irrigation", "Wasser & Bewässerung");
-        de.insert("no_water_sensor", "Noch keine Bewässerungssensoren verbunden.");
+        de.insert(
+            "no_water_sensor",
+            "Noch keine Bewässerungssensoren verbunden.",
+        );
         de.insert("workers", "Arbeitskräfte");
         de.insert("in_use", "Im Einsatz");
         de.insert("hours_today", "Stunden heute");
@@ -528,12 +615,18 @@ impl I18n {
         de.insert("workers_in_system", "Benutzer im System");
         de.insert("inventory_stock", "Lagerbestand");
         de.insert("inventory_available", "Equipment-Einträge sind verfügbar.");
-        de.insert("resource_assignments_desc", "Arbeitszuweisungen werden aus Aufträgen und Rollen abgeleitet.");
+        de.insert(
+            "resource_assignments_desc",
+            "Arbeitszuweisungen werden aus Aufträgen und Rollen abgeleitet.",
+        );
         de.insert("livestock_total", "Gesamtbestand");
         de.insert("animals_in_system", "Tiere im System");
         de.insert("under_treatment", "In Behandlung");
         de.insert("grazing", "Auf Weide");
-        de.insert("treatment_from_data", "Wird aus Behandlungsdaten berechnet.");
+        de.insert(
+            "treatment_from_data",
+            "Wird aus Behandlungsdaten berechnet.",
+        );
         de.insert("grazing_from_data", "Weidestatus folgt aus Tierdaten.");
         de.insert("animal_list", "Tierliste");
         de.insert("id_name", "ID / Name");
@@ -552,7 +645,10 @@ impl I18n {
         de.insert("species_poultry", "Geflügel");
         de.insert("species_horse", "Pferd");
         de.insert("compliance_certification", "Compliance & Zertifizierung");
-        de.insert("manage_requirements", "Verwalten Sie Ihre gesetzlichen Anforderungen und Zertifizierungen.");
+        de.insert(
+            "manage_requirements",
+            "Verwalten Sie Ihre gesetzlichen Anforderungen und Zertifizierungen.",
+        );
         de.insert("export_report", "Bericht exportieren");
         de.insert("new_checklist", "Neue Prüfung");
         de.insert("compliance_score", "Compliance Score");
@@ -562,25 +658,49 @@ impl I18n {
         de.insert("application_history", "Anwendungshistorie");
         de.insert("entry", "Eintrag");
         de.insert("recorded", "Erfasst");
-        de.insert("no_protection_entries", "Noch keine Pflanzenschutz-Einträge vorhanden.");
+        de.insert(
+            "no_protection_entries",
+            "Noch keine Pflanzenschutz-Einträge vorhanden.",
+        );
         de.insert("create_checklist", "Prüfung anlegen");
         de.insert("due_date", "Fällig am");
         de.insert("type", "Typ");
         de.insert("score_from_checks", "Wird aus Prüfungen berechnet.");
         de.insert("active_checks", "Aktive Prüfungen");
         de.insert("next_audit_desc", "Termin wird aus Auditdaten gefüllt.");
-        de.insert("certification_status_desc", "Zertifikate werden nach Anbindung der Prüfungsdaten angezeigt.");
-        de.insert("compliance_no_site_for_checklist", "Keine Fläche für eine Prüfung verfügbar.");
-        de.insert("analytics_no_site_for_prediction", "Keine Fläche für die Vorhersage verfügbar.");
-        de.insert("analytics_no_site_for_calculation", "Keine Fläche für die Berechnung verfügbar.");
-        de.insert("profitability_chart_placeholder", "[Graph: Profitabilität pro Standort]");
+        de.insert(
+            "certification_status_desc",
+            "Zertifikate werden nach Anbindung der Prüfungsdaten angezeigt.",
+        );
+        de.insert(
+            "compliance_no_site_for_checklist",
+            "Keine Fläche für eine Prüfung verfügbar.",
+        );
+        de.insert(
+            "analytics_no_site_for_prediction",
+            "Keine Fläche für die Vorhersage verfügbar.",
+        );
+        de.insert(
+            "analytics_no_site_for_calculation",
+            "Keine Fläche für die Berechnung verfügbar.",
+        );
+        de.insert(
+            "profitability_chart_placeholder",
+            "[Graph: Profitabilität pro Standort]",
+        );
         de.insert("analytics_title", "Analytics & Vorhersagen");
         de.insert("harvest_prediction", "Erntevorhersage");
-        de.insert("based_on_weather", "Basierend auf Wetterdaten und BBCH-Stadium.");
+        de.insert(
+            "based_on_weather",
+            "Basierend auf Wetterdaten und BBCH-Stadium.",
+        );
         de.insert("confidence", "Konfidenz");
         de.insert("start_simulation", "Simulation starten");
         de.insert("profitability", "Wirtschaftlichkeit");
-        de.insert("profitability_analysis", "Analyse der Deckungsbeiträge pro Schlag.");
+        de.insert(
+            "profitability_analysis",
+            "Analyse der Deckungsbeiträge pro Schlag.",
+        );
         de.insert("detail_report", "Detailbericht");
         de.insert("material_calculation", "Materialkalkulation");
         de.insert("site_label", "Standort");
@@ -593,14 +713,35 @@ impl I18n {
         de.insert("wizard_bbch", "BBCH-Beobachtung");
         de.insert("wizard_title", "Was möchten Sie tun?");
         de.insert("wizard_more_tasks", "Weitere Aufgaben?");
-        de.insert("wizard_explore", "Wählen Sie einen Bereich aus, um Schritt für Schritt geführt zu werden.");
+        de.insert(
+            "wizard_explore",
+            "Wählen Sie einen Bereich aus, um Schritt für Schritt geführt zu werden.",
+        );
         de.insert("wizard_start", "Starten");
-        de.insert("wizard_planting_desc", "Planen Sie die nächste Aussaat auf Ihren Flächen.");
-        de.insert("wizard_protection_desc", "Dokumentieren Sie Düngung oder Pflanzenschutz.");
-        de.insert("wizard_harvest_desc", "Erfassen Sie Erntemengen und Qualität.");
-        de.insert("wizard_livestock_desc", "Dokumentieren Sie medizinische Maßnahmen.");
-        de.insert("wizard_finance_desc", "Einnahmen oder Ausgaben schnell erfassen.");
-        de.insert("wizard_bbch_desc", "Aktuelle Wachstumsstadien protokollieren.");
+        de.insert(
+            "wizard_planting_desc",
+            "Planen Sie die nächste Aussaat auf Ihren Flächen.",
+        );
+        de.insert(
+            "wizard_protection_desc",
+            "Dokumentieren Sie Düngung oder Pflanzenschutz.",
+        );
+        de.insert(
+            "wizard_harvest_desc",
+            "Erfassen Sie Erntemengen und Qualität.",
+        );
+        de.insert(
+            "wizard_livestock_desc",
+            "Dokumentieren Sie medizinische Maßnahmen.",
+        );
+        de.insert(
+            "wizard_finance_desc",
+            "Einnahmen oder Ausgaben schnell erfassen.",
+        );
+        de.insert(
+            "wizard_bbch_desc",
+            "Aktuelle Wachstumsstadien protokollieren.",
+        );
 
         let mut es = HashMap::new();
         es.insert("setup_title", "Configuración Inicial");
@@ -686,23 +827,47 @@ impl I18n {
         es.insert("export_all_data", "Exportar todos los datos");
         es.insert("delete_tenant", "Eliminar tenant");
         es.insert("profile_saved", "Perfil guardado localmente.");
-        es.insert("validation_required_company", "Complete el nombre de la empresa, la dirección y el país.");
+        es.insert(
+            "validation_required_company",
+            "Complete el nombre de la empresa, la dirección y el país.",
+        );
         es.insert("time", "Hora");
         es.insert("initialized", "Inicializado");
-        es.insert("dashboard_simple_mode_text", "Use los asistentes guiados para terminar tareas complejas rápidamente.");
+        es.insert(
+            "dashboard_simple_mode_text",
+            "Use los asistentes guiados para terminar tareas complejas rápidamente.",
+        );
         es.insert("dashboard_tasks_desc", "Registrado actualmente");
         es.insert("dashboard_sites_desc", "Parcelas disponibles");
         es.insert("dashboard_users_desc", "Guardados en el sistema");
         es.insert("dashboard_equipment_desc", "Entradas disponibles");
-        es.insert("dashboard_weather_setup_address", "Se usa la dirección de la configuración cuando está disponible.");
+        es.insert(
+            "dashboard_weather_setup_address",
+            "Se usa la dirección de la configuración cuando está disponible.",
+        );
         es.insert("weather_no_external_data", "No hay datos meteorológicos. Si no existe una estación, se usa la dirección de configuración para una consulta externa.");
-        es.insert("weather_no_site_for_observation", "No hay una parcela disponible para la observación.");
+        es.insert(
+            "weather_no_site_for_observation",
+            "No hay una parcela disponible para la observación.",
+        );
         es.insert("weather_observation_title", "Registrar observación BBCH");
-        es.insert("weather_bbch_desc", "Estados BBCH actuales de sus cultivos.");
-        es.insert("resource_assignments_desc", "Las asignaciones se derivan de tareas y roles.");
+        es.insert(
+            "weather_bbch_desc",
+            "Estados BBCH actuales de sus cultivos.",
+        );
+        es.insert(
+            "resource_assignments_desc",
+            "Las asignaciones se derivan de tareas y roles.",
+        );
         es.insert("workers_in_system", "Usuarios en el sistema");
-        es.insert("treatment_from_data", "Calculado a partir de los datos de tratamiento.");
-        es.insert("grazing_from_data", "El estado de pastoreo sigue los datos del animal.");
+        es.insert(
+            "treatment_from_data",
+            "Calculado a partir de los datos de tratamiento.",
+        );
+        es.insert(
+            "grazing_from_data",
+            "El estado de pastoreo sigue los datos del animal.",
+        );
         es.insert("identifier", "Identificador");
         es.insert("breed", "Raza");
         es.insert("species_cattle", "Bovino");
@@ -713,12 +878,30 @@ impl I18n {
         es.insert("species_horse", "Caballo");
         es.insert("score_from_checks", "Calculado a partir de inspecciones.");
         es.insert("active_checks", "Inspecciones activas");
-        es.insert("next_audit_desc", "La fecha se rellena con los datos de auditoría.");
-        es.insert("certification_status_desc", "Los certificados aparecerán cuando se conecten los datos de auditoría.");
-        es.insert("compliance_no_site_for_checklist", "No hay una parcela disponible para la lista de verificación.");
-        es.insert("analytics_no_site_for_prediction", "No hay una parcela disponible para la predicción.");
-        es.insert("analytics_no_site_for_calculation", "No hay una parcela disponible para el cálculo.");
-        es.insert("profitability_chart_placeholder", "[Gráfico: rentabilidad por parcela]");
+        es.insert(
+            "next_audit_desc",
+            "La fecha se rellena con los datos de auditoría.",
+        );
+        es.insert(
+            "certification_status_desc",
+            "Los certificados aparecerán cuando se conecten los datos de auditoría.",
+        );
+        es.insert(
+            "compliance_no_site_for_checklist",
+            "No hay una parcela disponible para la lista de verificación.",
+        );
+        es.insert(
+            "analytics_no_site_for_prediction",
+            "No hay una parcela disponible para la predicción.",
+        );
+        es.insert(
+            "analytics_no_site_for_calculation",
+            "No hay una parcela disponible para el cálculo.",
+        );
+        es.insert(
+            "profitability_chart_placeholder",
+            "[Gráfico: rentabilidad por parcela]",
+        );
         es.insert("wizard_livestock", "Tratamiento animal");
         es.insert("wizard_finance", "Entrada financiera");
         es.insert("wizard_bbch", "Observación BBCH");
@@ -807,23 +990,47 @@ impl I18n {
         fr.insert("export_all_data", "Exporter toutes les données");
         fr.insert("delete_tenant", "Supprimer le tenant");
         fr.insert("profile_saved", "Profil enregistré localement.");
-        fr.insert("validation_required_company", "Veuillez renseigner le nom de l'entreprise, l'adresse et le pays.");
+        fr.insert(
+            "validation_required_company",
+            "Veuillez renseigner le nom de l'entreprise, l'adresse et le pays.",
+        );
         fr.insert("time", "Heure");
         fr.insert("initialized", "Initialisé");
-        fr.insert("dashboard_simple_mode_text", "Utilisez les assistants guidés pour terminer rapidement les tâches complexes.");
+        fr.insert(
+            "dashboard_simple_mode_text",
+            "Utilisez les assistants guidés pour terminer rapidement les tâches complexes.",
+        );
         fr.insert("dashboard_tasks_desc", "Actuellement enregistré");
         fr.insert("dashboard_sites_desc", "Parcelles disponibles");
         fr.insert("dashboard_users_desc", "Enregistrés dans le système");
         fr.insert("dashboard_equipment_desc", "Entrées disponibles");
-        fr.insert("dashboard_weather_setup_address", "L'adresse de configuration est utilisée si elle existe.");
+        fr.insert(
+            "dashboard_weather_setup_address",
+            "L'adresse de configuration est utilisée si elle existe.",
+        );
         fr.insert("weather_no_external_data", "Aucune donnée météo. S'il n'y a pas de station, l'adresse de configuration est utilisée pour une requête externe.");
-        fr.insert("weather_no_site_for_observation", "Aucune parcelle disponible pour l'observation.");
-        fr.insert("weather_observation_title", "Enregistrer une observation BBCH");
+        fr.insert(
+            "weather_no_site_for_observation",
+            "Aucune parcelle disponible pour l'observation.",
+        );
+        fr.insert(
+            "weather_observation_title",
+            "Enregistrer une observation BBCH",
+        );
         fr.insert("weather_bbch_desc", "Stades BBCH actuels de vos cultures.");
-        fr.insert("resource_assignments_desc", "Les affectations sont dérivées des tâches et des rôles.");
+        fr.insert(
+            "resource_assignments_desc",
+            "Les affectations sont dérivées des tâches et des rôles.",
+        );
         fr.insert("workers_in_system", "Utilisateurs dans le système");
-        fr.insert("treatment_from_data", "Calculé à partir des données de traitement.");
-        fr.insert("grazing_from_data", "L'état de pâturage suit les données animales.");
+        fr.insert(
+            "treatment_from_data",
+            "Calculé à partir des données de traitement.",
+        );
+        fr.insert(
+            "grazing_from_data",
+            "L'état de pâturage suit les données animales.",
+        );
         fr.insert("identifier", "Identifiant");
         fr.insert("breed", "Race");
         fr.insert("species_cattle", "Bovin");
@@ -834,12 +1041,30 @@ impl I18n {
         fr.insert("species_horse", "Cheval");
         fr.insert("score_from_checks", "Calculé à partir des contrôles.");
         fr.insert("active_checks", "Contrôles actifs");
-        fr.insert("next_audit_desc", "La date sera remplie à partir des données d'audit.");
-        fr.insert("certification_status_desc", "Les certificats apparaîtront une fois les données d'audit connectées.");
-        fr.insert("compliance_no_site_for_checklist", "Aucune parcelle disponible pour la liste de contrôle.");
-        fr.insert("analytics_no_site_for_prediction", "Aucune parcelle disponible pour la prédiction.");
-        fr.insert("analytics_no_site_for_calculation", "Aucune parcelle disponible pour le calcul.");
-        fr.insert("profitability_chart_placeholder", "[Graphique : rentabilité par parcelle]");
+        fr.insert(
+            "next_audit_desc",
+            "La date sera remplie à partir des données d'audit.",
+        );
+        fr.insert(
+            "certification_status_desc",
+            "Les certificats apparaîtront une fois les données d'audit connectées.",
+        );
+        fr.insert(
+            "compliance_no_site_for_checklist",
+            "Aucune parcelle disponible pour la liste de contrôle.",
+        );
+        fr.insert(
+            "analytics_no_site_for_prediction",
+            "Aucune parcelle disponible pour la prédiction.",
+        );
+        fr.insert(
+            "analytics_no_site_for_calculation",
+            "Aucune parcelle disponible pour le calcul.",
+        );
+        fr.insert(
+            "profitability_chart_placeholder",
+            "[Graphique : rentabilité par parcelle]",
+        );
         fr.insert("wizard_livestock", "Traitement animal");
         fr.insert("wizard_finance", "Entrée financière");
         fr.insert("wizard_bbch", "Observation BBCH");
@@ -928,23 +1153,47 @@ impl I18n {
         pt.insert("export_all_data", "Exportar todos os dados");
         pt.insert("delete_tenant", "Eliminar tenant");
         pt.insert("profile_saved", "Perfil guardado localmente.");
-        pt.insert("validation_required_company", "Preencha o nome da empresa, o endereço e o país.");
+        pt.insert(
+            "validation_required_company",
+            "Preencha o nome da empresa, o endereço e o país.",
+        );
         pt.insert("time", "Hora");
         pt.insert("initialized", "Inicializado");
-        pt.insert("dashboard_simple_mode_text", "Use os assistentes guiados para terminar tarefas complexas rapidamente.");
+        pt.insert(
+            "dashboard_simple_mode_text",
+            "Use os assistentes guiados para terminar tarefas complexas rapidamente.",
+        );
         pt.insert("dashboard_tasks_desc", "Registado atualmente");
         pt.insert("dashboard_sites_desc", "Parcelas disponíveis");
         pt.insert("dashboard_users_desc", "Guardado no sistema");
         pt.insert("dashboard_equipment_desc", "Entradas disponíveis");
-        pt.insert("dashboard_weather_setup_address", "O endereço da configuração é usado quando disponível.");
+        pt.insert(
+            "dashboard_weather_setup_address",
+            "O endereço da configuração é usado quando disponível.",
+        );
         pt.insert("weather_no_external_data", "Sem dados meteorológicos. Se não houver estação, usa-se o endereço da configuração para uma consulta externa.");
-        pt.insert("weather_no_site_for_observation", "Não existe uma parcela disponível para a observação.");
+        pt.insert(
+            "weather_no_site_for_observation",
+            "Não existe uma parcela disponível para a observação.",
+        );
         pt.insert("weather_observation_title", "Registar observação BBCH");
-        pt.insert("weather_bbch_desc", "Estádios BBCH atuais das suas culturas.");
-        pt.insert("resource_assignments_desc", "As atribuições são derivadas de tarefas e funções.");
+        pt.insert(
+            "weather_bbch_desc",
+            "Estádios BBCH atuais das suas culturas.",
+        );
+        pt.insert(
+            "resource_assignments_desc",
+            "As atribuições são derivadas de tarefas e funções.",
+        );
         pt.insert("workers_in_system", "Utilizadores no sistema");
-        pt.insert("treatment_from_data", "Calculado a partir dos dados de tratamento.");
-        pt.insert("grazing_from_data", "O estado de pastoreio segue os dados do animal.");
+        pt.insert(
+            "treatment_from_data",
+            "Calculado a partir dos dados de tratamento.",
+        );
+        pt.insert(
+            "grazing_from_data",
+            "O estado de pastoreio segue os dados do animal.",
+        );
         pt.insert("identifier", "Identificador");
         pt.insert("breed", "Raça");
         pt.insert("species_cattle", "Bovino");
@@ -955,12 +1204,30 @@ impl I18n {
         pt.insert("species_horse", "Cavalo");
         pt.insert("score_from_checks", "Calculado com base nas inspeções.");
         pt.insert("active_checks", "Inspeções ativas");
-        pt.insert("next_audit_desc", "A data será preenchida com dados de auditoria.");
-        pt.insert("certification_status_desc", "Os certificados aparecem quando os dados de auditoria estiverem ligados.");
-        pt.insert("compliance_no_site_for_checklist", "Não há uma parcela disponível para a lista de verificação.");
-        pt.insert("analytics_no_site_for_prediction", "Não há uma parcela disponível para a previsão.");
-        pt.insert("analytics_no_site_for_calculation", "Não há uma parcela disponível para o cálculo.");
-        pt.insert("profitability_chart_placeholder", "[Gráfico: rentabilidade por parcela]");
+        pt.insert(
+            "next_audit_desc",
+            "A data será preenchida com dados de auditoria.",
+        );
+        pt.insert(
+            "certification_status_desc",
+            "Os certificados aparecem quando os dados de auditoria estiverem ligados.",
+        );
+        pt.insert(
+            "compliance_no_site_for_checklist",
+            "Não há uma parcela disponível para a lista de verificação.",
+        );
+        pt.insert(
+            "analytics_no_site_for_prediction",
+            "Não há uma parcela disponível para a previsão.",
+        );
+        pt.insert(
+            "analytics_no_site_for_calculation",
+            "Não há uma parcela disponível para o cálculo.",
+        );
+        pt.insert(
+            "profitability_chart_placeholder",
+            "[Gráfico: rentabilidade por parcela]",
+        );
         pt.insert("wizard_livestock", "Tratamento animal");
         pt.insert("wizard_finance", "Entrada financeira");
         pt.insert("wizard_bbch", "Observação BBCH");

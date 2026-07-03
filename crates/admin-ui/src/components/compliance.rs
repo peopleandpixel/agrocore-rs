@@ -34,7 +34,8 @@ pub fn CompliancePage() -> impl IntoView {
     let cancel_label = t("cancel");
     let save_label = t("save");
     let no_site_for_checklist = t("compliance_no_site_for_checklist");
-    let no_site_for_checklist_label: &'static str = Box::leak(no_site_for_checklist.into_boxed_str());
+    let no_site_for_checklist_label: &'static str =
+        Box::leak(no_site_for_checklist.into_boxed_str());
     let sites = LocalResource::new(|| async move { api::fetch_sites().await.ok() });
     let checklists =
         LocalResource::new(|| async move { api::fetch_compliance_checklists().await.ok() });
