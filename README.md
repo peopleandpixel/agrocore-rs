@@ -6,6 +6,7 @@
 AgroCore RS is a farm operations platform built from scratch in this repository. The code, structure, naming, and product decisions were created here independently, while the implementation benefits from practical experience gained in earlier professional work.
 
 The goal is simple: give the office a single system that stays usable under real farm conditions. AgroCore brings together field management, tasks, weather, livestock, finance, compliance, equipment, and administration in one workflow instead of scattering daily work across isolated tools.
+It is designed to run locally by default, but the services can also be distributed if you want that setup. Data can stay fully on-premise or be placed on remote services where that makes operational sense. Cloud is an option, not a requirement.
 
 ## Why AgroCore?
 
@@ -70,6 +71,7 @@ trunk serve
 ## Docker Compose
 
 Docker Compose is still available for a fully containerized run, but the local development script is the better choice for day-to-day work.
+For deployment, you can keep API, UI, database, and messaging on one machine or split them across hosts. The platform does not require a cloud setup, but it supports one if you prefer it.
 
 ## License
 

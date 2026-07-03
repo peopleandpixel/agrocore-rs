@@ -1,5 +1,6 @@
 use crate::dto::{CreateOrderDto, CreateSiteDto, CreateTaskDataDto, CreateUserDto};
 use agrocore_domain::entities::{CropType, OrderType, SiteType};
+use agrocore_domain::entities::site::GeoPoint;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -12,6 +13,24 @@ fn test_api_site_dto_validation() {
         variety: None,
         area: -1.0,
         gross_area: None,
+        center: Some(GeoPoint {
+            lng: 14.0,
+            lat: 47.0,
+        }),
+        boundary: Some(vec![
+            GeoPoint {
+                lng: 14.0,
+                lat: 47.0,
+            },
+            GeoPoint {
+                lng: 14.1,
+                lat: 47.0,
+            },
+            GeoPoint {
+                lng: 14.1,
+                lat: 47.1,
+            },
+        ]),
         plots: None,
         properties: None,
     };
