@@ -1,0 +1,29 @@
+[package]
+name = "agrocore-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+agrocore-domain = { path = "../domain", features = ["mongodb"] }
+agrocore-infrastructure = { path = "../infrastructure" }
+agrocore-shared = { path = "../shared" }
+agrocore-messaging = { path = "../messaging" }
+actix-web = { workspace = true }
+actix-files = { workspace = true }
+actix-cors = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+jsonwebtoken = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tracing-actix-web = { workspace = true }
+utoipa = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+actix-web-prometheus = { workspace = true }
+validator = { workspace = true }
+rust_xlsxwriter = { workspace = true }
+geojson = { workspace = true }
+

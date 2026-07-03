@@ -1,0 +1,102 @@
+services:
+  build-base:
+    build:
+      context: .
+      dockerfile: Dockerfile.base-build
+    image: agrocore-build-base:latest
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    depends_on:
+      - build-base
+      - mongodb
+      - nats
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=mongodb://mongodb:27017
+      - DATABASE_NAME=agrocore
+      - NATS_URL=nats://nats:4222
+      - LISTEN_ADDR=0.0.0.0:3000
+      - JWT_SECRET=dev-secret
+
+  reporting-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: agrocore-reporting-service
+    depends_on:
+      - build-base
+      - mongodb
+      - nats
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017
+      - NATS_URL=nats://nats:4222
+
+  weather-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: agrocore-weather-service
+    depends_on:
+      - build-base
+      - mongodb
+      - nats
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017
+      - NATS_URL=nats://nats:4222
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - api
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./infra/loki/loki-config.yml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - /var/log:/var/log
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./infra/promtail/promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+      - loki
+
+volumes:
+  mongodb_data:

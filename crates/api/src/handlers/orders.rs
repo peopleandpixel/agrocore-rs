@@ -1,0 +1,473 @@
+use crate::dto::{
+    CreateOrderDto, ErrorResponse, OrderDto, PaginatedOrderResponse, PaginatedResponseDto,
+    UpdateOrderDto,
+};
+use crate::middleware::AuthExtractor as AuthUser;
+use crate::AppState;
+use actix_web::{web, HttpResponse, Responder};
+use agrocore_domain::entities::order::MyTask;
+use agrocore_domain::services::workflow::WorkflowService;
+use agrocore_messaging::{Event, GlobalEvent};
+use validator::Validate;
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/orders",
+    params(
+        ("page" = Option<u64>, Query, description = "Page number"),
+        ("per_page" = Option<u64>, Query, description = "Items per page")
+    ),
+    responses(
+        (status = 200, description = "List orders", body = PaginatedOrderResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "orders",
+    security(("bearer_auth" = []))
+)]
+pub async fn list_orders(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    query: web::Query<agrocore_shared::Pagination>,
+) -> impl Responder {
+    tracing::info!("Listing orders for tenant: {}", auth.0.tenant_id);
+    match state
+        .db
+        .order_repo()
+        .find_all_visible(
+            auth.0.tenant_id.into(),
+            query.0,
+            auth.0.user_id,
+            &auth.roles(),
+        )
+        .await
+    {
+        Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
+            data: result.data.into_iter().map(OrderDto::from).collect(),
+            total: result.total,
+            page: result.page,
+            per_page: result.per_page,
+            total_pages: result.total_pages,
+        }),
+        Err(e) => {
+            tracing::error!("Failed to list orders: {}", e);
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "internal".into(),
+                message: e.to_string(),
+            })
+        }
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/orders/{id}",
+    responses(
+        (status = 200, description = "Order details", body = OrderDto),
+        (status = 404, description = "Order not found", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "orders",
+    security(("bearer_auth" = []))
+)]
+pub async fn get_order(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+) -> impl Responder {
+    let order_id = *path;
+    tracing::info!(
+        "Getting order {} for tenant: {}",
+        order_id,
+        auth.0.tenant_id
+    );
+    match state
+        .db
+        .order_repo()
+        .find_by_id_visible(
+            auth.0.tenant_id.into(),
+            order_id,
+            auth.0.user_id,
+            &auth.roles(),
+        )
+        .await
+    {
+        Ok(Some(o)) => HttpResponse::Ok().json(OrderDto::from(o)),
+        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
+            error: "not_found".into(),
+            message: "Order not found".into(),
+        }),
+        Err(e) => {
+            tracing::error!("Failed to get order {}: {}", order_id, e);
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "internal".into(),
+                message: e.to_string(),
+            })
+        }
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/orders",
+    request_body = CreateOrderDto,
+    responses(
+        (status = 201, description = "Order created", body = OrderDto),
+        (status = 400, description = "Validation failed", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "orders",
+    security(("bearer_auth" = []))
+)]
+pub async fn create_order(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    dto: web::Json<CreateOrderDto>,
+) -> impl Responder {
+    if let Err(e) = auth.require_manager() {
+        return HttpResponse::Forbidden().json(ErrorResponse {
+            error: "forbidden".into(),
+            message: e.to_string(),
+        });
+    }
+    tracing::info!("Creating order for tenant: {}", auth.0.tenant_id);
+    if let Err(e) = dto.0.validate() {
+        tracing::warn!("Order validation failed: {}", e);
+        return HttpResponse::BadRequest().json(ErrorResponse {
+            error: "validation".into(),
+            message: e.to_string(),
+        });
+    }
+    match state
+        .db
+        .order_repo()
+        .create(auth.0.tenant_id.into(), dto.0.into(), auth.0.user_id)
+        .await
+    {
+        Ok(o) => {
+            let event = Event::new("api".into(), GlobalEvent::OrderCreated(o.clone()));
+            let _ = state.messaging.publish("events.orders", &event).await;
+            HttpResponse::Created().json(OrderDto::from(o))
+        }
+        Err(e) => {
+            tracing::error!("Failed to create order: {}", e);
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "internal".into(),
+                message: e.to_string(),
+            })
+        }
+    }
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/v1/orders/{id}",
+    request_body = UpdateOrderDto,
+    responses(
+        (status = 200, description = "Order updated", body = OrderDto),
+        (status = 404, description = "Order not found", body = ErrorResponse),
+        (status = 400, description = "Validation failed", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "orders",
+    security(("bearer_auth" = []))
+)]
+pub async fn update_order(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+    dto: web::Json<UpdateOrderDto>,
+) -> impl Responder {
+    if let Err(e) = auth.require_manager() {
+        return HttpResponse::Forbidden().json(ErrorResponse {
+            error: "forbidden".into(),
+            message: e.to_string(),
+        });
+    }
+    let order_id = *path;
+    tracing::info!(
+        "Updating order {} for tenant: {}",
+        order_id,
+        auth.0.tenant_id
+    );
+    if let Err(e) = dto.0.validate() {
+        tracing::warn!("Order update validation failed: {}", e);
+        return HttpResponse::BadRequest().json(ErrorResponse {
+            error: "validation".into(),
+            message: e.to_string(),
+        });
+    }
+    match state
+        .db
+        .order_repo()
+        .update(
+            auth.0.tenant_id.into(),
+            order_id,
+            dto.0.into(),
+            auth.0.user_id,
+        )
+        .await
+    {
+        Ok(Some(o)) => {
+            let event = Event::new("api".into(), GlobalEvent::OrderUpdated(o.clone()));
+            let _ = state.messaging.publish("events.orders", &event).await;
+            HttpResponse::Ok().json(OrderDto::from(o))
+        }
+        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
+            error: "not_found".into(),
+            message: "Order not found".into(),
+        }),
+        Err(e) => {
+            tracing::error!("Failed to update order {}: {}", order_id, e);
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "internal".into(),
+                message: e.to_string(),
+            })
+        }
+    }
+}
+
+#[utoipa::path(
+    delete,
+    path = "/api/v1/orders/{id}",
+    responses(
+        (status = 200, description = "Order deleted"),
+        (status = 404, description = "Order not found", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "orders",
+    security(("bearer_auth" = []))
+)]
+pub async fn delete_order(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+) -> impl Responder {
+    if let Err(e) = auth.require_manager() {
+        return HttpResponse::Forbidden().json(ErrorResponse {
+            error: "forbidden".into(),
+            message: e.to_string(),
+        });
+    }
+    let order_id = *path;
+    tracing::info!(
+        "Deleting order {} for tenant: {}",
+        order_id,
+        auth.0.tenant_id
+    );
+    match state
+        .db
+        .order_repo()
+        .delete(auth.0.tenant_id.into(), order_id)
+        .await
+    {
+        Ok(true) => {
+            let event = Event::new("api".into(), GlobalEvent::OrderDeleted(order_id));
+            let _ = state.messaging.publish("events.orders", &event).await;
+            HttpResponse::Ok().json(serde_json::json!({"deleted": true}))
+        }
+        Ok(false) => HttpResponse::NotFound().json(ErrorResponse {
+            error: "not_found".into(),
+            message: "Order not found".into(),
+        }),
+        Err(e) => {
+            tracing::error!("Failed to delete order {}: {}", order_id, e);
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "internal".into(),
+                message: e.to_string(),
+            })
+        }
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/orders/{id}/complete",
+    responses(
+        (status = 200, description = "Order completed", body = OrderDto),
+        (status = 404, description = "Order not found", body = ErrorResponse),
+        (status = 400, description = "Order cannot be completed", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "orders",
+    security(("bearer_auth" = []))
+)]
+pub async fn complete_order(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+) -> impl Responder {
+    let order_id = *path;
+    let tenant_id = auth.0.tenant_id.into();
+
+    // 1. Fetch current order
+    let mut order = match state.db.order_repo().find_by_id(tenant_id, order_id).await {
+        Ok(Some(o)) => o,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(ErrorResponse {
+                error: "not_found".into(),
+                message: "Order not found".into(),
+            })
+        }
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "internal".into(),
+                message: e.to_string(),
+            })
+        }
+    };
+
+    // 2. Execute domain logic
+    if !order.complete() {
+        return HttpResponse::BadRequest().json(ErrorResponse {
+            error: "invalid_transition".into(),
+            message: format!("Order {} cannot be completed from current state", order_id),
+        });
+    }
+
+    // 3. Persist change (reuse update logic from repo)
+    let update_dto = agrocore_domain::entities::order::UpdateOrderDto {
+        status: Some(order.status),
+        completed_at: order.completed_at,
+        ..Default::default()
+    };
+
+    match state
+        .db
+        .order_repo()
+        .update(tenant_id, order_id, update_dto, auth.0.user_id)
+        .await
+    {
+        Ok(Some(updated)) => {
+            // 4. Process workflows
+            let follow_ups = WorkflowService::process_status_transition(
+                &updated,
+                agrocore_domain::entities::OrderStatus::Completed,
+            );
+            for next_order_dto in follow_ups {
+                if let Err(e) = state
+                    .db
+                    .order_repo()
+                    .create(tenant_id, next_order_dto, auth.0.user_id)
+                    .await
+                {
+                    tracing::error!("Failed to create follow-up order: {}", e);
+                }
+            }
+
+            let event = Event::new("api".into(), GlobalEvent::OrderUpdated(updated.clone()));
+            let _ = state.messaging.publish("events.orders", &event).await;
+            HttpResponse::Ok().json(OrderDto::from(updated))
+        }
+        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
+            error: "not_found".into(),
+            message: "Order not found".into(),
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
+            error: "internal".into(),
+            message: e.to_string(),
+        }),
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/orders/{id}/start",
+    responses(
+        (status = 200, description = "Order started", body = OrderDto),
+        (status = 404, description = "Order not found", body = ErrorResponse),
+        (status = 400, description = "Order cannot be started", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "orders",
+    security(("bearer_auth" = []))
+)]
+pub async fn start_order(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+) -> impl Responder {
+    let order_id = *path;
+    let tenant_id = auth.0.tenant_id.into();
+
+    // 1. Fetch current order
+    let mut order = match state.db.order_repo().find_by_id(tenant_id, order_id).await {
+        Ok(Some(o)) => o,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(ErrorResponse {
+                error: "not_found".into(),
+                message: "Order not found".into(),
+            })
+        }
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "internal".into(),
+                message: e.to_string(),
+            })
+        }
+    };
+
+    // 2. Execute domain logic
+    if !order.start() {
+        return HttpResponse::BadRequest().json(ErrorResponse {
+            error: "invalid_transition".into(),
+            message: format!("Order {} cannot be started from current state", order_id),
+        });
+    }
+
+    // 3. Persist change
+    let update_dto = agrocore_domain::entities::order::UpdateOrderDto {
+        status: Some(order.status),
+        started_at: order.started_at,
+        ..Default::default()
+    };
+
+    match state
+        .db
+        .order_repo()
+        .update(tenant_id, order_id, update_dto, auth.0.user_id)
+        .await
+    {
+        Ok(Some(updated)) => {
+            let event = Event::new("api".into(), GlobalEvent::OrderUpdated(updated.clone()));
+            let _ = state.messaging.publish("events.orders", &event).await;
+            HttpResponse::Ok().json(OrderDto::from(updated))
+        }
+        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
+            error: "not_found".into(),
+            message: "Order not found".into(),
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
+            error: "internal".into(),
+            message: e.to_string(),
+        }),
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/orders/my-tasks",
+    responses(
+        (status = 200, description = "List my active orders", body = Vec<MyTask>),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "orders",
+    security(("bearer_auth" = []))
+)]
+pub async fn my_tasks(state: web::Data<AppState>, auth: AuthUser) -> impl Responder {
+    tracing::info!("Listing active tasks for user: {}", auth.0.user_id);
+    match state
+        .db
+        .order_repo()
+        .find_my_tasks(auth.0.tenant_id.into(), auth.0.user_id)
+        .await
+    {
+        Ok(tasks) => HttpResponse::Ok().json(tasks),
+        Err(e) => {
+            tracing::error!("Failed to list active tasks: {}", e);
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "internal".into(),
+                message: e.to_string(),
+            })
+        }
+    }
+}

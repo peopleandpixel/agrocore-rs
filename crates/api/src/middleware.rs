@@ -1,0 +1,119 @@
+use actix_web::{Error, FromRequest, HttpRequest};
+use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
+use serde::Deserialize;
+use std::future::{ready, Ready};
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Claims {
+    pub sub: String,
+    pub tenant_id: String,
+    pub roles: Vec<String>,
+    pub exp: usize,
+}
+
+#[derive(Clone)]
+pub struct AuthenticatedUser {
+    pub user_id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub roles: Vec<String>,
+}
+
+pub struct AuthExtractor(pub AuthenticatedUser);
+
+impl FromRequest for AuthExtractor {
+    type Error = Error;
+    type Future = Ready<Result<Self, Self::Error>>;
+
+    fn from_request(req: &HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
+        let auth_header = req.headers().get("authorization");
+        match auth_header {
+            Some(header_value) => {
+                let header_str = match header_value.to_str() {
+                    Ok(s) => s,
+                    Err(_) => {
+                        return ready(Err(actix_web::error::ErrorUnauthorized(
+                            "Invalid auth header",
+                        )))
+                    }
+                };
+                let token = match header_str.strip_prefix("Bearer ") {
+                    Some(t) => t,
+                    None => {
+                        return ready(Err(actix_web::error::ErrorUnauthorized("No Bearer prefix")))
+                    }
+                };
+                let secret = agrocore_shared::config::jwt_secret();
+                match decode::<Claims>(
+                    token,
+                    &DecodingKey::from_secret(secret.as_bytes()),
+                    &Validation::new(Algorithm::HS256),
+                ) {
+                    Ok(token_data) => match (
+                        parse_uuid(&token_data.claims.sub),
+                        parse_uuid(&token_data.claims.tenant_id),
+                    ) {
+                        (Ok(user_id), Ok(tenant_id)) => {
+                            ready(Ok(AuthExtractor(AuthenticatedUser {
+                                user_id,
+                                tenant_id,
+                                roles: token_data.claims.roles,
+                            })))
+                        }
+                        _ => ready(Err(actix_web::error::ErrorUnauthorized("Invalid UUID"))),
+                    },
+                    Err(_) => ready(Err(actix_web::error::ErrorUnauthorized("Invalid token"))),
+                }
+            }
+            None => ready(Err(actix_web::error::ErrorUnauthorized(
+                "Missing auth header",
+            ))),
+        }
+    }
+}
+
+impl AuthExtractor {
+    pub fn roles(&self) -> Vec<agrocore_domain::entities::user::UserRole> {
+        self.0
+            .roles
+            .iter()
+            .map(|r| match r.as_str() {
+                "Admin" => agrocore_domain::entities::user::UserRole::Admin,
+                "Manager" => agrocore_domain::entities::user::UserRole::Manager,
+                "Worker" => agrocore_domain::entities::user::UserRole::Worker,
+                _ => agrocore_domain::entities::user::UserRole::Viewer,
+            })
+            .collect()
+    }
+
+    pub fn is_admin(&self) -> bool {
+        self.0.roles.iter().any(|r| r == "Admin")
+    }
+
+    pub fn is_manager(&self) -> bool {
+        self.0.roles.iter().any(|r| r == "Admin" || r == "Manager")
+    }
+
+    pub fn require_admin(&self) -> Result<(), actix_web::Error> {
+        if self.is_admin() {
+            Ok(())
+        } else {
+            Err(actix_web::error::ErrorForbidden("Admin role required"))
+        }
+    }
+
+    pub fn require_manager(&self) -> Result<(), actix_web::Error> {
+        if self.is_manager() {
+            Ok(())
+        } else {
+            Err(actix_web::error::ErrorForbidden(
+                "Manager or Admin role required",
+            ))
+        }
+    }
+}
+
+fn parse_uuid(s: &str) -> Result<uuid::Uuid, Error> {
+    uuid::Uuid::parse_str(s).map_err(|_| actix_web::error::ErrorUnauthorized("Invalid UUID"))
+}
+
+pub type AuthUser = AuthenticatedUser;

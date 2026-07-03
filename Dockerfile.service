@@ -1,0 +1,23 @@
+FROM agrocore-build-base AS chef
+WORKDIR /app
+
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/app/target \
+    cargo chef cook --release --recipe-path recipe.json
+COPY . .
+ARG SERVICE_NAME
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/app/target \
+    cargo build --release -p ${SERVICE_NAME} && \
+    cp target/release/${SERVICE_NAME} /usr/local/bin/service
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /usr/local/bin/service /usr/local/bin/service
+ENTRYPOINT ["/usr/local/bin/service"]

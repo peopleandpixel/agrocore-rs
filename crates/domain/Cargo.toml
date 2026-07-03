@@ -1,0 +1,22 @@
+[package]
+name = "agrocore-domain"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+agrocore-shared = { path = "../shared" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+utoipa = { version = "5", features = ["chrono", "uuid"] }
+chrono = { workspace = true }
+uuid = { workspace = true }
+validator = { workspace = true }
+mongodb = { workspace = true, optional = true }
+
+[features]
+default = []
+mongodb = ["dep:mongodb"]
+
+[dev-dependencies]
+mockall = { workspace = true }

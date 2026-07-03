@@ -1,0 +1,164 @@
+pub mod compliance;
+pub mod equipment;
+pub mod finance;
+pub mod harvest;
+pub mod livestock;
+pub mod olive;
+pub mod order;
+pub mod plant_protection;
+pub mod site;
+pub mod task;
+pub mod tenant;
+pub mod user;
+pub mod vineyard;
+pub mod water;
+pub mod weather;
+pub mod workforce;
+
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+pub enum SiteType {
+    #[serde(rename = "vineyard")]
+    Vineyard,
+    #[serde(rename = "field")]
+    Field,
+    #[serde(rename = "cork_oak_montado")]
+    CorkOakMontado,
+    #[serde(rename = "holm_oak_montado")]
+    HolmOakMontado,
+    #[serde(rename = "olive_grove")]
+    OliveGrove,
+    #[serde(rename = "orchard")]
+    Orchard,
+    #[serde(rename = "almond_orchard")]
+    AlmondOrchard,
+    #[serde(rename = "citrus_grove")]
+    CitrusGrove,
+    #[serde(rename = "pasture")]
+    Pasture,
+    #[serde(rename = "greenhouse")]
+    Greenhouse,
+    #[serde(rename = "other")]
+    Other(String),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+pub enum CropType {
+    #[serde(rename = "grape")]
+    Grape,
+    #[serde(rename = "olive")]
+    Olive,
+    #[serde(rename = "apple")]
+    Apple,
+    #[serde(rename = "citrus")]
+    Citrus,
+    #[serde(rename = "vegetable")]
+    Vegetable(String),
+    #[serde(rename = "grain")]
+    Grain(String),
+    #[serde(rename = "other")]
+    Other(String),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+pub enum BbchStage {
+    #[serde(rename = "0")]
+    Dormancy,
+    #[serde(rename = "1")]
+    BudSwelling,
+    #[serde(rename = "5")]
+    WoolStage,
+    #[serde(rename = "9")]
+    BudBreak,
+    #[serde(rename = "11")]
+    FirstLeaf,
+    #[serde(rename = "15")]
+    LeafDevelopment,
+    #[serde(rename = "19")]
+    LeafFall,
+    #[serde(rename = "53")]
+    InflorescenceVisible,
+    #[serde(rename = "57")]
+    InflorescenceFullyDeveloped,
+    #[serde(rename = "61")]
+    FloweringBegins,
+    #[serde(rename = "69")]
+    FloweringEnds,
+    #[serde(rename = "71")]
+    FruitSet,
+    #[serde(rename = "75")]
+    PeaSizeBerries,
+    #[serde(rename = "77")]
+    BerriesTouching,
+    #[serde(rename = "81")]
+    VeraisonBegins,
+    #[serde(rename = "89")]
+    BerriesRipe,
+    #[serde(rename = "91")]
+    AfterHarvest,
+    #[serde(rename = "97")]
+    WinterDormancy,
+    Custom(String),
+}
+
+impl BbchStage {
+    pub fn to_u32(&self) -> u32 {
+        match self {
+            BbchStage::Dormancy => 0,
+            BbchStage::BudSwelling => 1,
+            BbchStage::WoolStage => 5,
+            BbchStage::BudBreak => 9,
+            BbchStage::FirstLeaf => 11,
+            BbchStage::LeafDevelopment => 15,
+            BbchStage::LeafFall => 19,
+            BbchStage::InflorescenceVisible => 53,
+            BbchStage::InflorescenceFullyDeveloped => 57,
+            BbchStage::FloweringBegins => 61,
+            BbchStage::FloweringEnds => 69,
+            BbchStage::PeaSizeBerries => 75,
+            BbchStage::FruitSet => 71,
+            BbchStage::BerriesTouching => 77,
+            BbchStage::VeraisonBegins => 81,
+            BbchStage::BerriesRipe => 89,
+            BbchStage::AfterHarvest => 91,
+            BbchStage::WinterDormancy => 97,
+            BbchStage::Custom(_) => 100, // Or whatever default
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+pub enum OrderStatus {
+    #[serde(rename = "draft")]
+    Draft,
+    #[serde(rename = "planned")]
+    Planned,
+    #[serde(rename = "in_progress")]
+    InProgress,
+    #[serde(rename = "completed")]
+    Completed,
+    #[serde(rename = "cancelled")]
+    Cancelled,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+pub enum OrderType {
+    #[serde(rename = "plant_protection")]
+    PlantProtection,
+    #[serde(rename = "fertilization")]
+    Fertilization,
+    #[serde(rename = "pruning")]
+    Pruning,
+    #[serde(rename = "harvest")]
+    Harvest,
+    #[serde(rename = "soil_work")]
+    SoilWork,
+    #[serde(rename = "irrigation")]
+    Irrigation,
+    #[serde(rename = "monitoring")]
+    Monitoring,
+    #[serde(rename = "other")]
+    Other(String),
+}

@@ -1,0 +1,23 @@
+[package]
+name = "agrocore-asset-registry"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+agrocore-domain = { path = "../domain" }
+agrocore-infrastructure = { path = "../infrastructure" }
+agrocore-shared = { path = "../shared" }
+agrocore-messaging = { path = "../messaging" }
+tokio = { workspace = true }
+actix-web = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+dotenvy = { workspace = true }
+uuid = { workspace = true }
+futures = { workspace = true }
+async-nats = { workspace = true }

@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agrocore-reporting-service
+  labels:
+    app: agrocore-reporting
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agrocore-reporting
+  template:
+    metadata:
+      labels:
+        app: agrocore-reporting
+    spec:
+      containers:
+      - name: reporting
+        image: agrocore-reporting:latest
+        env:
+        - name: MONGODB_URI
+          value: "mongodb://mongodb-service:27017"
+        - name: NATS_URL
+          value: "nats://nats-service:4222"
+        # Health checks for NATS workers are trickier without a sidecar or http endpoint.
+        # Often we use a custom script or rely on the process being alive.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agrocore-weather-service
+  labels:
+    app: agrocore-weather
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agrocore-weather
+  template:
+    metadata:
+      labels:
+        app: agrocore-weather
+    spec:
+      containers:
+      - name: weather
+        image: agrocore-weather:latest
+        env:
+        - name: MONGODB_URI
+          value: "mongodb://mongodb-service:27017"
+        - name: NATS_URL
+          value: "nats://nats-service:4222"
