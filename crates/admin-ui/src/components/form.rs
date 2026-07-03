@@ -106,3 +106,74 @@ pub fn RequiredLabel(required: bool, children: Children) -> impl IntoView {
         </span>
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        country_flag, is_valid_email, is_valid_phone, language_flag, normalize_phone, split_phone,
+    };
+
+    #[test]
+    fn email_validation_accepts_normal_addresses() {
+        assert!(is_valid_email("alice@example.com"));
+        assert!(is_valid_email(" alice@example.com "));
+    }
+
+    #[test]
+    fn email_validation_rejects_invalid_addresses() {
+        assert!(!is_valid_email(""));
+        assert!(!is_valid_email("alice"));
+        assert!(!is_valid_email("alice@"));
+        assert!(!is_valid_email("@example.com"));
+        assert!(!is_valid_email("alice@example"));
+        assert!(!is_valid_email("alice@.example.com"));
+        assert!(!is_valid_email("alice@example..com"));
+    }
+
+    #[test]
+    fn phone_validation_accepts_normalized_international_numbers() {
+        assert!(is_valid_phone("+351912345678"));
+        assert!(is_valid_phone("+49 151 234 5678"));
+        assert!(is_valid_phone("+1 (555) 123-4567"));
+    }
+
+    #[test]
+    fn phone_validation_rejects_invalid_values() {
+        assert!(!is_valid_phone(""));
+        assert!(!is_valid_phone("123456"));
+        assert!(!is_valid_phone("+12"));
+        assert!(!is_valid_phone("+351-abc"));
+    }
+
+    #[test]
+    fn normalize_phone_combines_prefix_and_local_digits() {
+        assert_eq!(
+            normalize_phone("+351", "912 345 678"),
+            Some(String::from("+351912345678"))
+        );
+        assert_eq!(normalize_phone("", "912345678"), None);
+        assert_eq!(normalize_phone("+351", "123"), None);
+    }
+
+    #[test]
+    fn split_phone_uses_known_prefixes_and_fallback() {
+        assert_eq!(
+            split_phone("+351912345678", "+49"),
+            (String::from("+351"), String::from("912345678"))
+        );
+        assert_eq!(
+            split_phone("912345678", "+49"),
+            (String::from("+49"), String::from("912345678"))
+        );
+    }
+
+    #[test]
+    fn country_and_language_flags_map_expected_values() {
+        assert_eq!(country_flag("Portugal"), "🇵🇹");
+        assert_eq!(country_flag("Deutschland"), "🇩🇪");
+        assert_eq!(country_flag("United States"), "🇺🇸");
+        assert_eq!(language_flag("de"), "🇩🇪");
+        assert_eq!(language_flag("pt"), "🇵🇹");
+        assert_eq!(language_flag("xx"), "🏳");
+    }
+}

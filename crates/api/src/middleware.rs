@@ -117,3 +117,130 @@ fn parse_uuid(s: &str) -> Result<uuid::Uuid, Error> {
 }
 
 pub type AuthUser = AuthenticatedUser;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use actix_web::{dev::Payload, http::header, test::TestRequest};
+    use jsonwebtoken::crypto::rust_crypto::DEFAULT_PROVIDER;
+    use jsonwebtoken::{encode, EncodingKey, Header};
+    use serde::Serialize;
+
+    #[derive(Serialize)]
+    struct TestClaims {
+        sub: String,
+        tenant_id: String,
+        roles: Vec<String>,
+        exp: usize,
+    }
+
+    fn signed_token(sub: &str, tenant_id: &str, roles: Vec<&str>) -> String {
+        let _ = DEFAULT_PROVIDER.install_default();
+        encode(
+            &Header::default(),
+            &TestClaims {
+                sub: sub.to_string(),
+                tenant_id: tenant_id.to_string(),
+                roles: roles.into_iter().map(String::from).collect(),
+                exp: usize::MAX / 2,
+            },
+            &EncodingKey::from_secret(agrocore_shared::config::jwt_secret().as_bytes()),
+        )
+        .expect("token")
+    }
+
+    #[test]
+    fn auth_extractor_rejects_missing_header() {
+        let req = TestRequest::default().to_http_request();
+        let mut payload = Payload::None;
+        let result = AuthExtractor::from_request(&req, &mut payload).into_inner();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn auth_extractor_rejects_bad_prefix() {
+        let req = TestRequest::default()
+            .insert_header((header::AUTHORIZATION, "Token abc"))
+            .to_http_request();
+        let mut payload = Payload::None;
+        let result = AuthExtractor::from_request(&req, &mut payload).into_inner();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn auth_extractor_rejects_invalid_uuid_claims() {
+        let token = signed_token("not-a-uuid", "also-not-a-uuid", vec!["Admin"]);
+        let req = TestRequest::default()
+            .insert_header((header::AUTHORIZATION, format!("Bearer {token}")))
+            .to_http_request();
+        let mut payload = Payload::None;
+        let result = AuthExtractor::from_request(&req, &mut payload).into_inner();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn auth_extractor_accepts_valid_token_and_maps_roles() {
+        let user_id = uuid::Uuid::new_v4();
+        let tenant_id = uuid::Uuid::new_v4();
+        let token = signed_token(
+            &user_id.to_string(),
+            &tenant_id.to_string(),
+            vec!["Admin", "Worker"],
+        );
+        let req = TestRequest::default()
+            .insert_header((header::AUTHORIZATION, format!("Bearer {token}")))
+            .to_http_request();
+        let mut payload = Payload::None;
+        let extractor = AuthExtractor::from_request(&req, &mut payload)
+            .into_inner()
+            .expect("extractor");
+
+        assert_eq!(extractor.0.user_id, user_id);
+        assert_eq!(extractor.0.tenant_id, tenant_id);
+        assert!(extractor.is_admin());
+        assert!(extractor.is_manager());
+        assert_eq!(
+            extractor.roles(),
+            vec![
+                agrocore_domain::entities::user::UserRole::Admin,
+                agrocore_domain::entities::user::UserRole::Worker,
+            ]
+        );
+    }
+
+    #[test]
+    fn auth_extractor_role_helpers_cover_admin_manager_and_viewer_paths() {
+        let admin = AuthExtractor(AuthenticatedUser {
+            user_id: uuid::Uuid::new_v4(),
+            tenant_id: uuid::Uuid::new_v4(),
+            roles: vec![String::from("Admin")],
+        });
+        assert!(admin.require_admin().is_ok());
+        assert!(admin.require_manager().is_ok());
+
+        let manager = AuthExtractor(AuthenticatedUser {
+            user_id: uuid::Uuid::new_v4(),
+            tenant_id: uuid::Uuid::new_v4(),
+            roles: vec![String::from("Manager")],
+        });
+        assert!(manager.require_admin().is_err());
+        assert!(manager.require_manager().is_ok());
+
+        let viewer = AuthExtractor(AuthenticatedUser {
+            user_id: uuid::Uuid::new_v4(),
+            tenant_id: uuid::Uuid::new_v4(),
+            roles: vec![String::from("Viewer"), String::from("Unknown")],
+        });
+        assert!(!viewer.is_admin());
+        assert!(!viewer.is_manager());
+        assert!(viewer.require_admin().is_err());
+        assert!(viewer.require_manager().is_err());
+        assert_eq!(
+            viewer.roles(),
+            vec![
+                agrocore_domain::entities::user::UserRole::Viewer,
+                agrocore_domain::entities::user::UserRole::Viewer,
+            ]
+        );
+    }
+}

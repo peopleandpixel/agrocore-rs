@@ -5,9 +5,11 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::entities::tenant::TenantId;
-use crate::entities::{user::UserRole, OrderStatus, OrderType};
+use crate::entities::{OrderStatus, OrderType};
 use crate::repositories::VisibilityAwareEntity;
 
+#[cfg(feature = "mongodb")]
+use crate::entities::user::UserRole;
 #[cfg(feature = "mongodb")]
 use mongodb::bson::{doc, Document};
 
@@ -161,4 +163,75 @@ pub struct MyTask {
     pub total_area: f64,
     pub deadline_date: Option<DateTime<Utc>>,
     pub planned_date: Option<DateTime<Utc>>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Utc;
+
+    fn sample_order(status: OrderStatus) -> Order {
+        Order {
+            id: Uuid::new_v4(),
+            tenant_id: Uuid::new_v4(),
+            label: String::from("Test Order"),
+            order_type: OrderType::Harvest,
+            status,
+            site_ids: vec![Uuid::new_v4()],
+            assigned_worker_ids: vec![Uuid::new_v4()],
+            planned_date: None,
+            deadline_date: None,
+            started_at: None,
+            completed_at: None,
+            articles: None,
+            quantities: None,
+            results: None,
+            weather: None,
+            custom_fields: None,
+            parent_order_id: None,
+            workflow_config: None,
+            cost_center_id: None,
+            is_active: true,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            created_by: None,
+            updated_by: None,
+        }
+    }
+
+    #[test]
+    fn order_transition_rules_cover_final_and_same_state() {
+        let order = sample_order(OrderStatus::Draft);
+        assert!(order.can_transition_to(OrderStatus::Planned));
+        assert!(order.can_transition_to(OrderStatus::Cancelled));
+        assert!(order.can_transition_to(OrderStatus::Draft));
+        assert!(!order.can_transition_to(OrderStatus::Completed));
+
+        let completed = sample_order(OrderStatus::Completed);
+        assert!(!completed.can_transition_to(OrderStatus::Planned));
+        assert!(!completed.can_transition_to(OrderStatus::Completed));
+    }
+
+    #[test]
+    fn order_start_and_complete_update_timestamps_when_allowed() {
+        let mut order = sample_order(OrderStatus::Planned);
+        assert!(order.start());
+        assert_eq!(order.status, OrderStatus::InProgress);
+        assert!(order.started_at.is_some());
+
+        assert!(order.complete());
+        assert_eq!(order.status, OrderStatus::Completed);
+        assert!(order.completed_at.is_some());
+    }
+
+    #[test]
+    fn order_start_and_complete_fail_for_invalid_transitions() {
+        let mut draft = sample_order(OrderStatus::Draft);
+        assert!(!draft.complete());
+        assert_eq!(draft.status, OrderStatus::Draft);
+
+        let mut cancelled = sample_order(OrderStatus::Cancelled);
+        assert!(!cancelled.start());
+        assert_eq!(cancelled.status, OrderStatus::Cancelled);
+    }
 }

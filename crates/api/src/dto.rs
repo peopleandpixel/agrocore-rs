@@ -632,3 +632,133 @@ pub struct FertilizerCalculationRequestDto {
 pub struct FertilizerCalculationResponseDto {
     pub fertilizer_amount_kg: f64,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::{TimeZone, Utc};
+    use serde_json::json;
+
+    #[test]
+    fn create_site_dto_into_domain_preserves_geodata_and_optional_fields() {
+        let center = GeoPoint {
+            lng: 14.0,
+            lat: 47.0,
+        };
+        let boundary = vec![
+            GeoPoint {
+                lng: 14.0,
+                lat: 47.0,
+            },
+            GeoPoint {
+                lng: 14.1,
+                lat: 47.0,
+            },
+            GeoPoint {
+                lng: 14.1,
+                lat: 47.1,
+            },
+        ];
+        let dto = CreateSiteDto {
+            label: String::from("Plot A"),
+            site_type: SiteType::Field,
+            crop_type: CropType::Grape,
+            variety: Some(String::from("Syrah")),
+            area: 12.5,
+            gross_area: Some(13.0),
+            center: Some(center.clone()),
+            boundary: Some(boundary.clone()),
+            plots: None,
+            properties: Some(vec![SiteProperty {
+                key: String::from("soil_ph"),
+                value: json!(6.4),
+                group: Some(String::from("soil")),
+            }]),
+        };
+
+        let domain: agrocore_domain::entities::site::CreateSiteDto = dto.into();
+        assert_eq!(domain.label, "Plot A");
+        assert_eq!(domain.site_type, SiteType::Field);
+        assert_eq!(domain.crop_type, CropType::Grape);
+        assert_eq!(domain.variety.as_deref(), Some("Syrah"));
+        assert_eq!(domain.area, 12.5);
+        assert_eq!(domain.gross_area, Some(13.0));
+        assert!(domain.plots.is_none());
+        assert!(domain.row_config.is_none());
+        assert!(domain.bbch_stage.is_none());
+        assert_eq!(domain.center.as_ref().map(|p| p.lng), Some(center.lng));
+        assert_eq!(domain.center.as_ref().map(|p| p.lat), Some(center.lat));
+        assert_eq!(domain.boundary.as_ref().map(Vec::len), Some(boundary.len()));
+        assert!(domain.custom_fields.is_none());
+        assert_eq!(domain.properties.as_ref().map(Vec::len), Some(1));
+    }
+
+    #[test]
+    fn create_order_dto_into_domain_keeps_assignment_information() {
+        let site_ids = vec![Uuid::new_v4(), Uuid::new_v4()];
+        let worker_ids = vec![Uuid::new_v4()];
+        let dto = CreateOrderDto {
+            label: String::from("Harvest 2026"),
+            order_type: OrderType::Harvest,
+            site_ids: site_ids.clone(),
+            assigned_worker_ids: Some(worker_ids.clone()),
+        };
+
+        let domain: agrocore_domain::entities::order::CreateOrderDto = dto.into();
+        assert_eq!(domain.label, "Harvest 2026");
+        assert_eq!(domain.order_type, OrderType::Harvest);
+        assert_eq!(domain.site_ids, site_ids);
+        assert_eq!(domain.assigned_worker_ids, Some(worker_ids));
+        assert!(domain.planned_date.is_none());
+        assert!(domain.deadline_date.is_none());
+        assert!(domain.workflow_config.is_none());
+    }
+
+    #[test]
+    fn create_user_dto_into_domain_sets_backend_defaults() {
+        let dto = CreateUserDto {
+            firstname: String::from("Anna"),
+            lastname: String::from("Meyer"),
+            email: String::from("anna@example.com"),
+            password: String::from("secure-pass-123"),
+            roles: Some(vec![UserRole::Manager]),
+        };
+
+        let domain: agrocore_domain::entities::user::CreateUserDto = dto.into();
+        assert_eq!(domain.firstname, "Anna");
+        assert_eq!(domain.lastname, "Meyer");
+        assert_eq!(domain.email, "anna@example.com");
+        assert_eq!(domain.password, "secure-pass-123");
+        assert_eq!(domain.roles, Some(vec![UserRole::Manager]));
+        assert!(domain.internal_cost_per_hour.is_none());
+        assert!(domain.external_cost_per_hour.is_none());
+        assert!(domain.language.is_none());
+    }
+
+    #[test]
+    fn dto_response_types_format_timestamps_as_rfc3339() {
+        let user = User {
+            id: Uuid::new_v4(),
+            tenant_id: Uuid::new_v4(),
+            firstname: String::from("Anna"),
+            lastname: String::from("Meyer"),
+            email: String::from("anna@example.com"),
+            password_hash: String::from("hash"),
+            roles: vec![UserRole::Viewer],
+            is_active: true,
+            internal_cost_per_hour: None,
+            external_cost_per_hour: None,
+            color: None,
+            language: Some(String::from("de")),
+            assigned_site_ids: None,
+            last_login: Some(Utc.with_ymd_and_hms(2026, 1, 2, 3, 4, 5).unwrap()),
+            created_at: Utc.with_ymd_and_hms(2026, 1, 2, 3, 4, 5).unwrap(),
+            updated_at: Utc.with_ymd_and_hms(2026, 1, 3, 4, 5, 6).unwrap(),
+        };
+
+        let dto = UserDto::from(user);
+        assert_eq!(dto.last_login.as_deref(), Some("2026-01-02T03:04:05+00:00"));
+        assert_eq!(dto.created_at, "2026-01-02T03:04:05+00:00");
+        assert_eq!(dto.updated_at, "2026-01-03T04:05:06+00:00");
+    }
+}

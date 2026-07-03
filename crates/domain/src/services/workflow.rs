@@ -56,7 +56,7 @@ impl WorkflowService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::entities::order::{CreateOrderDto, Order, WorkflowConfig};
+    use crate::entities::order::{Order, WorkflowConfig};
     use crate::entities::OrderStatus;
     use crate::entities::OrderType;
     use chrono::Utc;
@@ -141,6 +141,80 @@ mod tests {
         assert_eq!(next.site_ids, order.site_ids);
         assert_eq!(next.parent_order_id, Some(order.id));
         assert!(next.planned_date.is_some());
+    }
+
+    #[test]
+    fn test_process_status_transition_same_status_returns_none() {
+        let order = Order {
+            id: Uuid::new_v4(),
+            tenant_id: Uuid::new_v4(),
+            label: "No-op".into(),
+            order_type: OrderType::Harvest,
+            status: OrderStatus::Completed,
+            site_ids: vec![Uuid::new_v4()],
+            assigned_worker_ids: vec![Uuid::new_v4()],
+            planned_date: None,
+            deadline_date: None,
+            started_at: None,
+            completed_at: None,
+            articles: None,
+            quantities: None,
+            results: None,
+            weather: None,
+            custom_fields: None,
+            parent_order_id: None,
+            workflow_config: Some(WorkflowConfig {
+                auto_next_order_type: Some(OrderType::Fertilization),
+                delay_days: Some(1),
+                trigger_status: Some(OrderStatus::Completed),
+            }),
+            cost_center_id: None,
+            is_active: true,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            created_by: None,
+            updated_by: None,
+        };
+
+        let follow_ups = WorkflowService::process_status_transition(&order, OrderStatus::Completed);
+        assert!(follow_ups.is_empty());
+    }
+
+    #[test]
+    fn test_process_status_transition_without_matching_trigger_returns_none() {
+        let order = Order {
+            id: Uuid::new_v4(),
+            tenant_id: Uuid::new_v4(),
+            label: "No follow up".into(),
+            order_type: OrderType::Harvest,
+            status: OrderStatus::InProgress,
+            site_ids: vec![Uuid::new_v4()],
+            assigned_worker_ids: vec![Uuid::new_v4()],
+            planned_date: None,
+            deadline_date: None,
+            started_at: None,
+            completed_at: None,
+            articles: None,
+            quantities: None,
+            results: None,
+            weather: None,
+            custom_fields: None,
+            parent_order_id: None,
+            workflow_config: Some(WorkflowConfig {
+                auto_next_order_type: None,
+                delay_days: None,
+                trigger_status: Some(OrderStatus::Completed),
+            }),
+            cost_center_id: None,
+            is_active: true,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            created_by: None,
+            updated_by: None,
+        };
+
+        let follow_ups = WorkflowService::process_status_transition(&order, OrderStatus::Completed);
+        assert!(follow_ups.is_empty());
     }
 }
 

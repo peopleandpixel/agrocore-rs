@@ -132,4 +132,43 @@ mod tests {
         assert_eq!(balance.k, 0.0);
         assert_eq!(balance.mg, -10.0);
     }
+
+    #[test]
+    fn test_calculate_fertilizer_amount_handles_zero_n() {
+        let demand = NutrientValues {
+            n: 50.0,
+            p: 0.0,
+            k: 0.0,
+            mg: 0.0,
+        };
+        let fertilizer = Fertilizer {
+            name: "Water".into(),
+            nutrient_content_percent: NutrientValues {
+                n: 0.0,
+                p: 0.0,
+                k: 0.0,
+                mg: 0.0,
+            },
+        };
+
+        assert_eq!(
+            NutritionService::calculate_fertilizer_amount(&demand, &fertilizer),
+            0.0
+        );
+    }
+
+    #[test]
+    fn test_calculate_demand_scales_all_nutrients() {
+        let demand_per_t = NutrientValues {
+            n: 1.0,
+            p: 2.0,
+            k: 3.0,
+            mg: 4.0,
+        };
+        let demand = NutritionService::calculate_demand(3.0, 4.0, &demand_per_t);
+        assert_eq!(demand.n, 12.0);
+        assert_eq!(demand.p, 24.0);
+        assert_eq!(demand.k, 36.0);
+        assert_eq!(demand.mg, 48.0);
+    }
 }
