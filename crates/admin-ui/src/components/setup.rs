@@ -2,9 +2,12 @@ use crate::api;
 use crate::components::form::{
     country_flag, is_valid_email, language_flag, normalize_phone, RequiredLabel, PHONE_PREFIXES,
 };
+use crate::i18n::LANGUAGE_OPTIONS;
 use crate::i18n::{I18n, Language};
+use icondata::*;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
+use leptos_icons::Icon;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, PartialOrd, Ord)]
 enum SetupStep {
@@ -16,6 +19,42 @@ enum SetupStep {
 
 fn setup_t(i18n: &I18n, lang: Language, key: &str) -> String {
     i18n.t(lang.as_str(), key)
+}
+
+fn setup_logo_data_url() -> &'static str {
+    use std::sync::OnceLock;
+
+    static LOGO_DATA_URL: OnceLock<String> = OnceLock::new();
+    LOGO_DATA_URL
+        .get_or_init(|| {
+            let bytes = include_bytes!("../../public/logo.png");
+            const TABLE: &[u8; 64] =
+                b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+            let mut encoded = String::with_capacity(bytes.len().div_ceil(3) * 4);
+
+            for chunk in bytes.chunks(3) {
+                let b0 = chunk[0];
+                let b1 = *chunk.get(1).unwrap_or(&0);
+                let b2 = *chunk.get(2).unwrap_or(&0);
+                let n = ((b0 as u32) << 16) | ((b1 as u32) << 8) | (b2 as u32);
+
+                encoded.push(TABLE[((n >> 18) & 0x3f) as usize] as char);
+                encoded.push(TABLE[((n >> 12) & 0x3f) as usize] as char);
+                if chunk.len() > 1 {
+                    encoded.push(TABLE[((n >> 6) & 0x3f) as usize] as char);
+                } else {
+                    encoded.push('=');
+                }
+                if chunk.len() > 2 {
+                    encoded.push(TABLE[(n & 0x3f) as usize] as char);
+                } else {
+                    encoded.push('=');
+                }
+            }
+
+            format!("data:image/png;base64,{encoded}")
+        })
+        .as_str()
 }
 
 fn slug_is_valid(value: &str) -> bool {
@@ -206,58 +245,104 @@ pub fn SetupAssistant() -> impl IntoView {
     let (company_phone_prefix, set_company_phone_prefix) = signal(String::from("+351"));
     let (company_phone_local, set_company_phone_local) = signal(String::new());
 
-    let (_resource_type, set_resource_type) = signal("field_management".to_string());
-    let setup_title = setup_t(&i18n, lang.get(), "setup_title");
-    let wizard_language = setup_t(&i18n, lang.get(), "wizard_language");
-    let setup_step_admin = setup_t(&i18n, lang.get(), "setup_step_admin");
-    let setup_step_tenant = setup_t(&i18n, lang.get(), "setup_step_tenant");
-    let setup_step_company = setup_t(&i18n, lang.get(), "setup_step_company");
-    let setup_step_resources = setup_t(&i18n, lang.get(), "setup_step_resources");
+    let (resource_type, set_resource_type) = signal("field_management".to_string());
+    let i18n_for_title = i18n.clone();
+    let i18n_for_wizard_language = i18n.clone();
+    let i18n_for_admin_step = i18n.clone();
+    let i18n_for_tenant_step = i18n.clone();
+    let i18n_for_company_step = i18n.clone();
+    let i18n_for_resources_step = i18n.clone();
+    let i18n_for_language_options = i18n.clone();
+    let setup_title = move || setup_t(&i18n_for_title, lang.get(), "setup_title");
+    let wizard_language = move || setup_t(&i18n_for_wizard_language, lang.get(), "wizard_language");
     let finish_label = setup_t(&i18n, lang.get(), "finish_setup");
-
+    let i18n_for_welcome = i18n.clone();
+    let setup_welcome = move || setup_t(&i18n_for_welcome, lang.get(), "setup_welcome");
+    let starting_setup_label_loading = setup_t(&i18n, lang.get(), "starting_setup");
+    let setup_progress = move || match step.get() {
+        SetupStep::Admin => 25,
+        SetupStep::Tenant => 50,
+        SetupStep::Company => 75,
+        SetupStep::Resources => 100,
+    };
     view! {
-        <div class="min-h-screen bg-base-200 flex flex-col items-center justify-center p-4">
-            <div class="mb-8 flex flex-col items-center">
-                <img src="/docs/agrocore_RS.png" alt="AgroCore Logo" class="w-24 h-24 mb-3" />
-                <h1 class="text-5xl font-black mb-2 text-primary">"AgroCore"</h1>
-                <p class="text-base-content/50 uppercase tracking-widest font-bold">
-                    {setup_title}
-                </p>
-            </div>
+        <div class="min-h-screen bg-base-200">
+            <div class="mx-auto grid min-h-screen w-full max-w-7xl items-start gap-6 px-4 py-6 lg:grid-cols-[20rem_minmax(0,1fr)]">
+                <aside class="space-y-4 self-start lg:sticky lg:top-6">
+                    <div class="card bg-base-100 shadow-xl border border-base-300">
+                        <div class="card-body gap-5">
+                            <div class="flex items-center gap-4">
+                                <img
+                                    src=setup_logo_data_url()
+                                    alt="AgroCore Logo"
+                                    class="w-16 h-16 rounded-box border border-base-300 bg-base-200 p-2 object-contain"
+                                />
+                                <div>
+                                    <h1 class="text-3xl font-black text-primary leading-tight">"AgroCore"</h1>
+                                    <p class="text-sm text-base-content/70">{move || setup_title()}</p>
+                                </div>
+                            </div>
 
-            <div class="w-full max-w-lg mb-4">
-                <div class="form-control">
-                    <label class="label"><span class="label-text">{wizard_language}</span></label>
-                    <select
-                        class="select select-bordered w-full"
-                        prop:value=move || lang.get().as_str().to_string()
-                        on:change=move |ev| {
-                            let value = event_target_value(&ev);
-                            set_lang.set(Language::from_str(&value));
-                            if let Some(storage) = window().local_storage().ok().flatten() {
-                                let _ = storage.set_item("agrocore.lang", &value);
-                            }
-                        }
-                    >
-                        <option value="de">{format!("{} Deutsch", language_flag("de"))}</option>
-                        <option value="en">{format!("{} English", language_flag("en"))}</option>
-                        <option value="es">{format!("{} Español", language_flag("es"))}</option>
-                        <option value="fr">{format!("{} Français", language_flag("fr"))}</option>
-                        <option value="pt">{format!("{} Português", language_flag("pt"))}</option>
-                    </select>
-                </div>
-            </div>
+                            <div class="alert alert-info">
+                                <Icon icon=LuShieldCheck width="20" height="20" />
+                                <span>{move || setup_welcome()}</span>
+                            </div>
+                        </div>
+                    </div>
 
-            <ul class="steps mb-8 w-full max-w-2xl">
-                <li class=move || format!("step {}", if step.get() >= SetupStep::Admin { "step-primary" } else { "" })>{setup_step_admin}</li>
-                <li class=move || format!("step {}", if step.get() >= SetupStep::Tenant { "step-primary" } else { "" })>{setup_step_tenant}</li>
-                <li class=move || format!("step {}", if step.get() >= SetupStep::Company { "step-primary" } else { "" })>{setup_step_company}</li>
-                <li class=move || format!("step {}", if step.get() >= SetupStep::Resources { "step-primary" } else { "" })>{setup_step_resources}</li>
-            </ul>
+                    <div class="card bg-base-100 shadow border border-base-300">
+                        <div class="card-body gap-4">
+                            <div class="flex items-center gap-2">
+                                <Icon icon=LuGlobe width="18" height="18" />
+                                <span class="font-semibold">{move || wizard_language()}</span>
+                                <span class="badge ml-auto">{move || language_flag(lang.get().as_str())}</span>
+                            </div>
+                            <select
+                                class="select select-bordered w-full"
+                                prop:value=move || lang.get().as_str().to_string()
+                                on:change=move |ev| {
+                                    let value = event_target_value(&ev);
+                                    set_lang.set(Language::from_str(&value));
+                                    if let Some(storage) = window().local_storage().ok().flatten() {
+                                        let _ = storage.set_item("agrocore.lang", &value);
+                                    }
+                                }
+                            >
+                                {LANGUAGE_OPTIONS.iter().map(|(language, code, label_key)| {
+                                    let i18n = i18n_for_language_options.clone();
+                                    let selected = move || lang.get() == *language;
+                                    view! {
+                                        <option value=*code selected=selected>
+                                            {move || format!("{} {}", language_flag(code), i18n.t(lang.get().as_str(), label_key))}
+                                        </option>
+                                    }
+                                }).collect::<Vec<_>>()}
+                            </select>
+                        </div>
+                    </div>
 
-            <div class="card w-full max-w-lg bg-base-100 shadow-2xl border border-base-300">
-                <div class="card-body">
-                    {move || {
+                    <div class="card bg-base-100 shadow border border-base-300">
+                        <div class="card-body gap-4">
+                            <ul class="steps steps-vertical w-full">
+                                <li class=move || format!("step {}", if step.get() >= SetupStep::Admin { "step-primary" } else { "" })>{move || setup_t(&i18n_for_admin_step, lang.get(), "setup_step_admin")}</li>
+                                <li class=move || format!("step {}", if step.get() >= SetupStep::Tenant { "step-primary" } else { "" })>{move || setup_t(&i18n_for_tenant_step, lang.get(), "setup_step_tenant")}</li>
+                                <li class=move || format!("step {}", if step.get() >= SetupStep::Company { "step-primary" } else { "" })>{move || setup_t(&i18n_for_company_step, lang.get(), "setup_step_company")}</li>
+                                <li class=move || format!("step {}", if step.get() >= SetupStep::Resources { "step-primary" } else { "" })>{move || setup_t(&i18n_for_resources_step, lang.get(), "setup_step_resources")}</li>
+                            </ul>
+                            <progress class="progress progress-primary w-full" value=setup_progress max="100"></progress>
+                            {move || setup_error.get().map(|err| view! {
+                                <div class="alert alert-error">
+                                    <span>{err}</span>
+                                </div>
+                            })}
+                        </div>
+                    </div>
+                </aside>
+
+                <main class="flex items-start">
+                    <div class="card w-full bg-base-100 shadow-2xl border border-base-300">
+                        <div class="card-body gap-6">
+                            {move || {
                         let current_lang = lang.get();
                         let i18n_for_t = i18n.clone();
                         let t = move |key: &str| setup_t(&i18n_for_t, current_lang, key);
@@ -269,10 +354,15 @@ pub fn SetupAssistant() -> impl IntoView {
                         let setup_company_desc = t("setup_company_desc");
                         let setup_resources_title = t("setup_resources_title");
                         let setup_resources_desc = t("setup_resources_desc");
+                        let setup_admin_help = t("setup_admin_help");
+                        let setup_tenant_help = t("setup_tenant_help");
+                        let setup_company_help = t("setup_company_help");
+                        let setup_resources_help = t("setup_resources_help");
                         let setup_resource_type = t("setup_resource_type");
                         let setup_equipment = t("setup_equipment");
                         let setup_first_machine = t("setup_first_machine");
                         let setup_first_machine_placeholder = t("first_machine_placeholder");
+                        let optional_label = t("optional_label");
                         let first_name_label = t("first_name");
                         let last_name_label = t("last_name");
                         let email_label = t("email");
@@ -292,172 +382,194 @@ pub fn SetupAssistant() -> impl IntoView {
                         let invalid_email_error = t("validation_invalid_email");
                         let invalid_phone_error = t("validation_invalid_phone");
                         let invalid_slug_error = t("validation_invalid_slug");
-                        let starting_setup_label = t("starting_setup");
+                        let starting_setup_label_loading_class = starting_setup_label_loading.clone();
+                        let starting_setup_label_loading_disabled = starting_setup_label_loading.clone();
+                        let starting_setup_label_status = starting_setup_label_loading.clone();
                         let submit_i18n = i18n.clone();
                         let submit_i18n_status = i18n.clone();
                         match step.get() {
                             SetupStep::Admin => view! {
-                                <h2 class="card-title text-2xl font-bold mb-4">
-                                    {setup_admin_title.clone()}
-                                </h2>
-                                <p class="mb-6 text-base-content/70">
-                                    {setup_admin_desc.clone()}
-                                </p>
+                                <div class="space-y-5">
+                                    <div>
+                                        <h3 class="text-lg font-semibold">{setup_admin_title.clone()}</h3>
+                                        <p class="text-sm text-base-content/70">{setup_admin_desc.clone()}</p>
+                                        <p class="mt-2 text-sm leading-6 text-base-content/60">
+                                            {setup_admin_help.clone()}
+                                        </p>
+                                    </div>
 
-                                {move || setup_error.get().map(|err| view! {
-                                    <div class="alert alert-error mb-4">
-                                        <span>{err}</span>
+                                    <div class="grid gap-4 md:grid-cols-2">
+                                        <div class="form-control w-full">
+                                            <label class="label">
+                                                <RequiredLabel required=true>
+                                                    {first_name_label.clone()}
+                                                </RequiredLabel>
+                                            </label>
+                                            <input type="text" class="input input-bordered w-full" autocomplete="given-name" required on:input=move |ev| set_admin_firstname.set(event_target_value(&ev)) />
+                                        </div>
+                                        <div class="form-control w-full">
+                                            <label class="label">
+                                                <RequiredLabel required=true>
+                                                    {last_name_label.clone()}
+                                                </RequiredLabel>
+                                            </label>
+                                            <input type="text" class="input input-bordered w-full" autocomplete="family-name" required on:input=move |ev| set_admin_lastname.set(event_target_value(&ev)) />
+                                        </div>
                                     </div>
-                                })}
 
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div class="form-control w-full mb-4">
-                                        <label class="label">
-                                            <RequiredLabel required=true>
-                                                {first_name_label.clone()}
-                                            </RequiredLabel>
-                                        </label>
-                                        <input type="text" class="input input-bordered w-full" required on:input=move |ev| set_admin_firstname.set(event_target_value(&ev)) />
+                                    <div class="grid gap-4 md:grid-cols-2">
+                                        <div class="form-control w-full">
+                                            <label class="label">
+                                                <RequiredLabel required=true>
+                                                    {email_label.clone()}
+                                                </RequiredLabel>
+                                            </label>
+                                            <input type="email" class="input input-bordered w-full" autocomplete="email" required on:input=move |ev| set_admin_email.set(event_target_value(&ev)) />
+                                        </div>
+                                        <div class="form-control w-full">
+                                            <label class="label">
+                                                <RequiredLabel required=true>
+                                                    {admin_password_label.clone()}
+                                                </RequiredLabel>
+                                            </label>
+                                            <input type="password" class="input input-bordered w-full" autocomplete="new-password" required minlength="8" on:input=move |ev| set_admin_password.set(event_target_value(&ev)) />
+                                        </div>
                                     </div>
-                                    <div class="form-control w-full mb-4">
-                                        <label class="label">
-                                            <RequiredLabel required=true>
-                                                {last_name_label.clone()}
-                                            </RequiredLabel>
-                                        </label>
-                                        <input type="text" class="input input-bordered w-full" required on:input=move |ev| set_admin_lastname.set(event_target_value(&ev)) />
+
+                                    <div class="flex justify-end">
+                                        <button
+                                            class="btn btn-primary min-w-40"
+                                            on:click=move |_| {
+                                                let firstname = admin_firstname.get();
+                                                let lastname = admin_lastname.get();
+                                                let email = admin_email.get();
+                                                let password = admin_password.get();
+                                                if firstname.trim().is_empty()
+                                                    || lastname.trim().is_empty()
+                                                    || email.trim().is_empty()
+                                                    || password.trim().is_empty()
+                                                {
+                                                    set_setup_error.set(Some(required_error.clone()));
+                                                    return;
+                                                }
+                                                if !is_valid_email(&email) {
+                                                    set_setup_error.set(Some(invalid_email_error.clone()));
+                                                    return;
+                                                }
+                                                set_setup_error.set(None);
+                                                set_step.set(SetupStep::Tenant);
+                                            }
+                                        >
+                                            {continue_label.clone()}
+                                        </button>
                                     </div>
                                 </div>
-                                <div class="form-control w-full mb-4">
-                                    <label class="label">
-                                        <RequiredLabel required=true>
-                                            {email_label.clone()}
-                                        </RequiredLabel>
-                                    </label>
-                                    <input type="email" class="input input-bordered w-full" required on:input=move |ev| set_admin_email.set(event_target_value(&ev)) />
-                                </div>
-                                <div class="form-control w-full mb-6">
-                                    <label class="label">
-                                        <RequiredLabel required=true>
-                                            {admin_password_label.clone()}
-                                        </RequiredLabel>
-                                    </label>
-                                    <input type="password" class="input input-bordered w-full" required minlength="8" on:input=move |ev| set_admin_password.set(event_target_value(&ev)) />
-                                </div>
-                                <button
-                                    class="btn btn-primary w-full"
-                                    on:click=move |_| {
-                                        let firstname = admin_firstname.get();
-                                        let lastname = admin_lastname.get();
-                                        let email = admin_email.get();
-                                        let password = admin_password.get();
-                                        if firstname.trim().is_empty()
-                                            || lastname.trim().is_empty()
-                                            || email.trim().is_empty()
-                                            || password.trim().is_empty()
-                                        {
-                                            set_setup_error.set(Some(required_error.clone()));
-                                            return;
-                                        }
-                                        if !is_valid_email(&email) {
-                                            set_setup_error.set(Some(invalid_email_error.clone()));
-                                            return;
-                                        }
-                                        set_setup_error.set(None);
-                                        set_step.set(SetupStep::Tenant);
-                                    }
-                                >
-                                    {continue_label.clone()}
-                                </button>
                             }
                             .into_any(),
 
                             SetupStep::Tenant => view! {
-                                <h2 class="card-title text-2xl font-bold mb-4">
-                                    {setup_tenant_title.clone()}
-                                </h2>
-                                <p class="mb-6 text-base-content/70">
-                                    {setup_tenant_desc.clone()}
-                                </p>
+                                <div class="space-y-5">
+                                    <div>
+                                        <h3 class="text-lg font-semibold">{setup_tenant_title.clone()}</h3>
+                                        <p class="text-sm text-base-content/70">{setup_tenant_desc.clone()}</p>
+                                        <p class="mt-2 text-sm leading-6 text-base-content/60">
+                                            {setup_tenant_help.clone()}
+                                        </p>
+                                    </div>
 
-                                <div class="form-control w-full mb-4">
+                                    <div class="form-control w-full">
                                         <label class="label">
                                             <RequiredLabel required=true>
                                                 {tenant_name_label.clone()}
                                             </RequiredLabel>
                                         </label>
-                                    <input type="text" placeholder="AgroCorp" class="input input-bordered w-full" required on:input=move |ev| set_tenant_name.set(event_target_value(&ev)) />
-                                </div>
-                                <div class="form-control w-full mb-6">
+                                        <input type="text" placeholder="AgroCorp" class="input input-bordered w-full" autocomplete="organization" required on:input=move |ev| set_tenant_name.set(event_target_value(&ev)) />
+                                    </div>
+
+                                    <div class="form-control w-full">
                                         <label class="label">
                                             <RequiredLabel required=true>
                                                 {tenant_slug_label.clone()}
                                             </RequiredLabel>
                                         </label>
-                                    <input type="text" placeholder="agrocorp" class="input input-bordered w-full" required on:input=move |ev| set_tenant_slug.set(event_target_value(&ev)) />
+                                        <input type="text" placeholder="agrocorp" class="input input-bordered w-full" autocomplete="off" autocapitalize="off" spellcheck="false" required on:input=move |ev| set_tenant_slug.set(event_target_value(&ev)) />
+                                    </div>
+
+                                    <div class="flex justify-end">
+                                        <button
+                                            class="btn btn-primary min-w-40"
+                                            on:click=move |_| {
+                                                let name = tenant_name.get();
+                                                let slug = tenant_slug.get();
+                                                if name.trim().is_empty() || slug.trim().is_empty() {
+                                                    set_setup_error.set(Some(required_error.clone()));
+                                                    return;
+                                                }
+                                                if !slug_is_valid(&slug) {
+                                                    set_setup_error.set(Some(invalid_slug_error.clone()));
+                                                    return;
+                                                }
+                                                set_setup_error.set(None);
+                                                set_step.set(SetupStep::Company);
+                                            }
+                                        >
+                                            {continue_label.clone()}
+                                        </button>
+                                    </div>
                                 </div>
-                                <button
-                                    class="btn btn-primary w-full"
-                                    on:click=move |_| {
-                                        let name = tenant_name.get();
-                                        let slug = tenant_slug.get();
-                                        if name.trim().is_empty() || slug.trim().is_empty() {
-                                            set_setup_error.set(Some(required_error.clone()));
-                                            return;
-                                        }
-                                        if !slug_is_valid(&slug) {
-                                            set_setup_error.set(Some(invalid_slug_error.clone()));
-                                            return;
-                                        }
-                                        set_setup_error.set(None);
-                                        set_step.set(SetupStep::Company);
-                                    }
-                                >
-                                    {continue_label.clone()}
-                                </button>
                             }
                             .into_any(),
 
                             SetupStep::Company => view! {
-                                <h2 class="card-title text-2xl font-bold mb-4">
-                                    {setup_company_title.clone()}
-                                </h2>
-                                <p class="mb-6 text-base-content/70">
-                                    {setup_company_desc.clone()}
-                                </p>
+                                <div class="space-y-5">
+                                    <div>
+                                        <h3 class="text-lg font-semibold">{setup_company_title.clone()}</h3>
+                                        <p class="text-sm text-base-content/70">{setup_company_desc.clone()}</p>
+                                        <p class="mt-2 text-sm leading-6 text-base-content/60">
+                                            {setup_company_help.clone()}
+                                        </p>
+                                    </div>
 
-                                <div class="form-control w-full mb-4">
-                                        <label class="label">
-                                            <RequiredLabel required=true>
-                                                {company_name_label.clone()}
-                                            </RequiredLabel>
-                                        </label>
-                                    <input type="text" class="input input-bordered w-full" required on:input=move |ev| set_company_name.set(event_target_value(&ev)) />
-                                </div>
-                                <div class="form-control w-full mb-4">
-                                        <label class="label">
-                                            <RequiredLabel required=true>
-                                                {company_address_label.clone()}
-                                            </RequiredLabel>
-                                        </label>
-                                    <textarea class="textarea textarea-bordered w-full" required on:input=move |ev| set_company_address.set(event_target_value(&ev))></textarea>
-                                </div>
-                                <div class="grid grid-cols-2 gap-4 mb-6">
-                                    <div class="form-control w-full">
-                                        <label class="label flex items-center justify-between">
-                                            <RequiredLabel required=true>
-                                                {company_country_label.clone()}
-                                            </RequiredLabel>
-                                            <span class="badge badge-outline">{move || country_flag(&company_country.get())}</span>
-                                        </label>
-                                        <input type="text" class="input input-bordered w-full" required on:input=move |ev| set_company_country.set(event_target_value(&ev)) />
+                                    <div class="grid gap-4">
+                                        <div class="form-control w-full">
+                                            <label class="label">
+                                                <RequiredLabel required=true>
+                                                    {company_name_label.clone()}
+                                                </RequiredLabel>
+                                            </label>
+                                            <input type="text" class="input input-bordered w-full" autocomplete="organization" required on:input=move |ev| set_company_name.set(event_target_value(&ev)) />
+                                        </div>
+                                        <div class="form-control w-full">
+                                            <label class="label">
+                                                <RequiredLabel required=true>
+                                                    {company_address_label.clone()}
+                                                </RequiredLabel>
+                                            </label>
+                                            <textarea class="textarea textarea-bordered w-full min-h-28" autocomplete="street-address" required on:input=move |ev| set_company_address.set(event_target_value(&ev))></textarea>
+                                        </div>
                                     </div>
-                                    <div class="form-control w-full">
-                                        <label class="label">
-                                            <span class="label-text">{company_email_label.clone()}</span>
-                                        </label>
-                                        <input type="email" class="input input-bordered w-full" on:input=move |ev| set_company_email.set(event_target_value(&ev)) />
+
+                                    <div class="grid gap-4 md:grid-cols-2">
+                                        <div class="form-control w-full">
+                                            <label class="label flex items-center justify-between">
+                                                <RequiredLabel required=true>
+                                                    {company_country_label.clone()}
+                                                </RequiredLabel>
+                                                <span class="badge">{move || country_flag(&company_country.get())}</span>
+                                            </label>
+                                            <input type="text" class="input input-bordered w-full" autocomplete="country-name" required on:input=move |ev| set_company_country.set(event_target_value(&ev)) />
+                                        </div>
+                                        <div class="form-control w-full">
+                                            <label class="label">
+                                                <span class="label-text flex items-center gap-2">
+                                                    <span>{company_email_label.clone()}</span>
+                                                    <span class="badge badge-ghost badge-sm">{optional_label.clone()}</span>
+                                                </span>
+                                            </label>
+                                            <input type="email" class="input input-bordered w-full" autocomplete="email" on:input=move |ev| set_company_email.set(event_target_value(&ev)) />
+                                        </div>
                                     </div>
+
                                     <div class="form-control w-full">
                                         <label class="label">
                                             <span class="label-text flex items-center gap-2">
@@ -465,126 +577,191 @@ pub fn SetupAssistant() -> impl IntoView {
                                                 <span class="badge badge-ghost badge-sm">{move || company_phone_prefix.get()}</span>
                                             </span>
                                         </label>
-                                        <div class="grid grid-cols-[8rem_1fr] gap-2">
-                                            <select class="select select-bordered w-full" prop:value=move || company_phone_prefix.get() on:change=move |ev| set_company_phone_prefix.set(event_target_value(&ev))>
+                                        <div class="join w-full">
+                                            <select class="select select-bordered join-item w-36" prop:value=move || company_phone_prefix.get() on:change=move |ev| set_company_phone_prefix.set(event_target_value(&ev))>
                                                 {PHONE_PREFIXES.iter().map(|(prefix, country)| {
                                                     view! {
                                                         <option value=*prefix>{format!("{prefix} {country}")}</option>
                                                     }
                                                 }).collect::<Vec<_>>()}
                                             </select>
-                                            <input type="tel" class="input input-bordered w-full" on:input=move |ev| set_company_phone_local.set(event_target_value(&ev)) />
+                                            <input type="tel" class="input input-bordered join-item w-full" autocomplete="tel" on:input=move |ev| set_company_phone_local.set(event_target_value(&ev)) />
                                         </div>
                                     </div>
+
+                                    <div class="flex justify-end">
+                                        <button
+                                            class="btn btn-primary min-w-40"
+                                            on:click=move |_| {
+                                                let name = company_name.get();
+                                                let address = company_address.get();
+                                                let country = company_country.get();
+                                                if name.trim().is_empty() || address.trim().is_empty() || country.trim().is_empty() {
+                                                    set_setup_error.set(Some(required_error.clone()));
+                                                    return;
+                                                }
+                                                if let Some(email) = {
+                                                    let value = company_email.get();
+                                                    if value.trim().is_empty() {
+                                                        None
+                                                    } else {
+                                                        Some(value)
+                                                    }
+                                                } {
+                                                    if !is_valid_email(&email) {
+                                                        set_setup_error.set(Some(invalid_email_error.clone()));
+                                                        return;
+                                                    }
+                                                }
+                                                let phone_local = company_phone_local.get();
+                                                if !phone_local.trim().is_empty() {
+                                                    let prefix = company_phone_prefix.get();
+                                                    let phone = normalize_phone(&prefix, &phone_local);
+                                                    if phone.is_none() {
+                                                        set_setup_error.set(Some(invalid_phone_error.clone()));
+                                                        return;
+                                                    }
+                                                }
+                                                set_setup_error.set(None);
+                                                set_step.set(SetupStep::Resources);
+                                            }
+                                        >
+                                            {continue_label.clone()}
+                                        </button>
+                                    </div>
                                 </div>
-                                <button
-                                    class="btn btn-primary w-full"
-                                    on:click=move |_| {
-                                        let name = company_name.get();
-                                        let address = company_address.get();
-                                        let country = company_country.get();
-                                        if name.trim().is_empty() || address.trim().is_empty() || country.trim().is_empty() {
-                                            set_setup_error.set(Some(required_error.clone()));
-                                            return;
-                                        }
-                                        if let Some(email) = {
-                                            let value = company_email.get();
-                                            if value.trim().is_empty() {
-                                                None
-                                            } else {
-                                                Some(value)
-                                            }
-                                        } {
-                                            if !is_valid_email(&email) {
-                                                set_setup_error.set(Some(invalid_email_error.clone()));
-                                                return;
-                                            }
-                                        }
-                                        let phone_local = company_phone_local.get();
-                                        if !phone_local.trim().is_empty() {
-                                            let prefix = company_phone_prefix.get();
-                                            let phone = normalize_phone(&prefix, &phone_local);
-                                            if phone.is_none() {
-                                                set_setup_error.set(Some(invalid_phone_error.clone()));
-                                                return;
-                                            }
-                                        }
-                                        set_setup_error.set(None);
-                                        set_step.set(SetupStep::Resources);
-                                    }
-                                >
-                                    {continue_label.clone()}
-                                </button>
                             }
                             .into_any(),
 
                             SetupStep::Resources => view! {
-                                <h2 class="card-title text-2xl font-bold mb-4">
-                                    {setup_resources_title.clone()}
-                                </h2>
-                                <p class="mb-6 text-base-content/70">
-                                    {setup_resources_desc.clone()}
-                                </p>
+                                <div class="space-y-6">
+                                    <div>
+                                        <h3 class="text-lg font-semibold">{setup_resources_title.clone()}</h3>
+                                        <p class="text-sm text-base-content/70">{setup_resources_desc.clone()}</p>
+                                        <p class="mt-2 text-sm leading-6 text-base-content/60">
+                                            {setup_resources_help.clone()}
+                                        </p>
+                                    </div>
 
-                                <div class="form-control w-full mb-4">
-                                    <label class="label"><span class="label-text">{setup_resource_type.clone()}</span></label>
-                                    <select class="select select-bordered w-full" on:change=move |ev| set_resource_type.set(event_target_value(&ev))>
-                                        <option value="field_management">{field_management_label.clone()}</option>
-                                        <option value="PlantProtection">{task_protection_label.clone()}</option>
-                                        <option value="CostTracking">{resources_label.clone()}</option>
-                                    </select>
+                                    <div class="grid gap-3 md:grid-cols-3">
+                                        <label class="card border border-base-300 bg-base-100 shadow-sm cursor-pointer transition-colors hover:border-primary/60 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                                            <div class="card-body p-4">
+                                                <div class="flex items-center justify-between gap-3">
+                                                    <div>
+                                                        <div class="font-semibold">{field_management_label.clone()}</div>
+                                                        <div class="text-xs text-base-content/60">{setup_resource_type.clone()}</div>
+                                                    </div>
+                                                    <input
+                                                        type="radio"
+                                                        class="radio radio-primary"
+                                                        name="resource_type"
+                                                        value="field_management"
+                                                        prop:checked=move || resource_type.get() == "field_management"
+                                                        on:change=move |_| set_resource_type.set(String::from("field_management"))
+                                                    />
+                                                </div>
+                                            </div>
+                                        </label>
+
+                                        <label class="card border border-base-300 bg-base-100 shadow-sm cursor-pointer transition-colors hover:border-primary/60 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                                            <div class="card-body p-4">
+                                                <div class="flex items-center justify-between gap-3">
+                                                    <div>
+                                                        <div class="font-semibold">{task_protection_label.clone()}</div>
+                                                        <div class="text-xs text-base-content/60">{setup_resources_desc.clone()}</div>
+                                                    </div>
+                                                    <input
+                                                        type="radio"
+                                                        class="radio radio-primary"
+                                                        name="resource_type"
+                                                        value="PlantProtection"
+                                                        prop:checked=move || resource_type.get() == "PlantProtection"
+                                                        on:change=move |_| set_resource_type.set(String::from("PlantProtection"))
+                                                    />
+                                                </div>
+                                            </div>
+                                        </label>
+
+                                        <label class="card border border-base-300 bg-base-100 shadow-sm cursor-pointer transition-colors hover:border-primary/60 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                                            <div class="card-body p-4">
+                                                <div class="flex items-center justify-between gap-3">
+                                                    <div>
+                                                        <div class="font-semibold">{resources_label.clone()}</div>
+                                                        <div class="text-xs text-base-content/60">{setup_equipment.clone()}</div>
+                                                    </div>
+                                                    <input
+                                                        type="radio"
+                                                        class="radio radio-primary"
+                                                        name="resource_type"
+                                                        value="CostTracking"
+                                                        prop:checked=move || resource_type.get() == "CostTracking"
+                                                        on:change=move |_| set_resource_type.set(String::from("CostTracking"))
+                                                    />
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <div class="divider my-0">{setup_equipment.clone()}</div>
+                                    <div class="form-control w-full">
+                                        <label class="label">
+                                            <span class="label-text">{setup_first_machine.clone()}</span>
+                                        </label>
+                                        <input type="text" placeholder={setup_first_machine_placeholder.clone()} class="input input-bordered w-full" autocomplete="off" />
+                                    </div>
+
+                                    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
+                                        <button
+                                            class="btn btn-success min-w-40"
+                                            class:loading=move || matches!(setup_status.get(), Some(Err(msg)) if msg == starting_setup_label_loading_class)
+                                            prop:disabled=move || matches!(setup_status.get(), Some(Err(msg)) if msg == starting_setup_label_loading_disabled)
+                                            on:click=move |_| {
+                                                submit_setup(
+                                                    submit_i18n.clone(),
+                                                    lang.get(),
+                                                    admin_firstname.get(),
+                                                    admin_lastname.get(),
+                                                    admin_email.get(),
+                                                    admin_password.get(),
+                                                    tenant_name.get(),
+                                                    tenant_slug.get(),
+                                                    company_name.get(),
+                                                    company_address.get(),
+                                                    company_country.get(),
+                                                    company_email.get(),
+                                                    company_phone_prefix.get(),
+                                                    company_phone_local.get(),
+                                                    set_setup_status,
+                                                    set_setup_error,
+                                                );
+                                            }
+                                        >
+                                            {finish_label.clone()}
+                                        </button>
+                                    </div>
+
+                                    {move || match setup_status.get() {
+                                        Some(Err(msg)) if msg == starting_setup_label_status => view! {
+                                            <div class="alert alert-info">
+                                                <span>{setup_t(&submit_i18n_status, lang.get(), "redirecting")}</span>
+                                            </div>
+                                        }.into_any(),
+                                        Some(Err(msg)) => view! {
+                                            <div class="alert alert-error">
+                                                <span>{msg}</span>
+                                            </div>
+                                        }.into_any(),
+                                        _ => view! {
+                                            <div class="hidden"></div>
+                                        }.into_any(),
+                                    }}
                                 </div>
-
-                                <div class="divider">{setup_equipment.clone()}</div>
-                                <div class="form-control w-full mb-6">
-                                    <label class="label"><span class="label-text">{setup_first_machine.clone()}</span></label>
-                                    <input type="text" placeholder={setup_first_machine_placeholder.clone()} class="input input-bordered w-full" />
-                                </div>
-
-                                <button
-                                    class="btn btn-success w-full"
-                                    class:btn-disabled=move || setup_status.get().map(|s| s.is_ok()).unwrap_or(false)
-                                    on:click=move |_| {
-                                        submit_setup(
-                                            submit_i18n.clone(),
-                                            lang.get(),
-                                            admin_firstname.get(),
-                                            admin_lastname.get(),
-                                            admin_email.get(),
-                                            admin_password.get(),
-                                            tenant_name.get(),
-                                            tenant_slug.get(),
-                                            company_name.get(),
-                                            company_address.get(),
-                                            company_country.get(),
-                                            company_email.get(),
-                                            company_phone_prefix.get(),
-                                            company_phone_local.get(),
-                                            set_setup_status,
-                                            set_setup_error,
-                                        );
-                                    }
-                                >
-                                    {finish_label.clone()}
-                                </button>
-                                {move || match setup_status.get() {
-                                    Some(Err(msg)) if msg == starting_setup_label => view! {
-                                        <p class="mt-3 text-sm text-info">{setup_t(&submit_i18n_status, lang.get(), "redirecting")}</p>
-                                    }.into_any(),
-                                    Some(Err(msg)) => view! {
-                                        <div class="alert alert-error mt-3">
-                                            <span>{msg}</span>
-                                        </div>
-                                    }.into_any(),
-                                    _ => view! {
-                                        <div class="hidden"></div>
-                                    }.into_any(),
-                                }}
                             }
                             .into_any(),
-                        }
-                    }}
-                </div>
+                            }}}
+                        </div>
+                    </div>
+                </main>
             </div>
         </div>
     }

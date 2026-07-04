@@ -48,6 +48,10 @@ fn test_api_order_dto_validation() {
         order_type: OrderType::Harvest,
         site_ids: vec![],
         assigned_worker_ids: None,
+        planned_date: None,
+        deadline_date: None,
+        recurrence: None,
+        execution_policy: None,
     };
     assert!(dto.validate().is_err());
 

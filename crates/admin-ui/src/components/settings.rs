@@ -3,7 +3,7 @@ use crate::components::form::{
     country_flag, is_valid_email, language_flag, normalize_phone, split_phone, RequiredLabel,
     PHONE_PREFIXES,
 };
-use crate::i18n::{I18n, Language};
+use crate::i18n::{I18n, Language, LANGUAGE_OPTIONS};
 use icondata::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -48,6 +48,7 @@ pub fn SettingsPage() -> impl IntoView {
     let system_log_title = i18n.t(lang.get().as_str(), "system_log_title");
     let time_label = i18n.t(lang.get().as_str(), "time");
     let initialized_label = i18n.t(lang.get().as_str(), "initialized");
+    let i18n_for_language_options = i18n.clone();
     let (company_name, set_company_name) = signal(initial_profile.company_name.unwrap_or_default());
     let (tax_id, set_tax_id) = signal(initial_profile.tax_id.unwrap_or_default());
     let (office_email, set_office_email) = signal(initial_profile.office_email.unwrap_or_default());
@@ -275,11 +276,15 @@ pub fn SettingsPage() -> impl IntoView {
                                             }
                                         }
                                     >
-                                        <option value="de" selected=move || lang.get() == Language::DE>{format!("{} {}", language_flag("de"), i18n.t(lang.get().as_str(), "language_de"))}</option>
-                                        <option value="en" selected=move || lang.get() == Language::EN>{format!("{} {}", language_flag("en"), i18n.t(lang.get().as_str(), "language_en"))}</option>
-                                        <option value="es" selected=move || lang.get() == Language::ES>{format!("{} {}", language_flag("es"), i18n.t(lang.get().as_str(), "language_es"))}</option>
-                                        <option value="fr" selected=move || lang.get() == Language::FR>{format!("{} {}", language_flag("fr"), i18n.t(lang.get().as_str(), "language_fr"))}</option>
-                                        <option value="pt" selected=move || lang.get() == Language::PT>{format!("{} {}", language_flag("pt"), i18n.t(lang.get().as_str(), "language_pt"))}</option>
+                                        {LANGUAGE_OPTIONS.iter().map(|(language, code, label_key)| {
+                                            let i18n = i18n_for_language_options.clone();
+                                            let selected = move || lang.get() == *language;
+                                            view! {
+                                                <option value=*code selected=selected>
+                                                    {move || format!("{} {}", language_flag(code), i18n.t(lang.get().as_str(), label_key))}
+                                                </option>
+                                            }
+                                        }).collect::<Vec<_>>()}
                                     </select>
                                 </div>
                                 <div class="form-control w-full">

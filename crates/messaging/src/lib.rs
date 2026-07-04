@@ -1,6 +1,8 @@
 use agrocore_domain::entities::compliance::AuditLog;
 use agrocore_domain::entities::order::Order;
+use agrocore_domain::entities::site::GeoPoint;
 use agrocore_domain::entities::site::Site;
+use agrocore_domain::entities::spatial::SpatialObjectType;
 use agrocore_domain::entities::user::User;
 use agrocore_domain::entities::weather::{PhenologyRecord, WeatherData, WeatherStation};
 use async_nats::Client;
@@ -35,6 +37,30 @@ pub enum GlobalEvent {
     UserCreated(User),
     UserUpdated(User),
     UserDeleted(Uuid),
+    SpatialPolygonEntered(SpatialPresenceEvent),
+    SpatialPolygonIn(SpatialPresenceEvent),
+    SpatialPolygonLeft(SpatialPresenceEvent),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+pub enum SpatialPolygonEventKind {
+    EnteredPolygon,
+    InPolygon,
+    LeftPolygon,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SpatialPresenceEvent {
+    pub tenant_id: Uuid,
+    pub worker_id: Uuid,
+    pub spatial_object_id: Uuid,
+    pub spatial_object_type: SpatialObjectType,
+    pub spatial_object_label: String,
+    pub site_id: Option<Uuid>,
+    pub parent_id: Option<Uuid>,
+    pub location: GeoPoint,
+    pub observed_at: DateTime<Utc>,
+    pub kind: SpatialPolygonEventKind,
 }
 
 impl<T> Event<T> {

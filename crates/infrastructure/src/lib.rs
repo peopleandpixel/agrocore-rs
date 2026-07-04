@@ -13,7 +13,9 @@ pub use repositories::{ColdChainLogRepo, HarvestDeliveryRepo, HarvestLotRepo, Ha
 pub use repositories::{CostCenterRepo, FinancialRecordRepo, PACApplicationRepo};
 pub use repositories::{KelterDeliveryRepo, VineyardRepo};
 pub use repositories::{OliveGroveRepo, OliveOilRecordRepo};
-pub use repositories::{OrderRepo, SiteRepo, TaskDataRepo, TenantRepo, UserRepo};
+pub use repositories::{
+    OrderRepo, SiteRepo, SpatialObjectRepo, TaskDataRepo, TenantRepo, UserRepo,
+};
 pub use repositories::{PhenologyRecordRepo, WeatherDataRepo, WeatherStationRepo};
 pub use repositories::{WaterQuotaRepo, WaterSourceRepo, WaterUsageRepo};
 pub use repositories::{WorkLogRepo, WorkerLocationRepo, WorkerRepo};
@@ -183,10 +185,24 @@ impl Database {
 
         let worker_collection =
             self.collection::<agrocore_domain::entities::workforce::Worker>("workers");
+        worker_collection
+            .create_index(
+                IndexModel::builder()
+                    .keys(doc! { "tenant_id": 1, "user_id": 1 })
+                    .build(),
+            )
+            .await?;
         create_active_updated_index(&worker_collection).await?;
 
         let work_log_collection =
             self.collection::<agrocore_domain::entities::workforce::WorkLog>("work_logs");
+        work_log_collection
+            .create_index(
+                IndexModel::builder()
+                    .keys(doc! { "tenant_id": 1, "worker_id": 1, "date": -1 })
+                    .build(),
+            )
+            .await?;
         create_active_updated_index(&work_log_collection).await?;
 
         let worker_location_collection = self
@@ -242,6 +258,24 @@ impl Database {
         let animal_collection =
             self.collection::<agrocore_domain::entities::livestock::Animal>("animals");
         create_active_updated_index(&animal_collection).await?;
+
+        let spatial_collection =
+            self.collection::<agrocore_domain::entities::spatial::SpatialObject>("spatial_objects");
+        spatial_collection
+            .create_index(
+                IndexModel::builder()
+                    .keys(doc! { "tenant_id": 1, "site_id": 1, "object_type": 1 })
+                    .build(),
+            )
+            .await?;
+        spatial_collection
+            .create_index(
+                IndexModel::builder()
+                    .keys(doc! { "tenant_id": 1, "parent_id": 1 })
+                    .build(),
+            )
+            .await?;
+        create_active_updated_index(&spatial_collection).await?;
 
         Ok(())
     }
@@ -380,5 +414,9 @@ impl Database {
 
     pub fn animal_repo(&self) -> AnimalRepo {
         AnimalRepo::new(self.collection("animals"))
+    }
+
+    pub fn spatial_object_repo(&self) -> SpatialObjectRepo {
+        SpatialObjectRepo::new(self.collection("spatial_objects"))
     }
 }

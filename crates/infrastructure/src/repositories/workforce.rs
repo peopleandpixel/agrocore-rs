@@ -36,6 +36,14 @@ impl WorkerRepo {
     ) -> RepositoryFuture<PaginatedResponse<Worker>> {
         self.base.find_all(tid, p)
     }
+    pub fn find_by_user_id(&self, tid: TenantId, user_id: Uuid) -> Fut<Option<Worker>> {
+        let c = self.base.collection.clone();
+        Box::pin(async move {
+            c.find_one(doc! { "tenant_id": tid.to_string(), "user_id": user_id.to_string(), "is_active": { "$ne": false } })
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))
+        })
+    }
     pub fn create(&self, tid: TenantId, dto: CreateWorkerDto) -> Fut<Worker> {
         let c = self.base.collection.clone();
         Box::pin(async move {
@@ -172,6 +180,34 @@ impl WorkerLocationRepo {
                 result.push(loc);
             }
             Ok(result)
+        })
+    }
+
+    pub fn find_latest_by_worker(
+        &self,
+        tid: TenantId,
+        worker_id: Uuid,
+    ) -> Fut<Option<WorkerLocation>> {
+        let c = self.base.collection.clone();
+        Box::pin(async move {
+            let pipeline = vec![
+                doc! { "$match": { "tenant_id": tid.to_string(), "worker_id": worker_id.to_string() } },
+                doc! { "$sort": { "timestamp": -1 } },
+                doc! { "$limit": 1 },
+            ];
+            let mut cursor = c
+                .aggregate(pipeline)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            if let Some(doc) = cursor.next().await {
+                let doc = doc.map_err(|e| SharedError::Database(e.to_string()))?;
+                let loc: WorkerLocation = mongodb::bson::from_document(doc)
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
+                Ok(Some(loc))
+            } else {
+                Ok(None)
+            }
         })
     }
 }

@@ -60,7 +60,17 @@ impl OrderRepo {
     pub fn find_my_tasks(&self, tid: TenantId, wid: Uuid) -> Fut<Vec<MyTask>> {
         let c = self.base.collection.clone();
         Box::pin(async move {
-            let f = doc! {"tenant_id":tid.to_string(),"assigned_worker_ids":wid.to_string(),"status":{"$ne":"completed"}};
+            let now = mongodb::bson::DateTime::now();
+            let f = doc! {
+                "tenant_id": tid.to_string(),
+                "assigned_worker_ids": wid.to_string(),
+                "status": {"$ne": "completed"},
+                "$or": [
+                    { "planned_date": { "$lte": now } },
+                    { "planned_date": { "$exists": false } },
+                    { "planned_date": null }
+                ]
+            };
             let opts = FindOptions::builder()
                 .sort(doc! {"deadline_date":1})
                 .build();
@@ -86,6 +96,31 @@ impl OrderRepo {
             Ok(tasks)
         })
     }
+
+    pub fn find_assigned_to_worker(&self, tid: TenantId, wid: Uuid) -> Fut<Vec<Order>> {
+        let c = self.base.collection.clone();
+        Box::pin(async move {
+            let f = doc! {
+                "tenant_id": tid.to_string(),
+                "assigned_worker_ids": wid.to_string(),
+                "status": { "$nin": ["completed", "cancelled"] }
+            };
+            let opts = FindOptions::builder()
+                .sort(doc! {"planned_date": 1, "deadline_date": 1})
+                .build();
+            let mut cur = c
+                .find(f)
+                .with_options(opts)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let mut orders = Vec::new();
+            while let Some(r) = cur.next().await {
+                let o = r.map_err(|e| SharedError::Database(e.to_string()))?;
+                orders.push(o);
+            }
+            Ok(orders)
+        })
+    }
     pub fn create(&self, tid: TenantId, dto: CreateOrderDto, by: Uuid) -> Fut<Order> {
         let c = self.base.collection.clone();
         Box::pin(async move {
@@ -102,6 +137,10 @@ impl OrderRepo {
                 deadline_date: dto.deadline_date,
                 started_at: None,
                 completed_at: None,
+                last_completed_at: None,
+                recurrence: dto.recurrence,
+                execution_policy: dto.execution_policy,
+                automation_state: None,
                 articles: dto.articles,
                 quantities: dto.quantities,
                 results: None,
@@ -138,14 +177,56 @@ impl OrderRepo {
             if let Some(v) = dto.status {
                 d.insert("status", mongodb::bson::to_bson(&v).unwrap());
             }
+            if let Some(v) = dto.site_ids {
+                d.insert("site_ids", mongodb::bson::to_bson(&v).unwrap());
+            }
+            if let Some(v) = dto.assigned_worker_ids {
+                d.insert("assigned_worker_ids", mongodb::bson::to_bson(&v).unwrap());
+            }
+            if let Some(v) = dto.planned_date {
+                d.insert("planned_date", mongodb::bson::to_bson(&v).unwrap());
+            }
+            if let Some(v) = dto.deadline_date {
+                d.insert("deadline_date", mongodb::bson::to_bson(&v).unwrap());
+            }
+            if let Some(v) = dto.started_at {
+                d.insert("started_at", mongodb::bson::to_bson(&v).unwrap());
+            }
+            if let Some(v) = dto.completed_at {
+                d.insert("completed_at", mongodb::bson::to_bson(&v).unwrap());
+            }
+            if let Some(v) = dto.last_completed_at {
+                d.insert("last_completed_at", mongodb::bson::to_bson(&v).unwrap());
+            }
             if let Some(v) = dto.results {
                 d.insert("results", v);
+            }
+            if let Some(v) = dto.articles {
+                d.insert("articles", mongodb::bson::to_bson(&v).unwrap());
+            }
+            if let Some(v) = dto.quantities {
+                d.insert("quantities", mongodb::bson::to_bson(&v).unwrap());
+            }
+            if let Some(v) = dto.custom_fields {
+                d.insert("custom_fields", mongodb::bson::to_bson(&v).unwrap());
+            }
+            if let Some(v) = dto.parent_order_id {
+                d.insert("parent_order_id", v.to_string());
             }
             if let Some(v) = dto.cost_center_id {
                 d.insert("cost_center_id", v.to_string());
             }
             if let Some(v) = dto.workflow_config {
                 d.insert("workflow_config", mongodb::bson::to_bson(&v).unwrap());
+            }
+            if let Some(v) = dto.recurrence {
+                d.insert("recurrence", mongodb::bson::to_bson(&v).unwrap());
+            }
+            if let Some(v) = dto.execution_policy {
+                d.insert("execution_policy", mongodb::bson::to_bson(&v).unwrap());
+            }
+            if let Some(v) = dto.automation_state {
+                d.insert("automation_state", mongodb::bson::to_bson(&v).unwrap());
             }
             if let Some(v) = dto.is_active {
                 d.insert("is_active", v);

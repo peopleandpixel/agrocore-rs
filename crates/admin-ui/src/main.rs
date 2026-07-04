@@ -55,7 +55,17 @@ impl Theme {
 
 #[component]
 pub fn App() -> impl IntoView {
-    let (user_role, set_user_role) = signal(UserRole::Admin);
+    let initial_role = api::user_role()
+        .as_deref()
+        .map(|role| match role {
+            "Admin" => UserRole::Admin,
+            "Manager" => UserRole::Manager,
+            "Worker" => UserRole::Worker,
+            "Viewer" => UserRole::Viewer,
+            _ => UserRole::Viewer,
+        })
+        .unwrap_or(UserRole::Viewer);
+    let (user_role, _set_user_role) = signal(initial_role);
     let (view_mode, set_view_mode) = signal(ViewMode::Full);
     let (theme, set_theme) = signal(Theme::Light);
     let initial_lang = web_sys::window()
@@ -78,7 +88,6 @@ pub fn App() -> impl IntoView {
     let has_token = move || api::auth_token().is_some();
 
     provide_context(user_role);
-    provide_context(set_user_role);
     provide_context(view_mode);
     provide_context(set_view_mode);
     provide_context(theme);
@@ -109,7 +118,6 @@ pub fn App() -> impl IntoView {
             <Show when=move || has_token() fallback=|| view! { <LoginView /> }>
                 <AuthenticatedShell
                     user_role=user_role
-                    set_user_role=set_user_role
                     view_mode=view_mode
                     set_view_mode=set_view_mode
                     theme=theme
@@ -123,7 +131,6 @@ pub fn App() -> impl IntoView {
 #[component]
 fn AuthenticatedShell(
     user_role: ReadSignal<UserRole>,
-    set_user_role: WriteSignal<UserRole>,
     view_mode: ReadSignal<ViewMode>,
     set_view_mode: WriteSignal<ViewMode>,
     theme: ReadSignal<Theme>,
@@ -131,13 +138,10 @@ fn AuthenticatedShell(
 ) -> impl IntoView {
     let i18n = use_context::<i18n::I18n>().expect("i18n context");
     let lang = use_context::<ReadSignal<i18n::Language>>().expect("lang signal");
-    let role_simulate: &'static str = Box::leak(
-        i18n.t(lang.get().as_str(), "role_simulate")
-            .into_boxed_str(),
-    );
     let simple_label: &'static str =
-        Box::leak(i18n.t(lang.get().as_str(), "simple").into_boxed_str());
-    let full_label: &'static str = Box::leak(i18n.t(lang.get().as_str(), "full").into_boxed_str());
+        Box::leak(i18n.t(lang.get().as_str(), "mode_simple").into_boxed_str());
+    let full_label: &'static str =
+        Box::leak(i18n.t(lang.get().as_str(), "mode_full").into_boxed_str());
     let not_found_label: &'static str =
         Box::leak(i18n.t(lang.get().as_str(), "not_found").into_boxed_str());
     let nav_dashboard: &'static str = Box::leak(
@@ -201,10 +205,6 @@ fn AuthenticatedShell(
                 </div>
 
                 <div class="flex gap-2 mb-8 p-4 bg-base-200 rounded-box">
-                    <span class="self-center font-bold">{role_simulate}</span>
-                    <button class="btn btn-sm" on:click=move |_| set_user_role.set(UserRole::Admin)>"Admin"</button>
-                    <button class="btn btn-sm" on:click=move |_| set_user_role.set(UserRole::Manager)>"Manager"</button>
-                    <button class="btn btn-sm" on:click=move |_| set_user_role.set(UserRole::Worker)>"Worker"</button>
                     <button class="btn btn-sm btn-outline" on:click=move |_| {
                         set_view_mode.set(if view_mode.get() == ViewMode::Full { ViewMode::Simple } else { ViewMode::Full });
                     }>
@@ -294,9 +294,10 @@ fn AuthenticatedShell(
                         </li>
                         <li>
                             <a class="text-error" on:click=move |_| {
-                                api::clear_auth_token();
-                                let _ = window().location().reload();
-                            }>
+                            api::clear_auth_token();
+                            api::clear_user_role();
+                            let _ = window().location().reload();
+                        }>
                                 <Icon icon=LuLogOut width="20" height="20" />
                                 {logout_label}
                             </a>

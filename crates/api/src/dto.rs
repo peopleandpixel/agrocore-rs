@@ -3,7 +3,8 @@ use agrocore_domain::entities::equipment::{
     UpdateEquipmentDto as DomainUpdateEquipmentDto,
 };
 use agrocore_domain::entities::order::{
-    CreateOrderDto as DomainCreateOrderDto, Order, UpdateOrderDto as DomainUpdateOrderDto,
+    CreateOrderDto as DomainCreateOrderDto, Order, RecurrenceRule, TaskExecutionPolicy,
+    UpdateOrderDto as DomainUpdateOrderDto,
 };
 use agrocore_domain::entities::plant_protection::PlantProtectionAreaMethod;
 use agrocore_domain::entities::site::{
@@ -350,6 +351,9 @@ pub struct OrderDto {
     pub deadline_date: Option<String>,
     pub started_at: Option<String>,
     pub completed_at: Option<String>,
+    pub last_completed_at: Option<String>,
+    pub recurrence: Option<RecurrenceRule>,
+    pub execution_policy: Option<TaskExecutionPolicy>,
     pub is_active: bool,
     pub created_at: String,
     pub updated_at: String,
@@ -369,6 +373,9 @@ impl From<Order> for OrderDto {
             deadline_date: o.deadline_date.map(|d| d.to_rfc3339()),
             started_at: o.started_at.map(|d| d.to_rfc3339()),
             completed_at: o.completed_at.map(|d| d.to_rfc3339()),
+            last_completed_at: o.last_completed_at.map(|d| d.to_rfc3339()),
+            recurrence: o.recurrence,
+            execution_policy: o.execution_policy,
             is_active: o.is_active,
             created_at: o.created_at.to_rfc3339(),
             updated_at: o.updated_at.to_rfc3339(),
@@ -384,6 +391,10 @@ pub struct CreateOrderDto {
     #[validate(length(min = 1))]
     pub site_ids: Vec<Uuid>,
     pub assigned_worker_ids: Option<Vec<Uuid>>,
+    pub planned_date: Option<chrono::DateTime<chrono::Utc>>,
+    pub deadline_date: Option<chrono::DateTime<chrono::Utc>>,
+    pub recurrence: Option<RecurrenceRule>,
+    pub execution_policy: Option<TaskExecutionPolicy>,
 }
 
 impl From<CreateOrderDto> for DomainCreateOrderDto {
@@ -393,13 +404,15 @@ impl From<CreateOrderDto> for DomainCreateOrderDto {
             order_type: dto.order_type,
             site_ids: dto.site_ids,
             assigned_worker_ids: dto.assigned_worker_ids,
-            planned_date: None,
-            deadline_date: None,
+            planned_date: dto.planned_date,
+            deadline_date: dto.deadline_date,
             articles: None,
             quantities: None,
             custom_fields: None,
             parent_order_id: None,
             workflow_config: None,
+            recurrence: dto.recurrence,
+            execution_policy: dto.execution_policy,
             cost_center_id: None,
         }
     }
@@ -413,6 +426,10 @@ pub struct UpdateOrderDto {
     #[validate(length(min = 1))]
     pub site_ids: Option<Vec<Uuid>>,
     pub assigned_worker_ids: Option<Vec<Uuid>>,
+    pub planned_date: Option<chrono::DateTime<chrono::Utc>>,
+    pub deadline_date: Option<chrono::DateTime<chrono::Utc>>,
+    pub recurrence: Option<RecurrenceRule>,
+    pub execution_policy: Option<TaskExecutionPolicy>,
     pub is_active: Option<bool>,
 }
 
@@ -423,6 +440,10 @@ impl From<UpdateOrderDto> for DomainUpdateOrderDto {
             status: dto.status,
             site_ids: dto.site_ids,
             assigned_worker_ids: dto.assigned_worker_ids,
+            planned_date: dto.planned_date,
+            deadline_date: dto.deadline_date,
+            recurrence: dto.recurrence,
+            execution_policy: dto.execution_policy,
             is_active: dto.is_active,
             ..Default::default()
         }
@@ -697,11 +718,21 @@ mod tests {
     fn create_order_dto_into_domain_keeps_assignment_information() {
         let site_ids = vec![Uuid::new_v4(), Uuid::new_v4()];
         let worker_ids = vec![Uuid::new_v4()];
+        let recurrence = RecurrenceRule {
+            cadence: agrocore_domain::entities::order::RecurrenceCadence::Daily,
+            every: 2,
+            day_of_month: None,
+            month: None,
+        };
         let dto = CreateOrderDto {
             label: String::from("Harvest 2026"),
             order_type: OrderType::Harvest,
             site_ids: site_ids.clone(),
             assigned_worker_ids: Some(worker_ids.clone()),
+            planned_date: None,
+            deadline_date: None,
+            recurrence: Some(recurrence.clone()),
+            execution_policy: None,
         };
 
         let domain: agrocore_domain::entities::order::CreateOrderDto = dto.into();
@@ -711,6 +742,8 @@ mod tests {
         assert_eq!(domain.assigned_worker_ids, Some(worker_ids));
         assert!(domain.planned_date.is_none());
         assert!(domain.deadline_date.is_none());
+        assert_eq!(domain.recurrence, Some(recurrence));
+        assert!(domain.execution_policy.is_none());
         assert!(domain.workflow_config.is_none());
     }
 

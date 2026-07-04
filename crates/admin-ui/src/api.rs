@@ -69,6 +69,7 @@ pub struct WeatherSnapshot {
 }
 
 const COMPANY_PROFILE_KEY: &str = "agrocore.company_profile";
+const USER_ROLE_KEY: &str = "agrocore.user_role";
 
 pub fn load_company_profile() -> Option<CompanyProfile> {
     storage()?
@@ -233,6 +234,22 @@ pub fn set_auth_token(token: &str) {
 pub fn clear_auth_token() {
     if let Some(storage) = storage() {
         let _ = storage.remove_item("agrocore.auth_token");
+    }
+}
+
+pub fn set_user_role(role: &str) {
+    if let Some(storage) = storage() {
+        let _ = storage.set_item(USER_ROLE_KEY, role);
+    }
+}
+
+pub fn user_role() -> Option<String> {
+    storage()?.get_item(USER_ROLE_KEY).ok().flatten()
+}
+
+pub fn clear_user_role() {
+    if let Some(storage) = storage() {
+        let _ = storage.remove_item(USER_ROLE_KEY);
     }
 }
 
@@ -437,9 +454,19 @@ pub struct OrderDto {
     pub deadline_date: Option<String>,
     pub started_at: Option<String>,
     pub completed_at: Option<String>,
+    pub last_completed_at: Option<String>,
+    pub recurrence: Option<RecurrenceRule>,
     pub is_active: bool,
     pub created_at: String,
     pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RecurrenceRule {
+    pub cadence: String,
+    pub every: u32,
+    pub day_of_month: Option<u32>,
+    pub month: Option<u32>,
 }
 
 pub async fn fetch_users() -> Result<PaginatedResponse<UserDto>, String> {
@@ -533,6 +560,9 @@ pub struct CreateOrderRequest {
     pub order_type: String,
     pub site_ids: Vec<uuid::Uuid>,
     pub assigned_worker_ids: Option<Vec<uuid::Uuid>>,
+    pub planned_date: Option<String>,
+    pub deadline_date: Option<String>,
+    pub recurrence: Option<RecurrenceRule>,
 }
 
 pub async fn create_user(req: CreateUserRequest) -> Result<UserDto, String> {

@@ -25,7 +25,7 @@ pub struct SigpacData {
     pub usage_code: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema, PartialEq)]
 pub struct GeoPoint {
     #[validate(range(min = -180.0, max = 180.0))]
     pub lng: f64,

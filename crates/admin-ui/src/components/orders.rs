@@ -20,6 +20,9 @@ fn submit_order(
                     order_type,
                     site_ids: vec![site_uuid],
                     assigned_worker_ids: None,
+                    planned_date: None,
+                    deadline_date: None,
+                    recurrence: None,
                 })
                 .await
                 {
@@ -53,6 +56,66 @@ pub fn OrderList() -> impl IntoView {
     let _task_protection = i18n.t(lang.get().as_str(), "task_protection");
     let _task_harvest = i18n.t(lang.get().as_str(), "task_harvest");
     let _required_error = i18n.t(lang.get().as_str(), "validation_required");
+    let order_type_plant_protection: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "order_type_plant_protection")
+            .into_boxed_str(),
+    );
+    let order_type_fertilization: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "order_type_fertilization")
+            .into_boxed_str(),
+    );
+    let order_type_pruning: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "order_type_pruning")
+            .into_boxed_str(),
+    );
+    let order_type_harvest: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "order_type_harvest")
+            .into_boxed_str(),
+    );
+    let order_type_soil_work: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "order_type_soil_work")
+            .into_boxed_str(),
+    );
+    let order_type_irrigation: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "order_type_irrigation")
+            .into_boxed_str(),
+    );
+    let order_type_monitoring: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "order_type_monitoring")
+            .into_boxed_str(),
+    );
+    let order_type_livestock_feeding: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "order_type_livestock_feeding")
+            .into_boxed_str(),
+    );
+    let order_type_livestock_watering: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "order_type_livestock_watering")
+            .into_boxed_str(),
+    );
+    let order_type_livestock_relocation: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "order_type_livestock_relocation")
+            .into_boxed_str(),
+    );
+    let order_type_livestock_health_check: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "order_type_livestock_health_check")
+            .into_boxed_str(),
+    );
+    let order_type_barn_cleaning: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "order_type_barn_cleaning")
+            .into_boxed_str(),
+    );
+    let order_type_egg_collection: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "order_type_egg_collection")
+            .into_boxed_str(),
+    );
+    let order_type_shearing: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "order_type_shearing")
+            .into_boxed_str(),
+    );
+    let order_type_milking: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "order_type_milking")
+            .into_boxed_str(),
+    );
 
     let orders = LocalResource::new(|| async move { api::fetch_orders().await.ok() });
     let sites = LocalResource::new(|| async move { api::fetch_sites().await.ok() });
@@ -61,6 +124,26 @@ pub fn OrderList() -> impl IntoView {
     let (label, set_label) = signal(String::new());
     let (order_type, set_order_type) = signal(String::from("plant_protection"));
     let (site_id, set_site_id) = signal(String::new());
+    let order_type_text = move |value: &str| match value {
+        "plant_protection" => i18n.t(lang.get().as_str(), "order_type_plant_protection"),
+        "fertilization" => i18n.t(lang.get().as_str(), "order_type_fertilization"),
+        "pruning" => i18n.t(lang.get().as_str(), "order_type_pruning"),
+        "harvest" => i18n.t(lang.get().as_str(), "order_type_harvest"),
+        "soil_work" => i18n.t(lang.get().as_str(), "order_type_soil_work"),
+        "irrigation" => i18n.t(lang.get().as_str(), "order_type_irrigation"),
+        "monitoring" => i18n.t(lang.get().as_str(), "order_type_monitoring"),
+        "livestock_feeding" => i18n.t(lang.get().as_str(), "order_type_livestock_feeding"),
+        "livestock_watering" => i18n.t(lang.get().as_str(), "order_type_livestock_watering"),
+        "livestock_relocation" => i18n.t(lang.get().as_str(), "order_type_livestock_relocation"),
+        "livestock_health_check" => {
+            i18n.t(lang.get().as_str(), "order_type_livestock_health_check")
+        }
+        "barn_cleaning" => i18n.t(lang.get().as_str(), "order_type_barn_cleaning"),
+        "egg_collection" => i18n.t(lang.get().as_str(), "order_type_egg_collection"),
+        "shearing" => i18n.t(lang.get().as_str(), "order_type_shearing"),
+        "milking" => i18n.t(lang.get().as_str(), "order_type_milking"),
+        _ => value.to_string(),
+    };
 
     view! {
         <div class="flex flex-col gap-6">
@@ -100,7 +183,7 @@ pub fn OrderList() -> impl IntoView {
                                 key=|order| order.id
                                 children=move |order| view! {
                                     <tr>
-                                        <td>{order.order_type}</td>
+                                        <td>{order_type_text(order.order_type.as_str())}</td>
                                         <td>{order.label}</td>
                                         <td>{order.site_ids.len()}</td>
                                         <td>{order.assigned_worker_ids.len()}</td>
@@ -143,13 +226,21 @@ pub fn OrderList() -> impl IntoView {
                                             </RequiredLabel>
                                         </label>
                                         <select class="select select-bordered w-full" required on:change=move |ev| set_order_type.set(event_target_value(&ev))>
-                                            <option value="plant_protection">"Pflanzenschutz"</option>
-                                            <option value="fertilization">"Düngung"</option>
-                                            <option value="pruning">"Schnitt"</option>
-                                            <option value="harvest">"Ernte"</option>
-                                            <option value="soil_work">"Bodenbearbeitung"</option>
-                                            <option value="irrigation">"Bewässerung"</option>
-                                            <option value="monitoring">"Monitoring"</option>
+                                            <option value="plant_protection">{order_type_plant_protection}</option>
+                                            <option value="fertilization">{order_type_fertilization}</option>
+                                            <option value="pruning">{order_type_pruning}</option>
+                                            <option value="harvest">{order_type_harvest}</option>
+                                            <option value="soil_work">{order_type_soil_work}</option>
+                                            <option value="irrigation">{order_type_irrigation}</option>
+                                            <option value="monitoring">{order_type_monitoring}</option>
+                                            <option value="livestock_feeding">{order_type_livestock_feeding}</option>
+                                            <option value="livestock_watering">{order_type_livestock_watering}</option>
+                                            <option value="livestock_relocation">{order_type_livestock_relocation}</option>
+                                            <option value="livestock_health_check">{order_type_livestock_health_check}</option>
+                                            <option value="barn_cleaning">{order_type_barn_cleaning}</option>
+                                            <option value="egg_collection">{order_type_egg_collection}</option>
+                                            <option value="shearing">{order_type_shearing}</option>
+                                            <option value="milking">{order_type_milking}</option>
                                         </select>
                                     </div>
                                     <div class="form-control">

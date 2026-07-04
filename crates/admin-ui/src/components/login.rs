@@ -43,6 +43,15 @@ pub fn LoginView() -> impl IntoView {
             match api::login(api::LoginRequest { email, password }).await {
                 Ok(auth) => {
                     api::set_auth_token(&auth.token);
+                    let primary_role = auth
+                        .roles
+                        .iter()
+                        .find(|role| {
+                            matches!(role.as_str(), "Admin" | "Manager" | "Worker" | "Viewer")
+                        })
+                        .cloned()
+                        .unwrap_or_else(|| String::from("Viewer"));
+                    api::set_user_role(&primary_role);
                     let _ = window().location().reload();
                 }
                 Err(e) => {

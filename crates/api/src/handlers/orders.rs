@@ -6,8 +6,10 @@ use crate::middleware::AuthExtractor as AuthUser;
 use crate::AppState;
 use actix_web::{web, HttpResponse, Responder};
 use agrocore_domain::entities::order::MyTask;
+use agrocore_domain::entities::workforce::CreateWorkLogDto;
 use agrocore_domain::services::workflow::WorkflowService;
 use agrocore_messaging::{Event, GlobalEvent};
+use chrono::Utc;
 use validator::Validate;
 
 #[utoipa::path(
@@ -301,8 +303,10 @@ pub async fn complete_order(
         }
     };
 
-    // 2. Execute domain logic
-    if !order.complete() {
+    let now = Utc::now();
+    let duration_minutes = order.complete_at(now);
+
+    if duration_minutes.is_none() {
         return HttpResponse::BadRequest().json(ErrorResponse {
             error: "invalid_transition".into(),
             message: format!("Order {} cannot be completed from current state", order_id),
@@ -311,8 +315,14 @@ pub async fn complete_order(
 
     // 3. Persist change (reuse update logic from repo)
     let update_dto = agrocore_domain::entities::order::UpdateOrderDto {
-        status: Some(order.status),
+        status: Some(order.status.clone()),
+        planned_date: order.planned_date,
         completed_at: order.completed_at,
+        last_completed_at: order.last_completed_at,
+        recurrence: order.recurrence.clone(),
+        execution_policy: order.execution_policy.clone(),
+        automation_state: order.automation_state.clone(),
+        started_at: order.started_at,
         ..Default::default()
     };
 
@@ -323,6 +333,38 @@ pub async fn complete_order(
         .await
     {
         Ok(Some(updated)) => {
+            let worker_id = match state
+                .db
+                .worker_repo()
+                .find_by_user_id(tenant_id, auth.0.user_id)
+                .await
+            {
+                Ok(Some(worker)) => worker.id,
+                Ok(None) => auth.0.user_id,
+                Err(e) => {
+                    tracing::warn!("Failed to resolve worker for worklog: {}", e);
+                    auth.0.user_id
+                }
+            };
+            let worklog = CreateWorkLogDto {
+                worker_id,
+                date: now,
+                hours_worked: duration_minutes.unwrap_or(0) as f64 / 60.0,
+                overtime_hours: 0.0,
+                rest_period_hours: 0.0,
+                task_description: updated.label.clone(),
+                site_id: updated.site_ids.first().copied(),
+                is_night_shift: false,
+                breaks_taken: 0,
+            };
+            if let Err(e) = state.db.work_log_repo().create(tenant_id, worklog).await {
+                tracing::warn!(
+                    "Failed to create worklog for completed order {}: {}",
+                    order_id,
+                    e
+                );
+            }
+
             // 4. Process workflows
             let follow_ups = WorkflowService::process_status_transition(
                 &updated,
@@ -392,7 +434,7 @@ pub async fn start_order(
     };
 
     // 2. Execute domain logic
-    if !order.start() {
+    if !order.start_at(Utc::now()) {
         return HttpResponse::BadRequest().json(ErrorResponse {
             error: "invalid_transition".into(),
             message: format!("Order {} cannot be started from current state", order_id),
@@ -403,6 +445,8 @@ pub async fn start_order(
     let update_dto = agrocore_domain::entities::order::UpdateOrderDto {
         status: Some(order.status),
         started_at: order.started_at,
+        execution_policy: order.execution_policy.clone(),
+        automation_state: order.automation_state.clone(),
         ..Default::default()
     };
 

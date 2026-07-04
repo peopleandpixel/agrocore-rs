@@ -101,6 +101,8 @@ fn test_order_validation() {
         assigned_worker_ids: None,
         planned_date: None,
         deadline_date: None,
+        recurrence: None,
+        execution_policy: None,
         articles: None,
         quantities: None,
         custom_fields: None,

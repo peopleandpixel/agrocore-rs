@@ -31,6 +31,8 @@ impl WorkflowService {
                             custom_fields: None,
                             parent_order_id: Some(order.id),
                             workflow_config: None, // Prevent infinite loops or chain them
+                            recurrence: None,
+                            execution_policy: None,
                             cost_center_id: order.cost_center_id,
                         };
 
@@ -59,6 +61,14 @@ impl std::fmt::Display for crate::entities::OrderType {
             crate::entities::OrderType::SoilWork => "Bodenbearbeitung",
             crate::entities::OrderType::Irrigation => "Bewässerung",
             crate::entities::OrderType::Monitoring => "Monitoring",
+            crate::entities::OrderType::LivestockFeeding => "Fütterung",
+            crate::entities::OrderType::LivestockWatering => "Wasser geben",
+            crate::entities::OrderType::LivestockRelocation => "Verlegung",
+            crate::entities::OrderType::LivestockHealthCheck => "Gesundheitskontrolle",
+            crate::entities::OrderType::BarnCleaning => "Stallreinigung",
+            crate::entities::OrderType::EggCollection => "Eier holen",
+            crate::entities::OrderType::Shearing => "Scheren",
+            crate::entities::OrderType::Milking => "Melken",
             crate::entities::OrderType::Other(s) => return f.write_str(s),
         };
 
@@ -89,6 +99,10 @@ mod tests {
             deadline_date: None,
             started_at: None,
             completed_at: None,
+            last_completed_at: None,
+            recurrence: None,
+            execution_policy: None,
+            automation_state: None,
             articles: None,
             quantities: None,
             results: None,
@@ -128,6 +142,10 @@ mod tests {
             deadline_date: None,
             started_at: None,
             completed_at: None,
+            last_completed_at: None,
+            recurrence: None,
+            execution_policy: None,
+            automation_state: None,
             articles: None,
             quantities: None,
             results: None,
@@ -170,6 +188,10 @@ mod tests {
             deadline_date: None,
             started_at: None,
             completed_at: None,
+            last_completed_at: None,
+            recurrence: None,
+            execution_policy: None,
+            automation_state: None,
             articles: None,
             quantities: None,
             results: None,
@@ -207,6 +229,10 @@ mod tests {
             deadline_date: None,
             started_at: None,
             completed_at: None,
+            last_completed_at: None,
+            recurrence: None,
+            execution_policy: None,
+            automation_state: None,
             articles: None,
             quantities: None,
             results: None,
@@ -228,5 +254,20 @@ mod tests {
 
         let follow_ups = WorkflowService::process_status_transition(&order, OrderStatus::Completed);
         assert!(follow_ups.is_empty());
+    }
+
+    #[test]
+    fn order_type_display_covers_livestock_tasks() {
+        assert_eq!(OrderType::LivestockFeeding.to_string(), "Fütterung");
+        assert_eq!(OrderType::LivestockWatering.to_string(), "Wasser geben");
+        assert_eq!(OrderType::LivestockRelocation.to_string(), "Verlegung");
+        assert_eq!(
+            OrderType::LivestockHealthCheck.to_string(),
+            "Gesundheitskontrolle"
+        );
+        assert_eq!(OrderType::BarnCleaning.to_string(), "Stallreinigung");
+        assert_eq!(OrderType::EggCollection.to_string(), "Eier holen");
+        assert_eq!(OrderType::Shearing.to_string(), "Scheren");
+        assert_eq!(OrderType::Milking.to_string(), "Melken");
     }
 }

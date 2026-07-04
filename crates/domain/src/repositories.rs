@@ -34,6 +34,7 @@ where
 
 use crate::entities::equipment::{CreateEquipmentDto, Equipment, UpdateEquipmentDto};
 use crate::entities::site::{CreateSiteDto, Site, UpdateSiteDto};
+use crate::entities::spatial::SpatialObject;
 
 #[cfg_attr(test, automock)]
 pub trait EquipmentRepository: Send + Sync {
@@ -100,6 +101,23 @@ pub trait SiteRepository: Send + Sync {
         by: Uuid,
     ) -> RepositoryFuture<Option<Site>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+#[cfg_attr(test, automock)]
+pub trait SpatialObjectRepository: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<SpatialObject>>;
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<SpatialObject>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+    fn find_containing_point(
+        &self,
+        tid: TenantId,
+        point: crate::entities::site::GeoPoint,
+        site_id: Option<Uuid>,
+    ) -> RepositoryFuture<Vec<SpatialObject>>;
 }
 
 use crate::entities::livestock::{Animal, CreateAnimalDto, UpdateAnimalDto};

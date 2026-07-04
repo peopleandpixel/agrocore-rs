@@ -90,6 +90,11 @@ pub fn language_flag(code: &str) -> &'static str {
         "es" => "🇪🇸",
         "fr" => "🇫🇷",
         "pt" => "🇵🇹",
+        "it" => "🇮🇹",
+        "pl" => "🇵🇱",
+        "ro" => "🇷🇴",
+        "uk" => "🇺🇦",
+        "nl" => "🇳🇱",
         _ => "🏳",
     }
 }
@@ -173,6 +178,11 @@ mod tests {
         assert_eq!(country_flag("United States"), "🇺🇸");
         assert_eq!(language_flag("de"), "🇩🇪");
         assert_eq!(language_flag("pt"), "🇵🇹");
+        assert_eq!(language_flag("it"), "🇮🇹");
+        assert_eq!(language_flag("pl"), "🇵🇱");
+        assert_eq!(language_flag("ro"), "🇷🇴");
+        assert_eq!(language_flag("uk"), "🇺🇦");
+        assert_eq!(language_flag("nl"), "🇳🇱");
         assert_eq!(language_flag("xx"), "🏳");
     }
 }

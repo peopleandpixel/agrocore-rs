@@ -7,6 +7,7 @@ pub mod olive;
 pub mod order;
 pub mod plant_protection;
 pub mod site;
+pub mod spatial;
 pub mod task;
 pub mod tenant;
 pub mod user;
@@ -17,6 +18,8 @@ pub mod workforce;
 
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
+
+pub use spatial::{PolygonGeometry, SpatialGeometry, SpatialObject, SpatialObjectType};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum SiteType {
@@ -159,6 +162,22 @@ pub enum OrderType {
     Irrigation,
     #[serde(rename = "monitoring")]
     Monitoring,
+    #[serde(rename = "livestock_feeding")]
+    LivestockFeeding,
+    #[serde(rename = "livestock_watering")]
+    LivestockWatering,
+    #[serde(rename = "livestock_relocation")]
+    LivestockRelocation,
+    #[serde(rename = "livestock_health_check")]
+    LivestockHealthCheck,
+    #[serde(rename = "barn_cleaning")]
+    BarnCleaning,
+    #[serde(rename = "egg_collection")]
+    EggCollection,
+    #[serde(rename = "shearing")]
+    Shearing,
+    #[serde(rename = "milking")]
+    Milking,
     #[serde(rename = "other")]
     Other(String),
 }
