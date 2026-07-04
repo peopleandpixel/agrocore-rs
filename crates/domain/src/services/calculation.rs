@@ -3,29 +3,32 @@ use chrono::{DateTime, Utc};
 
 pub struct CalculationService;
 
+#[derive(Debug, Clone)]
+pub struct MaterialAmountRequest {
+    pub method: PlantProtectionAreaMethod,
+    pub net_area: f64,
+    pub gross_area: Option<f64>,
+    pub lane_width: Option<f64>,
+    pub total_strike_length: Option<f64>,
+    pub is_steep: bool,
+    pub dosage_per_ha: f64,
+    pub application_date: DateTime<Utc>,
+}
+
 impl CalculationService {
     /// Berechnet die benötigte Materialmenge basierend auf der Fläche und der Dosierung.
     /// Berücksichtigt verschiedene Flächenberechnungsmethoden und Steillagenfaktoren.
-    pub fn calculate_material_amount(
-        method: &PlantProtectionAreaMethod,
-        net_area: f64,
-        gross_area: Option<f64>,
-        lane_width: Option<f64>,
-        total_strike_length: Option<f64>,
-        is_steep: bool,
-        dosage_per_ha: f64,
-        application_date: DateTime<Utc>,
-    ) -> f64 {
-        let treated_area = method.calculate_treated_area(
-            net_area,
-            gross_area,
-            lane_width,
-            total_strike_length,
-            is_steep,
-            application_date,
+    pub fn calculate_material_amount(input: MaterialAmountRequest) -> f64 {
+        let treated_area = input.method.calculate_treated_area(
+            input.net_area,
+            input.gross_area,
+            input.lane_width,
+            input.total_strike_length,
+            input.is_steep,
+            input.application_date,
         );
 
-        treated_area * dosage_per_ha
+        treated_area * input.dosage_per_ha
     }
 
     /// Berechnet die Wasserabgabe (L/ha) basierend auf der Fahrgeschwindigkeit,
@@ -160,9 +163,16 @@ mod tests {
     fn test_calculate_material_amount() {
         let method = PlantProtectionAreaMethod::NetArea;
         let date = Utc.with_ymd_and_hms(2025, 1, 1, 0, 0, 0).unwrap();
-        let amount = CalculationService::calculate_material_amount(
-            &method, 1.0, None, None, None, false, 5.0, date,
-        );
+        let amount = CalculationService::calculate_material_amount(MaterialAmountRequest {
+            method,
+            net_area: 1.0,
+            gross_area: None,
+            lane_width: None,
+            total_strike_length: None,
+            is_steep: false,
+            dosage_per_ha: 5.0,
+            application_date: date,
+        });
         assert_eq!(amount, 5.0);
     }
 

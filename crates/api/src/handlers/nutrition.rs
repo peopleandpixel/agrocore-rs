@@ -32,7 +32,7 @@ pub async fn calculate_demand(
     auth: AuthUser,
     dto: web::Json<NutritionDemandRequestDto>,
 ) -> impl Responder {
-    let tenant_id = auth.0.tenant_id.into();
+    let tenant_id = auth.0.tenant_id;
 
     let site = match state
         .db

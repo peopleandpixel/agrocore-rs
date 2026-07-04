@@ -37,7 +37,7 @@ pub async fn list_users(
     match state
         .db
         .user_repo()
-        .find_all(auth.0.tenant_id.into(), query.0)
+        .find_all(auth.0.tenant_id, query.0)
         .await
     {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
@@ -78,7 +78,7 @@ pub async fn get_user(
     match state
         .db
         .user_repo()
-        .find_by_id(auth.0.tenant_id.into(), user_id)
+        .find_by_id(auth.0.tenant_id, user_id)
         .await
     {
         Ok(Some(u)) => HttpResponse::Ok().json(UserDto::from(u)),
@@ -130,7 +130,7 @@ pub async fn create_user(
     match state
         .db
         .user_repo()
-        .create(auth.0.tenant_id.into(), dto.0.into())
+        .create(auth.0.tenant_id, dto.0.into())
         .await
     {
         Ok(u) => {
@@ -187,7 +187,7 @@ pub async fn update_user(
     match state
         .db
         .user_repo()
-        .update(auth.0.tenant_id.into(), user_id, dto.0.into())
+        .update(auth.0.tenant_id, user_id, dto.0.into())
         .await
     {
         Ok(Some(u)) => {
@@ -233,12 +233,7 @@ pub async fn delete_user(
     }
     let user_id = *path;
     tracing::info!("Deleting user {} for tenant: {}", user_id, auth.0.tenant_id);
-    match state
-        .db
-        .user_repo()
-        .delete(auth.0.tenant_id.into(), user_id)
-        .await
-    {
+    match state.db.user_repo().delete(auth.0.tenant_id, user_id).await {
         Ok(true) => {
             let event = Event::new("api".into(), GlobalEvent::UserDeleted(user_id));
             let _ = state.messaging.publish("events.users", &event).await;

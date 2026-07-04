@@ -16,7 +16,7 @@ pub async fn list_water_sources(
     match state
         .db
         .water_source_repo()
-        .find_all(auth.0.tenant_id.into(), query.0)
+        .find_all(auth.0.tenant_id, query.0)
         .await
     {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
@@ -41,7 +41,7 @@ pub async fn list_water_usage(
     match state
         .db
         .water_usage_repo()
-        .find_all(auth.0.tenant_id.into(), query.0)
+        .find_all(auth.0.tenant_id, query.0)
         .await
     {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {

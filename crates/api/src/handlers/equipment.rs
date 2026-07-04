@@ -31,7 +31,7 @@ pub async fn list_equipments(
     match state
         .db
         .equipment_repo()
-        .find_all(auth.0.tenant_id.into(), query.0)
+        .find_all(auth.0.tenant_id, query.0)
         .await
     {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
@@ -76,7 +76,7 @@ pub async fn get_equipment(
     match state
         .db
         .equipment_repo()
-        .find_by_id(auth.0.tenant_id.into(), equipment_id)
+        .find_by_id(auth.0.tenant_id, equipment_id)
         .await
     {
         Ok(Some(equipment)) => HttpResponse::Ok().json(EquipmentDto::from(equipment)),
@@ -122,7 +122,7 @@ pub async fn create_equipment(
     match state
         .db
         .equipment_repo()
-        .create(auth.0.tenant_id.into(), dto.0.into(), auth.0.user_id)
+        .create(auth.0.tenant_id, dto.0.into(), auth.0.user_id)
         .await
     {
         Ok(equipment) => HttpResponse::Created().json(EquipmentDto::from(equipment)),
@@ -171,12 +171,7 @@ pub async fn update_equipment(
     match state
         .db
         .equipment_repo()
-        .update(
-            auth.0.tenant_id.into(),
-            equipment_id,
-            dto.0.into(),
-            auth.0.user_id,
-        )
+        .update(auth.0.tenant_id, equipment_id, dto.0.into(), auth.0.user_id)
         .await
     {
         Ok(Some(equipment)) => HttpResponse::Ok().json(EquipmentDto::from(equipment)),
@@ -219,7 +214,7 @@ pub async fn delete_equipment(
     match state
         .db
         .equipment_repo()
-        .delete(auth.0.tenant_id.into(), equipment_id)
+        .delete(auth.0.tenant_id, equipment_id)
         .await
     {
         Ok(true) => HttpResponse::Ok().json(serde_json::json!({"deleted": true})),

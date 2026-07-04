@@ -33,8 +33,7 @@ pub fn is_valid_phone(value: &str) -> bool {
     let value = value.trim();
     let digits = value.chars().filter(|c| c.is_ascii_digit()).count();
     value.starts_with('+')
-        && digits >= 6
-        && digits <= 15
+        && (6..=15).contains(&digits)
         && value
             .chars()
             .all(|c| c.is_ascii_digit() || matches!(c, '+' | ' ' | '-' | '(' | ')'))

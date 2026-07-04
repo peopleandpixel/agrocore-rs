@@ -6,7 +6,7 @@ use crate::middleware::AuthExtractor as AuthUser;
 use crate::AppState;
 use actix_web::{web, HttpResponse, Responder};
 use agrocore_domain::entities::{CropType, SiteType};
-use agrocore_domain::services::calculation::CalculationService;
+use agrocore_domain::services::calculation::{CalculationService, MaterialAmountRequest};
 use chrono::Utc;
 use serde::Deserialize;
 use utoipa::IntoParams;
@@ -44,7 +44,7 @@ pub async fn predict_harvest(
     auth: AuthUser,
     query: web::Query<HarvestPredictionQuery>,
 ) -> impl Responder {
-    let tid = auth.0.tenant_id.into();
+    let tid = auth.0.tenant_id;
 
     // 1. Aktuelle Phänologie abrufen
     let phenology = state
@@ -106,7 +106,7 @@ pub async fn calculate_profitability(
     auth: AuthUser,
     dto: web::Json<ProfitabilityRequest>,
 ) -> impl Responder {
-    let tid = auth.0.tenant_id.into();
+    let tid = auth.0.tenant_id;
     let site = match state.db.site_repo().find_by_id(tid, dto.site_id).await {
         Ok(Some(s)) => s,
         _ => return HttpResponse::NotFound().finish(),
@@ -142,7 +142,7 @@ pub async fn list_specialized_sites(
     auth: AuthUser,
     query: web::Query<SpecializedSiteQuery>,
 ) -> impl Responder {
-    let tenant_id = auth.0.tenant_id.into();
+    let tenant_id = auth.0.tenant_id;
 
     // In einer echten Implementierung würde hier ein spezialisierter Repository-Aufruf stehen,
     // der nach site_type und crop_type filtert.
@@ -194,7 +194,7 @@ pub async fn calculate_material(
     auth: AuthUser,
     dto: web::Json<MaterialCalculationRequestDto>,
 ) -> impl Responder {
-    let tenant_id = auth.0.tenant_id.into();
+    let tenant_id = auth.0.tenant_id;
 
     // 1. Site-Daten abrufen
     let site = match state
@@ -235,16 +235,16 @@ pub async fn calculate_material(
         application_date,
     );
 
-    let total_amount = CalculationService::calculate_material_amount(
-        &dto.method,
-        site.area,
-        site.gross_area,
-        site.row_config.as_ref().map(|rc| rc.lane_width),
-        site.row_config.as_ref().map(|rc| rc.total_strike_length),
-        site.slope.map(|s| s > 15.0).unwrap_or(false),
-        dto.dosage_per_ha,
+    let total_amount = CalculationService::calculate_material_amount(MaterialAmountRequest {
+        method: dto.method.clone(),
+        net_area: site.area,
+        gross_area: site.gross_area,
+        lane_width: site.row_config.as_ref().map(|rc| rc.lane_width),
+        total_strike_length: site.row_config.as_ref().map(|rc| rc.total_strike_length),
+        is_steep: site.slope.map(|s| s > 15.0).unwrap_or(false),
+        dosage_per_ha: dto.dosage_per_ha,
         application_date,
-    );
+    });
 
     HttpResponse::Ok().json(MaterialCalculationResponseDto {
         treated_area_ha: treated_area,

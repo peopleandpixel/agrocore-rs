@@ -47,7 +47,7 @@ pub async fn list_stations(
     match state
         .db
         .weather_station_repo()
-        .find_all(auth.0.tenant_id.into(), query.0)
+        .find_all(auth.0.tenant_id, query.0)
         .await
     {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
@@ -86,7 +86,7 @@ pub async fn get_station(
     match state
         .db
         .weather_station_repo()
-        .find_by_id(auth.0.tenant_id.into(), *id)
+        .find_by_id(auth.0.tenant_id, *id)
         .await
     {
         Ok(Some(s)) => HttpResponse::Ok().json(s),
@@ -120,7 +120,7 @@ pub async fn create_station(
     match state
         .db
         .weather_station_repo()
-        .create(auth.0.tenant_id.into(), dto.into_inner())
+        .create(auth.0.tenant_id, dto.into_inner())
         .await
     {
         Ok(s) => HttpResponse::Created().json(s),
@@ -149,7 +149,7 @@ pub async fn list_weather_data(
     match state
         .db
         .weather_data_repo()
-        .find_all(auth.0.tenant_id.into(), query.0)
+        .find_all(auth.0.tenant_id, query.0)
         .await
     {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
@@ -185,7 +185,7 @@ pub async fn create_weather_data(
     match state
         .db
         .weather_data_repo()
-        .create(auth.0.tenant_id.into(), dto.into_inner())
+        .create(auth.0.tenant_id, dto.into_inner())
         .await
     {
         Ok(wd) => HttpResponse::Created().json(wd),
@@ -214,7 +214,7 @@ pub async fn list_phenology(
     match state
         .db
         .phenology_record_repo()
-        .find_all(auth.0.tenant_id.into(), query.0)
+        .find_all(auth.0.tenant_id, query.0)
         .await
     {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
@@ -250,7 +250,7 @@ pub async fn create_phenology(
     match state
         .db
         .phenology_record_repo()
-        .create(auth.0.tenant_id.into(), dto.into_inner())
+        .create(auth.0.tenant_id, dto.into_inner())
         .await
     {
         Ok(pr) => HttpResponse::Created().json(pr),

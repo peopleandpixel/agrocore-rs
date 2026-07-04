@@ -35,7 +35,7 @@ pub async fn list_tasks(
     match state
         .db
         .task_data_repo()
-        .find_by_worker(auth.0.tenant_id.into(), auth.0.user_id, query.0)
+        .find_by_worker(auth.0.tenant_id, auth.0.user_id, query.0)
         .await
     {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
@@ -76,7 +76,7 @@ pub async fn get_task(
     match state
         .db
         .task_data_repo()
-        .find_by_id(auth.0.tenant_id.into(), task_id)
+        .find_by_id(auth.0.tenant_id, task_id)
         .await
     {
         Ok(Some(t)) => HttpResponse::Ok().json(TaskDataDto::from(t)),
@@ -124,7 +124,7 @@ pub async fn create_task(
     match state
         .db
         .task_data_repo()
-        .create(auth.0.tenant_id.into(), auth.0.user_id, dto.0.into())
+        .create(auth.0.tenant_id, auth.0.user_id, dto.0.into())
         .await
     {
         Ok(t) => HttpResponse::Created().json(TaskDataDto::from(t)),
@@ -169,7 +169,7 @@ pub async fn update_task(
     match state
         .db
         .task_data_repo()
-        .update(auth.0.tenant_id.into(), task_id, dto.0.into())
+        .update(auth.0.tenant_id, task_id, dto.0.into())
         .await
     {
         Ok(Some(t)) => HttpResponse::Ok().json(TaskDataDto::from(t)),
@@ -214,7 +214,7 @@ pub async fn delete_task(
     match state
         .db
         .task_data_repo()
-        .delete(auth.0.tenant_id.into(), task_id)
+        .delete(auth.0.tenant_id, task_id)
         .await
     {
         Ok(true) => HttpResponse::Ok().json(serde_json::json!({"deleted": true})),

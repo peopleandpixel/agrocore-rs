@@ -25,7 +25,7 @@ pub async fn list_animals(
     match state
         .db
         .animal_repo()
-        .find_all(auth.0.tenant_id.into(), query.0)
+        .find_all(auth.0.tenant_id, query.0)
         .await
     {
         Ok(result) => HttpResponse::Ok().json(result),
@@ -54,7 +54,7 @@ pub async fn create_animal(
     match state
         .db
         .animal_repo()
-        .create(auth.0.tenant_id.into(), dto.0, auth.0.user_id)
+        .create(auth.0.tenant_id, dto.0, auth.0.user_id)
         .await
     {
         Ok(animal) => HttpResponse::Created().json(animal),
@@ -82,7 +82,7 @@ pub async fn get_animal(
     match state
         .db
         .animal_repo()
-        .find_by_id(auth.0.tenant_id.into(), *path)
+        .find_by_id(auth.0.tenant_id, *path)
         .await
     {
         Ok(Some(animal)) => HttpResponse::Ok().json(animal),
@@ -116,7 +116,7 @@ pub async fn update_animal(
     match state
         .db
         .animal_repo()
-        .update(auth.0.tenant_id.into(), *path, dto.0, auth.0.user_id)
+        .update(auth.0.tenant_id, *path, dto.0, auth.0.user_id)
         .await
     {
         Ok(Some(animal)) => HttpResponse::Ok().json(animal),
@@ -145,12 +145,7 @@ pub async fn delete_animal(
     auth: AuthUser,
     path: web::Path<Uuid>,
 ) -> impl Responder {
-    match state
-        .db
-        .animal_repo()
-        .delete(auth.0.tenant_id.into(), *path)
-        .await
-    {
+    match state.db.animal_repo().delete(auth.0.tenant_id, *path).await {
         Ok(true) => HttpResponse::Ok().json(serde_json::json!({"deleted": true})),
         Ok(false) => HttpResponse::NotFound().json(ErrorResponse {
             error: "not_found".into(),
@@ -182,7 +177,7 @@ pub async fn add_treatment(
     match state
         .db
         .animal_repo()
-        .add_treatment(auth.0.tenant_id.into(), *path, dto.0)
+        .add_treatment(auth.0.tenant_id, *path, dto.0)
         .await
     {
         Ok(true) => HttpResponse::Ok().json(serde_json::json!({"success": true})),
@@ -216,7 +211,7 @@ pub async fn add_grazing(
     match state
         .db
         .animal_repo()
-        .add_grazing_record(auth.0.tenant_id.into(), *path, dto.0)
+        .add_grazing_record(auth.0.tenant_id, *path, dto.0)
         .await
     {
         Ok(true) => HttpResponse::Ok().json(serde_json::json!({"success": true})),

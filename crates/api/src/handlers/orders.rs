@@ -33,12 +33,7 @@ pub async fn list_orders(
     match state
         .db
         .order_repo()
-        .find_all_visible(
-            auth.0.tenant_id.into(),
-            query.0,
-            auth.0.user_id,
-            &auth.roles(),
-        )
+        .find_all_visible(auth.0.tenant_id, query.0, auth.0.user_id, &auth.roles())
         .await
     {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
@@ -83,12 +78,7 @@ pub async fn get_order(
     match state
         .db
         .order_repo()
-        .find_by_id_visible(
-            auth.0.tenant_id.into(),
-            order_id,
-            auth.0.user_id,
-            &auth.roles(),
-        )
+        .find_by_id_visible(auth.0.tenant_id, order_id, auth.0.user_id, &auth.roles())
         .await
     {
         Ok(Some(o)) => HttpResponse::Ok().json(OrderDto::from(o)),
@@ -140,7 +130,7 @@ pub async fn create_order(
     match state
         .db
         .order_repo()
-        .create(auth.0.tenant_id.into(), dto.0.into(), auth.0.user_id)
+        .create(auth.0.tenant_id, dto.0.into(), auth.0.user_id)
         .await
     {
         Ok(o) => {
@@ -199,12 +189,7 @@ pub async fn update_order(
     match state
         .db
         .order_repo()
-        .update(
-            auth.0.tenant_id.into(),
-            order_id,
-            dto.0.into(),
-            auth.0.user_id,
-        )
+        .update(auth.0.tenant_id, order_id, dto.0.into(), auth.0.user_id)
         .await
     {
         Ok(Some(o)) => {
@@ -257,7 +242,7 @@ pub async fn delete_order(
     match state
         .db
         .order_repo()
-        .delete(auth.0.tenant_id.into(), order_id)
+        .delete(auth.0.tenant_id, order_id)
         .await
     {
         Ok(true) => {
@@ -297,7 +282,7 @@ pub async fn complete_order(
     path: web::Path<uuid::Uuid>,
 ) -> impl Responder {
     let order_id = *path;
-    let tenant_id = auth.0.tenant_id.into();
+    let tenant_id = auth.0.tenant_id;
 
     // 1. Fetch current order
     let mut order = match state.db.order_repo().find_by_id(tenant_id, order_id).await {
@@ -387,7 +372,7 @@ pub async fn start_order(
     path: web::Path<uuid::Uuid>,
 ) -> impl Responder {
     let order_id = *path;
-    let tenant_id = auth.0.tenant_id.into();
+    let tenant_id = auth.0.tenant_id;
 
     // 1. Fetch current order
     let mut order = match state.db.order_repo().find_by_id(tenant_id, order_id).await {
@@ -458,7 +443,7 @@ pub async fn my_tasks(state: web::Data<AppState>, auth: AuthUser) -> impl Respon
     match state
         .db
         .order_repo()
-        .find_my_tasks(auth.0.tenant_id.into(), auth.0.user_id)
+        .find_my_tasks(auth.0.tenant_id, auth.0.user_id)
         .await
     {
         Ok(tasks) => HttpResponse::Ok().json(tasks),

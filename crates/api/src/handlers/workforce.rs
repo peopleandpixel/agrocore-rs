@@ -22,7 +22,7 @@ pub async fn list_workers(
     match state
         .db
         .worker_repo()
-        .find_all(auth.0.tenant_id.into(), query.0)
+        .find_all(auth.0.tenant_id, query.0)
         .await
     {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
@@ -47,7 +47,7 @@ pub async fn list_work_logs(
     match state
         .db
         .work_log_repo()
-        .find_all(auth.0.tenant_id.into(), query.0)
+        .find_all(auth.0.tenant_id, query.0)
         .await
     {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
@@ -75,7 +75,7 @@ pub async fn report_location(
     match state
         .db
         .worker_location_repo()
-        .report_location(auth.0.tenant_id.into(), auth.0.user_id, dto.into_inner())
+        .report_location(auth.0.tenant_id, auth.0.user_id, dto.into_inner())
         .await
     {
         Ok(loc) => HttpResponse::Created().json(loc),
@@ -90,7 +90,7 @@ pub async fn get_latest_locations(state: web::Data<AppState>, auth: AuthUser) ->
     match state
         .db
         .worker_location_repo()
-        .get_latest_locations(auth.0.tenant_id.into())
+        .get_latest_locations(auth.0.tenant_id)
         .await
     {
         Ok(locations) => HttpResponse::Ok().json(locations),

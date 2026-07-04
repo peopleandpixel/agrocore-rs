@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use gloo_net::http::{Request, RequestBuilder};
 use leptos::prelude::window;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};

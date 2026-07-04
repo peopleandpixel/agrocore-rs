@@ -31,12 +31,7 @@ pub async fn list_sites(
     match state
         .db
         .site_repo()
-        .find_all_visible(
-            auth.0.tenant_id.into(),
-            query.0,
-            auth.0.user_id,
-            &auth.roles(),
-        )
+        .find_all_visible(auth.0.tenant_id, query.0, auth.0.user_id, &auth.roles())
         .await
     {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
@@ -77,12 +72,7 @@ pub async fn get_site(
     match state
         .db
         .site_repo()
-        .find_by_id_visible(
-            auth.0.tenant_id.into(),
-            site_id,
-            auth.0.user_id,
-            &auth.roles(),
-        )
+        .find_by_id_visible(auth.0.tenant_id, site_id, auth.0.user_id, &auth.roles())
         .await
     {
         Ok(Some(site)) => HttpResponse::Ok().json(SiteDto::from(site)),
@@ -134,7 +124,7 @@ pub async fn create_site(
     match state
         .db
         .site_repo()
-        .create(auth.0.tenant_id.into(), dto.0.into(), auth.0.user_id)
+        .create(auth.0.tenant_id, dto.0.into(), auth.0.user_id)
         .await
     {
         Ok(site) => {
@@ -189,12 +179,7 @@ pub async fn update_site(
     match state
         .db
         .site_repo()
-        .update(
-            auth.0.tenant_id.into(),
-            site_id,
-            dto.0.into(),
-            auth.0.user_id,
-        )
+        .update(auth.0.tenant_id, site_id, dto.0.into(), auth.0.user_id)
         .await
     {
         Ok(Some(site)) => {
@@ -240,12 +225,7 @@ pub async fn delete_site(
     }
     let site_id = *path;
     tracing::info!("Deleting site {} for tenant: {}", site_id, auth.0.tenant_id);
-    match state
-        .db
-        .site_repo()
-        .delete(auth.0.tenant_id.into(), site_id)
-        .await
-    {
+    match state.db.site_repo().delete(auth.0.tenant_id, site_id).await {
         Ok(true) => {
             let event = Event::new("api".into(), GlobalEvent::SiteDeleted(site_id));
             let _ = state.messaging.publish("events.sites", &event).await;

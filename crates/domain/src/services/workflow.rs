@@ -20,11 +20,7 @@ impl WorkflowService {
                 if *trigger == next_status {
                     if let Some(next_type) = &config.auto_next_order_type {
                         let mut next_dto = CreateOrderDto {
-                            label: format!(
-                                "Folgeauftrag ({}): {}",
-                                next_type.to_string(),
-                                order.label
-                            ),
+                            label: format!("Folgeauftrag ({}): {}", next_type, order.label),
                             order_type: next_type.clone(),
                             site_ids: order.site_ids.clone(),
                             assigned_worker_ids: Some(order.assigned_worker_ids.clone()),
@@ -50,6 +46,23 @@ impl WorkflowService {
         }
 
         follow_up_orders
+    }
+}
+
+impl std::fmt::Display for crate::entities::OrderType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let label = match self {
+            crate::entities::OrderType::PlantProtection => "Pflanzenschutz",
+            crate::entities::OrderType::Fertilization => "Düngung",
+            crate::entities::OrderType::Pruning => "Schnitt",
+            crate::entities::OrderType::Harvest => "Ernte",
+            crate::entities::OrderType::SoilWork => "Bodenbearbeitung",
+            crate::entities::OrderType::Irrigation => "Bewässerung",
+            crate::entities::OrderType::Monitoring => "Monitoring",
+            crate::entities::OrderType::Other(s) => return f.write_str(s),
+        };
+
+        f.write_str(label)
     }
 }
 
@@ -215,20 +228,5 @@ mod tests {
 
         let follow_ups = WorkflowService::process_status_transition(&order, OrderStatus::Completed);
         assert!(follow_ups.is_empty());
-    }
-}
-
-impl ToString for crate::entities::OrderType {
-    fn to_string(&self) -> String {
-        match self {
-            crate::entities::OrderType::PlantProtection => "Pflanzenschutz".to_string(),
-            crate::entities::OrderType::Fertilization => "Düngung".to_string(),
-            crate::entities::OrderType::Pruning => "Schnitt".to_string(),
-            crate::entities::OrderType::Harvest => "Ernte".to_string(),
-            crate::entities::OrderType::SoilWork => "Bodenbearbeitung".to_string(),
-            crate::entities::OrderType::Irrigation => "Bewässerung".to_string(),
-            crate::entities::OrderType::Monitoring => "Monitoring".to_string(),
-            crate::entities::OrderType::Other(s) => s.clone(),
-        }
     }
 }

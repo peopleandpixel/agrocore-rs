@@ -138,3 +138,69 @@ pub async fn delete_tenant(
         }),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn initial_setup_request_deserializes_with_setup_modules() {
+        let payload = json!({
+            "admin": {
+                "firstname": "Anna",
+                "lastname": "Meyer",
+                "email": "anna@example.com",
+                "password": "secure-pass-123",
+                "roles": null,
+                "internal_cost_per_hour": null,
+                "external_cost_per_hour": null,
+                "language": null
+            },
+            "tenant": {
+                "name": "AgroCore",
+                "slug": "agrocore",
+                "config": {
+                    "default_language": "de",
+                    "supported_languages": ["de", "en", "es", "fr", "pt"],
+                    "timezone": "Europe/Lisbon",
+                    "enabled_modules": [
+                        "field_management",
+                        "PlantProtection",
+                        "Fertilization",
+                        "Harvest",
+                        "WorkLog",
+                        "CostTracking",
+                        "Maps",
+                        "Reports"
+                    ],
+                    "custom_field_schemas": {
+                        "company_profile": {
+                            "name": "AgroCore",
+                            "address": "Rua Nova 1",
+                            "country": "Portugal",
+                            "email": "office@example.com",
+                            "phone": "+351912345678"
+                        }
+                    },
+                    "logo_url": null,
+                    "primary_color": null,
+                    "validation_rules": null
+                }
+            }
+        });
+
+        let request: InitialSetupRequest = serde_json::from_value(payload).expect("setup request");
+        assert_eq!(request.tenant.name, "AgroCore");
+        assert_eq!(
+            request
+                .tenant
+                .config
+                .as_ref()
+                .unwrap()
+                .enabled_modules
+                .len(),
+            8
+        );
+    }
+}

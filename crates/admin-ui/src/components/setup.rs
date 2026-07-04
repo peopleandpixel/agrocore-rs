@@ -28,6 +28,7 @@ fn slug_is_valid(value: &str) -> bool {
             .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-')
 }
 
+#[allow(clippy::too_many_arguments)]
 fn submit_setup(
     i18n: I18n,
     lang: Language,
@@ -90,7 +91,6 @@ fn submit_setup(
     };
 
     let admin_email = admin_email.trim().to_string();
-    let admin_password = admin_password;
     let admin_firstname = admin_firstname.trim().to_string();
     let admin_lastname = admin_lastname.trim().to_string();
     let tenant_name = tenant_name.trim().to_string();
@@ -133,7 +133,7 @@ fn submit_setup(
                 "default_language": selected_language,
                 "supported_languages": ["de", "en", "es", "fr", "pt"],
                 "timezone": "Europe/Lisbon",
-                "enabled_modules": ["field_management", "crop_protection", "fertilization", "harvest", "work_log", "cost_tracking", "maps", "reports"],
+                "enabled_modules": ["field_management", "PlantProtection", "Fertilization", "Harvest", "WorkLog", "CostTracking", "Maps", "Reports"],
                 "custom_field_schemas": {
                     "company_profile": {
                         "name": company_name,
@@ -292,7 +292,9 @@ pub fn SetupAssistant() -> impl IntoView {
                         let invalid_email_error = t("validation_invalid_email");
                         let invalid_phone_error = t("validation_invalid_phone");
                         let invalid_slug_error = t("validation_invalid_slug");
+                        let starting_setup_label = t("starting_setup");
                         let submit_i18n = i18n.clone();
+                        let submit_i18n_status = i18n.clone();
                         match step.get() {
                             SetupStep::Admin => view! {
                                 <h2 class="card-title text-2xl font-bold mb-4">
@@ -528,8 +530,8 @@ pub fn SetupAssistant() -> impl IntoView {
                                     <label class="label"><span class="label-text">{setup_resource_type.clone()}</span></label>
                                     <select class="select select-bordered w-full" on:change=move |ev| set_resource_type.set(event_target_value(&ev))>
                                         <option value="field_management">{field_management_label.clone()}</option>
-                                        <option value="crop_protection">{task_protection_label.clone()}</option>
-                                        <option value="resource_tracking">{resources_label.clone()}</option>
+                                        <option value="PlantProtection">{task_protection_label.clone()}</option>
+                                        <option value="CostTracking">{resources_label.clone()}</option>
                                     </select>
                                 </div>
 
@@ -565,6 +567,19 @@ pub fn SetupAssistant() -> impl IntoView {
                                 >
                                     {finish_label.clone()}
                                 </button>
+                                {move || match setup_status.get() {
+                                    Some(Err(msg)) if msg == starting_setup_label => view! {
+                                        <p class="mt-3 text-sm text-info">{setup_t(&submit_i18n_status, lang.get(), "redirecting")}</p>
+                                    }.into_any(),
+                                    Some(Err(msg)) => view! {
+                                        <div class="alert alert-error mt-3">
+                                            <span>{msg}</span>
+                                        </div>
+                                    }.into_any(),
+                                    _ => view! {
+                                        <div class="hidden"></div>
+                                    }.into_any(),
+                                }}
                             }
                             .into_any(),
                         }

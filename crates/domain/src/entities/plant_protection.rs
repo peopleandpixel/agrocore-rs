@@ -124,16 +124,10 @@ impl PlantProtectionAreaMethod {
             let threshold_2024_01_01 = DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z")
                 .unwrap()
                 .with_timezone(&Utc);
-            let threshold_2024_07_11 = DateTime::parse_from_rfc3339("2024-07-11T00:00:00Z")
-                .unwrap()
-                .with_timezone(&Utc);
-
             let factor = if application_date < threshold_2024_01_01 {
                 1.25
-            } else if application_date < threshold_2024_07_11 {
-                1.15
             } else {
-                1.15 // Default for newer orders
+                1.15
             };
             base_area * factor
         } else {

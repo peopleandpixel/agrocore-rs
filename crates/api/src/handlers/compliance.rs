@@ -25,7 +25,7 @@ pub async fn list_checklists(
     match state
         .db
         .compliance_checklist_repo()
-        .find_all(auth.0.tenant_id.into(), query.0)
+        .find_all(auth.0.tenant_id, query.0)
         .await
     {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
@@ -50,7 +50,7 @@ pub async fn list_fertilizer_records(
     match state
         .db
         .fertilizer_record_repo()
-        .find_all(auth.0.tenant_id.into(), query.0)
+        .find_all(auth.0.tenant_id, query.0)
         .await
     {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
@@ -75,7 +75,7 @@ pub async fn list_plant_protection_records(
     match state
         .db
         .plant_protection_record_repo()
-        .find_all(auth.0.tenant_id.into(), query.0)
+        .find_all(auth.0.tenant_id, query.0)
         .await
     {
         Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
@@ -100,7 +100,7 @@ pub async fn create_checklist(
     match state
         .db
         .compliance_checklist_repo()
-        .create(auth.0.tenant_id.into(), dto.into_inner())
+        .create(auth.0.tenant_id, dto.into_inner())
         .await
     {
         Ok(checklist) => HttpResponse::Created().json(checklist),

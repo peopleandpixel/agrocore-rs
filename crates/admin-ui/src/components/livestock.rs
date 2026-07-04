@@ -195,7 +195,7 @@ pub fn LivestockManagement() -> impl IntoView {
                                             .get("id")
                                             .and_then(|value| value.as_str())
                                             .and_then(|value| uuid::Uuid::parse_str(value).ok())
-                                            .unwrap_or_else(|| uuid::Uuid::nil())
+                                            .unwrap_or_else(uuid::Uuid::nil)
                                     }
                                     children=move |animal| {
                                         let animal_id = animal
