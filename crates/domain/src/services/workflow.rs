@@ -15,10 +15,10 @@ impl WorkflowService {
             return follow_up_orders;
         }
 
-        if let Some(config) = &order.workflow_config {
-            if let Some(trigger) = &config.trigger_status {
-                if *trigger == next_status {
-                    if let Some(next_type) = &config.auto_next_order_type {
+        if let Some(config) = &order.workflow_config
+            && let Some(trigger) = &config.trigger_status
+                && *trigger == next_status
+                    && let Some(next_type) = &config.auto_next_order_type {
                         let mut next_dto = CreateOrderDto {
                             label: format!("Folgeauftrag ({}): {}", next_type, order.label),
                             order_type: next_type.clone(),
@@ -43,9 +43,6 @@ impl WorkflowService {
 
                         follow_up_orders.push(next_dto);
                     }
-                }
-            }
-        }
 
         follow_up_orders
     }

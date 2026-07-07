@@ -102,7 +102,6 @@ pub struct UpdateAnimalDto {
 // VISIBILITY SECURITY: Animal Entity implements VisibilityAwareEntity
 // =============================================================================
 use crate::repositories::VisibilityAwareEntity;
-use crate::entities::user::UserRole;
 
 #[cfg(feature = "mongodb")]
 use mongodb::bson::{doc, Document};

@@ -221,11 +221,10 @@ fn to_closed_linestring(points: &[GeoPoint]) -> LineString<f64> {
         })
         .collect();
 
-    if let (Some(first), Some(last)) = (coords.first().copied(), coords.last().copied()) {
-        if first != last {
+    if let (Some(first), Some(last)) = (coords.first().copied(), coords.last().copied())
+        && first != last {
             coords.push(first);
         }
-    }
 
     LineString::from(coords)
 }

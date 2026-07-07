@@ -1,6 +1,5 @@
 use crate::entities::tenant::TenantId;
 use crate::entities::BbchStage;
-use crate::entities::user::UserRole;
 use crate::repositories::VisibilityAwareEntity;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

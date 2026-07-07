@@ -5,7 +5,6 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::entities::tenant::TenantId;
-use crate::entities::user::UserRole;
 use crate::repositories::VisibilityAwareEntity;
 
 #[cfg(feature = "mongodb")]
