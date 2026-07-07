@@ -177,14 +177,13 @@ pub async fn update_user(
     dto: web::Json<UpdateUserDto>,
 ) -> impl Responder {
     let user_id = *path;
-    if let Err(e) = auth.require_admin() {
-        if auth.0.user_id != user_id {
+    if let Err(e) = auth.require_admin()
+        && auth.0.user_id != user_id {
             return HttpResponse::Forbidden().json(ErrorResponse {
                 error: "forbidden".into(),
                 message: e.to_string(),
             });
         }
-    }
     tracing::info!("Updating user {} for tenant: {}", user_id, auth.0.tenant_id);
     if let Err(e) = dto.0.validate() {
         tracing::warn!("User update validation failed: {}", e);
