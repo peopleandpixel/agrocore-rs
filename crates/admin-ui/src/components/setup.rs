@@ -607,12 +607,11 @@ pub fn SetupAssistant() -> impl IntoView {
                                                     } else {
                                                         Some(value)
                                                     }
-                                                } {
-                                                    if !is_valid_email(&email) {
+                                                }
+                                                    && !is_valid_email(&email) {
                                                         set_setup_error.set(Some(invalid_email_error.clone()));
                                                         return;
                                                     }
-                                                }
                                                 let phone_local = company_phone_local.get();
                                                 if !phone_local.trim().is_empty() {
                                                     let prefix = company_phone_prefix.get();

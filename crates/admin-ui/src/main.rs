@@ -104,13 +104,11 @@ pub fn App() -> impl IntoView {
 
     Effect::new(move |_| {
         use web_sys::window;
-        if let Some(win) = window() {
-            if let Some(doc) = win.document() {
-                if let Some(root) = doc.document_element() {
+        if let Some(win) = window()
+            && let Some(doc) = win.document()
+                && let Some(root) = doc.document_element() {
                     let _ = root.set_attribute("data-theme", theme.get().as_str());
                 }
-            }
-        }
     });
 
     view! {
