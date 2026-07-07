@@ -29,6 +29,15 @@ impl WeatherStationRepo {
     pub fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WeatherStation>> {
         self.base.find_by_id(tid, id)
     }
+    pub fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[agrocore_domain::entities::user::UserRole],
+    ) -> RepositoryFuture<Option<WeatherStation>> {
+        self.base.find_by_id_visible(tid, id, user_id, roles)
+    }
     pub fn find_all(
         &self,
         tid: TenantId,

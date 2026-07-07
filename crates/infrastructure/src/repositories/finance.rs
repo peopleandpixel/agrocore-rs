@@ -27,6 +27,15 @@ impl PACApplicationRepo {
     pub fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<PACApplication>> {
         self.base.find_by_id(tid, id)
     }
+    pub fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[agrocore_domain::entities::user::UserRole],
+    ) -> RepositoryFuture<Option<PACApplication>> {
+        self.base.find_by_id_visible(tid, id, user_id, roles)
+    }
     pub fn find_all(
         &self,
         tid: TenantId,
@@ -72,6 +81,15 @@ impl CostCenterRepo {
     pub fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<CostCenter>> {
         self.base.find_by_id(tid, id)
     }
+    pub fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[agrocore_domain::entities::user::UserRole],
+    ) -> RepositoryFuture<Option<CostCenter>> {
+        self.base.find_by_id_visible(tid, id, user_id, roles)
+    }
     pub fn find_all(
         &self,
         tid: TenantId,
@@ -111,6 +129,15 @@ impl FinancialRecordRepo {
     }
     pub fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<FinancialRecord>> {
         self.base.find_by_id(tid, id)
+    }
+    pub fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[agrocore_domain::entities::user::UserRole],
+    ) -> RepositoryFuture<Option<FinancialRecord>> {
+        self.base.find_by_id_visible(tid, id, user_id, roles)
     }
     pub fn find_all(
         &self,

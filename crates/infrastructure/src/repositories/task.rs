@@ -27,6 +27,15 @@ impl TaskDataRepo {
     pub fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<TaskData>> {
         self.base.find_by_id(tid, id)
     }
+    pub fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[agrocore_domain::entities::user::UserRole],
+    ) -> RepositoryFuture<Option<TaskData>> {
+        self.base.find_by_id_visible(tid, id, user_id, roles)
+    }
     pub fn find_by_order(&self, tid: TenantId, oid: Uuid) -> Fut<Vec<TaskData>> {
         let c = self.base.collection.clone();
         Box::pin(async move {

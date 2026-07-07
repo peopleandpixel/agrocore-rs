@@ -73,10 +73,11 @@ pub async fn get_task(
 ) -> impl Responder {
     let task_id = *path;
     tracing::info!("Getting task {} for tenant: {}", task_id, auth.0.tenant_id);
+    let roles = auth.roles();
     match state
         .db
         .task_data_repo()
-        .find_by_id(auth.0.tenant_id, task_id)
+        .find_by_id_visible(auth.0.tenant_id, task_id, auth.0.user_id, &roles)
         .await
     {
         Ok(Some(t)) => HttpResponse::Ok().json(TaskDataDto::from(t)),

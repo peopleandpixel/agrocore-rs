@@ -4,6 +4,11 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::entities::tenant::TenantId;
+use crate::entities::user::UserRole;
+use crate::repositories::VisibilityAwareEntity;
+
+#[cfg(feature = "mongodb")]
+use mongodb::bson::{doc, Document};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct TaskData {
@@ -27,6 +32,25 @@ pub struct TaskData {
     pub photo_urls: Option<Vec<String>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+// =============================================================================
+// VISIBILITY SECURITY: TaskData Entity implements VisibilityAwareEntity
+// =============================================================================
+impl VisibilityAwareEntity for TaskData {
+    #[cfg(feature = "mongodb")]
+    fn visibility_filter(user_id: Uuid, roles: &[UserRole]) -> Document {
+        // Worker sieht nur Aufgaben, die ihm direkt zugewiesen sind (worker_id match)
+        if roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager) {
+            doc! {} // Alle Tasks im Tenant sichtbar
+        } else if roles.contains(&UserRole::Worker) {
+            // Worker filtert nach worker_id
+            doc! { "worker_id": user_id.to_string() }
+        } else {
+            // Viewer hat keinen Zugriff auf Tasks - zurückgeben leeres Set
+            doc! { "worker_id": "never-match-visibility" }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]

@@ -5,6 +5,11 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::entities::tenant::TenantId;
+use crate::entities::user::UserRole;
+use crate::repositories::VisibilityAwareEntity;
+
+#[cfg(feature = "mongodb")]
+use mongodb::bson::{doc, Document};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct PACApplication {
@@ -20,6 +25,19 @@ pub struct PACApplication {
     pub documents_urls: Vec<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+impl VisibilityAwareEntity for PACApplication {
+    #[cfg(feature = "mongodb")]
+    fn visibility_filter(_user_id: Uuid, roles: &[UserRole]) -> Document {
+        if roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager) {
+            doc! {}
+        } else if roles.contains(&UserRole::Worker) {
+            doc! {} // Worker kann PAC-Daten lesen
+        } else {
+            doc! {}
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
@@ -48,8 +66,19 @@ pub struct CostCenter {
     pub label: String,
     pub code: String,
     pub cost_center_type: CostCenterType,
-    pub reference_id: Option<Uuid>, // ID of Site, Crop, or Activity
+    pub reference_id: Option<Uuid>,
     pub is_active: bool,
+}
+
+impl VisibilityAwareEntity for CostCenter {
+    #[cfg(feature = "mongodb")]
+    fn visibility_filter(_user_id: Uuid, roles: &[UserRole]) -> Document {
+        if roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager) {
+            doc! {}
+        } else {
+            doc! {} // Alle im Tenant
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
@@ -72,8 +101,21 @@ pub struct FinancialRecord {
     pub record_type: FinancialRecordType,
     pub category: String,
     pub description: String,
-    pub reference_id: Option<Uuid>, // ID of Order, Task, or Purchase
+    pub reference_id: Option<Uuid>,
     pub created_at: DateTime<Utc>,
+}
+
+impl VisibilityAwareEntity for FinancialRecord {
+    #[cfg(feature = "mongodb")]
+    fn visibility_filter(_user_id: Uuid, roles: &[UserRole]) -> Document {
+        if roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager) {
+            doc! {}
+        } else if roles.contains(&UserRole::Worker) {
+            doc! {} // Worker sieht Finanzen über Auftrags-Beziehung
+        } else {
+            doc! {}
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]

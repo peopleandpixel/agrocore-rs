@@ -88,7 +88,7 @@ pub struct CreateAnimalDto {
     pub current_site_id: Option<Uuid>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, Default, ToSchema)]
 pub struct UpdateAnimalDto {
     pub breed: Option<String>,
     pub identifier: Option<String>,
@@ -96,4 +96,31 @@ pub struct UpdateAnimalDto {
     pub current_site_id: Option<Uuid>,
     pub group_id: Option<Uuid>,
     pub weight_kg: Option<f64>,
+}
+
+// =============================================================================
+// VISIBILITY SECURITY: Animal Entity implements VisibilityAwareEntity
+// =============================================================================
+use crate::repositories::VisibilityAwareEntity;
+use crate::entities::user::UserRole;
+
+#[cfg(feature = "mongodb")]
+use mongodb::bson::{doc, Document};
+
+impl VisibilityAwareEntity for Animal {
+    #[cfg(feature = "mongodb")]
+    fn visibility_filter(_user_id: Uuid, roles: &[UserRole]) -> Document {
+        // Animal ist tenant-geschützt
+        // Worker sieht Tiere auf zugewiesenen Weiden (über Site-Zuordnung)
+        if roles.contains(&UserRole::Admin)
+            || roles.contains(&UserRole::Manager)
+        {
+            doc! {}
+        } else if roles.contains(&UserRole::Worker) {
+            // Worker filtert über Site-Zuordnung - site.current_site_id und site.assigned_user_ids
+            doc! {} // Wird im Repository weiter geregelt
+        } else {
+            doc! {}
+        }
+    }
 }

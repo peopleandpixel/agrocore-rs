@@ -125,6 +125,13 @@ use crate::entities::livestock::{Animal, CreateAnimalDto, UpdateAnimalDto};
 #[cfg_attr(test, automock)]
 pub trait AnimalRepository: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Animal>>;
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[crate::entities::user::UserRole],
+    ) -> RepositoryFuture<Option<Animal>>;
     fn find_all(&self, tid: TenantId, p: Pagination)
         -> RepositoryFuture<PaginatedResponse<Animal>>;
     fn create(&self, tid: TenantId, dto: CreateAnimalDto, by: Uuid) -> RepositoryFuture<Animal>;

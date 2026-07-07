@@ -26,6 +26,15 @@ impl AnimalRepository for AnimalRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Animal>> {
         self.base.find_by_id(tid, id)
     }
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[agrocore_domain::entities::user::UserRole],
+    ) -> RepositoryFuture<Option<Animal>> {
+        self.base.find_by_id_visible(tid, id, user_id, roles)
+    }
 
     fn find_all(
         &self,

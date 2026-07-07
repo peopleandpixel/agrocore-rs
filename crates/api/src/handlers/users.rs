@@ -74,6 +74,15 @@ pub async fn get_user(
     path: web::Path<uuid::Uuid>,
 ) -> impl Responder {
     let user_id = *path;
+    
+    // SECURITY: Worker darf nur eigenes Profil sehen
+    if !auth.is_manager() && auth.0.user_id != user_id {
+        return HttpResponse::Forbidden().json(ErrorResponse {
+            error: "forbidden".into(),
+            message: "Workers can only view their own profile".into(),
+        });
+    }
+    
     tracing::info!("Getting user {} for tenant: {}", user_id, auth.0.tenant_id);
     match state
         .db

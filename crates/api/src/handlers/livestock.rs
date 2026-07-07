@@ -79,10 +79,11 @@ pub async fn get_animal(
     auth: AuthUser,
     path: web::Path<Uuid>,
 ) -> impl Responder {
+    let roles = auth.roles();
     match state
         .db
         .animal_repo()
-        .find_by_id(auth.0.tenant_id, *path)
+        .find_by_id_visible(auth.0.tenant_id, *path, auth.0.user_id, &roles)
         .await
     {
         Ok(Some(animal)) => HttpResponse::Ok().json(animal),

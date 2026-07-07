@@ -120,11 +120,11 @@ pub async fn get_pac_application(
     auth: AuthExtractor,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    let roles = auth.roles();
     match state
         .db
         .pac_application_repo()
-        .find_by_id(auth.0.tenant_id, id.into_inner())
-        .await
+        .find_by_id_visible(auth.0.tenant_id, id.into_inner(), auth.0.user_id, &roles).await
     {
         Ok(Some(app)) => HttpResponse::Ok().json(app),
         Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
@@ -218,11 +218,11 @@ pub async fn get_cost_center(
     auth: AuthExtractor,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    let roles = auth.roles();
     match state
         .db
         .cost_center_repo()
-        .find_by_id(auth.0.tenant_id, id.into_inner())
-        .await
+        .find_by_id_visible(auth.0.tenant_id, id.into_inner(), auth.0.user_id, &roles).await
     {
         Ok(Some(cc)) => HttpResponse::Ok().json(cc),
         Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
@@ -316,11 +316,11 @@ pub async fn get_financial_record(
     auth: AuthExtractor,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    let roles = auth.roles();
     match state
         .db
         .financial_record_repo()
-        .find_by_id(auth.0.tenant_id, id.into_inner())
-        .await
+        .find_by_id_visible(auth.0.tenant_id, id.into_inner(), auth.0.user_id, &roles).await
     {
         Ok(Some(rec)) => HttpResponse::Ok().json(rec),
         Ok(None) => HttpResponse::NotFound().json(ErrorResponse {

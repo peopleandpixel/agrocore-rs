@@ -117,7 +117,7 @@ pub struct CreateUserDto {
     pub language: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, Default, ToSchema)]
 pub struct UpdateUserDto {
     pub firstname: Option<String>,
     pub lastname: Option<String>,
@@ -131,6 +131,30 @@ pub struct UpdateUserDto {
     pub color: Option<String>,
     pub language: Option<String>,
     pub assigned_site_ids: Option<Vec<Uuid>>,
+}
+
+// =============================================================================
+// VISIBILITY SECURITY: User Entity implements VisibilityAwareEntity
+// =============================================================================
+use crate::repositories::VisibilityAwareEntity;
+
+#[cfg(feature = "mongodb")]
+use mongodb::bson::{doc, Document};
+
+impl VisibilityAwareEntity for User {
+    #[cfg(feature = "mongodb")]
+    fn visibility_filter(_user_id: Uuid, roles: &[UserRole]) -> Document {
+        // Admin/Manager sehen alle User im Tenant
+        // Worker sieht nur Nutzer, die Aufträge im selben Tenant haben
+        // Viewer hat selbe Tenant-Isolation
+        if roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager) {
+            doc! {} // Alle im Tenant sichtbar
+        } else {
+            // Worker/Viewer sehen nur Nutzer mit gleicher user_id (eigenes Profil)
+            // Diese Logik wird im Handler weiter ausgeführt
+            doc! {}
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]

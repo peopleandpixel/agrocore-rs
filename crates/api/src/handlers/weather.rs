@@ -83,10 +83,11 @@ pub async fn get_station(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    let roles = auth.roles();
     match state
         .db
         .weather_station_repo()
-        .find_by_id(auth.0.tenant_id, *id)
+        .find_by_id_visible(auth.0.tenant_id, *id, auth.0.user_id, &roles)
         .await
     {
         Ok(Some(s)) => HttpResponse::Ok().json(s),

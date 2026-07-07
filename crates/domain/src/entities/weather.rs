@@ -1,12 +1,17 @@
 use crate::entities::tenant::TenantId;
 use crate::entities::BbchStage;
+use crate::entities::user::UserRole;
+use crate::repositories::VisibilityAwareEntity;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
+#[cfg(feature = "mongodb")]
+use mongodb::bson::{doc, Document};
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum WeatherStationType {
     #[serde(rename = "iot")]
     Iot,
@@ -31,12 +36,24 @@ pub struct WeatherStation {
     pub manufacturer: Option<String>,
     pub model: Option<String>,
     pub serial_number: Option<String>,
-    pub api_key_config: Option<String>, // Encrypted or reference
+    pub api_key_config: Option<String>,
     pub is_active: bool,
-    pub sensor_metadata: Option<serde_json::Value>, // IoT Sensor Details (Battery, Signal, etc.)
+    pub sensor_metadata: Option<serde_json::Value>,
     pub firmware_version: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+impl VisibilityAwareEntity for WeatherStation {
+    #[cfg(feature = "mongodb")]
+    fn visibility_filter(_user_id: Uuid, roles: &[UserRole]) -> Document {
+        if roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager) {
+            doc! {}
+        } else {
+            // Worker/Viewer sehen Wetterstationen allgemein (tenant-gesichert)
+            doc! {}
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]

@@ -286,8 +286,12 @@ pub async fn complete_order(
     let order_id = *path;
     let tenant_id = auth.0.tenant_id;
 
-    // 1. Fetch current order
-    let mut order = match state.db.order_repo().find_by_id(tenant_id, order_id).await {
+    // 1. Fetch current order with visibility check (prevents unauthorized access)
+    let mut order = match state
+        .db
+        .order_repo()
+        .find_by_id_visible(tenant_id, order_id, auth.0.user_id, &auth.roles())
+        .await {
         Ok(Some(o)) => o,
         Ok(None) => {
             return HttpResponse::NotFound().json(ErrorResponse {
@@ -416,8 +420,12 @@ pub async fn start_order(
     let order_id = *path;
     let tenant_id = auth.0.tenant_id;
 
-    // 1. Fetch current order
-    let mut order = match state.db.order_repo().find_by_id(tenant_id, order_id).await {
+    // 1. Fetch current order with visibility check (prevents unauthorized access)
+    let mut order = match state
+        .db
+        .order_repo()
+        .find_by_id_visible(tenant_id, order_id, auth.0.user_id, &auth.roles())
+        .await {
         Ok(Some(o)) => o,
         Ok(None) => {
             return HttpResponse::NotFound().json(ErrorResponse {
