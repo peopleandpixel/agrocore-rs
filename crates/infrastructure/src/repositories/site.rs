@@ -122,11 +122,10 @@ impl SiteRepository for SiteRepo {
             if let Some(v) = dto.gross_area {
                 d.insert("gross_area", v);
             }
-            if let Some(v) = dto.properties {
-                if let Ok(bson_v) = mongodb::bson::to_bson(&v) {
+            if let Some(v) = dto.properties
+                && let Ok(bson_v) = mongodb::bson::to_bson(&v) {
                     d.insert("properties", bson_v);
                 }
-            }
             if let Some(v) = dto.is_active {
                 d.insert("is_active", v);
             }
