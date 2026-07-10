@@ -1,4 +1,5 @@
 use crate::entities::tenant::TenantId;
+use crate::entities::user::UserRole;
 use crate::entities::BbchStage;
 use crate::repositories::VisibilityAwareEntity;
 use chrono::{DateTime, Utc};

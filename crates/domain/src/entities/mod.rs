@@ -14,6 +14,7 @@ pub mod user;
 pub mod vineyard;
 pub mod water;
 pub mod weather;
+pub mod worker_task_status;
 pub mod workforce;
 
 use serde::{Deserialize, Serialize};

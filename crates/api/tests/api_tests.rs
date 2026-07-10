@@ -36,5 +36,5 @@ async fn test_swagger_ui() {
     .await;
     let req = TestRequest::get().uri("/swagger-ui/").to_request();
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), StatusCode::OK); // UI itself returns 200
+    assert_eq!(resp.status(), StatusCode::OK);
 }

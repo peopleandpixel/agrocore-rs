@@ -1,4 +1,4 @@
-mod auth_utils;
+pub mod auth_utils;
 mod base;
 mod compliance;
 mod equipment;
@@ -15,6 +15,7 @@ mod user;
 mod vineyard;
 mod water;
 mod weather;
+mod worker_task_status;
 mod workforce;
 
 pub use base::{paginate, MongoRepository};
@@ -36,4 +37,5 @@ pub use user::UserRepo;
 pub use vineyard::{KelterDeliveryRepo, VineyardRepo};
 pub use water::{WaterQuotaRepo, WaterSourceRepo, WaterUsageRepo};
 pub use weather::{PhenologyRecordRepo, WeatherDataRepo, WeatherStationRepo};
+pub use worker_task_status::WorkerTaskStatusRepo;
 pub use workforce::{WorkLogRepo, WorkerLocationRepo, WorkerRepo};

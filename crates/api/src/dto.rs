@@ -214,6 +214,8 @@ pub struct ErrorResponse {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct AuthResponseDto {
     pub token: String,
+    pub refresh_token: Option<String>,
+    pub token_expires_in: i64, // Sekunden bis expiry
     pub user_id: Uuid,
     pub tenant_id: Uuid,
     pub firstname: String,
@@ -591,6 +593,8 @@ impl From<CreateTaskDataDto> for DomainCreateTaskDataDto {
             description: dto.description,
             started_at: None,
             ended_at: None,
+            paused_at: None,
+            resume_at: None,
             duration_minutes: None,
             area_covered: None,
             materials_used: None,
@@ -785,6 +789,8 @@ mod tests {
             language: Some(String::from("de")),
             assigned_site_ids: None,
             last_login: Some(Utc.with_ymd_and_hms(2026, 1, 2, 3, 4, 5).unwrap()),
+            refresh_token: None,
+            refresh_token_expires_at: None,
             created_at: Utc.with_ymd_and_hms(2026, 1, 2, 3, 4, 5).unwrap(),
             updated_at: Utc.with_ymd_and_hms(2026, 1, 3, 4, 5, 6).unwrap(),
         };

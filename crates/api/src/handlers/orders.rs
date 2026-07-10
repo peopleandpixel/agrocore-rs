@@ -7,6 +7,7 @@ use crate::AppState;
 use actix_web::{web, HttpResponse, Responder};
 use agrocore_domain::entities::order::MyTask;
 use agrocore_domain::entities::workforce::CreateWorkLogDto;
+use agrocore_domain::repositories::WorkerTaskStatusRepository;
 use agrocore_domain::services::workflow::WorkflowService;
 use agrocore_messaging::{Event, GlobalEvent};
 use chrono::Utc;
@@ -506,5 +507,125 @@ pub async fn my_tasks(state: web::Data<AppState>, auth: AuthUser) -> impl Respon
                 message: e.to_string(),
             })
         }
+    }
+}
+
+// =============================================================================
+// Worker Task Status - separate status per worker for multi-worker tasks
+// =============================================================================
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/tasks/{id}/start-for-worker",
+    responses(
+        (status = 200, description = "Worker task status updated", body = String),
+        (status = 404, description = "Task not found or not assigned", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "tasks",
+    security(("bearer_auth" = []))
+)]
+pub async fn start_task_for_worker(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+) -> impl Responder {
+    let task_id = *path;
+    let tenant_id = auth.0.tenant_id;
+    let worker_id = auth.0.user_id;
+
+    // Find existing status, create if not exists
+    let status = state
+        .db
+        .worker_task_status_repo()
+        .find_by_task_and_worker(tenant_id, task_id, worker_id)
+        .await;
+
+    match status {
+        Ok(Some(_)) => {
+            // Update existing to Started
+            let updated = state
+                .db
+                .worker_task_status_repo()
+                .update_status(
+                    tenant_id,
+                    task_id,
+                    worker_id,
+                    agrocore_domain::entities::worker_task_status::WorkerTaskStatusType::Started,
+                )
+                .await;
+
+            match updated {
+                Ok(_) => HttpResponse::Ok().json(serde_json::json!({"status": "started"})),
+                Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
+                    error: "internal".into(),
+                    message: e.to_string(),
+                }),
+            }
+        }
+        Ok(None) => {
+            // Create new status entry
+            let dto = agrocore_domain::entities::worker_task_status::CreateWorkerTaskStatusDto {
+                task_id,
+                worker_id,
+                tenant_id,
+            };
+            match state
+                .db
+                .worker_task_status_repo()
+                .create(tenant_id, dto)
+                .await
+            {
+                Ok(_) => HttpResponse::Ok().json(serde_json::json!({"status": "created"})),
+                Err(e) => HttpResponse::Created().json(ErrorResponse {
+                    error: "internal".into(),
+                    message: e.to_string(),
+                }),
+            }
+        }
+        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
+            error: "internal".into(),
+            message: e.to_string(),
+        }),
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/tasks/{id}/stop-for-worker",
+    responses(
+        (status = 200, description = "Worker task status updated", body = String),
+        (status = 404, description = "Task not found or not assigned", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "tasks",
+    security(("bearer_auth" = []))
+)]
+pub async fn stop_task_for_worker(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+) -> impl Responder {
+    let task_id = *path;
+    let tenant_id = auth.0.tenant_id;
+    let worker_id = auth.0.user_id;
+
+    let updated = state
+        .db
+        .worker_task_status_repo()
+        .update_status(
+            tenant_id,
+            task_id,
+            worker_id,
+            agrocore_domain::entities::worker_task_status::WorkerTaskStatusType::Stopped,
+        )
+        .await;
+
+    match updated {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({"status": "stopped"})),
+        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
+            error: "internal".into(),
+            message: e.to_string(),
+        }),
     }
 }

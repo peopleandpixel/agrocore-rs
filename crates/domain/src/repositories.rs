@@ -156,3 +156,32 @@ pub trait AnimalRepository: Send + Sync {
         record: crate::entities::livestock::GrazingRecord,
     ) -> RepositoryFuture<bool>;
 }
+
+use crate::entities::worker_task_status::{CreateWorkerTaskStatusDto, WorkerTaskStatus, WorkerTaskStatusType};
+
+#[cfg_attr(test, automock)]
+pub trait WorkerTaskStatusRepository: Send + Sync {
+    fn find_by_task_and_worker(
+        &self,
+        tid: TenantId,
+        task_id: Uuid,
+        worker_id: Uuid,
+    ) -> RepositoryFuture<Option<WorkerTaskStatus>>;
+    fn find_all_for_task(
+        &self,
+        tid: TenantId,
+        task_id: Uuid,
+    ) -> RepositoryFuture<Vec<WorkerTaskStatus>>;
+    fn create(
+        &self,
+        tid: TenantId,
+        dto: CreateWorkerTaskStatusDto,
+    ) -> RepositoryFuture<WorkerTaskStatus>;
+    fn update_status(
+        &self,
+        tid: TenantId,
+        task_id: Uuid,
+        worker_id: Uuid,
+        status: WorkerTaskStatusType,
+    ) -> RepositoryFuture<Option<WorkerTaskStatus>>;
+}

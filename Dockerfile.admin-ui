@@ -1,0 +1,27 @@
+# Build stage for Admin UI
+FROM rust:1.81-slim as builder
+
+RUN apt-get update && apt-get install -y \
+    nodejs npm \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install trunk
+RUN cargo install trunk
+
+WORKDIR /app
+COPY crates/admin-ui/ ./admin-ui/
+COPY crates/domain/ ./domain/
+COPY crates/shared/ ./shared/
+COPY Cargo.toml ./
+
+# Build static assets with trunk
+RUN cd admin-ui && trunk build --release
+
+# Runtime - serve static files with nginx
+FROM nginx:alpine
+
+COPY --from=builder /app/admin-ui/dist /usr/share/nginx/html
+COPY --from=builder /app/admin-ui/styles /usr/share/nginx/html/styles
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

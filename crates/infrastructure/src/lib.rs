@@ -3,6 +3,8 @@ mod repositories;
 use agrocore_domain::repositories::SiteRepository;
 use std::sync::Arc;
 
+// Re-export auth_utils functions at crate root for API access
+pub use repositories::auth_utils::{generate_jwt, hash_password, verify_password};
 pub use repositories::AnimalRepo;
 pub use repositories::EquipmentRepo;
 pub use repositories::{
@@ -18,7 +20,7 @@ pub use repositories::{
 };
 pub use repositories::{PhenologyRecordRepo, WeatherDataRepo, WeatherStationRepo};
 pub use repositories::{WaterQuotaRepo, WaterSourceRepo, WaterUsageRepo};
-pub use repositories::{WorkLogRepo, WorkerLocationRepo, WorkerRepo};
+pub use repositories::{WorkLogRepo, WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepo};
 
 use mongodb::bson::doc;
 use mongodb::options::{ClientOptions, IndexOptions};
@@ -81,31 +83,6 @@ impl Database {
                     .build(),
             )
             .await?;
-
-        // Orders: tenant_id + status + deadline_date
-        let order_collection = self.collection::<agrocore_domain::entities::order::Order>("orders");
-        order_collection
-            .create_index(
-                IndexModel::builder()
-                    .keys(doc! { "tenant_id": 1, "status": 1, "deadline_date": 1 })
-                    .build(),
-            )
-            .await?;
-        create_active_updated_index(&order_collection).await?;
-
-        // Task Data: tenant_id + worker_id + started_at
-        let task_collection =
-            self.collection::<agrocore_domain::entities::task::TaskData>("task_data");
-        task_collection
-            .create_index(
-                IndexModel::builder()
-                    .keys(doc! { "tenant_id": 1, "worker_id": 1, "started_at": -1 })
-                    .build(),
-            )
-            .await?;
-        create_active_updated_index(&task_collection).await?;
-
-        // Sites: 2dsphere index for geo-queries
         site_collection
             .create_index(
                 IndexModel::builder()
@@ -115,74 +92,35 @@ impl Database {
             .await?;
         create_active_updated_index(&site_collection).await?;
 
-        // Compliance: tenant_id + site_id
+        // Orders
+        let order_collection = self.collection::<agrocore_domain::entities::order::Order>("orders");
+        create_active_updated_index(&order_collection).await?;
+
+        // Task Data
+        let task_collection =
+            self.collection::<agrocore_domain::entities::task::TaskData>("task_data");
+        create_active_updated_index(&task_collection).await?;
+
+        // Worker Task Status
+        let worker_task_status_collection = self
+            .collection::<agrocore_domain::entities::worker_task_status::WorkerTaskStatus>("worker_task_status");
+        worker_task_status_collection
+            .create_index(
+                IndexModel::builder()
+                    .keys(doc! { "tenant_id": 1, "task_id": 1, "worker_id": 1 })
+                    .build(),
+            )
+            .await?;
+        create_active_updated_index(&worker_task_status_collection).await?;
+
+        // Compliance
         let checklist_collection = self
             .collection::<agrocore_domain::entities::compliance::ComplianceChecklist>(
                 "compliance_checklists",
             );
-        checklist_collection
-            .create_index(
-                IndexModel::builder()
-                    .keys(doc! { "tenant_id": 1, "site_id": 1 })
-                    .build(),
-            )
-            .await?;
         create_active_updated_index(&checklist_collection).await?;
 
-        // Fertilizer: tenant_id + application_date
-        let fertilizer_collection = self
-            .collection::<agrocore_domain::entities::compliance::FertilizerRecord>(
-                "fertilizer_records",
-            );
-        fertilizer_collection
-            .create_index(
-                IndexModel::builder()
-                    .keys(doc! { "tenant_id": 1, "application_date": -1 })
-                    .build(),
-            )
-            .await?;
-        create_active_updated_index(&fertilizer_collection).await?;
-
-        let plant_protection_collection =
-            self.collection::<agrocore_domain::entities::plant_protection::PlantProtectionRecord>(
-                "plant_protection_records",
-            );
-        create_active_updated_index(&plant_protection_collection).await?;
-
-        let applicator_license_collection =
-            self.collection::<agrocore_domain::entities::plant_protection::ApplicatorLicense>(
-                "applicator_licenses",
-            );
-        create_active_updated_index(&applicator_license_collection).await?;
-
-        let olive_grove_collection =
-            self.collection::<agrocore_domain::entities::olive::OliveGrove>("olive_groves");
-        create_active_updated_index(&olive_grove_collection).await?;
-
-        let olive_oil_record_collection = self
-            .collection::<agrocore_domain::entities::olive::OliveOilRecord>("olive_oil_records");
-        create_active_updated_index(&olive_oil_record_collection).await?;
-
-        let vineyard_collection =
-            self.collection::<agrocore_domain::entities::vineyard::Vineyard>("vineyards");
-        create_active_updated_index(&vineyard_collection).await?;
-
-        let kelter_delivery_collection = self
-            .collection::<agrocore_domain::entities::vineyard::KelterDelivery>("kelter_deliveries");
-        create_active_updated_index(&kelter_delivery_collection).await?;
-
-        let water_source_collection =
-            self.collection::<agrocore_domain::entities::water::WaterSource>("water_sources");
-        create_active_updated_index(&water_source_collection).await?;
-
-        let water_usage_collection =
-            self.collection::<agrocore_domain::entities::water::WaterUsage>("water_usages");
-        create_active_updated_index(&water_usage_collection).await?;
-
-        let water_quota_collection =
-            self.collection::<agrocore_domain::entities::water::WaterQuota>("water_quotas");
-        create_active_updated_index(&water_quota_collection).await?;
-
+        // Worker
         let worker_collection =
             self.collection::<agrocore_domain::entities::workforce::Worker>("workers");
         worker_collection
@@ -194,87 +132,9 @@ impl Database {
             .await?;
         create_active_updated_index(&worker_collection).await?;
 
-        let work_log_collection =
-            self.collection::<agrocore_domain::entities::workforce::WorkLog>("work_logs");
-        work_log_collection
-            .create_index(
-                IndexModel::builder()
-                    .keys(doc! { "tenant_id": 1, "worker_id": 1, "date": -1 })
-                    .build(),
-            )
-            .await?;
-        create_active_updated_index(&work_log_collection).await?;
-
-        let worker_location_collection = self
-            .collection::<agrocore_domain::entities::workforce::WorkerLocation>("worker_locations");
-        create_active_updated_index(&worker_location_collection).await?;
-
-        let weather_station_collection = self
-            .collection::<agrocore_domain::entities::weather::WeatherStation>("weather_stations");
-        create_active_updated_index(&weather_station_collection).await?;
-
-        let weather_data_collection =
-            self.collection::<agrocore_domain::entities::weather::WeatherData>("weather_data");
-        create_active_updated_index(&weather_data_collection).await?;
-
-        let phenology_record_collection = self
-            .collection::<agrocore_domain::entities::weather::PhenologyRecord>("phenology_records");
-        create_active_updated_index(&phenology_record_collection).await?;
-
-        let pac_application_collection = self
-            .collection::<agrocore_domain::entities::finance::PACApplication>("pac_applications");
-        create_active_updated_index(&pac_application_collection).await?;
-
-        let cost_center_collection =
-            self.collection::<agrocore_domain::entities::finance::CostCenter>("cost_centers");
-        create_active_updated_index(&cost_center_collection).await?;
-
-        let financial_record_collection = self
-            .collection::<agrocore_domain::entities::finance::FinancialRecord>("financial_records");
-        create_active_updated_index(&financial_record_collection).await?;
-
-        let equipment_collection =
-            self.collection::<agrocore_domain::entities::equipment::Equipment>("equipment");
-        create_active_updated_index(&equipment_collection).await?;
-
-        let cold_chain_log_collection =
-            self.collection::<agrocore_domain::entities::harvest::ColdChainLog>("cold_chain_logs");
-        create_active_updated_index(&cold_chain_log_collection).await?;
-
-        let harvest_season_collection =
-            self.collection::<agrocore_domain::entities::harvest::HarvestSeason>("harvest_seasons");
-        create_active_updated_index(&harvest_season_collection).await?;
-
-        let harvest_lot_collection =
-            self.collection::<agrocore_domain::entities::harvest::HarvestLot>("harvest_lots");
-        create_active_updated_index(&harvest_lot_collection).await?;
-
-        let harvest_delivery_collection = self
-            .collection::<agrocore_domain::entities::harvest::HarvestDelivery>(
-                "harvest_deliveries",
-            );
-        create_active_updated_index(&harvest_delivery_collection).await?;
-
-        let animal_collection =
-            self.collection::<agrocore_domain::entities::livestock::Animal>("animals");
-        create_active_updated_index(&animal_collection).await?;
-
+        // Spatial
         let spatial_collection =
             self.collection::<agrocore_domain::entities::spatial::SpatialObject>("spatial_objects");
-        spatial_collection
-            .create_index(
-                IndexModel::builder()
-                    .keys(doc! { "tenant_id": 1, "site_id": 1, "object_type": 1 })
-                    .build(),
-            )
-            .await?;
-        spatial_collection
-            .create_index(
-                IndexModel::builder()
-                    .keys(doc! { "tenant_id": 1, "parent_id": 1 })
-                    .build(),
-            )
-            .await?;
         create_active_updated_index(&spatial_collection).await?;
 
         Ok(())
@@ -366,6 +226,10 @@ impl Database {
 
     pub fn worker_location_repo(&self) -> WorkerLocationRepo {
         WorkerLocationRepo::new(self.collection("worker_locations"))
+    }
+
+    pub fn worker_task_status_repo(&self) -> WorkerTaskStatusRepo {
+        WorkerTaskStatusRepo::new(self.collection("worker_task_status"))
     }
 
     pub fn weather_station_repo(&self) -> WeatherStationRepo {

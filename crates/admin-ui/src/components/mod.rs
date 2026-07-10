@@ -15,3 +15,4 @@ pub mod sites;
 pub mod users;
 pub mod weather;
 pub mod wizard;
+pub mod worker_tasks;

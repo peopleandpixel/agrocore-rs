@@ -69,6 +69,8 @@ impl UserRepo {
                 language: dto.language,
                 assigned_site_ids: None,
                 last_login: None,
+                refresh_token: None,
+                refresh_token_expires_at: None,
                 created_at: now,
                 updated_at: now,
             };
@@ -122,7 +124,7 @@ impl UserRepo {
     pub fn authenticate(&self, dto: LoginDto) -> Fut<AuthResponse> {
         let c = self.base.collection.clone();
         Box::pin(async move {
-            let u = c
+            let mut u = c
                 .find_one(doc! {"email":&dto.email})
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?
@@ -131,7 +133,22 @@ impl UserRepo {
                 return Err(SharedError::Unauthorized("Account disabled".into()));
             }
             verify_password(&dto.password, &u.password_hash)?;
+
+            // Generate tokens
             let token = generate_jwt(&u)?;
+            let refresh_token = Uuid::new_v4().to_string();
+            let refresh_token_expires_at = Utc::now() + chrono::Duration::days(7);
+            u.refresh_token = Some(refresh_token.clone());
+            u.refresh_token_expires_at = Some(refresh_token_expires_at);
+
+            // Update user with refresh token
+            c.update_one(
+                doc! { "_id": u.id.to_string(), "tenant_id": u.tenant_id.to_string() },
+                doc! { "$set": { "refresh_token": refresh_token.clone(), "refresh_token_expires_at": refresh_token_expires_at } }
+            )
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
             Ok(AuthResponse {
                 token,
                 user_id: u.id,
@@ -140,6 +157,46 @@ impl UserRepo {
                 lastname: u.lastname,
                 roles: u.roles,
             })
+        })
+    }
+
+    pub fn find_by_refresh_token(&self, refresh_token: &str) -> Fut<Option<User>> {
+        let c = self.base.collection.clone();
+        let rt = refresh_token.to_string();
+        Box::pin(async move {
+            c.find_one(doc! {"refresh_token": &rt})
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))
+        })
+    }
+
+    pub fn update_refresh_token(&self, user_id: Uuid, refresh_token: &str, expires_at: chrono::DateTime<Utc>) -> Fut<bool> {
+        let c = self.base.collection.clone();
+        let rt = refresh_token.to_string();
+        let expires = expires_at;
+        Box::pin(async move {
+            let result = c
+                .update_one(
+                    doc! { "_id": user_id.to_string() },
+                    doc! { "$set": { "refresh_token": rt, "refresh_token_expires_at": expires } }
+                )
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
+            Ok(result.modified_count > 0)
+        })
+    }
+
+    pub fn invalidate_refresh_token(&self, user_id: Uuid) -> Fut<bool> {
+        let c = self.base.collection.clone();
+        Box::pin(async move {
+            let result = c
+                .update_one(
+                    doc! { "_id": user_id.to_string() },
+                    doc! { "$set": { "refresh_token": None::<String>, "refresh_token_expires_at": None::<chrono::DateTime<Utc>> } }
+                )
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
+            Ok(result.modified_count > 0)
         })
     }
 }

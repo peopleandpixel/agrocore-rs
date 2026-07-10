@@ -82,47 +82,99 @@ function emitPolygonState(onChange, layer) {
     onChange(points, polygonAreaHa(points), ringCentroid(points));
 }
 
-export function initPolygonEditor(el, onChange) {
+export function initPolygonEditor(el, onChange, onLocation) {
     if (el.__agrocoreLeafletInitialized) {
         return;
     }
 
-    const { L, map } = initializeMap(el, [38.7223, -9.1393], 16);
-    const drawnItems = L.featureGroup().addTo(map);
+    // Get user's current location
+    const defaultCenter = [38.7223, -9.1393]; // Lisbon fallback
 
-    const drawControl = new L.Control.Draw({
-        draw: {
-            polygon: true,
-            polyline: false,
-            rectangle: false,
-            circle: false,
-            circlemarker: false,
-            marker: false,
-        },
-        edit: {
-            featureGroup: drawnItems,
-            edit: true,
-            remove: true,
-        },
-    });
+    function setupMap(center) {
+        const { L, map } = initializeMap(el, center, 16);
+        const drawnItems = L.featureGroup().addTo(map);
 
-    map.addControl(drawControl);
+        // Add user location marker (red marker)
+        L.marker(center, {
+            icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+            })
+        }).addTo(map);
 
-    map.on(L.Draw.Event.CREATED, (event) => {
-        drawnItems.clearLayers();
-        drawnItems.addLayer(event.layer);
-        emitPolygonState(onChange, event.layer);
-    });
+        L.popup().setLatLng(center).setContent('Ihr Standort').openOn(map);
 
-    map.on(L.Draw.Event.EDITED, (event) => {
-        event.layers.eachLayer((layer) => emitPolygonState(onChange, layer));
-    });
+        // Notify parent about user location
+        onLocation({ lat: center[0], lng: center[1] });
 
-    map.on(L.Draw.Event.DELETED, () => {
-        onChange(null, null, null);
-    });
+        // Handle container resize for proper map rendering in modal
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 300);
 
-    el.__agrocoreLeafletInitialized = true;
+        const drawControl = new L.Control.Draw({
+            draw: {
+                polygon: true,
+                polyline: false,
+                rectangle: false,
+                circle: false,
+                circlemarker: false,
+                marker: false,
+            },
+            edit: {
+                featureGroup: drawnItems,
+                edit: true,
+                remove: true,
+            },
+        });
+
+        map.addControl(drawControl);
+
+        map.on(L.Draw.Event.CREATED, (event) => {
+            drawnItems.clearLayers();
+            drawnItems.addLayer(event.layer);
+            emitPolygonState(onChange, event.layer);
+        });
+
+        // Handle polygon completion when clicking first point
+        map.on('draw:drawstop', () => {
+            setTimeout(() => {
+                const layers = drawnItems.getLayers();
+                if (layers.length > 0) {
+                    emitPolygonState(onChange, layers[0]);
+                }
+            }, 100);
+        });
+
+        map.on(L.Draw.Event.EDITED, (event) => {
+            event.layers.eachLayer((layer) => emitPolygonState(onChange, layer));
+        });
+
+        map.on(L.Draw.Event.DELETED, () => {
+            onChange(null, null, null);
+        });
+
+        el.__agrocoreLeafletInitialized = true;
+    }
+
+    // Try to get user location
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setupMap([position.coords.latitude, position.coords.longitude]);
+            },
+            () => {
+                // Geolocation failed, use default
+                setupMap(defaultCenter);
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
+    } else {
+        setupMap(defaultCenter);
+    }
 }
 
 export function initWorkerMap(el) {
@@ -130,6 +182,12 @@ export function initWorkerMap(el) {
         return;
     }
 
-    initializeMap(el, [48.8566, 2.3522], 13);
+    const { L, map } = initializeMap(el, [48.8566, 2.3522], 13);
+
+    // Handle container resize for proper map rendering
+    setTimeout(() => {
+        map.invalidateSize();
+    }, 300);
+
     el.__agrocoreLeafletInitialized = true;
 }

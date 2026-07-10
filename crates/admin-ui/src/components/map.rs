@@ -89,7 +89,7 @@ where
         <div class="space-y-3">
             <div
                 node_ref=map_ref
-                class="w-full h-[380px] rounded-box overflow-hidden border border-base-300 bg-base-200"
+                class="w-full h-[500px] rounded-box overflow-hidden border border-base-300 bg-base-200"
             ></div>
         </div>
     }

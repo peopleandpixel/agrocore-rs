@@ -4,6 +4,7 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::entities::tenant::TenantId;
+use crate::entities::user::UserRole;
 use crate::repositories::VisibilityAwareEntity;
 
 #[cfg(feature = "mongodb")]
@@ -20,6 +21,8 @@ pub struct TaskData {
     pub description: String,
     pub started_at: DateTime<Utc>,
     pub ended_at: Option<DateTime<Utc>>,
+    pub paused_at: Option<DateTime<Utc>>,
+    pub resume_at: Option<DateTime<Utc>>,
     pub duration_minutes: Option<u32>,
     pub machine_id: Option<Uuid>,
     pub machine_hours: Option<f64>,
@@ -76,6 +79,8 @@ pub struct CreateTaskDataDto {
     pub description: String,
     pub started_at: Option<DateTime<Utc>>,
     pub ended_at: Option<DateTime<Utc>>,
+    pub paused_at: Option<DateTime<Utc>>,
+    pub resume_at: Option<DateTime<Utc>>,
     pub duration_minutes: Option<u32>,
     pub machine_id: Option<Uuid>,
     pub machine_hours: Option<f64>,

@@ -32,7 +32,7 @@ pub fn generate_jwt(u: &User) -> Result<String> {
     use jsonwebtoken::{encode, EncodingKey, Header};
     let secret = agrocore_shared::config::jwt_secret();
     let exp = Utc::now()
-        .checked_add_signed(chrono::Duration::hours(24))
+        .checked_add_signed(chrono::Duration::minutes(30))
         .unwrap()
         .timestamp() as usize;
     let roles: Vec<String> = u.roles.iter().map(|r| format!("{:?}", r)).collect();
@@ -86,6 +86,8 @@ mod tests {
             language: Some(String::from("de")),
             assigned_site_ids: None,
             last_login: None,
+            refresh_token: None,
+            refresh_token_expires_at: None,
             created_at: now,
             updated_at: now,
         }

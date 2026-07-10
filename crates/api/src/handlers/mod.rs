@@ -22,6 +22,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         web::scope("/api/v1")
             .service(web::resource("/health").route(web::get().to(health)))
             .service(web::resource("/auth/login").route(web::post().to(auth::login)))
+            .service(web::resource("/auth/refresh").route(web::post().to(auth::refresh_token)))
             .service(
                 web::resource("/sites")
                     .route(web::get().to(sites::list_sites))
@@ -50,6 +51,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route(web::post().to(orders::complete_order)),
             )
             .service(web::resource("/orders/{id}/start").route(web::post().to(orders::start_order)))
+            .service(web::resource("/tasks/{id}/start-for-worker").route(web::post().to(orders::start_task_for_worker)))
+            .service(web::resource("/tasks/{id}/stop-for-worker").route(web::post().to(orders::stop_task_for_worker)))
             .service(
                 web::resource("/users")
                     .route(web::get().to(users::list_users))

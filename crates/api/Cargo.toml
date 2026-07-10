@@ -23,6 +23,8 @@ tracing-actix-web = { workspace = true }
 utoipa = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 actix-web-prometheus = { workspace = true }
+actix-governor = "0.10"
+dashmap = "6"
 validator = { workspace = true }
 rust_xlsxwriter = { workspace = true }
 geojson = { workspace = true }

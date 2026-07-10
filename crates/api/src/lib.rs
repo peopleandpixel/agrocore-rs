@@ -1,6 +1,7 @@
 use actix_cors::Cors;
 use actix_files as fs;
 use actix_web::{web, App, HttpServer};
+use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_web_prometheus::PrometheusMetricsBuilder;
 use std::sync::Arc;
 use tracing_actix_web::TracingLogger;
@@ -196,14 +197,30 @@ pub async fn run_server(
         .build()
         .unwrap();
 
+    // Governor Rate Limiting: 120 req/min (2 req/sec) per IP
+    let gov_conf = GovernorConfigBuilder::default()
+        .seconds_per_request(1)
+        .burst_size(120)
+        .finish()
+        .unwrap();
+
     HttpServer::new(move || {
         let cors = Cors::permissive()
             .max_age(3600);
+
+        let security_headers = actix_web::middleware::DefaultHeaders::new()
+            .add(("X-Content-Type-Options", "nosniff"))
+            .add(("X-Frame-Options", "DENY"))
+            .add(("X-XSS-Protection", "1; mode=block"))
+            .add(("Strict-Transport-Security", "max-age=31536000; includeSubDomains"))
+            .add(("Content-Security-Policy", "default-src 'self'"));
 
         App::new()
             .app_data(state.clone())
             .wrap(prometheus.clone())
             .wrap(TracingLogger::default())
+            .wrap(security_headers)
+            .wrap(Governor::new(&gov_conf))
             .wrap(cors)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")

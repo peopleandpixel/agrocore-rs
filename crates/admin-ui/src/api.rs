@@ -383,6 +383,11 @@ pub async fn fetch_tasks() -> Result<PaginatedTasks, String> {
     get_json("/api/v1/tasks", true).await
 }
 
+/// Fetch tasks assigned to current worker
+pub async fn fetch_my_tasks() -> Result<PaginatedTasks, String> {
+    get_json("/api/v1/orders/my-tasks", true).await
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PaginatedResponse<T> {
     pub data: Vec<T>,

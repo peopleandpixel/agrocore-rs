@@ -69,6 +69,40 @@ cd crates/admin-ui
 trunk serve
 ```
 
+## Testing
+
+Tests are organized in separate directories under `crates/api/tests/`:
+
+```bash
+cargo test --workspace
+```
+
+| Handler | Tests |
+|---------|-------|
+| auth | Login validation, password rules |
+| sites | DTO serialization, validation |
+| orders | Create/Update DTO tests |
+| users | User DTO tests |
+| tasks | Task DTO tests |
+| weather | Station/Data DTO tests |
+| finance | PAC/CostCenter tests |
+| livestock | Animal/Treatment tests |
+| reporting | Pagination tests |
+
+**Rate Limiting:** 120 requests/minute per IP via `actix-governor`.
+
+## Security
+
+- JWT tokens expire after **30 minutes**
+- Password hashing via **argon2**
+- Rate limiting via Governor (120 req/min)
+- Security headers: X-Frame-Options, CSP, HSTS
+
+Run security audit:
+```bash
+cargo audit
+```
+
 ## Docker Compose
 
 Docker Compose is still available for a fully containerized run, but the local development script is the better choice for day-to-day work.

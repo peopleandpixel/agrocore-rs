@@ -79,6 +79,8 @@ impl TaskDataRepo {
                 description: dto.description,
                 started_at: dto.started_at.unwrap_or(now),
                 ended_at: dto.ended_at,
+                paused_at: dto.paused_at,
+                resume_at: dto.resume_at,
                 duration_minutes: dto.duration_minutes,
                 machine_id: dto.machine_id,
                 machine_hours: dto.machine_hours,

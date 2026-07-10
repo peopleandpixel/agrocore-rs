@@ -134,8 +134,8 @@ pub fn SiteManagement() -> impl IntoView {
 
             <Show when=move || show_add_modal.get()>
                 <div class="modal modal-open">
-                    <div class="modal-box">
-                        <h3 class="font-bold text-lg">"Neue Fläche anlegen"</h3>
+                    <div class="modal-box w-11/12 max-w-5xl h-[700px] max-h-[90vh]">
+                        <h3 class="font-bold text-lg mb-4">"Neue Fläche anlegen"</h3>
 
                         {move || error.get().map(|err| view! {
                             <div class="alert alert-error mt-4">
@@ -190,16 +190,18 @@ pub fn SiteManagement() -> impl IntoView {
                                     {move || area.get().map(|value| format!("{:.2} ha", value)).unwrap_or_else(|| String::from("0.00 ha"))}
                                 </span>
                             </div>
-                            <FieldPolygonEditor on_change=move |new_boundary, new_area, new_center| {
-                                set_boundary.set(new_boundary);
-                                set_area.set(new_area);
-                                set_center.set(new_center);
-                            } />
+                            <FieldPolygonEditor
+                                on_change=move |new_boundary, new_area, new_center| {
+                                    set_boundary.set(new_boundary);
+                                    set_area.set(new_area);
+                                    set_center.set(new_center);
+                                }
+                            />
                         </div>
 
                         <div class="modal-action">
-                            <button class="btn" on:click=move |_| set_show_add_modal.set(false)>"Abbrechen"</button>
-                            <button class="btn btn-primary" on:click=on_create>"Speichern"</button>
+                            <button class="btn" on:click=move |_| set_show_add_modal.set(false)> "Abbrechen" </button>
+                            <button class="btn btn-primary" on:click=on_create> "Speichern" </button>
                         </div>
                     </div>
                 </div>

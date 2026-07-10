@@ -25,6 +25,8 @@ pub struct User {
     pub language: Option<String>,
     pub assigned_site_ids: Option<Vec<Uuid>>,
     pub last_login: Option<DateTime<Utc>>,
+    pub refresh_token: Option<String>,
+    pub refresh_token_expires_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -164,6 +166,11 @@ pub struct LoginDto {
     pub password: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct RefreshRequest {
+    pub refresh_token: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthResponse {
     pub token: String,
@@ -212,6 +219,8 @@ mod tests {
             language: None,
             assigned_site_ids: None,
             last_login: None,
+            refresh_token: None,
+            refresh_token_expires_at: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };

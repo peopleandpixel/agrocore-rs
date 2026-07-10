@@ -98,5 +98,16 @@ services:
       - prometheus
       - loki
 
+  admin-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin-ui
+    ports:
+      - "5173:5173"
+    environment:
+      - API_URL=http://api:3000
+    depends_on:
+      - api
+
 volumes:
   mongodb_data:

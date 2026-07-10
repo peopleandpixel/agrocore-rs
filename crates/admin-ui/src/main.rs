@@ -17,6 +17,7 @@ use crate::components::sites::SiteManagement;
 use crate::components::users::UserManagement;
 use crate::components::weather::WeatherManagement;
 use crate::components::wizard::WizardView;
+use crate::components::worker_tasks::WorkerTasksPage;
 use icondata::*;
 use leptos::prelude::*;
 use leptos_icons::Icon;
@@ -229,6 +230,7 @@ fn AuthenticatedShell(
                             <Route path=path!("/users") view=|| view! { <UserManagement /> } />
                             <Route path=path!("/settings") view=|| view! { <SettingsPage /> } />
                             <Route path=path!("/wizard") view=|| view! { <WizardView /> } />
+                            <Route path=path!("/worker/tasks") view=|| view! { <WorkerTasksPage /> } />
                         </Routes>
                     </Router>
                 </div>
@@ -276,6 +278,10 @@ fn AuthenticatedShell(
                         <a href="/users"><Icon icon=LuUsers width="20" height="20" />{nav_users}</a>
                     </li>
                     <li><a href="/settings"><Icon icon=LuSettings width="20" height="20" />{nav_settings}</a></li>
+                    // Worker-only navigation
+                    <li class=move || if user_role.get() == UserRole::Worker { "" } else { "hidden" }>
+                        <a href="/worker/tasks"><Icon icon=LuClipboardList width="20" height="20" />My Tasks</a>
+                    </li>
                     <li><a href="http://localhost:3001" target="_blank"><Icon icon=LuLayoutDashboard width="20" height="20" />{nav_grafana}</a></li>
                     <div class="mt-auto">
                         <div class="divider"></div>
