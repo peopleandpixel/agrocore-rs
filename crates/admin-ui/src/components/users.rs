@@ -6,6 +6,87 @@ use leptos::task::spawn_local;
 use leptos_icons::Icon;
 use uuid::Uuid;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ResourceKey {
+    Sites,
+    Equipment,
+    Orders,
+    Users,
+    Finance,
+    Analytics,
+}
+
+impl ResourceKey {
+    pub fn label(&self) -> &'static str {
+        match self {
+            ResourceKey::Sites => "Flächen",
+            ResourceKey::Equipment => "Equipment",
+            ResourceKey::Orders => "Aufträge",
+            ResourceKey::Users => "Benutzer",
+            ResourceKey::Finance => "Finanzen",
+            ResourceKey::Analytics => "Analytics",
+        }
+    }
+}
+
+/// Rollen-Definition mit granulareren Rechten (fest codiert wie im Domain-Layer)
+pub struct RoleDefinition {
+    pub name: &'static str,
+    pub description: &'static str,
+    pub permissions: Vec<(ResourceKey, Vec<&'static str>)>,
+}
+
+pub const ROLE_DEFINITIONS: &[RoleDefinition] = &[
+    RoleDefinition {
+        name: "Admin",
+        description: "Vollzugriff auf alle Bereiche und Benutzerverwaltung",
+        permissions: vec![
+            (ResourceKey::Sites, vec!["create", "read", "update", "delete"]),
+            (ResourceKey::Equipment, vec!["create", "read", "update", "delete"]),
+            (ResourceKey::Orders, vec!["create", "read", "update", "delete"]),
+            (ResourceKey::Users, vec!["create", "read", "update", "delete"]),
+            (ResourceKey::Finance, vec!["create", "read", "update", "delete"]),
+            (ResourceKey::Analytics, vec!["create", "read", "update", "delete"]),
+        ],
+    },
+    RoleDefinition {
+        name: "Manager",
+        description: "Verwaltung ohne Benutzer-Rechte",
+        permissions: vec![
+            (ResourceKey::Sites, vec!["create", "read", "update", "delete"]),
+            (ResourceKey::Equipment, vec!["create", "read", "update", "delete"]),
+            (ResourceKey::Orders, vec!["create", "read", "update", "delete"]),
+            (ResourceKey::Users, vec!["read"]),
+            (ResourceKey::Finance, vec!["create", "read", "update"]),
+            (ResourceKey::Analytics, vec!["create", "read"]),
+        ],
+    },
+    RoleDefinition {
+        name: "Worker",
+        description: "Eingabe und Ansicht eigener Daten",
+        permissions: vec![
+            (ResourceKey::Sites, vec!["read"]),
+            (ResourceKey::Equipment, vec!["read"]),
+            (ResourceKey::Orders, vec!["read"]),
+            (ResourceKey::Users, vec!["read"]), // own profile only
+            (ResourceKey::Finance, vec![]),
+            (ResourceKey::Analytics, vec![]),
+        ],
+    },
+    RoleDefinition {
+        name: "Viewer",
+        description: "Nur-Lese-Zugang",
+        permissions: vec![
+            (ResourceKey::Sites, vec!["read"]),
+            (ResourceKey::Equipment, vec!["read"]),
+            (ResourceKey::Orders, vec!["read"]),
+            (ResourceKey::Users, vec![]),
+            (ResourceKey::Finance, vec!["read"]),
+            (ResourceKey::Analytics, vec!["read"]),
+        ],
+    },
+];
+
 #[component]
 pub fn UserManagement() -> impl IntoView {
     let i18n = use_context::<crate::i18n::I18n>().expect("i18n context");
@@ -32,6 +113,7 @@ pub fn UserManagement() -> impl IntoView {
     let (edit_email, set_edit_email) = signal(String::new());
     let (edit_role, set_edit_role) = signal(String::from("Worker"));
     let (edit_is_active, set_edit_is_active) = signal(true);
+    let (show_permissions_modal, set_show_permissions_modal) = signal(false);
     
     let on_create = move |_| {
         let firstname = add_firstname.get();
@@ -119,10 +201,16 @@ pub fn UserManagement() -> impl IntoView {
                     <h1 class="text-3xl font-bold">{move || t("users")}</h1>
                     <p class="text-base-content/60">"Verwalten Sie Teammitglieder und deren Zugriffsberechtigungen."</p>
                 </div>
-                <button class="btn btn-primary" on:click=move |_| set_show_add_modal.set(true)>
-                    <Icon icon=LuUserPlus width="20" height="20" />
-                    "Benutzer einladen"
-                </button>
+                <div class="flex gap-2">
+                    <button class="btn btn-outline" on:click=move |_| set_show_permissions_modal.set(true)>
+                        <Icon icon=LuShield width="20" height="20" />
+                        "Rollen-Rechte"
+                    </button>
+                    <button class="btn btn-primary" on:click=move |_| set_show_add_modal.set(true)>
+                        <Icon icon=LuUserPlus width="20" height="20" />
+                        "Benutzer einladen"
+                    </button>
+                </div>
             </div>
 
             <div class="card bg-base-100 shadow">
@@ -300,6 +388,61 @@ pub fn UserManagement() -> impl IntoView {
                         <div class="modal-action">
                             <button class="btn" on:click=move |_| set_show_edit_modal.set(false)> "Abbrechen" </button>
                             <button class="btn btn-primary" on:click=on_update> "Speichern" </button>
+                        </div>
+                    </div>
+                </div>
+            </Show>
+
+            // Permissions Overview Modal
+            <Show when=move || show_permissions_modal.get()>
+                <div class="modal modal-open">
+                    <div class="modal-box w-11/12 max-w-4xl">
+                        <h3 class="font-bold text-lg mb-4">"Rollen und Rechte Übersicht"</h3>
+                        
+                        <p class="text-base-content/60 mb-4">
+                            "Jede Rolle hat fest definierte Berechtigungen. Die Rechte können nicht einzeln vergeben werden - 
+                            nur die Rolle des Benutzers."
+                        </p>
+
+                        <div class="overflow-x-auto">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>"Rolle"</th>
+                                        <th>"Beschreibung"</th>
+                                        <th>"Flächen"</th>
+                                        <th>"Equipment"</th>
+                                        <th>"Aufträge"</th>
+                                        <th>"Benutzer"</th>
+                                        <th>"Finanzen"</th>
+                                        <th>"Analytics"</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {move || ROLE_DEFINITIONS.iter().map(|role| {
+                                        let perms = role.permissions.clone();
+                                        view! {
+                                            <tr>
+                                                <td><strong>{role.name}</strong></td>
+                                                <td class="text-xs">{role.description}</td>
+                                                {move || perms.iter().map(|(resource, actions)| {
+                                                    let action_str = match actions.as_slice() {
+                                                        [] => "—",
+                                                        acts => acts.join(", "),
+                                                    };
+                                                    view! {
+                                                        <td class="text-xs">{action_str}</td>
+                                                    }
+                                                }).collect::<Vec<_>>()}
+                                            </tr>
+                                        }
+                                    }).collect::<Vec<_>>()}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="modal-action">
+                            <button class="btn" on:click=move |_| set_show_permissions_modal.set(false)> "Schließen" </button>
                         </div>
                     </div>
                 </div>
