@@ -18,6 +18,7 @@ pub enum Language {
 }
 
 impl Language {
+    #[cfg(test)]
     pub const ALL: [Language; 10] = [
         Language::EN,
         Language::DE,
@@ -106,6 +107,7 @@ impl I18n {
     }
 }
 
+#[cfg(test)]
 pub fn supported_language_codes() -> [&'static str; 10] {
     ["en", "de", "es", "fr", "pt", "it", "pl", "ro", "uk", "nl"]
 }

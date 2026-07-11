@@ -1,13 +1,15 @@
-use crate::dto::{AuthResponseDto, ErrorResponse};
 use crate::AppState;
-use actix_web::{web, HttpResponse, Responder};
+use crate::dto::{AuthResponseDto, ErrorResponse};
+use crate::error::ApiError;
+use actix_web::{HttpResponse, web};
 use agrocore_domain::entities::user::{LoginDto, RefreshRequest};
+use agrocore_infrastructure::generate_jwt;
+use agrocore_shared::SharedError;
+use chrono::Utc;
 use serde::Deserialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
-use chrono::Utc;
-use agrocore_infrastructure::generate_jwt;
 
 #[derive(Deserialize, Validate, ToSchema)]
 pub struct LoginRequest {
@@ -28,55 +30,43 @@ pub struct LoginRequest {
     ),
     tag = "auth"
 )]
-pub async fn login(state: web::Data<AppState>, dto: web::Json<LoginRequest>) -> impl Responder {
-    if let Err(e) = dto.0.validate() {
-        tracing::warn!("Login validation failed: {}", e);
-        return HttpResponse::BadRequest().json(ErrorResponse {
-            error: "validation".into(),
-            message: e.to_string(),
-        });
-    }
-    match state
+pub async fn login(
+    state: web::Data<AppState>,
+    dto: web::Json<LoginRequest>,
+) -> Result<HttpResponse, ApiError> {
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
+    let user = state
         .db
         .user_repo()
         .authenticate(LoginDto {
             email: dto.email.clone(),
             password: dto.password.clone(),
         })
-        .await
-    {
-        Ok(user) => {
-            tracing::info!("User {} logged in successfully", user.user_id);
-            // Generate refresh token
-            let refresh_token = Uuid::new_v4().to_string();
-            let refresh_expires_at = Utc::now() + chrono::Duration::days(7);
+        .await?;
+    tracing::info!("User {} logged in successfully", user.user_id);
+    // Generate refresh token
+    let refresh_token = Uuid::new_v4().to_string();
+    let refresh_expires_at = Utc::now() + chrono::Duration::days(7);
 
-            // Update user with refresh token
-            let _ = state
-                .db
-                .user_repo()
-                .update_refresh_token(user.user_id, &refresh_token, refresh_expires_at)
-                .await;
+    // Update user with refresh token
+    let _ = state
+        .db
+        .user_repo()
+        .update_refresh_token(user.user_id, &refresh_token, refresh_expires_at)
+        .await;
 
-            HttpResponse::Ok().json(AuthResponseDto {
-                token: user.token,
-                refresh_token: Some(refresh_token),
-                user_id: user.user_id,
-                tenant_id: user.tenant_id,
-                firstname: user.firstname,
-                lastname: user.lastname,
-                roles: user.roles,
-                token_expires_in: 3600,
-            })
-        }
-        Err(e) => {
-            tracing::error!("Authentication failed: {}", e);
-            HttpResponse::Unauthorized().json(ErrorResponse {
-                error: "auth".into(),
-                message: e.to_string(),
-            })
-        }
-    }
+    Ok(HttpResponse::Ok().json(AuthResponseDto {
+        token: user.token,
+        refresh_token: Some(refresh_token),
+        user_id: user.user_id,
+        tenant_id: user.tenant_id,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        roles: user.roles,
+        token_expires_in: 3600,
+    }))
 }
 
 #[utoipa::path(
@@ -92,73 +82,44 @@ pub async fn login(state: web::Data<AppState>, dto: web::Json<LoginRequest>) -> 
     ),
     tag = "auth"
 )]
-pub async fn refresh_token(state: web::Data<AppState>, dto: web::Json<RefreshRequest>) -> impl Responder {
+pub async fn refresh_token(
+    state: web::Data<AppState>,
+    dto: web::Json<RefreshRequest>,
+) -> Result<HttpResponse, ApiError> {
     let refresh_token = dto.0.refresh_token;
 
     // Find user by refresh token
-    let user = match state
+    let user = state
         .db
         .user_repo()
         .find_by_refresh_token(&refresh_token)
-        .await
-    {
-        Ok(Some(u)) => u,
-        Ok(None) => {
-            return HttpResponse::Unauthorized().json(ErrorResponse {
-                error: "auth".into(),
-                message: "Invalid refresh token".into(),
-            });
-        }
-        Err(e) => {
-            tracing::error!("Database error during refresh: {}", e);
-            return HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "internal".into(),
-                message: e.to_string(),
-            });
-        }
-    };
+        .await?
+        .ok_or_else(|| SharedError::Unauthorized("Invalid refresh token".into()))?;
 
     // Check if refresh token is expired
-    if let Some(expires_at) = user.refresh_token_expires_at {
-        if expires_at < Utc::now() {
-            // Invalidate expired token
-            let _ = state
-                .db
-                .user_repo()
-                .invalidate_refresh_token(user.id)
-                .await;
-            return HttpResponse::Unauthorized().json(ErrorResponse {
-                error: "auth".into(),
-                message: "Refresh token expired".into(),
-            });
-        }
+    if let Some(expires_at) = user.refresh_token_expires_at
+        && expires_at < Utc::now()
+    {
+        // Invalidate expired token
+        let _ = state.db.user_repo().invalidate_refresh_token(user.id).await;
+        return Err(SharedError::Unauthorized("Refresh token expired".into()).into());
     }
 
     // Generate new tokens
-    let new_token = match generate_jwt(&user) {
-        Ok(t) => t,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "internal".into(),
-                message: format!("Token generation failed: {}", e),
-            });
-        }
-    };
+    let new_token = generate_jwt(&user)
+        .map_err(|e| SharedError::Internal(format!("Token generation failed: {}", e)))?;
 
     let new_refresh_token = Uuid::new_v4().to_string();
     let refresh_expires_at = Utc::now() + chrono::Duration::days(7);
 
     // Update refresh token in database
-    if let Err(e) = state
+    let _ = state
         .db
         .user_repo()
         .update_refresh_token(user.id, &new_refresh_token, refresh_expires_at)
-        .await
-    {
-        tracing::error!("Failed to update refresh token: {}", e);
-    }
+        .await;
 
-    HttpResponse::Ok().json(AuthResponseDto {
+    Ok(HttpResponse::Ok().json(AuthResponseDto {
         token: new_token,
         refresh_token: Some(new_refresh_token),
         token_expires_in: 3600,
@@ -167,5 +128,5 @@ pub async fn refresh_token(state: web::Data<AppState>, dto: web::Json<RefreshReq
         firstname: user.firstname,
         lastname: user.lastname,
         roles: user.roles,
-    })
+    }))
 }

@@ -160,30 +160,38 @@ pub fn UserManagement() -> impl IntoView {
                                 }
                                 key=|user| user.id
                                 children=move |user| {
-                                    let name = format!("{} {}", user.firstname, user.lastname);
+                                    let user_id = user.id;
+                                    let email_for_view = user.email.clone();
+                                    let email_for_edit = email_for_view.clone();
+                                    let firstname = user.firstname.clone();
+                                    let lastname = user.lastname.clone();
+                                    let name = format!("{} {}", firstname, lastname);
                                     let role = user.roles.first().cloned().unwrap_or_else(|| String::from("Worker"));
+                                    let roles_for_edit = user.roles.clone();
+                                    let last_login = user.last_login.clone().unwrap_or_else(|| String::from("-"));
+                                    let is_active = user.is_active;
                                     
                                     let edit_click = move |_| {
-                                        set_edit_user_id.set(Some(user.id));
-                                        set_edit_firstname.set(user.firstname.clone());
-                                        set_edit_lastname.set(user.lastname.clone());
-                                        set_edit_email.set(user.email.clone());
-                                        set_edit_role.set(user.roles.first().cloned().unwrap_or_default());
-                                        set_edit_is_active.set(user.is_active);
+                                        set_edit_user_id.set(Some(user_id));
+                                        set_edit_firstname.set(firstname.clone());
+                                        set_edit_lastname.set(lastname.clone());
+                                        set_edit_email.set(email_for_edit.clone());
+                                        set_edit_role.set(roles_for_edit.first().cloned().unwrap_or_default());
+                                        set_edit_is_active.set(is_active);
                                         set_show_edit_modal.set(true);
                                     };
                                     
                                     let delete_click = move |_| {
-                                        on_delete(user.id);
+                                        on_delete(user_id);
                                     };
                                     
                                     view! {
                                         <tr>
                                             <td>{name}</td>
-                                            <td>{user.email}</td>
+                                            <td>{email_for_view}</td>
                                             <td><div class="badge badge-primary">{role}</div></td>
-                                            <td>{if user.is_active { "Aktiv" } else { "Inaktiv" }}</td>
-                                            <td>{user.last_login.clone().unwrap_or_else(|| String::from("-"))}</td>
+                                            <td>{if is_active { "Aktiv" } else { "Inaktiv" }}</td>
+                                            <td>{last_login}</td>
                                             <td>
                                                 <div class="flex gap-2 justify-end">
                                                     <button class="btn btn-sm btn-ghost" on:click=edit_click>

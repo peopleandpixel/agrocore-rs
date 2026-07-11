@@ -29,14 +29,10 @@ pub struct PACApplication {
 
 impl VisibilityAwareEntity for PACApplication {
     #[cfg(feature = "mongodb")]
-    fn visibility_filter(_user_id: Uuid, roles: &[UserRole]) -> Document {
-        if roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager) {
-            doc! {}
-        } else if roles.contains(&UserRole::Worker) {
-            doc! {} // Worker kann PAC-Daten lesen
-        } else {
-            doc! {}
-        }
+    fn visibility_filter(_user_id: Uuid, _roles: &[UserRole]) -> Document {
+        // Aktuell sehen alle Rollen im Tenant die PAC-Daten (inkl. Worker).
+        // Rollenspezifische Einschränkung folgt bei Bedarf.
+        doc! {}
     }
 }
 
@@ -72,12 +68,9 @@ pub struct CostCenter {
 
 impl VisibilityAwareEntity for CostCenter {
     #[cfg(feature = "mongodb")]
-    fn visibility_filter(_user_id: Uuid, roles: &[UserRole]) -> Document {
-        if roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager) {
-            doc! {}
-        } else {
-            doc! {} // Alle im Tenant
-        }
+    fn visibility_filter(_user_id: Uuid, _roles: &[UserRole]) -> Document {
+        // Kostenstellen sind für alle Rollen im Tenant sichtbar.
+        doc! {}
     }
 }
 
@@ -107,14 +100,10 @@ pub struct FinancialRecord {
 
 impl VisibilityAwareEntity for FinancialRecord {
     #[cfg(feature = "mongodb")]
-    fn visibility_filter(_user_id: Uuid, roles: &[UserRole]) -> Document {
-        if roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager) {
-            doc! {}
-        } else if roles.contains(&UserRole::Worker) {
-            doc! {} // Worker sieht Finanzen über Auftrags-Beziehung
-        } else {
-            doc! {}
-        }
+    fn visibility_filter(_user_id: Uuid, _roles: &[UserRole]) -> Document {
+        // Finanzsätze sind aktuell für alle Rollen im Tenant sichtbar.
+        // Rollenspezifische Einschränkung (z. B. Worker über Auftragsbezug) folgt bei Bedarf.
+        doc! {}
     }
 }
 

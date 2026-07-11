@@ -1,7 +1,7 @@
 use actix_web::{Error, FromRequest, HttpRequest};
-use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
+use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode};
 use serde::Deserialize;
-use std::future::{ready, Ready};
+use std::future::{Ready, ready};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Claims {
@@ -33,13 +33,13 @@ impl FromRequest for AuthExtractor {
                     Err(_) => {
                         return ready(Err(actix_web::error::ErrorUnauthorized(
                             "Invalid auth header",
-                        )))
+                        )));
                     }
                 };
                 let token = match header_str.strip_prefix("Bearer ") {
                     Some(t) => t,
                     None => {
-                        return ready(Err(actix_web::error::ErrorUnauthorized("No Bearer prefix")))
+                        return ready(Err(actix_web::error::ErrorUnauthorized("No Bearer prefix")));
                     }
                 };
                 let secret = agrocore_shared::config::jwt_secret();
@@ -93,20 +93,22 @@ impl AuthExtractor {
         self.0.roles.iter().any(|r| r == "Admin" || r == "Manager")
     }
 
-    pub fn require_admin(&self) -> Result<(), actix_web::Error> {
+    pub fn require_admin(&self) -> agrocore_shared::Result<()> {
         if self.is_admin() {
             Ok(())
         } else {
-            Err(actix_web::error::ErrorForbidden("Admin role required"))
+            Err(agrocore_shared::SharedError::Forbidden(
+                "Admin role required".into(),
+            ))
         }
     }
 
-    pub fn require_manager(&self) -> Result<(), actix_web::Error> {
+    pub fn require_manager(&self) -> agrocore_shared::Result<()> {
         if self.is_manager() {
             Ok(())
         } else {
-            Err(actix_web::error::ErrorForbidden(
-                "Manager or Admin role required",
+            Err(agrocore_shared::SharedError::Forbidden(
+                "Manager or Admin role required".into(),
             ))
         }
     }
@@ -123,7 +125,7 @@ mod tests {
     use super::*;
     use actix_web::{dev::Payload, http::header, test::TestRequest};
     use jsonwebtoken::crypto::rust_crypto::DEFAULT_PROVIDER;
-    use jsonwebtoken::{encode, EncodingKey, Header};
+    use jsonwebtoken::{EncodingKey, Header, encode};
     use serde::Serialize;
 
     #[derive(Serialize)]

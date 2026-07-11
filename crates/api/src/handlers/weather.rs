@@ -1,13 +1,15 @@
+use crate::AppState;
 use crate::dto::{
     ErrorResponse, PaginatedPhenologyResponse, PaginatedResponseDto, PaginatedWeatherDataResponse,
     PaginatedWeatherStationResponse,
 };
+use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
-use crate::AppState;
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{HttpResponse, web};
 use agrocore_domain::entities::weather::{
     CreatePhenologyRecordDto, CreateWeatherDataDto, CreateWeatherStationDto,
 };
+use agrocore_shared::SharedError;
 use uuid::Uuid;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
@@ -43,25 +45,19 @@ pub async fn list_stations(
     state: web::Data<AppState>,
     auth: AuthUser,
     query: web::Query<agrocore_shared::Pagination>,
-) -> impl Responder {
-    match state
+) -> Result<HttpResponse, ApiError> {
+    let result = state
         .db
         .weather_station_repo()
         .find_all(auth.0.tenant_id, query.0)
-        .await
-    {
-        Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
-            data: result.data,
-            total: result.total,
-            page: result.page,
-            per_page: result.per_page,
-            total_pages: result.total_pages,
-        }),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?;
+    Ok(HttpResponse::Ok().json(PaginatedResponseDto {
+        data: result.data,
+        total: result.total,
+        page: result.page,
+        per_page: result.per_page,
+        total_pages: result.total_pages,
+    }))
 }
 
 #[utoipa::path(
@@ -82,24 +78,15 @@ pub async fn get_station(
     state: web::Data<AppState>,
     auth: AuthUser,
     id: web::Path<Uuid>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let roles = auth.roles();
-    match state
+    let station = state
         .db
         .weather_station_repo()
         .find_by_id_visible(auth.0.tenant_id, *id, auth.0.user_id, &roles)
-        .await
-    {
-        Ok(Some(s)) => HttpResponse::Ok().json(s),
-        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "not_found".into(),
-            message: "Station not found".into(),
-        }),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Station not found".into()))?;
+    Ok(HttpResponse::Ok().json(station))
 }
 
 #[utoipa::path(
@@ -117,19 +104,13 @@ pub async fn create_station(
     state: web::Data<AppState>,
     auth: AuthUser,
     dto: web::Json<CreateWeatherStationDto>,
-) -> impl Responder {
-    match state
+) -> Result<HttpResponse, ApiError> {
+    let station = state
         .db
         .weather_station_repo()
         .create(auth.0.tenant_id, dto.into_inner())
-        .await
-    {
-        Ok(s) => HttpResponse::Created().json(s),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?;
+    Ok(HttpResponse::Created().json(station))
 }
 
 #[utoipa::path(
@@ -146,25 +127,19 @@ pub async fn list_weather_data(
     state: web::Data<AppState>,
     auth: AuthUser,
     query: web::Query<agrocore_shared::Pagination>,
-) -> impl Responder {
-    match state
+) -> Result<HttpResponse, ApiError> {
+    let result = state
         .db
         .weather_data_repo()
         .find_all(auth.0.tenant_id, query.0)
-        .await
-    {
-        Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
-            data: result.data,
-            total: result.total,
-            page: result.page,
-            per_page: result.per_page,
-            total_pages: result.total_pages,
-        }),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?;
+    Ok(HttpResponse::Ok().json(PaginatedResponseDto {
+        data: result.data,
+        total: result.total,
+        page: result.page,
+        per_page: result.per_page,
+        total_pages: result.total_pages,
+    }))
 }
 
 #[utoipa::path(
@@ -182,19 +157,13 @@ pub async fn create_weather_data(
     state: web::Data<AppState>,
     auth: AuthUser,
     dto: web::Json<CreateWeatherDataDto>,
-) -> impl Responder {
-    match state
+) -> Result<HttpResponse, ApiError> {
+    let wd = state
         .db
         .weather_data_repo()
         .create(auth.0.tenant_id, dto.into_inner())
-        .await
-    {
-        Ok(wd) => HttpResponse::Created().json(wd),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?;
+    Ok(HttpResponse::Created().json(wd))
 }
 
 #[utoipa::path(
@@ -211,25 +180,19 @@ pub async fn list_phenology(
     state: web::Data<AppState>,
     auth: AuthUser,
     query: web::Query<agrocore_shared::Pagination>,
-) -> impl Responder {
-    match state
+) -> Result<HttpResponse, ApiError> {
+    let result = state
         .db
         .phenology_record_repo()
         .find_all(auth.0.tenant_id, query.0)
-        .await
-    {
-        Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
-            data: result.data,
-            total: result.total,
-            page: result.page,
-            per_page: result.per_page,
-            total_pages: result.total_pages,
-        }),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?;
+    Ok(HttpResponse::Ok().json(PaginatedResponseDto {
+        data: result.data,
+        total: result.total,
+        page: result.page,
+        per_page: result.per_page,
+        total_pages: result.total_pages,
+    }))
 }
 
 #[utoipa::path(
@@ -247,17 +210,11 @@ pub async fn create_phenology(
     state: web::Data<AppState>,
     auth: AuthUser,
     dto: web::Json<CreatePhenologyRecordDto>,
-) -> impl Responder {
-    match state
+) -> Result<HttpResponse, ApiError> {
+    let pr = state
         .db
         .phenology_record_repo()
         .create(auth.0.tenant_id, dto.into_inner())
-        .await
-    {
-        Ok(pr) => HttpResponse::Created().json(pr),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?;
+    Ok(HttpResponse::Created().json(pr))
 }

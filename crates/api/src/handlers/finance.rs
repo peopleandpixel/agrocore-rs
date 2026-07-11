@@ -1,15 +1,16 @@
+use crate::AppState;
 use crate::dto::{
     ErrorResponse, PaginatedCostCenterResponse, PaginatedFinancialRecordResponse,
     PaginatedPACApplicationResponse,
 };
+use crate::error::ApiError;
 use crate::middleware::AuthExtractor;
-use crate::AppState;
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{HttpResponse, web};
 use agrocore_domain::entities::finance::{
     CostCenter, CreateCostCenterDto, CreateFinancialRecordDto, CreatePACApplicationDto,
     FinancialRecord, PACApplication,
 };
-use agrocore_shared::Pagination;
+use agrocore_shared::{Pagination, SharedError};
 use uuid::Uuid;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
@@ -57,19 +58,13 @@ pub async fn list_pac_applications(
     state: web::Data<AppState>,
     auth: AuthExtractor,
     query: web::Query<Pagination>,
-) -> impl Responder {
-    match state
+) -> Result<HttpResponse, ApiError> {
+    let apps = state
         .db
         .pac_application_repo()
         .find_all(auth.0.tenant_id, query.into_inner())
-        .await
-    {
-        Ok(apps) => HttpResponse::Ok().json(apps),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "Database error".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?;
+    Ok(HttpResponse::Ok().json(apps))
 }
 
 #[utoipa::path(
@@ -87,19 +82,13 @@ pub async fn create_pac_application(
     state: web::Data<AppState>,
     auth: AuthExtractor,
     dto: web::Json<CreatePACApplicationDto>,
-) -> impl Responder {
-    match state
+) -> Result<HttpResponse, ApiError> {
+    let app = state
         .db
         .pac_application_repo()
         .create(auth.0.tenant_id, dto.into_inner())
-        .await
-    {
-        Ok(app) => HttpResponse::Created().json(app),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "Database error".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?;
+    Ok(HttpResponse::Created().json(app))
 }
 
 #[utoipa::path(
@@ -119,23 +108,15 @@ pub async fn get_pac_application(
     state: web::Data<AppState>,
     auth: AuthExtractor,
     id: web::Path<Uuid>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let roles = auth.roles();
-    match state
+    let app = state
         .db
         .pac_application_repo()
-        .find_by_id_visible(auth.0.tenant_id, id.into_inner(), auth.0.user_id, &roles).await
-    {
-        Ok(Some(app)) => HttpResponse::Ok().json(app),
-        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "Not found".into(),
-            message: "Not found".to_string(),
-        }),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "Database error".into(),
-            message: e.to_string(),
-        }),
-    }
+        .find_by_id_visible(auth.0.tenant_id, id.into_inner(), auth.0.user_id, &roles)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Not found".into()))?;
+    Ok(HttpResponse::Ok().json(app))
 }
 
 #[utoipa::path(
@@ -155,19 +136,13 @@ pub async fn list_cost_centers(
     state: web::Data<AppState>,
     auth: AuthExtractor,
     query: web::Query<Pagination>,
-) -> impl Responder {
-    match state
+) -> Result<HttpResponse, ApiError> {
+    let ccs = state
         .db
         .cost_center_repo()
         .find_all(auth.0.tenant_id, query.into_inner())
-        .await
-    {
-        Ok(ccs) => HttpResponse::Ok().json(ccs),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "Database error".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?;
+    Ok(HttpResponse::Ok().json(ccs))
 }
 
 #[utoipa::path(
@@ -185,19 +160,13 @@ pub async fn create_cost_center(
     state: web::Data<AppState>,
     auth: AuthExtractor,
     dto: web::Json<CreateCostCenterDto>,
-) -> impl Responder {
-    match state
+) -> Result<HttpResponse, ApiError> {
+    let cc = state
         .db
         .cost_center_repo()
         .create(auth.0.tenant_id, dto.into_inner())
-        .await
-    {
-        Ok(cc) => HttpResponse::Created().json(cc),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "Database error".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?;
+    Ok(HttpResponse::Created().json(cc))
 }
 
 #[utoipa::path(
@@ -217,23 +186,15 @@ pub async fn get_cost_center(
     state: web::Data<AppState>,
     auth: AuthExtractor,
     id: web::Path<Uuid>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let roles = auth.roles();
-    match state
+    let cc = state
         .db
         .cost_center_repo()
-        .find_by_id_visible(auth.0.tenant_id, id.into_inner(), auth.0.user_id, &roles).await
-    {
-        Ok(Some(cc)) => HttpResponse::Ok().json(cc),
-        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "Not found".into(),
-            message: "Not found".to_string(),
-        }),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "Database error".into(),
-            message: e.to_string(),
-        }),
-    }
+        .find_by_id_visible(auth.0.tenant_id, id.into_inner(), auth.0.user_id, &roles)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Not found".into()))?;
+    Ok(HttpResponse::Ok().json(cc))
 }
 
 #[utoipa::path(
@@ -253,19 +214,13 @@ pub async fn list_financial_records(
     state: web::Data<AppState>,
     auth: AuthExtractor,
     query: web::Query<Pagination>,
-) -> impl Responder {
-    match state
+) -> Result<HttpResponse, ApiError> {
+    let recs = state
         .db
         .financial_record_repo()
         .find_all(auth.0.tenant_id, query.into_inner())
-        .await
-    {
-        Ok(recs) => HttpResponse::Ok().json(recs),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "Database error".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?;
+    Ok(HttpResponse::Ok().json(recs))
 }
 
 #[utoipa::path(
@@ -283,19 +238,13 @@ pub async fn create_financial_record(
     state: web::Data<AppState>,
     auth: AuthExtractor,
     dto: web::Json<CreateFinancialRecordDto>,
-) -> impl Responder {
-    match state
+) -> Result<HttpResponse, ApiError> {
+    let rec = state
         .db
         .financial_record_repo()
         .create(auth.0.tenant_id, dto.into_inner())
-        .await
-    {
-        Ok(rec) => HttpResponse::Created().json(rec),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "Database error".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?;
+    Ok(HttpResponse::Created().json(rec))
 }
 
 #[utoipa::path(
@@ -315,21 +264,13 @@ pub async fn get_financial_record(
     state: web::Data<AppState>,
     auth: AuthExtractor,
     id: web::Path<Uuid>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let roles = auth.roles();
-    match state
+    let rec = state
         .db
         .financial_record_repo()
-        .find_by_id_visible(auth.0.tenant_id, id.into_inner(), auth.0.user_id, &roles).await
-    {
-        Ok(Some(rec)) => HttpResponse::Ok().json(rec),
-        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "Not found".into(),
-            message: "Not found".to_string(),
-        }),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "Database error".into(),
-            message: e.to_string(),
-        }),
-    }
+        .find_by_id_visible(auth.0.tenant_id, id.into_inner(), auth.0.user_id, &roles)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Not found".into()))?;
+    Ok(HttpResponse::Ok().json(rec))
 }

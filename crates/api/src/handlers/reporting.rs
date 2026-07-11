@@ -1,9 +1,11 @@
+use crate::AppState;
 use crate::dto::ErrorResponse;
+use crate::error::ApiError;
 use crate::handlers::reporting::worker::{ReportingRequest, ReportingResponse};
 use crate::middleware::AuthExtractor;
-use crate::AppState;
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{HttpResponse, web};
 use agrocore_messaging::Event;
+use agrocore_shared::SharedError;
 
 pub mod worker {
     use serde::{Deserialize, Serialize};
@@ -51,40 +53,28 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 pub async fn export_orders_excel(
     state: web::Data<AppState>,
     auth: AuthExtractor,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let request = ReportingRequest::OrdersExcel {
         tenant_id: auth.0.tenant_id,
     };
     let event = Event::new("api".into(), request);
 
-    match state
+    let response = state
         .messaging
         .request::<_, ReportingResponse>("reporting.request", &event)
         .await
-    {
-        Ok(response) => match response {
-            ReportingResponse::Excel(buffer) => HttpResponse::Ok()
-                .content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                .insert_header((
-                    "Content-Disposition",
-                    "attachment; filename=\"orders.xlsx\"",
-                ))
-                .body(buffer),
-            ReportingResponse::Error(e) => {
-                HttpResponse::InternalServerError().json(ErrorResponse {
-                    error: "Reporting Service error".into(),
-                    message: e,
-                })
-            }
-            _ => HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "Unexpected response".into(),
-                message: "Wrong response type".into(),
-            }),
-        },
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "Messaging error".into(),
-            message: e.to_string(),
-        }),
+        .map_err(|e| SharedError::Internal(e.to_string()))?;
+
+    match response {
+        ReportingResponse::Excel(buffer) => Ok(HttpResponse::Ok()
+            .content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            .insert_header((
+                "Content-Disposition",
+                "attachment; filename=\"orders.xlsx\"",
+            ))
+            .body(buffer)),
+        ReportingResponse::Error(e) => Err(SharedError::Internal(e).into()),
+        _ => Err(SharedError::Internal("Wrong response type".into()).into()),
     }
 }
 
@@ -100,36 +90,24 @@ pub async fn export_orders_excel(
 pub async fn export_sites_geojson(
     state: web::Data<AppState>,
     auth: AuthExtractor,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let request = ReportingRequest::SitesGeoJson {
         tenant_id: auth.0.tenant_id,
     };
     let event = Event::new("api".into(), request);
 
-    match state
+    let response = state
         .messaging
         .request::<_, ReportingResponse>("reporting.request", &event)
         .await
-    {
-        Ok(response) => match response {
-            ReportingResponse::GeoJson(feature_collection) => {
-                HttpResponse::Ok().json(feature_collection)
-            }
-            ReportingResponse::Error(e) => {
-                HttpResponse::InternalServerError().json(ErrorResponse {
-                    error: "Reporting Service error".into(),
-                    message: e,
-                })
-            }
-            _ => HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "Unexpected response".into(),
-                message: "Wrong response type".into(),
-            }),
-        },
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "Messaging error".into(),
-            message: e.to_string(),
-        }),
+        .map_err(|e| SharedError::Internal(e.to_string()))?;
+
+    match response {
+        ReportingResponse::GeoJson(feature_collection) => {
+            Ok(HttpResponse::Ok().json(feature_collection))
+        }
+        ReportingResponse::Error(e) => Err(SharedError::Internal(e).into()),
+        _ => Err(SharedError::Internal("Wrong response type".into()).into()),
     }
 }
 
@@ -142,40 +120,31 @@ pub async fn export_sites_geojson(
     ),
     security(("bearer_auth" = []))
 )]
-pub async fn export_pac_sip(state: web::Data<AppState>, auth: AuthExtractor) -> impl Responder {
+pub async fn export_pac_sip(
+    state: web::Data<AppState>,
+    auth: AuthExtractor,
+) -> Result<HttpResponse, ApiError> {
     let request = ReportingRequest::PacSipExcel {
         tenant_id: auth.0.tenant_id,
     };
     let event = Event::new("api".into(), request);
 
-    match state
+    let response = state
         .messaging
         .request::<_, ReportingResponse>("reporting.request", &event)
         .await
-    {
-        Ok(response) => match response {
-            ReportingResponse::Excel(buffer) => HttpResponse::Ok()
-                .content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                .insert_header((
-                    "Content-Disposition",
-                    "attachment; filename=\"pac_sip_report.xlsx\"",
-                ))
-                .body(buffer),
-            ReportingResponse::Error(e) => {
-                HttpResponse::InternalServerError().json(ErrorResponse {
-                    error: "Reporting Service error".into(),
-                    message: e,
-                })
-            }
-            _ => HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "Unexpected response".into(),
-                message: "Wrong response type".into(),
-            }),
-        },
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "Messaging error".into(),
-            message: e.to_string(),
-        }),
+        .map_err(|e| SharedError::Internal(e.to_string()))?;
+
+    match response {
+        ReportingResponse::Excel(buffer) => Ok(HttpResponse::Ok()
+            .content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            .insert_header((
+                "Content-Disposition",
+                "attachment; filename=\"pac_sip_report.xlsx\"",
+            ))
+            .body(buffer)),
+        ReportingResponse::Error(e) => Err(SharedError::Internal(e).into()),
+        _ => Err(SharedError::Internal("Wrong response type".into()).into()),
     }
 }
 
@@ -188,39 +157,30 @@ pub async fn export_pac_sip(state: web::Data<AppState>, auth: AuthExtractor) -> 
     ),
     security(("bearer_auth" = []))
 )]
-pub async fn export_veterinary(state: web::Data<AppState>, auth: AuthExtractor) -> impl Responder {
+pub async fn export_veterinary(
+    state: web::Data<AppState>,
+    auth: AuthExtractor,
+) -> Result<HttpResponse, ApiError> {
     let request = ReportingRequest::VeterinaryExcel {
         tenant_id: auth.0.tenant_id,
     };
     let event = Event::new("api".into(), request);
 
-    match state
+    let response = state
         .messaging
         .request::<_, ReportingResponse>("reporting.request", &event)
         .await
-    {
-        Ok(response) => match response {
-            ReportingResponse::Excel(buffer) => HttpResponse::Ok()
-                .content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                .insert_header((
-                    "Content-Disposition",
-                    "attachment; filename=\"veterinary_report.xlsx\"",
-                ))
-                .body(buffer),
-            ReportingResponse::Error(e) => {
-                HttpResponse::InternalServerError().json(ErrorResponse {
-                    error: "Reporting Service error".into(),
-                    message: e,
-                })
-            }
-            _ => HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "Unexpected response".into(),
-                message: "Wrong response type".into(),
-            }),
-        },
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "Messaging error".into(),
-            message: e.to_string(),
-        }),
+        .map_err(|e| SharedError::Internal(e.to_string()))?;
+
+    match response {
+        ReportingResponse::Excel(buffer) => Ok(HttpResponse::Ok()
+            .content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            .insert_header((
+                "Content-Disposition",
+                "attachment; filename=\"veterinary_report.xlsx\"",
+            ))
+            .body(buffer)),
+        ReportingResponse::Error(e) => Err(SharedError::Internal(e).into()),
+        _ => Err(SharedError::Internal("Wrong response type".into()).into()),
     }
 }

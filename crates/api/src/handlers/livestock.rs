@@ -1,11 +1,13 @@
-use crate::dto::{ErrorResponse, PaginatedAnimalResponse};
-use crate::middleware::AuthExtractor as AuthUser;
 use crate::AppState;
-use actix_web::{web, HttpResponse, Responder};
+use crate::dto::PaginatedAnimalResponse;
+use crate::error::ApiError;
+use crate::middleware::AuthExtractor as AuthUser;
+use actix_web::{HttpResponse, web};
 use agrocore_domain::entities::livestock::{
     Animal, CreateAnimalDto, GrazingRecord, TreatmentRecord, UpdateAnimalDto,
 };
 use agrocore_domain::repositories::AnimalRepository;
+use agrocore_shared::SharedError;
 use uuid::Uuid;
 
 #[utoipa::path(
@@ -21,19 +23,13 @@ pub async fn list_animals(
     state: web::Data<AppState>,
     auth: AuthUser,
     query: web::Query<agrocore_shared::Pagination>,
-) -> impl Responder {
-    match state
+) -> Result<HttpResponse, ApiError> {
+    let result = state
         .db
         .animal_repo()
         .find_all(auth.0.tenant_id, query.0)
-        .await
-    {
-        Ok(result) => HttpResponse::Ok().json(result),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?;
+    Ok(HttpResponse::Ok().json(result))
 }
 
 #[utoipa::path(
@@ -50,19 +46,13 @@ pub async fn create_animal(
     state: web::Data<AppState>,
     auth: AuthUser,
     dto: web::Json<CreateAnimalDto>,
-) -> impl Responder {
-    match state
+) -> Result<HttpResponse, ApiError> {
+    let animal = state
         .db
         .animal_repo()
         .create(auth.0.tenant_id, dto.0, auth.0.user_id)
-        .await
-    {
-        Ok(animal) => HttpResponse::Created().json(animal),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?;
+    Ok(HttpResponse::Created().json(animal))
 }
 
 #[utoipa::path(
@@ -78,24 +68,15 @@ pub async fn get_animal(
     state: web::Data<AppState>,
     auth: AuthUser,
     path: web::Path<Uuid>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let roles = auth.roles();
-    match state
+    let animal = state
         .db
         .animal_repo()
         .find_by_id_visible(auth.0.tenant_id, *path, auth.0.user_id, &roles)
-        .await
-    {
-        Ok(Some(animal)) => HttpResponse::Ok().json(animal),
-        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "not_found".into(),
-            message: "Animal not found".into(),
-        }),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Animal not found".into()))?;
+    Ok(HttpResponse::Ok().json(animal))
 }
 
 #[utoipa::path(
@@ -113,23 +94,14 @@ pub async fn update_animal(
     auth: AuthUser,
     path: web::Path<Uuid>,
     dto: web::Json<UpdateAnimalDto>,
-) -> impl Responder {
-    match state
+) -> Result<HttpResponse, ApiError> {
+    let animal = state
         .db
         .animal_repo()
         .update(auth.0.tenant_id, *path, dto.0, auth.0.user_id)
-        .await
-    {
-        Ok(Some(animal)) => HttpResponse::Ok().json(animal),
-        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "not_found".into(),
-            message: "Animal not found".into(),
-        }),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Animal not found".into()))?;
+    Ok(HttpResponse::Ok().json(animal))
 }
 
 #[utoipa::path(
@@ -145,17 +117,16 @@ pub async fn delete_animal(
     state: web::Data<AppState>,
     auth: AuthUser,
     path: web::Path<Uuid>,
-) -> impl Responder {
-    match state.db.animal_repo().delete(auth.0.tenant_id, *path).await {
-        Ok(true) => HttpResponse::Ok().json(serde_json::json!({"deleted": true})),
-        Ok(false) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "not_found".into(),
-            message: "Animal not found".into(),
-        }),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
+) -> Result<HttpResponse, ApiError> {
+    if state
+        .db
+        .animal_repo()
+        .delete(auth.0.tenant_id, *path)
+        .await?
+    {
+        Ok(HttpResponse::Ok().json(serde_json::json!({"deleted": true})))
+    } else {
+        Err(SharedError::NotFound("Animal not found".into()).into())
     }
 }
 
@@ -174,22 +145,16 @@ pub async fn add_treatment(
     auth: AuthUser,
     path: web::Path<Uuid>,
     dto: web::Json<TreatmentRecord>,
-) -> impl Responder {
-    match state
+) -> Result<HttpResponse, ApiError> {
+    if state
         .db
         .animal_repo()
         .add_treatment(auth.0.tenant_id, *path, dto.0)
-        .await
+        .await?
     {
-        Ok(true) => HttpResponse::Ok().json(serde_json::json!({"success": true})),
-        Ok(false) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "not_found".into(),
-            message: "Animal not found".into(),
-        }),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
+        Ok(HttpResponse::Ok().json(serde_json::json!({"success": true})))
+    } else {
+        Err(SharedError::NotFound("Animal not found".into()).into())
     }
 }
 
@@ -208,22 +173,16 @@ pub async fn add_grazing(
     auth: AuthUser,
     path: web::Path<Uuid>,
     dto: web::Json<GrazingRecord>,
-) -> impl Responder {
-    match state
+) -> Result<HttpResponse, ApiError> {
+    if state
         .db
         .animal_repo()
         .add_grazing_record(auth.0.tenant_id, *path, dto.0)
-        .await
+        .await?
     {
-        Ok(true) => HttpResponse::Ok().json(serde_json::json!({"success": true})),
-        Ok(false) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "not_found".into(),
-            message: "Animal not found".into(),
-        }),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
+        Ok(HttpResponse::Ok().json(serde_json::json!({"success": true})))
+    } else {
+        Err(SharedError::NotFound("Animal not found".into()).into())
     }
 }
 

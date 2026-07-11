@@ -1,9 +1,11 @@
+use crate::AppState;
 use crate::dto::{
     CreateTaskDataDto, ErrorResponse, PaginatedResponseDto, PaginatedTaskResponse, TaskDataDto,
 };
+use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
-use crate::AppState;
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{HttpResponse, web};
+use agrocore_shared::SharedError;
 use validator::Validate;
 
 #[utoipa::path(
@@ -24,35 +26,21 @@ pub async fn list_tasks(
     state: web::Data<AppState>,
     auth: AuthUser,
     query: web::Query<agrocore_shared::Pagination>,
-) -> impl Responder {
-    if let Err(e) = auth.require_manager() {
-        return HttpResponse::Forbidden().json(ErrorResponse {
-            error: "forbidden".into(),
-            message: e.to_string(),
-        });
-    }
+) -> Result<HttpResponse, ApiError> {
+    auth.require_manager()?;
     tracing::info!("Listing tasks for tenant: {}", auth.0.tenant_id);
-    match state
+    let result = state
         .db
         .task_data_repo()
         .find_by_worker(auth.0.tenant_id, auth.0.user_id, query.0)
-        .await
-    {
-        Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
-            data: result.data.into_iter().map(TaskDataDto::from).collect(),
-            total: result.total,
-            page: result.page,
-            per_page: result.per_page,
-            total_pages: result.total_pages,
-        }),
-        Err(e) => {
-            tracing::error!("Failed to list tasks: {}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "internal".into(),
-                message: e.to_string(),
-            })
-        }
-    }
+        .await?;
+    Ok(HttpResponse::Ok().json(PaginatedResponseDto {
+        data: result.data.into_iter().map(TaskDataDto::from).collect(),
+        total: result.total,
+        page: result.page,
+        per_page: result.per_page,
+        total_pages: result.total_pages,
+    }))
 }
 
 #[utoipa::path(
@@ -70,29 +58,17 @@ pub async fn get_task(
     state: web::Data<AppState>,
     auth: AuthUser,
     path: web::Path<uuid::Uuid>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let task_id = *path;
     tracing::info!("Getting task {} for tenant: {}", task_id, auth.0.tenant_id);
     let roles = auth.roles();
-    match state
+    let task = state
         .db
         .task_data_repo()
         .find_by_id_visible(auth.0.tenant_id, task_id, auth.0.user_id, &roles)
-        .await
-    {
-        Ok(Some(t)) => HttpResponse::Ok().json(TaskDataDto::from(t)),
-        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "not_found".into(),
-            message: "Task not found".into(),
-        }),
-        Err(e) => {
-            tracing::error!("Failed to get task {}: {}", task_id, e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "internal".into(),
-                message: e.to_string(),
-            })
-        }
-    }
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Task not found".into()))?;
+    Ok(HttpResponse::Ok().json(TaskDataDto::from(task)))
 }
 
 #[utoipa::path(
@@ -111,32 +87,19 @@ pub async fn create_task(
     state: web::Data<AppState>,
     auth: AuthUser,
     dto: web::Json<CreateTaskDataDto>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     // Workers should be able to create tasks (log their own work),
     // but managers are definitely allowed.
     tracing::info!("Creating task for tenant: {}", auth.0.tenant_id);
-    if let Err(e) = dto.0.validate() {
-        tracing::warn!("Task validation failed: {}", e);
-        return HttpResponse::BadRequest().json(ErrorResponse {
-            error: "validation".into(),
-            message: e.to_string(),
-        });
-    }
-    match state
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
+    let task = state
         .db
         .task_data_repo()
         .create(auth.0.tenant_id, auth.0.user_id, dto.0.into())
-        .await
-    {
-        Ok(t) => HttpResponse::Created().json(TaskDataDto::from(t)),
-        Err(e) => {
-            tracing::error!("Failed to create task: {}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "internal".into(),
-                message: e.to_string(),
-            })
-        }
-    }
+        .await?;
+    Ok(HttpResponse::Created().json(TaskDataDto::from(task)))
 }
 
 #[utoipa::path(
@@ -157,35 +120,19 @@ pub async fn update_task(
     auth: AuthUser,
     path: web::Path<uuid::Uuid>,
     dto: web::Json<CreateTaskDataDto>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let task_id = *path;
     tracing::info!("Updating task {} for tenant: {}", task_id, auth.0.tenant_id);
-    if let Err(e) = dto.0.validate() {
-        tracing::warn!("Task update validation failed: {}", e);
-        return HttpResponse::BadRequest().json(ErrorResponse {
-            error: "validation".into(),
-            message: e.to_string(),
-        });
-    }
-    match state
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
+    let task = state
         .db
         .task_data_repo()
         .update(auth.0.tenant_id, task_id, dto.0.into())
-        .await
-    {
-        Ok(Some(t)) => HttpResponse::Ok().json(TaskDataDto::from(t)),
-        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "not_found".into(),
-            message: "Task not found".into(),
-        }),
-        Err(e) => {
-            tracing::error!("Failed to update task {}: {}", task_id, e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "internal".into(),
-                message: e.to_string(),
-            })
-        }
-    }
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Task not found".into()))?;
+    Ok(HttpResponse::Ok().json(TaskDataDto::from(task)))
 }
 
 #[utoipa::path(
@@ -203,32 +150,18 @@ pub async fn delete_task(
     state: web::Data<AppState>,
     auth: AuthUser,
     path: web::Path<uuid::Uuid>,
-) -> impl Responder {
-    if let Err(e) = auth.require_manager() {
-        return HttpResponse::Forbidden().json(ErrorResponse {
-            error: "forbidden".into(),
-            message: e.to_string(),
-        });
-    }
+) -> Result<HttpResponse, ApiError> {
+    auth.require_manager()?;
     let task_id = *path;
     tracing::info!("Deleting task {} for tenant: {}", task_id, auth.0.tenant_id);
-    match state
+    if state
         .db
         .task_data_repo()
         .delete(auth.0.tenant_id, task_id)
-        .await
+        .await?
     {
-        Ok(true) => HttpResponse::Ok().json(serde_json::json!({"deleted": true})),
-        Ok(false) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "not_found".into(),
-            message: "Task not found".into(),
-        }),
-        Err(e) => {
-            tracing::error!("Failed to delete task {}: {}", task_id, e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "internal".into(),
-                message: e.to_string(),
-            })
-        }
+        Ok(HttpResponse::Ok().json(serde_json::json!({"deleted": true})))
+    } else {
+        Err(SharedError::NotFound("Task not found".into()).into())
     }
 }

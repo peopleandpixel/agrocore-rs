@@ -1,12 +1,14 @@
-use crate::dto::{
-    ErrorResponse, MaterialCalculationRequestDto, MaterialCalculationResponseDto,
-    PaginatedResponseDto, SiteDto, WaterRateCalculationRequestDto, WaterRateCalculationResponseDto,
-};
-use crate::middleware::AuthExtractor as AuthUser;
 use crate::AppState;
-use actix_web::{web, HttpResponse, Responder};
+use crate::dto::{
+    MaterialCalculationRequestDto, MaterialCalculationResponseDto, PaginatedResponseDto, SiteDto,
+    WaterRateCalculationRequestDto, WaterRateCalculationResponseDto,
+};
+use crate::error::ApiError;
+use crate::middleware::AuthExtractor as AuthUser;
+use actix_web::{HttpResponse, web};
 use agrocore_domain::entities::{CropType, SiteType};
 use agrocore_domain::services::calculation::{CalculationService, MaterialAmountRequest};
+use agrocore_shared::SharedError;
 use chrono::Utc;
 use serde::Deserialize;
 use utoipa::IntoParams;
@@ -43,7 +45,7 @@ pub async fn predict_harvest(
     state: web::Data<AppState>,
     auth: AuthUser,
     query: web::Query<HarvestPredictionQuery>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let tid = auth.0.tenant_id;
 
     // 1. Aktuelle Phänologie abrufen
@@ -74,12 +76,12 @@ pub async fn predict_harvest(
         10.0, // Basis-Temp
     );
 
-    HttpResponse::Ok().json(serde_json::json!({
+    Ok(HttpResponse::Ok().json(serde_json::json!({
         "site_id": query.site_id,
         "current_bbch": latest_bbch,
         "predicted_days": days_to_harvest,
         "confidence": "medium"
-    }))
+    })))
 }
 
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
@@ -105,12 +107,14 @@ pub async fn calculate_profitability(
     state: web::Data<AppState>,
     auth: AuthUser,
     dto: web::Json<ProfitabilityRequest>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let tid = auth.0.tenant_id;
-    let site = match state.db.site_repo().find_by_id(tid, dto.site_id).await {
-        Ok(Some(s)) => s,
-        _ => return HttpResponse::NotFound().finish(),
-    };
+    let site = state
+        .db
+        .site_repo()
+        .find_by_id(tid, dto.site_id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Site not found".into()))?;
 
     let profit_per_ha = CalculationService::calculate_profitability(
         dto.yield_amount,
@@ -121,12 +125,12 @@ pub async fn calculate_profitability(
         site.area,
     );
 
-    HttpResponse::Ok().json(serde_json::json!({
+    Ok(HttpResponse::Ok().json(serde_json::json!({
         "site_id": dto.site_id,
         "profit_per_ha": profit_per_ha,
         "total_profit": profit_per_ha * site.area,
         "currency": "EUR"
-    }))
+    })))
 }
 
 #[derive(Debug, Deserialize, IntoParams)]
@@ -141,82 +145,60 @@ pub async fn list_specialized_sites(
     state: web::Data<AppState>,
     auth: AuthUser,
     query: web::Query<SpecializedSiteQuery>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let tenant_id = auth.0.tenant_id;
 
     // In einer echten Implementierung würde hier ein spezialisierter Repository-Aufruf stehen,
     // der nach site_type und crop_type filtert.
     // Für diesen Quick-Win nutzen wir das vorhandene Site-Repo und filtern (in-memory oder via Repo-Support).
 
-    match state
+    let result = state
         .db
         .site_repo()
         .find_all(tenant_id, query.pagination.clone())
-        .await
-    {
-        Ok(result) => {
-            let filtered_data: Vec<SiteDto> = result
-                .data
-                .into_iter()
-                .filter(|s| {
-                    let type_match = query
-                        .site_type
-                        .as_ref()
-                        .map(|t| &s.site_type == t)
-                        .unwrap_or(true);
-                    let crop_match = query
-                        .crop_type
-                        .as_ref()
-                        .map(|c| &s.crop_type == c)
-                        .unwrap_or(true);
-                    type_match && crop_match
-                })
-                .map(SiteDto::from)
-                .collect();
+        .await?;
+    let filtered_data: Vec<SiteDto> = result
+        .data
+        .into_iter()
+        .filter(|s| {
+            let type_match = query
+                .site_type
+                .as_ref()
+                .map(|t| &s.site_type == t)
+                .unwrap_or(true);
+            let crop_match = query
+                .crop_type
+                .as_ref()
+                .map(|c| &s.crop_type == c)
+                .unwrap_or(true);
+            type_match && crop_match
+        })
+        .map(SiteDto::from)
+        .collect();
 
-            HttpResponse::Ok().json(PaginatedResponseDto {
-                data: filtered_data,
-                total: result.total, // Hinweis: total stimmt hier nicht exakt, wenn gefiltert wurde
-                page: result.page,
-                per_page: result.per_page,
-                total_pages: result.total_pages,
-            })
-        }
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
-    }
+    Ok(HttpResponse::Ok().json(PaginatedResponseDto {
+        data: filtered_data,
+        total: result.total, // Hinweis: total stimmt hier nicht exakt, wenn gefiltert wurde
+        page: result.page,
+        per_page: result.per_page,
+        total_pages: result.total_pages,
+    }))
 }
 
 pub async fn calculate_material(
     state: web::Data<AppState>,
     auth: AuthUser,
     dto: web::Json<MaterialCalculationRequestDto>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let tenant_id = auth.0.tenant_id;
 
     // 1. Site-Daten abrufen
-    let site = match state
+    let site = state
         .db
         .site_repo()
         .find_by_id(tenant_id, dto.site_id)
-        .await
-    {
-        Ok(Some(s)) => s,
-        Ok(None) => {
-            return HttpResponse::NotFound().json(ErrorResponse {
-                error: "not_found".into(),
-                message: "Site not found".into(),
-            })
-        }
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "internal".into(),
-                message: e.to_string(),
-            })
-        }
-    };
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Site not found".into()))?;
 
     let application_date = dto
         .application_date
@@ -246,16 +228,16 @@ pub async fn calculate_material(
         application_date,
     });
 
-    HttpResponse::Ok().json(MaterialCalculationResponseDto {
+    Ok(HttpResponse::Ok().json(MaterialCalculationResponseDto {
         treated_area_ha: treated_area,
         total_material_amount: total_amount,
-    })
+    }))
 }
 
 pub async fn calculate_water_rate(
     _auth: AuthUser,
     dto: web::Json<WaterRateCalculationRequestDto>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let water_rate = CalculationService::calculate_water_rate(
         dto.speed_kmh,
         dto.nozzle_flow_lmin,
@@ -263,7 +245,7 @@ pub async fn calculate_water_rate(
         dto.number_of_nozzles,
     );
 
-    HttpResponse::Ok().json(WaterRateCalculationResponseDto {
+    Ok(HttpResponse::Ok().json(WaterRateCalculationResponseDto {
         water_rate_lha: water_rate,
-    })
+    }))
 }

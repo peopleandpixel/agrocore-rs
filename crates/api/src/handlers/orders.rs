@@ -1,15 +1,17 @@
+use crate::AppState;
 use crate::dto::{
     CreateOrderDto, ErrorResponse, OrderDto, PaginatedOrderResponse, PaginatedResponseDto,
     UpdateOrderDto,
 };
+use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
-use crate::AppState;
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{HttpResponse, web};
 use agrocore_domain::entities::order::MyTask;
 use agrocore_domain::entities::workforce::CreateWorkLogDto;
 use agrocore_domain::repositories::WorkerTaskStatusRepository;
 use agrocore_domain::services::workflow::WorkflowService;
 use agrocore_messaging::{Event, GlobalEvent};
+use agrocore_shared::SharedError;
 use chrono::Utc;
 use validator::Validate;
 
@@ -31,29 +33,20 @@ pub async fn list_orders(
     state: web::Data<AppState>,
     auth: AuthUser,
     query: web::Query<agrocore_shared::Pagination>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     tracing::info!("Listing orders for tenant: {}", auth.0.tenant_id);
-    match state
+    let result = state
         .db
         .order_repo()
         .find_all_visible(auth.0.tenant_id, query.0, auth.0.user_id, &auth.roles())
-        .await
-    {
-        Ok(result) => HttpResponse::Ok().json(PaginatedResponseDto {
-            data: result.data.into_iter().map(OrderDto::from).collect(),
-            total: result.total,
-            page: result.page,
-            per_page: result.per_page,
-            total_pages: result.total_pages,
-        }),
-        Err(e) => {
-            tracing::error!("Failed to list orders: {}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "internal".into(),
-                message: e.to_string(),
-            })
-        }
-    }
+        .await?;
+    Ok(HttpResponse::Ok().json(PaginatedResponseDto {
+        data: result.data.into_iter().map(OrderDto::from).collect(),
+        total: result.total,
+        page: result.page,
+        per_page: result.per_page,
+        total_pages: result.total_pages,
+    }))
 }
 
 #[utoipa::path(
@@ -71,32 +64,20 @@ pub async fn get_order(
     state: web::Data<AppState>,
     auth: AuthUser,
     path: web::Path<uuid::Uuid>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let order_id = *path;
     tracing::info!(
         "Getting order {} for tenant: {}",
         order_id,
         auth.0.tenant_id
     );
-    match state
+    let order = state
         .db
         .order_repo()
         .find_by_id_visible(auth.0.tenant_id, order_id, auth.0.user_id, &auth.roles())
-        .await
-    {
-        Ok(Some(o)) => HttpResponse::Ok().json(OrderDto::from(o)),
-        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "not_found".into(),
-            message: "Order not found".into(),
-        }),
-        Err(e) => {
-            tracing::error!("Failed to get order {}: {}", order_id, e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "internal".into(),
-                message: e.to_string(),
-            })
-        }
-    }
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Order not found".into()))?;
+    Ok(HttpResponse::Ok().json(OrderDto::from(order)))
 }
 
 #[utoipa::path(
@@ -115,40 +96,20 @@ pub async fn create_order(
     state: web::Data<AppState>,
     auth: AuthUser,
     dto: web::Json<CreateOrderDto>,
-) -> impl Responder {
-    if let Err(e) = auth.require_manager() {
-        return HttpResponse::Forbidden().json(ErrorResponse {
-            error: "forbidden".into(),
-            message: e.to_string(),
-        });
-    }
+) -> Result<HttpResponse, ApiError> {
+    auth.require_manager()?;
     tracing::info!("Creating order for tenant: {}", auth.0.tenant_id);
-    if let Err(e) = dto.0.validate() {
-        tracing::warn!("Order validation failed: {}", e);
-        return HttpResponse::BadRequest().json(ErrorResponse {
-            error: "validation".into(),
-            message: e.to_string(),
-        });
-    }
-    match state
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
+    let o = state
         .db
         .order_repo()
         .create(auth.0.tenant_id, dto.0.into(), auth.0.user_id)
-        .await
-    {
-        Ok(o) => {
-            let event = Event::new("api".into(), GlobalEvent::OrderCreated(o.clone()));
-            let _ = state.messaging.publish("events.orders", &event).await;
-            HttpResponse::Created().json(OrderDto::from(o))
-        }
-        Err(e) => {
-            tracing::error!("Failed to create order: {}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "internal".into(),
-                message: e.to_string(),
-            })
-        }
-    }
+        .await?;
+    let event = Event::new("api".into(), GlobalEvent::OrderCreated(o.clone()));
+    let _ = state.messaging.publish("events.orders", &event).await;
+    Ok(HttpResponse::Created().json(OrderDto::from(o)))
 }
 
 #[utoipa::path(
@@ -169,49 +130,26 @@ pub async fn update_order(
     auth: AuthUser,
     path: web::Path<uuid::Uuid>,
     dto: web::Json<UpdateOrderDto>,
-) -> impl Responder {
-    if let Err(e) = auth.require_manager() {
-        return HttpResponse::Forbidden().json(ErrorResponse {
-            error: "forbidden".into(),
-            message: e.to_string(),
-        });
-    }
+) -> Result<HttpResponse, ApiError> {
+    auth.require_manager()?;
     let order_id = *path;
     tracing::info!(
         "Updating order {} for tenant: {}",
         order_id,
         auth.0.tenant_id
     );
-    if let Err(e) = dto.0.validate() {
-        tracing::warn!("Order update validation failed: {}", e);
-        return HttpResponse::BadRequest().json(ErrorResponse {
-            error: "validation".into(),
-            message: e.to_string(),
-        });
-    }
-    match state
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
+    let o = state
         .db
         .order_repo()
         .update(auth.0.tenant_id, order_id, dto.0.into(), auth.0.user_id)
-        .await
-    {
-        Ok(Some(o)) => {
-            let event = Event::new("api".into(), GlobalEvent::OrderUpdated(o.clone()));
-            let _ = state.messaging.publish("events.orders", &event).await;
-            HttpResponse::Ok().json(OrderDto::from(o))
-        }
-        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "not_found".into(),
-            message: "Order not found".into(),
-        }),
-        Err(e) => {
-            tracing::error!("Failed to update order {}: {}", order_id, e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "internal".into(),
-                message: e.to_string(),
-            })
-        }
-    }
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Order not found".into()))?;
+    let event = Event::new("api".into(), GlobalEvent::OrderUpdated(o.clone()));
+    let _ = state.messaging.publish("events.orders", &event).await;
+    Ok(HttpResponse::Ok().json(OrderDto::from(o)))
 }
 
 #[utoipa::path(
@@ -229,41 +167,25 @@ pub async fn delete_order(
     state: web::Data<AppState>,
     auth: AuthUser,
     path: web::Path<uuid::Uuid>,
-) -> impl Responder {
-    if let Err(e) = auth.require_manager() {
-        return HttpResponse::Forbidden().json(ErrorResponse {
-            error: "forbidden".into(),
-            message: e.to_string(),
-        });
-    }
+) -> Result<HttpResponse, ApiError> {
+    auth.require_manager()?;
     let order_id = *path;
     tracing::info!(
         "Deleting order {} for tenant: {}",
         order_id,
         auth.0.tenant_id
     );
-    match state
+    if state
         .db
         .order_repo()
         .delete(auth.0.tenant_id, order_id)
-        .await
+        .await?
     {
-        Ok(true) => {
-            let event = Event::new("api".into(), GlobalEvent::OrderDeleted(order_id));
-            let _ = state.messaging.publish("events.orders", &event).await;
-            HttpResponse::Ok().json(serde_json::json!({"deleted": true}))
-        }
-        Ok(false) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "not_found".into(),
-            message: "Order not found".into(),
-        }),
-        Err(e) => {
-            tracing::error!("Failed to delete order {}: {}", order_id, e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "internal".into(),
-                message: e.to_string(),
-            })
-        }
+        let event = Event::new("api".into(), GlobalEvent::OrderDeleted(order_id));
+        let _ = state.messaging.publish("events.orders", &event).await;
+        Ok(HttpResponse::Ok().json(serde_json::json!({"deleted": true})))
+    } else {
+        Err(SharedError::NotFound("Order not found".into()).into())
     }
 }
 
@@ -283,39 +205,27 @@ pub async fn complete_order(
     state: web::Data<AppState>,
     auth: AuthUser,
     path: web::Path<uuid::Uuid>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let order_id = *path;
     let tenant_id = auth.0.tenant_id;
 
     // 1. Fetch current order with visibility check (prevents unauthorized access)
-    let mut order = match state
+    let mut order = state
         .db
         .order_repo()
         .find_by_id_visible(tenant_id, order_id, auth.0.user_id, &auth.roles())
-        .await {
-        Ok(Some(o)) => o,
-        Ok(None) => {
-            return HttpResponse::NotFound().json(ErrorResponse {
-                error: "not_found".into(),
-                message: "Order not found".into(),
-            })
-        }
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "internal".into(),
-                message: e.to_string(),
-            })
-        }
-    };
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Order not found".into()))?;
 
     let now = Utc::now();
     let duration_minutes = order.complete_at(now);
 
     if duration_minutes.is_none() {
-        return HttpResponse::BadRequest().json(ErrorResponse {
-            error: "invalid_transition".into(),
-            message: format!("Order {} cannot be completed from current state", order_id),
-        });
+        return Err(SharedError::Validation(format!(
+            "Order {} cannot be completed from current state",
+            order_id
+        ))
+        .into());
     }
 
     // 3. Persist change (reuse update logic from repo)
@@ -331,74 +241,64 @@ pub async fn complete_order(
         ..Default::default()
     };
 
-    match state
+    let updated = state
         .db
         .order_repo()
         .update(tenant_id, order_id, update_dto, auth.0.user_id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Order not found".into()))?;
+
+    let worker_id = match state
+        .db
+        .worker_repo()
+        .find_by_user_id(tenant_id, auth.0.user_id)
         .await
     {
-        Ok(Some(updated)) => {
-            let worker_id = match state
-                .db
-                .worker_repo()
-                .find_by_user_id(tenant_id, auth.0.user_id)
-                .await
-            {
-                Ok(Some(worker)) => worker.id,
-                Ok(None) => auth.0.user_id,
-                Err(e) => {
-                    tracing::warn!("Failed to resolve worker for worklog: {}", e);
-                    auth.0.user_id
-                }
-            };
-            let worklog = CreateWorkLogDto {
-                worker_id,
-                date: now,
-                hours_worked: duration_minutes.unwrap_or(0) as f64 / 60.0,
-                overtime_hours: 0.0,
-                rest_period_hours: 0.0,
-                task_description: updated.label.clone(),
-                site_id: updated.site_ids.first().copied(),
-                is_night_shift: false,
-                breaks_taken: 0,
-            };
-            if let Err(e) = state.db.work_log_repo().create(tenant_id, worklog).await {
-                tracing::warn!(
-                    "Failed to create worklog for completed order {}: {}",
-                    order_id,
-                    e
-                );
-            }
-
-            // 4. Process workflows
-            let follow_ups = WorkflowService::process_status_transition(
-                &updated,
-                agrocore_domain::entities::OrderStatus::Completed,
-            );
-            for next_order_dto in follow_ups {
-                if let Err(e) = state
-                    .db
-                    .order_repo()
-                    .create(tenant_id, next_order_dto, auth.0.user_id)
-                    .await
-                {
-                    tracing::error!("Failed to create follow-up order: {}", e);
-                }
-            }
-
-            let event = Event::new("api".into(), GlobalEvent::OrderUpdated(updated.clone()));
-            let _ = state.messaging.publish("events.orders", &event).await;
-            HttpResponse::Ok().json(OrderDto::from(updated))
+        Ok(Some(worker)) => worker.id,
+        Ok(None) => auth.0.user_id,
+        Err(e) => {
+            tracing::warn!("Failed to resolve worker for worklog: {}", e);
+            auth.0.user_id
         }
-        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "not_found".into(),
-            message: "Order not found".into(),
-        }),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
+    };
+    let worklog = CreateWorkLogDto {
+        worker_id,
+        date: now,
+        hours_worked: duration_minutes.unwrap_or(0) as f64 / 60.0,
+        overtime_hours: 0.0,
+        rest_period_hours: 0.0,
+        task_description: updated.label.clone(),
+        site_id: updated.site_ids.first().copied(),
+        is_night_shift: false,
+        breaks_taken: 0,
+    };
+    if let Err(e) = state.db.work_log_repo().create(tenant_id, worklog).await {
+        tracing::warn!(
+            "Failed to create worklog for completed order {}: {}",
+            order_id,
+            e
+        );
     }
+
+    // 4. Process workflows
+    let follow_ups = WorkflowService::process_status_transition(
+        &updated,
+        agrocore_domain::entities::OrderStatus::Completed,
+    );
+    for next_order_dto in follow_ups {
+        if let Err(e) = state
+            .db
+            .order_repo()
+            .create(tenant_id, next_order_dto, auth.0.user_id)
+            .await
+        {
+            tracing::error!("Failed to create follow-up order: {}", e);
+        }
+    }
+
+    let event = Event::new("api".into(), GlobalEvent::OrderUpdated(updated.clone()));
+    let _ = state.messaging.publish("events.orders", &event).await;
+    Ok(HttpResponse::Ok().json(OrderDto::from(updated)))
 }
 
 #[utoipa::path(
@@ -417,37 +317,25 @@ pub async fn start_order(
     state: web::Data<AppState>,
     auth: AuthUser,
     path: web::Path<uuid::Uuid>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let order_id = *path;
     let tenant_id = auth.0.tenant_id;
 
     // 1. Fetch current order with visibility check (prevents unauthorized access)
-    let mut order = match state
+    let mut order = state
         .db
         .order_repo()
         .find_by_id_visible(tenant_id, order_id, auth.0.user_id, &auth.roles())
-        .await {
-        Ok(Some(o)) => o,
-        Ok(None) => {
-            return HttpResponse::NotFound().json(ErrorResponse {
-                error: "not_found".into(),
-                message: "Order not found".into(),
-            })
-        }
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "internal".into(),
-                message: e.to_string(),
-            })
-        }
-    };
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Order not found".into()))?;
 
     // 2. Execute domain logic
     if !order.start_at(Utc::now()) {
-        return HttpResponse::BadRequest().json(ErrorResponse {
-            error: "invalid_transition".into(),
-            message: format!("Order {} cannot be started from current state", order_id),
-        });
+        return Err(SharedError::Validation(format!(
+            "Order {} cannot be started from current state",
+            order_id
+        ))
+        .into());
     }
 
     // 3. Persist change
@@ -459,26 +347,15 @@ pub async fn start_order(
         ..Default::default()
     };
 
-    match state
+    let updated = state
         .db
         .order_repo()
         .update(tenant_id, order_id, update_dto, auth.0.user_id)
-        .await
-    {
-        Ok(Some(updated)) => {
-            let event = Event::new("api".into(), GlobalEvent::OrderUpdated(updated.clone()));
-            let _ = state.messaging.publish("events.orders", &event).await;
-            HttpResponse::Ok().json(OrderDto::from(updated))
-        }
-        Ok(None) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "not_found".into(),
-            message: "Order not found".into(),
-        }),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Order not found".into()))?;
+    let event = Event::new("api".into(), GlobalEvent::OrderUpdated(updated.clone()));
+    let _ = state.messaging.publish("events.orders", &event).await;
+    Ok(HttpResponse::Ok().json(OrderDto::from(updated)))
 }
 
 #[utoipa::path(
@@ -491,23 +368,17 @@ pub async fn start_order(
     tag = "orders",
     security(("bearer_auth" = []))
 )]
-pub async fn my_tasks(state: web::Data<AppState>, auth: AuthUser) -> impl Responder {
+pub async fn my_tasks(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+) -> Result<HttpResponse, ApiError> {
     tracing::info!("Listing active tasks for user: {}", auth.0.user_id);
-    match state
+    let tasks = state
         .db
         .order_repo()
         .find_my_tasks(auth.0.tenant_id, auth.0.user_id)
-        .await
-    {
-        Ok(tasks) => HttpResponse::Ok().json(tasks),
-        Err(e) => {
-            tracing::error!("Failed to list active tasks: {}", e);
-            HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "internal".into(),
-                message: e.to_string(),
-            })
-        }
-    }
+        .await?;
+    Ok(HttpResponse::Ok().json(tasks))
 }
 
 // =============================================================================
@@ -529,7 +400,7 @@ pub async fn start_task_for_worker(
     state: web::Data<AppState>,
     auth: AuthUser,
     path: web::Path<uuid::Uuid>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let task_id = *path;
     let tenant_id = auth.0.tenant_id;
     let worker_id = auth.0.user_id;
@@ -539,12 +410,12 @@ pub async fn start_task_for_worker(
         .db
         .worker_task_status_repo()
         .find_by_task_and_worker(tenant_id, task_id, worker_id)
-        .await;
+        .await?;
 
     match status {
-        Ok(Some(_)) => {
+        Some(_) => {
             // Update existing to Started
-            let updated = state
+            state
                 .db
                 .worker_task_status_repo()
                 .update_status(
@@ -553,40 +424,23 @@ pub async fn start_task_for_worker(
                     worker_id,
                     agrocore_domain::entities::worker_task_status::WorkerTaskStatusType::Started,
                 )
-                .await;
-
-            match updated {
-                Ok(_) => HttpResponse::Ok().json(serde_json::json!({"status": "started"})),
-                Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-                    error: "internal".into(),
-                    message: e.to_string(),
-                }),
-            }
+                .await?;
+            Ok(HttpResponse::Ok().json(serde_json::json!({"status": "started"})))
         }
-        Ok(None) => {
+        None => {
             // Create new status entry
             let dto = agrocore_domain::entities::worker_task_status::CreateWorkerTaskStatusDto {
                 task_id,
                 worker_id,
                 tenant_id,
             };
-            match state
+            state
                 .db
                 .worker_task_status_repo()
                 .create(tenant_id, dto)
-                .await
-            {
-                Ok(_) => HttpResponse::Ok().json(serde_json::json!({"status": "created"})),
-                Err(e) => HttpResponse::Created().json(ErrorResponse {
-                    error: "internal".into(),
-                    message: e.to_string(),
-                }),
-            }
+                .await?;
+            Ok(HttpResponse::Ok().json(serde_json::json!({"status": "created"})))
         }
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
     }
 }
 
@@ -605,12 +459,12 @@ pub async fn stop_task_for_worker(
     state: web::Data<AppState>,
     auth: AuthUser,
     path: web::Path<uuid::Uuid>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let task_id = *path;
     let tenant_id = auth.0.tenant_id;
     let worker_id = auth.0.user_id;
 
-    let updated = state
+    state
         .db
         .worker_task_status_repo()
         .update_status(
@@ -619,13 +473,6 @@ pub async fn stop_task_for_worker(
             worker_id,
             agrocore_domain::entities::worker_task_status::WorkerTaskStatusType::Stopped,
         )
-        .await;
-
-    match updated {
-        Ok(_) => HttpResponse::Ok().json(serde_json::json!({"status": "stopped"})),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "internal".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?;
+    Ok(HttpResponse::Ok().json(serde_json::json!({"status": "stopped"})))
 }

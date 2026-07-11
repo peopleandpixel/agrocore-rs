@@ -1,7 +1,7 @@
 use actix_cors::Cors;
 use actix_files as fs;
-use actix_web::{web, App, HttpServer};
 use actix_governor::{Governor, GovernorConfigBuilder};
+use actix_web::{App, HttpServer, web};
 use actix_web_prometheus::PrometheusMetricsBuilder;
 use std::sync::Arc;
 use tracing_actix_web::TracingLogger;
@@ -9,6 +9,7 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 pub mod dto;
+pub mod error;
 pub mod handlers;
 pub mod middleware;
 
@@ -205,14 +206,16 @@ pub async fn run_server(
         .unwrap();
 
     HttpServer::new(move || {
-        let cors = Cors::permissive()
-            .max_age(3600);
+        let cors = Cors::permissive().max_age(3600);
 
         let security_headers = actix_web::middleware::DefaultHeaders::new()
             .add(("X-Content-Type-Options", "nosniff"))
             .add(("X-Frame-Options", "DENY"))
             .add(("X-XSS-Protection", "1; mode=block"))
-            .add(("Strict-Transport-Security", "max-age=31536000; includeSubDomains"))
+            .add((
+                "Strict-Transport-Security",
+                "max-age=31536000; includeSubDomains",
+            ))
             .add(("Content-Security-Policy", "default-src 'self'"));
 
         App::new()

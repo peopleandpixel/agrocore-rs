@@ -1,8 +1,10 @@
-use crate::dto::{CreateUserDto, ErrorResponse};
 use crate::AppState;
-use actix_web::{web, HttpResponse, Responder};
+use crate::dto::CreateUserDto;
+use crate::error::ApiError;
+use actix_web::{HttpResponse, web};
 use agrocore_domain::entities::tenant::CreateTenantDto;
 use agrocore_domain::entities::user::UserRole;
+use agrocore_shared::SharedError;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use validator::Validate;
@@ -26,16 +28,11 @@ pub struct InitialSetupRequest {
     ),
     tag = "system"
 )]
-pub async fn get_status(state: web::Data<AppState>) -> impl Responder {
-    match state.db.user_repo().count_all().await {
-        Ok(count) => HttpResponse::Ok().json(SystemStatusResponse {
-            initialized: count > 0,
-        }),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "database".into(),
-            message: e.to_string(),
-        }),
-    }
+pub async fn get_status(state: web::Data<AppState>) -> Result<HttpResponse, ApiError> {
+    let count = state.db.user_repo().count_all().await?;
+    Ok(HttpResponse::Ok().json(SystemStatusResponse {
+        initialized: count > 0,
+    }))
 }
 
 #[utoipa::path(
@@ -52,64 +49,33 @@ pub async fn get_status(state: web::Data<AppState>) -> impl Responder {
 pub async fn initial_setup(
     state: web::Data<AppState>,
     dto: web::Json<InitialSetupRequest>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     // 1. Check if already initialized
-    match state.db.user_repo().count_all().await {
-        Ok(count) if count > 0 => {
-            return HttpResponse::BadRequest().json(ErrorResponse {
-                error: "already_initialized".into(),
-                message: "System is already initialized".into(),
-            });
-        }
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "database".into(),
-                message: e.to_string(),
-            });
-        }
-        _ => {}
+    let count = state.db.user_repo().count_all().await?;
+    if count > 0 {
+        return Err(SharedError::Validation("System is already initialized".into()).into());
     }
 
-    if let Err(e) = dto.admin.validate() {
-        return HttpResponse::BadRequest().json(ErrorResponse {
-            error: "validation".into(),
-            message: e.to_string(),
-        });
-    }
-    if let Err(e) = dto.tenant.validate() {
-        return HttpResponse::BadRequest().json(ErrorResponse {
-            error: "validation".into(),
-            message: e.to_string(),
-        });
-    }
+    dto.admin
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.tenant
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
 
     // 2. Create Tenant
-    let tenant = match state.db.tenant_repo().create(dto.tenant.clone()).await {
-        Ok(t) => t,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(ErrorResponse {
-                error: "database".into(),
-                message: e.to_string(),
-            })
-        }
-    };
+    let tenant = state.db.tenant_repo().create(dto.tenant.clone()).await?;
 
     // 3. Create Admin User
     let mut admin_dto = dto.admin.clone();
     admin_dto.roles = Some(vec![UserRole::Admin]);
 
-    match state
+    state
         .db
         .user_repo()
         .create(tenant.id, admin_dto.into())
-        .await
-    {
-        Ok(_) => HttpResponse::Created().finish(),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "database".into(),
-            message: e.to_string(),
-        }),
-    }
+        .await?;
+    Ok(HttpResponse::Created().finish())
 }
 
 #[utoipa::path(
@@ -125,17 +91,11 @@ pub async fn initial_setup(
 pub async fn delete_tenant(
     state: web::Data<AppState>,
     auth: crate::middleware::AuthExtractor,
-) -> impl Responder {
-    match state.db.tenant_repo().delete(auth.0.tenant_id).await {
-        Ok(true) => HttpResponse::Ok().json(serde_json::json!({"deleted": true})),
-        Ok(false) => HttpResponse::NotFound().json(ErrorResponse {
-            error: "not_found".into(),
-            message: "Tenant not found".into(),
-        }),
-        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "database".into(),
-            message: e.to_string(),
-        }),
+) -> Result<HttpResponse, ApiError> {
+    if state.db.tenant_repo().delete(auth.0.tenant_id).await? {
+        Ok(HttpResponse::Ok().json(serde_json::json!({"deleted": true})))
+    } else {
+        Err(SharedError::NotFound("Tenant not found".into()).into())
     }
 }
 
