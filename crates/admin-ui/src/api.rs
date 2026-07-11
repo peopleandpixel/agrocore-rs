@@ -571,15 +571,6 @@ pub struct CreateOrderRequest {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CreateUserRequest {
-    pub firstname: String,
-    pub lastname: String,
-    pub email: String,
-    pub password: String,
-    pub roles: Option<Vec<String>>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct UpdateUserRequest {
     pub firstname: Option<String>,
     pub lastname: Option<String>,
@@ -593,10 +584,11 @@ pub async fn create_user(req: CreateUserRequest) -> Result<UserDto, String> {
 }
 
 pub async fn update_user(id: uuid::Uuid, req: UpdateUserRequest) -> Result<UserDto, String> {
+    let body = req;
     let req = Request::put(&api_url(&format!("/api/v1/users/{}", id)));
     let req = with_auth(req);
     let resp = req
-        .json(&req)
+        .json(&body)
         .map_err(|e| e.to_string())?
         .send()
         .await

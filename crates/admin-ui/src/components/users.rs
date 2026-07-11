@@ -6,87 +6,6 @@ use leptos::task::spawn_local;
 use leptos_icons::Icon;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ResourceKey {
-    Sites,
-    Equipment,
-    Orders,
-    Users,
-    Finance,
-    Analytics,
-}
-
-impl ResourceKey {
-    pub fn label(&self) -> &'static str {
-        match self {
-            ResourceKey::Sites => "Flächen",
-            ResourceKey::Equipment => "Equipment",
-            ResourceKey::Orders => "Aufträge",
-            ResourceKey::Users => "Benutzer",
-            ResourceKey::Finance => "Finanzen",
-            ResourceKey::Analytics => "Analytics",
-        }
-    }
-}
-
-/// Rollen-Definition mit granulareren Rechten (fest codiert wie im Domain-Layer)
-pub struct RoleDefinition {
-    pub name: &'static str,
-    pub description: &'static str,
-    pub permissions: Vec<(ResourceKey, Vec<&'static str>)>,
-}
-
-pub const ROLE_DEFINITIONS: &[RoleDefinition] = &[
-    RoleDefinition {
-        name: "Admin",
-        description: "Vollzugriff auf alle Bereiche und Benutzerverwaltung",
-        permissions: vec![
-            (ResourceKey::Sites, vec!["create", "read", "update", "delete"]),
-            (ResourceKey::Equipment, vec!["create", "read", "update", "delete"]),
-            (ResourceKey::Orders, vec!["create", "read", "update", "delete"]),
-            (ResourceKey::Users, vec!["create", "read", "update", "delete"]),
-            (ResourceKey::Finance, vec!["create", "read", "update", "delete"]),
-            (ResourceKey::Analytics, vec!["create", "read", "update", "delete"]),
-        ],
-    },
-    RoleDefinition {
-        name: "Manager",
-        description: "Verwaltung ohne Benutzer-Rechte",
-        permissions: vec![
-            (ResourceKey::Sites, vec!["create", "read", "update", "delete"]),
-            (ResourceKey::Equipment, vec!["create", "read", "update", "delete"]),
-            (ResourceKey::Orders, vec!["create", "read", "update", "delete"]),
-            (ResourceKey::Users, vec!["read"]),
-            (ResourceKey::Finance, vec!["create", "read", "update"]),
-            (ResourceKey::Analytics, vec!["create", "read"]),
-        ],
-    },
-    RoleDefinition {
-        name: "Worker",
-        description: "Eingabe und Ansicht eigener Daten",
-        permissions: vec![
-            (ResourceKey::Sites, vec!["read"]),
-            (ResourceKey::Equipment, vec!["read"]),
-            (ResourceKey::Orders, vec!["read"]),
-            (ResourceKey::Users, vec!["read"]), // own profile only
-            (ResourceKey::Finance, vec![]),
-            (ResourceKey::Analytics, vec![]),
-        ],
-    },
-    RoleDefinition {
-        name: "Viewer",
-        description: "Nur-Lese-Zugang",
-        permissions: vec![
-            (ResourceKey::Sites, vec!["read"]),
-            (ResourceKey::Equipment, vec!["read"]),
-            (ResourceKey::Orders, vec!["read"]),
-            (ResourceKey::Users, vec![]),
-            (ResourceKey::Finance, vec!["read"]),
-            (ResourceKey::Analytics, vec!["read"]),
-        ],
-    },
-];
-
 #[component]
 pub fn UserManagement() -> impl IntoView {
     let i18n = use_context::<crate::i18n::I18n>().expect("i18n context");
@@ -255,9 +174,7 @@ pub fn UserManagement() -> impl IntoView {
                                     };
                                     
                                     let delete_click = move |_| {
-                                        if window().confirm(Some("Benutzer wirklich löschen?")).unwrap_or(false) {
-                                            on_delete(user.id);
-                                        }
+                                        on_delete(user.id);
                                     };
                                     
                                     view! {
@@ -398,10 +315,8 @@ pub fn UserManagement() -> impl IntoView {
                 <div class="modal modal-open">
                     <div class="modal-box w-11/12 max-w-4xl">
                         <h3 class="font-bold text-lg mb-4">"Rollen und Rechte Übersicht"</h3>
-                        
                         <p class="text-base-content/60 mb-4">
-                            "Jede Rolle hat fest definierte Berechtigungen. Die Rechte können nicht einzeln vergeben werden - 
-                            nur die Rolle des Benutzers."
+                            "Jede Rolle hat fest definierte Berechtigungen. Die Rechte können nicht einzeln vergeben werden - nur die Rolle des Benutzers."
                         </p>
 
                         <div class="overflow-x-auto">
@@ -419,24 +334,46 @@ pub fn UserManagement() -> impl IntoView {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {move || ROLE_DEFINITIONS.iter().map(|role| {
-                                        let perms = role.permissions.clone();
-                                        view! {
-                                            <tr>
-                                                <td><strong>{role.name}</strong></td>
-                                                <td class="text-xs">{role.description}</td>
-                                                {move || perms.iter().map(|(resource, actions)| {
-                                                    let action_str = match actions.as_slice() {
-                                                        [] => "—",
-                                                        acts => acts.join(", "),
-                                                    };
-                                                    view! {
-                                                        <td class="text-xs">{action_str}</td>
-                                                    }
-                                                }).collect::<Vec<_>>()}
-                                            </tr>
-                                        }
-                                    }).collect::<Vec<_>>()}
+                                    <tr>
+                                        <td><strong>"Admin"</strong></td>
+                                        <td class="text-xs">"Vollzugriff auf alle Bereiche und Benutzerverwaltung"</td>
+                                        <td class="text-xs">"create, read, update, delete"</td>
+                                        <td class="text-xs">"create, read, update, delete"</td>
+                                        <td class="text-xs">"create, read, update, delete"</td>
+                                        <td class="text-xs">"create, read, update, delete"</td>
+                                        <td class="text-xs">"create, read, update, delete"</td>
+                                        <td class="text-xs">"create, read, update, delete"</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>"Manager"</strong></td>
+                                        <td class="text-xs">"Verwaltung ohne Benutzer-Rechte"</td>
+                                        <td class="text-xs">"create, read, update, delete"</td>
+                                        <td class="text-xs">"create, read, update, delete"</td>
+                                        <td class="text-xs">"create, read, update, delete"</td>
+                                        <td class="text-xs">"read"</td>
+                                        <td class="text-xs">"create, read, update"</td>
+                                        <td class="text-xs">"create, read"</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>"Worker"</strong></td>
+                                        <td class="text-xs">"Eingabe und Ansicht eigener Daten"</td>
+                                        <td class="text-xs">"read"</td>
+                                        <td class="text-xs">"read"</td>
+                                        <td class="text-xs">"read"</td>
+                                        <td class="text-xs">"read"</td>
+                                        <td class="text-xs">"—"</td>
+                                        <td class="text-xs">"—"</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>"Viewer"</strong></td>
+                                        <td class="text-xs">"Nur-Lese-Zugang"</td>
+                                        <td class="text-xs">"read"</td>
+                                        <td class="text-xs">"read"</td>
+                                        <td class="text-xs">"read"</td>
+                                        <td class="text-xs">"—"</td>
+                                        <td class="text-xs">"read"</td>
+                                        <td class="text-xs">"read"</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
