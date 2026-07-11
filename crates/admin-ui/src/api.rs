@@ -570,8 +570,51 @@ pub struct CreateOrderRequest {
     pub recurrence: Option<RecurrenceRule>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CreateUserRequest {
+    pub firstname: String,
+    pub lastname: String,
+    pub email: String,
+    pub password: String,
+    pub roles: Option<Vec<String>>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct UpdateUserRequest {
+    pub firstname: Option<String>,
+    pub lastname: Option<String>,
+    pub email: Option<String>,
+    pub roles: Option<Vec<String>>,
+    pub is_active: Option<bool>,
+}
+
 pub async fn create_user(req: CreateUserRequest) -> Result<UserDto, String> {
     post_json("/api/v1/users", &req, true).await
+}
+
+pub async fn update_user(id: uuid::Uuid, req: UpdateUserRequest) -> Result<UserDto, String> {
+    let req = Request::put(&api_url(&format!("/api/v1/users/{}", id)));
+    let req = with_auth(req);
+    let resp = req
+        .json(&req)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<UserDto>().await.map_err(|e| e.to_string())
+}
+
+pub async fn delete_user(id: uuid::Uuid) -> Result<(), String> {
+    let req = Request::delete(&api_url(&format!("/api/v1/users/{}", id)));
+    let req = with_auth(req);
+    let resp = req.send().await.map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    Ok(())
 }
 
 pub async fn create_site(req: CreateSiteRequest) -> Result<SiteDto, String> {
