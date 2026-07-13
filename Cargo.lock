@@ -383,6 +383,7 @@ dependencies = [
  "jsonwebtoken",
  "mongodb",
  "serde",
+ "tokio",
  "uuid",
 ]
 
@@ -393,6 +394,7 @@ dependencies = [
  "agrocore-domain",
  "anyhow",
  "async-nats",
+ "bytes",
  "chrono",
  "failsafe",
  "serde",

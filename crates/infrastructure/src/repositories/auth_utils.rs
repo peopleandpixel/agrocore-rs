@@ -33,7 +33,7 @@ pub fn generate_jwt(u: &User) -> Result<String> {
     let secret = agrocore_shared::config::jwt_secret();
     let exp = Utc::now()
         .checked_add_signed(chrono::Duration::minutes(30))
-        .unwrap()
+        .ok_or_else(|| SharedError::Internal("JWT expiry timestamp overflow".into()))?
         .timestamp() as usize;
     let roles: Vec<String> = u.roles.iter().map(|r| format!("{:?}", r)).collect();
     let claims = Claims {

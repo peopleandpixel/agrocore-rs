@@ -175,40 +175,40 @@ impl OrderRepo {
                 d.insert("label", v);
             }
             if let Some(v) = dto.status {
-                d.insert("status", mongodb::bson::to_bson(&v).unwrap());
+                d.insert("status", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
             }
             if let Some(v) = dto.site_ids {
-                d.insert("site_ids", mongodb::bson::to_bson(&v).unwrap());
+                d.insert("site_ids", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
             }
             if let Some(v) = dto.assigned_worker_ids {
-                d.insert("assigned_worker_ids", mongodb::bson::to_bson(&v).unwrap());
+                d.insert("assigned_worker_ids", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
             }
             if let Some(v) = dto.planned_date {
-                d.insert("planned_date", mongodb::bson::to_bson(&v).unwrap());
+                d.insert("planned_date", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
             }
             if let Some(v) = dto.deadline_date {
-                d.insert("deadline_date", mongodb::bson::to_bson(&v).unwrap());
+                d.insert("deadline_date", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
             }
             if let Some(v) = dto.started_at {
-                d.insert("started_at", mongodb::bson::to_bson(&v).unwrap());
+                d.insert("started_at", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
             }
             if let Some(v) = dto.completed_at {
-                d.insert("completed_at", mongodb::bson::to_bson(&v).unwrap());
+                d.insert("completed_at", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
             }
             if let Some(v) = dto.last_completed_at {
-                d.insert("last_completed_at", mongodb::bson::to_bson(&v).unwrap());
+                d.insert("last_completed_at", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
             }
             if let Some(v) = dto.results {
                 d.insert("results", v);
             }
             if let Some(v) = dto.articles {
-                d.insert("articles", mongodb::bson::to_bson(&v).unwrap());
+                d.insert("articles", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
             }
             if let Some(v) = dto.quantities {
-                d.insert("quantities", mongodb::bson::to_bson(&v).unwrap());
+                d.insert("quantities", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
             }
             if let Some(v) = dto.custom_fields {
-                d.insert("custom_fields", mongodb::bson::to_bson(&v).unwrap());
+                d.insert("custom_fields", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
             }
             if let Some(v) = dto.parent_order_id {
                 d.insert("parent_order_id", v.to_string());
@@ -217,16 +217,16 @@ impl OrderRepo {
                 d.insert("cost_center_id", v.to_string());
             }
             if let Some(v) = dto.workflow_config {
-                d.insert("workflow_config", mongodb::bson::to_bson(&v).unwrap());
+                d.insert("workflow_config", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
             }
             if let Some(v) = dto.recurrence {
-                d.insert("recurrence", mongodb::bson::to_bson(&v).unwrap());
+                d.insert("recurrence", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
             }
             if let Some(v) = dto.execution_policy {
-                d.insert("execution_policy", mongodb::bson::to_bson(&v).unwrap());
+                d.insert("execution_policy", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
             }
             if let Some(v) = dto.automation_state {
-                d.insert("automation_state", mongodb::bson::to_bson(&v).unwrap());
+                d.insert("automation_state", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
             }
             if let Some(v) = dto.is_active {
                 d.insert("is_active", v);

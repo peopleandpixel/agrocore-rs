@@ -108,10 +108,10 @@ impl EquipmentRepository for EquipmentRepo {
                 d.insert("in_usage", v);
             }
             if let Some(v) = dto.maintenance_intervals {
-                d.insert("maintenance_intervals", mongodb::bson::to_bson(&v).unwrap());
+                d.insert("maintenance_intervals", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
             }
             if let Some(v) = dto.next_maintenance_date {
-                d.insert("next_maintenance_date", mongodb::bson::to_bson(&v).unwrap());
+                d.insert("next_maintenance_date", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
             }
             if let Some(v) = dto.last_maintenance_hours {
                 d.insert("last_maintenance_hours", v);

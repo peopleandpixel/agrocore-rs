@@ -1,9 +1,11 @@
+mod defaults;
 mod repositories;
 
 use agrocore_domain::repositories::SiteRepository;
 use std::sync::Arc;
 
 // Re-export auth_utils functions at crate root for API access
+pub use defaults::{default_bind_addr, default_mongodb_uri, default_nats_url};
 pub use repositories::auth_utils::{generate_jwt, hash_password, verify_password};
 pub use repositories::AnimalRepo;
 pub use repositories::EquipmentRepo;

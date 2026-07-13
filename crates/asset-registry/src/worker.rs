@@ -5,6 +5,11 @@ use serde::{Deserialize, Serialize};
 use tracing::info;
 use uuid::Uuid;
 
+#[inline]
+fn health_check_response() -> &'static [u8] {
+    b"{\"status\":\"ok\",\"service\":\"asset-registry\"}"
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub enum AssetRequest {
     GetEquipment { id: Uuid },
