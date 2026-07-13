@@ -18,6 +18,70 @@ pub trait VisibilityAwareEntity {
     ) -> mongodb::bson::Document;
 }
 
+use crate::entities::user::{CreateUserDto, LoginDto, UpdateUserDto, User};
+use crate::entities::order::{CreateOrderDto, MyTask, Order, UpdateOrderDto};
+
+#[cfg_attr(test, automock)]
+pub trait UserRepository: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<User>>;
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[crate::entities::user::UserRole],
+    ) -> RepositoryFuture<Option<User>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<User>>;
+    fn find_all_visible(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+        user_id: Uuid,
+        roles: &[crate::entities::user::UserRole],
+    ) -> RepositoryFuture<PaginatedResponse<User>>;
+    fn find_by_email(&self, email: &str) -> RepositoryFuture<Option<User>>;
+    fn create(&self, tid: TenantId, dto: CreateUserDto, by: Uuid) -> RepositoryFuture<User>;
+    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateUserDto, by: Uuid) -> RepositoryFuture<Option<User>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+    fn authenticate(&self, dto: LoginDto) -> RepositoryFuture<crate::entities::user::AuthResponse>;
+    fn find_by_refresh_token(&self, refresh_token: &str) -> RepositoryFuture<Option<User>>;
+    fn invalidate_refresh_token(&self, user_id: Uuid) -> RepositoryFuture<bool>;
+}
+
+#[cfg_attr(test, automock)]
+pub trait OrderRepository: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Order>>;
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[crate::entities::user::UserRole],
+    ) -> RepositoryFuture<Option<Order>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Order>>;
+    fn find_all_visible(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+        user_id: Uuid,
+        roles: &[crate::entities::user::UserRole],
+    ) -> RepositoryFuture<PaginatedResponse<Order>>;
+    fn create(&self, tid: TenantId, dto: CreateOrderDto, by: Uuid) -> RepositoryFuture<Order>;
+    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateOrderDto, by: Uuid) -> RepositoryFuture<Option<Order>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+    fn find_my_tasks(&self, tid: TenantId, worker_id: Uuid) -> RepositoryFuture<Vec<MyTask>>;
+    fn find_assigned_to_worker(&self, tid: TenantId, worker_id: Uuid) -> RepositoryFuture<Vec<Order>>;
+}
+
+use crate::entities::tenant::{CreateTenantDto, Tenant};
+
+#[cfg_attr(test, automock)]
+pub trait TenantRepository: Send + Sync {
+    fn find_by_id(&self, id: Uuid) -> RepositoryFuture<Option<Tenant>>;
+    fn create(&self, dto: CreateTenantDto) -> RepositoryFuture<Tenant>;
+    fn delete(&self, id: Uuid) -> RepositoryFuture<bool>;
+}
+
 #[cfg_attr(test, automock)]
 pub trait Repository<T>: Send + Sync
 where

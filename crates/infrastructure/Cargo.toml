@@ -9,7 +9,7 @@ agrocore-domain = { path = "../domain" }
 agrocore-shared = { path = "../shared" }
 mongodb = { workspace = true, optional = true }
 bson = { workspace = true, optional = true }
-sqlx = { version = "0.8", features = ["postgres", "chrono", "uuid", "runtime-tokio-rustls"], optional = true }
+sqlx = { version = "0.8", features = ["postgres", "chrono", "uuid", "runtime-tokio-rustls", "json"], optional = true }
 serde = { workspace = true }
 chrono = { workspace = true }
 uuid = { workspace = true }
