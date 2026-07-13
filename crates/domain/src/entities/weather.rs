@@ -1,6 +1,6 @@
+use crate::entities::BbchStage;
 use crate::entities::tenant::TenantId;
 use crate::entities::user::UserRole;
-use crate::entities::BbchStage;
 use crate::repositories::VisibilityAwareEntity;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -9,7 +9,7 @@ use uuid::Uuid;
 use validator::Validate;
 
 #[cfg(feature = "mongodb")]
-use mongodb::bson::{doc, Document};
+use mongodb::bson::{Document, doc};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum WeatherStationType {

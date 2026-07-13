@@ -8,7 +8,7 @@ use crate::entities::user::UserRole;
 use crate::repositories::VisibilityAwareEntity;
 
 #[cfg(feature = "mongodb")]
-use mongodb::bson::{doc, Document};
+use mongodb::bson::{Document, doc};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct TaskData {
