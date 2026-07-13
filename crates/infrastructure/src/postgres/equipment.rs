@@ -33,37 +33,129 @@ impl EquipmentRepository for PgEquipmentRepo {
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            row.map(|(e,)| e).ok_or_else(|| SharedError::NotFound.to_error())
+            Ok(row.map(|(e,)| e))
         })
     }
 
-    fn find_by_id_visible(&self, tid: TenantId, id: Uuid, _user_id: Uuid, _roles: &[UserRole]) -> RepositoryFuture<Option<Equipment>> {
-        self.find_by_id(tid, id)
+    fn find_by_id_visible(&self, tid: TenantId, id: Uuid, user_id: Uuid, roles: &[UserRole]) -> RepositoryFuture<Option<Equipment>> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            let can_see_all = roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager);
+            
+            if can_see_all {
+                let row = sqlx::query_as::<_, (Equipment,)>("SELECT row_to_json(equipment) FROM equipment WHERE id = $1 AND tenant_id = $2")
+                    .bind(id)
+                    .bind(tid.to_string())
+                    .fetch_optional(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
+                Ok(row.map(|(e,)| e))
+            } else {
+                let row = sqlx::query_as::<_, (Equipment,)>("SELECT row_to_json(equipment) FROM equipment WHERE id = $1 AND tenant_id = $2 AND assigned_to = $3")
+                    .bind(id)
+                    .bind(tid.to_string())
+                    .bind(user_id)
+                    .fetch_optional(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
+                Ok(row.map(|(e,)| e))
+            }
+        })
     }
 
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Equipment>> {
         let pool = self.pool.clone();
+        let page = p.page.unwrap_or(0);
+        let per_page = p.per_page.unwrap_or(20);
+
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM equipment WHERE tenant_id = $1::uuid")
+            let offset = page * per_page;
+            
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM equipment WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true)")
                 .bind(tid.to_string())
                 .fetch_one(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let items: Vec<Equipment> = sqlx::query_as("SELECT * FROM equipment WHERE tenant_id = $1::uuid ORDER BY label LIMIT $2 OFFSET $3")
+            let items: Vec<Equipment> = sqlx::query_as("SELECT * FROM equipment WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true) ORDER BY label LIMIT $2 OFFSET $3")
                 .bind(tid.to_string())
-                .bind(p.limit as i32)
-                .bind(((p.page - 1) * p.limit) as i32)
+                .bind(per_page as i32)
+                .bind(offset as i32)
                 .fetch_all(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            Ok(PaginatedResponse { items, total, page: p.page, limit: p.limit })
+            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
+            
+            Ok(PaginatedResponse {
+                data: items,
+                total: total as u64,
+                page,
+                per_page,
+                total_pages,
+            })
         })
     }
 
-    fn find_all_visible(&self, tid: TenantId, p: Pagination, _user_id: Uuid, _roles: &[UserRole]) -> RepositoryFuture<PaginatedResponse<Equipment>> {
-        self.find_all(tid, p)
+    fn find_all_visible(&self, tid: TenantId, p: Pagination, user_id: Uuid, roles: &[UserRole]) -> RepositoryFuture<PaginatedResponse<Equipment>> {
+        let pool = self.pool.clone();
+        let page = p.page.unwrap_or(0);
+        let per_page = p.per_page.unwrap_or(20);
+        let offset = page * per_page;
+
+        Box::pin(async move {
+            let can_see_all = roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager);
+            
+            if can_see_all {
+                let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM equipment WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true)")
+                    .bind(tid.to_string())
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
+
+                let items: Vec<Equipment> = sqlx::query_as("SELECT * FROM equipment WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true) ORDER BY label LIMIT $2 OFFSET $3")
+                    .bind(tid.to_string())
+                    .bind(per_page as i32)
+                    .bind(offset as i32)
+                    .fetch_all(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
+
+                let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
+                
+                Ok(PaginatedResponse {
+                    data: items,
+                    total: total as u64,
+                    page,
+                    per_page,
+                    total_pages,
+                })
+            } else {
+                let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM equipment WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true)")
+                    .bind(tid.to_string())
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
+
+                let items: Vec<Equipment> = sqlx::query_as("SELECT * FROM equipment WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true) ORDER BY label LIMIT $2 OFFSET $3")
+                    .bind(tid.to_string())
+                    .bind(per_page as i32)
+                    .bind(offset as i32)
+                    .fetch_all(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
+
+                let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
+                
+                Ok(PaginatedResponse {
+                    data: items,
+                    total: total as u64,
+                    page,
+                    per_page,
+                    total_pages,
+                })
+            }
+        })
     }
 
     fn create(&self, tid: TenantId, dto: CreateEquipmentDto, _by: Uuid) -> RepositoryFuture<Equipment> {
@@ -71,17 +163,21 @@ impl EquipmentRepository for PgEquipmentRepo {
         Box::pin(async move {
             let now = Utc::now();
             let id = Uuid::new_v4();
+            let equipment_type = dto.equipment_type.map(|t| serde_json::to_string(&t).unwrap_or_else(|_| "{}".to_string()));
+            let maintenance_intervals = dto.maintenance_intervals.map(|m| serde_json::to_string(&m).unwrap_or_else(|_| "{}".to_string()));
 
             let equipment = sqlx::query_as::<_, Equipment>(
-                "INSERT INTO equipment (id, tenant_id, label, category, serial_number, created_at, updated_at) \
-                 VALUES ($1, $2, $3, $4, $5, $6, $7) \
-                 RETURNING *"
+                r#"INSERT INTO equipment (id, tenant_id, label, code, equipment_type, in_usage, maintenance_intervals, created_at, updated_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                   RETURNING *"#
             )
             .bind(id)
             .bind(tid.to_string())
             .bind(&dto.label)
-            .bind(&dto.category)
-            .bind(&dto.serial_number)
+            .bind(&dto.code)
+            .bind(equipment_type)
+            .bind(dto.in_usage.unwrap_or(false))
+            .bind(maintenance_intervals)
             .bind(now)
             .bind(now)
             .fetch_one(&pool)
@@ -96,11 +192,30 @@ impl EquipmentRepository for PgEquipmentRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             let now = Utc::now();
+            let equipment_type = dto.equipment_type.as_ref().map(|t| serde_json::to_string(t).unwrap_or_else(|_| "{}".to_string()));
+            let maintenance_intervals = dto.maintenance_intervals.as_ref().map(|m| serde_json::to_string(m).unwrap_or_else(|_| "{}".to_string()));
+            let next_maintenance = dto.next_maintenance_date;
+
             let equipment = sqlx::query_as::<_, Equipment>(
-                r#"UPDATE equipment SET label = COALESCE($1, label), category = COALESCE($2, category), updated_at = $3 WHERE id = $4 AND tenant_id = $5 RETURNING *"#
+                r#"UPDATE equipment SET 
+                    label = COALESCE($1, label), 
+                    code = COALESCE($2, code), 
+                    equipment_type = COALESCE($3, equipment_type),
+                    in_usage = COALESCE($4, in_usage),
+                    maintenance_intervals = COALESCE($5, maintenance_intervals),
+                    next_maintenance_date = COALESCE($6, next_maintenance_date),
+                    last_maintenance_hours = COALESCE($7, last_maintenance_hours),
+                    updated_at = $8
+                   WHERE id = $9 AND tenant_id = $10
+                   RETURNING *"#
             )
             .bind(&dto.label)
-            .bind(&dto.category)
+            .bind(&dto.code)
+            .bind(equipment_type)
+            .bind(dto.in_usage)
+            .bind(maintenance_intervals)
+            .bind(next_maintenance)
+            .bind(dto.last_maintenance_hours)
             .bind(now)
             .bind(id)
             .bind(tid.to_string())
@@ -115,7 +230,8 @@ impl EquipmentRepository for PgEquipmentRepo {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            let result = sqlx::query("DELETE FROM equipment WHERE id = $1 AND tenant_id = $2")
+            let result = sqlx::query("UPDATE equipment SET is_active = false, updated_at = $1 WHERE id = $2 AND tenant_id = $3")
+                .bind(Utc::now())
                 .bind(id)
                 .bind(tid.to_string())
                 .execute(&pool)
