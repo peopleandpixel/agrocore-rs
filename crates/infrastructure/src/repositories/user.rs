@@ -94,6 +94,31 @@ impl UserRepo {
             if let Some(v) = dto.lastname {
                 d.insert("lastname", v);
             }
+            if let Some(v) = dto.email {
+                d.insert("email", v);
+            }
+            if let Some(v) = dto.roles {
+                d.insert("roles", bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
+            }
+            if let Some(v) = dto.password {
+                let pw = hash_password(&v)?;
+                d.insert("password_hash", pw);
+            }
+            if let Some(v) = dto.language {
+                d.insert("language", v);
+            }
+            if let Some(v) = dto.color {
+                d.insert("color", v);
+            }
+            if let Some(v) = dto.internal_cost_per_hour {
+                d.insert("internal_cost_per_hour", v);
+            }
+            if let Some(v) = dto.external_cost_per_hour {
+                d.insert("external_cost_per_hour", v);
+            }
+            if let Some(v) = dto.assigned_site_ids {
+                d.insert("assigned_site_ids", bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
+            }
             if let Some(v) = dto.is_active {
                 d.insert("is_active", v);
             }
