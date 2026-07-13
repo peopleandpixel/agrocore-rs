@@ -1,5 +1,6 @@
 use agrocore_domain::entities::order::{CreateOrderDto, Order, UpdateOrderDto, OrderType};
 use agrocore_domain::entities::tenant::TenantId;
+use agrocore_domain::entities::user::UserRole;
 use agrocore_domain::repositories::{PaginatedResponse, Pagination, RepositoryFuture, OrderRepository};
 use agrocore_shared::{Result, SharedError};
 use chrono::Utc;
@@ -21,14 +22,14 @@ impl OrderRepository for PgOrderRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Order>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            let row = sqlx::query_as::<_, (Order,)>("SELECT row_to_json(orders) FROM orders WHERE id = $1 AND tenant_id = $2")
+            sqlx::query_as::<_, (Order,)>("SELECT row_to_json(orders) FROM orders WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
                 .bind(tid.to_string())
                 .fetch_optional(&pool)
                 .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
-
-            row.map(|(o,)| o).ok_or_else(|| SharedError::NotFound.to_error())
+                .map_err(|e| SharedError::Database(e.to_string()))?
+                .map(|(o,)| o)
+                .ok_or_else(|| SharedError::NotFound.to_error())
         })
     }
 
@@ -37,33 +38,40 @@ impl OrderRepository for PgOrderRepo {
         tid: TenantId,
         id: Uuid,
         _user_id: Uuid,
-        _roles: &[agrocore_domain::entities::user::UserRole],
+        _roles: &[UserRole],
     ) -> RepositoryFuture<Option<Order>> {
         self.find_by_id(tid, id)
     }
 
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Order>> {
         let pool = self.pool.clone();
+        let page = p.page.unwrap_or(0);
+        let per_page = p.per_page.unwrap_or(20);
+        let offset = page * per_page;
+
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM orders WHERE tenant_id = $1::uuid")
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM orders WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true)")
                 .bind(tid.to_string())
                 .fetch_one(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let items: Vec<Order> = sqlx::query_as("SELECT * FROM orders WHERE tenant_id = $1::uuid ORDER BY label LIMIT $2 OFFSET $3")
+            let data: Vec<Order> = sqlx::query_as("SELECT * FROM orders WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true) ORDER BY created_at DESC LIMIT $2 OFFSET $3")
                 .bind(tid.to_string())
-                .bind(p.limit as i32)
-                .bind(((p.page - 1) * p.limit) as i32)
+                .bind(per_page as i32)
+                .bind(offset as i32)
                 .fetch_all(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
+            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
+            
             Ok(PaginatedResponse {
-                items,
-                total,
-                page: p.page,
-                limit: p.limit,
+                data,
+                total: total as u64,
+                page,
+                per_page,
+                total_pages,
             })
         })
     }
@@ -73,7 +81,7 @@ impl OrderRepository for PgOrderRepo {
         tid: TenantId,
         p: Pagination,
         _user_id: Uuid,
-        _roles: &[agrocore_domain::entities::user::UserRole],
+        _roles: &[UserRole],
     ) -> RepositoryFuture<PaginatedResponse<Order>> {
         self.find_all(tid, p)
     }
@@ -84,49 +92,40 @@ impl OrderRepository for PgOrderRepo {
             let now = Utc::now();
             let id = Uuid::new_v4();
 
-            let order = sqlx::query_as::<_, Order>(
-                "INSERT INTO orders (id, tenant_id, label, order_type, deadline_date, planned_date, created_at, updated_at) \
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) \
-                 RETURNING *"
-            )
+            sqlx::query_as::<_, Order>(
+                r#"INSERT INTO orders (id, tenant_id, label, order_type, deadline_date, planned_date, is_active, created_at, updated_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, true, $7, $8)
+                   RETURNING *"#)
             .bind(id)
             .bind(tid.to_string())
             .bind(&dto.label)
-            .bind(&dto.order_type)
+            .bind(format!("{:?}", dto.order_type))
             .bind(dto.deadline_date)
             .bind(dto.planned_date)
             .bind(now)
             .bind(now)
             .fetch_one(&pool)
             .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
-
-            Ok(order)
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 
-    fn update(
-        &self,
-        tid: TenantId,
-        id: Uuid,
-        dto: UpdateOrderDto,
-        _by: Uuid,
-    ) -> RepositoryFuture<Option<Order>> {
+    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateOrderDto, _by: Uuid) -> RepositoryFuture<Option<Order>> {
         let pool = self.pool.clone();
         Box::pin(async move {
             let now = Utc::now();
-            let order = sqlx::query_as::<_, Order>(
-                r#"UPDATE orders SET 
+
+            sqlx::query_as::<_, Order>(
+                r#"UPDATE orders SET
                     label = COALESCE($1, label),
                     order_type = COALESCE($2, order_type),
                     deadline_date = COALESCE($3, deadline_date),
                     planned_date = COALESCE($4, planned_date),
                     updated_at = $5
                    WHERE id = $6 AND tenant_id = $7
-                   RETURNING *"#
-            )
+                   RETURNING *"#)
             .bind(&dto.label)
-            .bind(&dto.order_type)
+            .bind(dto.order_type.as_ref().map(|t| format!("{:?}", t)))
             .bind(dto.deadline_date)
             .bind(dto.planned_date)
             .bind(now)
@@ -134,16 +133,15 @@ impl OrderRepository for PgOrderRepo {
             .bind(tid.to_string())
             .fetch_optional(&pool)
             .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
-
-            Ok(order)
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            let result = sqlx::query("DELETE FROM orders WHERE id = $1 AND tenant_id = $2")
+            let result = sqlx::query("UPDATE orders SET is_active = false, updated_at = $1 WHERE id = $2 AND tenant_id = $3")
+                .bind(Utc::now())
                 .bind(id)
                 .bind(tid.to_string())
                 .execute(&pool)
@@ -151,23 +149,6 @@ impl OrderRepository for PgOrderRepo {
                 .map_err(|e| SharedError::Database(e.to_string()))?;
             
             Ok(result.rows_affected() > 0)
-        })
-    }
-
-    fn find_sites_for_order(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Vec<agrocore_domain::entities::site::Site>> {
-        // Load sites via order_sites junction table
-        let pool = self.pool.clone();
-        Box::pin(async move {
-            let sites: Vec<agrocore_domain::entities::site::Site> = sqlx::query_as(
-                "SELECT s.* FROM sites s JOIN order_sites os ON s.id = os.site_id WHERE os.order_id = $1 AND s.tenant_id = $2"
-            )
-            .bind(id)
-            .bind(tid.to_string())
-            .fetch_all(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
-
-            Ok(sites)
         })
     }
 }
