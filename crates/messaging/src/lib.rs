@@ -6,6 +6,7 @@ use agrocore_domain::entities::spatial::SpatialObjectType;
 use agrocore_domain::entities::user::User;
 use agrocore_domain::entities::weather::{PhenologyRecord, WeatherData, WeatherStation};
 use async_nats::Client;
+use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use failsafe::Config;
 use serde::{Deserialize, Serialize};
@@ -109,6 +110,7 @@ impl MessagingClient {
         })
     }
 
+    /// Publiziert ein Event an NATS. Nutzt `bytes::Bytes` für zero-copy Payload.
     pub async fn publish<T: Serialize>(
         &self,
         subject: &str,
@@ -116,12 +118,12 @@ impl MessagingClient {
     ) -> anyhow::Result<()> {
         let mut attempts = 0;
         let max_attempts = 3;
-        let payload = serde_json::to_vec(event)?;
+        let payload: Bytes = Bytes::from(serde_json::to_vec(event)?);
 
         loop {
             match self
                 .client
-                .publish(subject.to_string(), payload.clone().into())
+                .publish(subject.to_string(), payload.clone())
                 .await
             {
                 Ok(_) => return Ok(()),
@@ -153,7 +155,7 @@ impl MessagingClient {
     ) -> anyhow::Result<R> {
         let mut attempts = 0;
         let max_attempts = 3;
-        let payload_bytes = serde_json::to_vec(payload)?;
+        let payload_bytes: Bytes = Bytes::from(serde_json::to_vec(payload)?);
 
         loop {
             if !self.circuit_breaker.is_call_permitted() {
@@ -165,7 +167,7 @@ impl MessagingClient {
 
             match self
                 .client
-                .request(subject.to_string(), payload_bytes.clone().into())
+                .request(subject.to_string(), payload_bytes.clone())
                 .await
             {
                 Ok(response) => {

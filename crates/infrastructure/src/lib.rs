@@ -25,6 +25,11 @@ pub use repositories::{WorkLogRepo, WorkerLocationRepo, WorkerRepo, WorkerTaskSt
 use mongodb::bson::doc;
 use mongodb::options::{ClientOptions, IndexOptions};
 use mongodb::{Client, Collection, IndexModel};
+use std::env;
+
+/// Standard-MongoDB-Pool-Größe für Agrar-Anwendung (weniger als 100 gleichzeitige Requests)
+const DEFAULT_MAX_POOL_SIZE: u32 = 20;
+const DEFAULT_MIN_POOL_SIZE: u32 = 5;
 
 #[derive(Clone)]
 pub struct Database {
@@ -35,8 +40,11 @@ pub struct Database {
 impl Database {
     pub async fn connect(uri: &str, db_name: &str) -> anyhow::Result<Self> {
         let mut opts = ClientOptions::parse(uri).await?;
-        opts.max_pool_size = Some(100);
-        opts.min_pool_size = Some(10);
+        
+        opts.max_pool_size = Some(env::var("MONGODB_MAX_POOL_SIZE")
+            .ok().and_then(|v| v.parse().ok()).unwrap_or(DEFAULT_MAX_POOL_SIZE));
+        opts.min_pool_size = Some(env::var("MONGODB_MIN_POOL_SIZE")
+            .ok().and_then(|v| v.parse().ok()).unwrap_or(DEFAULT_MIN_POOL_SIZE));
         opts.max_idle_time = Some(std::time::Duration::from_secs(300));
         opts.connect_timeout = Some(std::time::Duration::from_secs(10));
         opts.server_selection_timeout = Some(std::time::Duration::from_secs(5));
