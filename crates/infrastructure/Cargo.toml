@@ -19,8 +19,7 @@ jsonwebtoken = { workspace = true }
 argon2 = { workspace = true }
 
 [features]
-default = []
-mongodb = ["dep:mongodb", "dep:bson"]
+default = ["postgres"]
 postgres = ["dep:sqlx"]
 
 [dev-dependencies]
