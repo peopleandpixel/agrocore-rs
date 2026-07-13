@@ -5,10 +5,11 @@ edition = "2024"
 license.workspace = true
 
 [dependencies]
-agrocore-domain = { path = "../domain", features = ["mongodb"] }
+agrocore-domain = { path = "../domain" }
 agrocore-shared = { path = "../shared" }
-mongodb = { workspace = true }
-bson = { workspace = true }
+mongodb = { workspace = true, optional = true }
+bson = { workspace = true, optional = true }
+sqlx = { version = "0.8", features = ["postgres", "chrono", "uuid", "runtime-tokio-rustls"], optional = true }
 serde = { workspace = true }
 chrono = { workspace = true }
 uuid = { workspace = true }
@@ -16,6 +17,11 @@ anyhow = { workspace = true }
 futures = { workspace = true }
 jsonwebtoken = { workspace = true }
 argon2 = { workspace = true }
+
+[features]
+default = []
+mongodb = ["dep:mongodb", "dep:bson"]
+postgres = ["dep:sqlx"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt", "macros"] }
