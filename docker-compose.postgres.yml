@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: agrocore-postgres
+    environment:
+      POSTGRES_DB: agrocore
+      POSTGRES_USER: agrocore
+      POSTGRES_PASSWORD: agrocore-secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
