@@ -1,0 +1,13 @@
+[target.'cfg(all())']
+rustflags = ["-D", "warnings"]
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+opt-level = 3
+
+[profile.release-lto-off]
+inherits = "release"
+lto = false
+codegen-units = 16
