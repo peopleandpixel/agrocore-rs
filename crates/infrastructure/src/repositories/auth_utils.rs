@@ -29,7 +29,7 @@ struct Claims {
 }
 
 pub fn generate_jwt(u: &User) -> Result<String> {
-    use jsonwebtoken::{encode, EncodingKey, Header};
+    use jsonwebtoken::{EncodingKey, Header, encode};
     let secret = agrocore_shared::config::jwt_secret();
     let exp = Utc::now()
         .checked_add_signed(chrono::Duration::minutes(30))
@@ -57,7 +57,7 @@ mod tests {
     use agrocore_domain::entities::user::{User, UserRole};
     use chrono::Utc;
     use jsonwebtoken::crypto::rust_crypto::DEFAULT_PROVIDER;
-    use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
+    use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode};
     use serde::{Deserialize, Serialize};
     use uuid::Uuid;
 

@@ -1,11 +1,11 @@
 use chrono::Utc;
-use mongodb::bson::doc;
 use mongodb::Collection;
+use mongodb::bson::doc;
 use std::future::Future;
 use std::pin::Pin;
 use uuid::Uuid;
 
-use crate::repositories::{paginate, MongoRepository};
+use crate::repositories::{MongoRepository, paginate};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::weather::{
     CreatePhenologyRecordDto, CreateWeatherDataDto, CreateWeatherStationDto, PhenologyRecord,

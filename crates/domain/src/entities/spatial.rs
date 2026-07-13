@@ -13,7 +13,7 @@ use crate::repositories::VisibilityAwareEntity;
 #[cfg(feature = "mongodb")]
 use crate::entities::user::UserRole;
 #[cfg(feature = "mongodb")]
-use mongodb::bson::{doc, Document};
+use mongodb::bson::{Document, doc};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum SpatialObjectType {
@@ -222,9 +222,10 @@ fn to_closed_linestring(points: &[GeoPoint]) -> LineString<f64> {
         .collect();
 
     if let (Some(first), Some(last)) = (coords.first().copied(), coords.last().copied())
-        && first != last {
-            coords.push(first);
-        }
+        && first != last
+    {
+        coords.push(first);
+    }
 
     LineString::from(coords)
 }

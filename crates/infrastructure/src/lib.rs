@@ -6,9 +6,9 @@ use std::sync::Arc;
 
 // Re-export auth_utils functions at crate root for API access
 pub use defaults::{default_bind_addr, default_mongodb_uri, default_nats_url};
-pub use repositories::auth_utils::{generate_jwt, hash_password, verify_password};
 pub use repositories::AnimalRepo;
 pub use repositories::EquipmentRepo;
+pub use repositories::auth_utils::{generate_jwt, hash_password, verify_password};
 pub use repositories::{
     ApplicatorLicenseRepo, AuditLogRepo, ComplianceChecklistRepo, FertilizerRecordRepo,
     PlantProtectionRecordRepo,
@@ -42,11 +42,19 @@ pub struct Database {
 impl Database {
     pub async fn connect(uri: &str, db_name: &str) -> anyhow::Result<Self> {
         let mut opts = ClientOptions::parse(uri).await?;
-        
-        opts.max_pool_size = Some(env::var("MONGODB_MAX_POOL_SIZE")
-            .ok().and_then(|v| v.parse().ok()).unwrap_or(DEFAULT_MAX_POOL_SIZE));
-        opts.min_pool_size = Some(env::var("MONGODB_MIN_POOL_SIZE")
-            .ok().and_then(|v| v.parse().ok()).unwrap_or(DEFAULT_MIN_POOL_SIZE));
+
+        opts.max_pool_size = Some(
+            env::var("MONGODB_MAX_POOL_SIZE")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(DEFAULT_MAX_POOL_SIZE),
+        );
+        opts.min_pool_size = Some(
+            env::var("MONGODB_MIN_POOL_SIZE")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(DEFAULT_MIN_POOL_SIZE),
+        );
         opts.max_idle_time = Some(std::time::Duration::from_secs(300));
         opts.connect_timeout = Some(std::time::Duration::from_secs(10));
         opts.server_selection_timeout = Some(std::time::Duration::from_secs(5));
@@ -112,8 +120,10 @@ impl Database {
         create_active_updated_index(&task_collection).await?;
 
         // Worker Task Status
-        let worker_task_status_collection = self
-            .collection::<agrocore_domain::entities::worker_task_status::WorkerTaskStatus>("worker_task_status");
+        let worker_task_status_collection =
+            self.collection::<agrocore_domain::entities::worker_task_status::WorkerTaskStatus>(
+                "worker_task_status",
+            );
         worker_task_status_collection
             .create_index(
                 IndexModel::builder()

@@ -2,9 +2,9 @@ use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::repositories::{Repository, RepositoryFuture, VisibilityAwareEntity};
 use agrocore_shared::{PaginatedResponse, Pagination, SharedError};
 use futures::StreamExt;
-use mongodb::bson::{doc, Document};
-use mongodb::{options::FindOptions, Collection};
-use serde::{de::DeserializeOwned, Serialize};
+use mongodb::bson::{Document, doc};
+use mongodb::{Collection, options::FindOptions};
+use serde::{Serialize, de::DeserializeOwned};
 use std::marker::PhantomData;
 use uuid::Uuid;
 

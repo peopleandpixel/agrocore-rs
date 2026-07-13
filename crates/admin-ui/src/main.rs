@@ -107,9 +107,10 @@ pub fn App() -> impl IntoView {
         use web_sys::window;
         if let Some(win) = window()
             && let Some(doc) = win.document()
-                && let Some(root) = doc.document_element() {
-                    let _ = root.set_attribute("data-theme", theme.get().as_str());
-                }
+            && let Some(root) = doc.document_element()
+        {
+            let _ = root.set_attribute("data-theme", theme.get().as_str());
+        }
     });
 
     view! {

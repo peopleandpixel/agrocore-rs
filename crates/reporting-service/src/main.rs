@@ -1,4 +1,4 @@
-use actix_web::{web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{App, HttpResponse, HttpServer, Responder, web};
 use agrocore_domain::repositories::AnimalRepository;
 use agrocore_infrastructure::Database;
 use agrocore_shared::Pagination;

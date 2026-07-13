@@ -1,4 +1,4 @@
-use crate::api::{fetch_my_tasks, TaskData};
+use crate::api::{TaskData, fetch_my_tasks};
 use crate::i18n::{I18n, Language};
 use icondata::*;
 use leptos::prelude::*;

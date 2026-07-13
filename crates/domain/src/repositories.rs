@@ -133,7 +133,7 @@ pub trait AnimalRepository: Send + Sync {
         roles: &[crate::entities::user::UserRole],
     ) -> RepositoryFuture<Option<Animal>>;
     fn find_all(&self, tid: TenantId, p: Pagination)
-        -> RepositoryFuture<PaginatedResponse<Animal>>;
+    -> RepositoryFuture<PaginatedResponse<Animal>>;
     fn create(&self, tid: TenantId, dto: CreateAnimalDto, by: Uuid) -> RepositoryFuture<Animal>;
     fn update(
         &self,
@@ -157,7 +157,9 @@ pub trait AnimalRepository: Send + Sync {
     ) -> RepositoryFuture<bool>;
 }
 
-use crate::entities::worker_task_status::{CreateWorkerTaskStatusDto, WorkerTaskStatus, WorkerTaskStatusType};
+use crate::entities::worker_task_status::{
+    CreateWorkerTaskStatusDto, WorkerTaskStatus, WorkerTaskStatusType,
+};
 
 #[cfg_attr(test, automock)]
 pub trait WorkerTaskStatusRepository: Send + Sync {

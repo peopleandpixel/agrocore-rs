@@ -1,5 +1,5 @@
 use crate::api;
-use crate::components::form::{is_valid_email, RequiredLabel};
+use crate::components::form::{RequiredLabel, is_valid_email};
 use icondata::*;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
@@ -13,7 +13,7 @@ pub fn UserManagement() -> impl IntoView {
     let t = move |key: &str| i18n.t(lang.get().as_str(), key);
 
     let users = LocalResource::new(|| async move { api::fetch_users().await.ok() });
-    
+
     // Add modal state
     let (show_add_modal, set_show_add_modal) = signal(false);
     let (add_error, set_add_error) = signal(None::<String>);
@@ -22,7 +22,7 @@ pub fn UserManagement() -> impl IntoView {
     let (add_email, set_add_email) = signal(String::new());
     let (add_password, set_add_password) = signal(String::new());
     let (add_role, set_add_role) = signal(String::from("Worker"));
-    
+
     // Edit modal state
     let (show_edit_modal, set_show_edit_modal) = signal(false);
     let (edit_user_id, set_edit_user_id) = signal(None::<Uuid>);
@@ -33,7 +33,7 @@ pub fn UserManagement() -> impl IntoView {
     let (edit_role, set_edit_role) = signal(String::from("Worker"));
     let (edit_is_active, set_edit_is_active) = signal(true);
     let (show_permissions_modal, set_show_permissions_modal) = signal(false);
-    
+
     let on_create = move |_| {
         let firstname = add_firstname.get();
         let lastname = add_lastname.get();
@@ -81,22 +81,39 @@ pub fn UserManagement() -> impl IntoView {
             Some(id) => id,
             None => return,
         };
-        let firstname = if edit_firstname.get().trim().is_empty() { None } else { Some(edit_firstname.get()) };
-        let lastname = if edit_lastname.get().trim().is_empty() { None } else { Some(edit_lastname.get()) };
-        let email = if edit_email.get().trim().is_empty() { None } else { Some(edit_email.get()) };
+        let firstname = if edit_firstname.get().trim().is_empty() {
+            None
+        } else {
+            Some(edit_firstname.get())
+        };
+        let lastname = if edit_lastname.get().trim().is_empty() {
+            None
+        } else {
+            Some(edit_lastname.get())
+        };
+        let email = if edit_email.get().trim().is_empty() {
+            None
+        } else {
+            Some(edit_email.get())
+        };
         let roles = Some(vec![edit_role.get()]);
         let is_active = Some(edit_is_active.get());
 
         set_edit_error.set(None);
 
         spawn_local(async move {
-            match api::update_user(user_id, api::UpdateUserRequest {
-                firstname,
-                lastname,
-                email,
-                roles,
-                is_active,
-            }).await {
+            match api::update_user(
+                user_id,
+                api::UpdateUserRequest {
+                    firstname,
+                    lastname,
+                    email,
+                    roles,
+                    is_active,
+                },
+            )
+            .await
+            {
                 Ok(_) => {
                     let _ = window().location().reload();
                 }
@@ -170,7 +187,7 @@ pub fn UserManagement() -> impl IntoView {
                                     let roles_for_edit = user.roles.clone();
                                     let last_login = user.last_login.clone().unwrap_or_else(|| String::from("-"));
                                     let is_active = user.is_active;
-                                    
+
                                     let edit_click = move |_| {
                                         set_edit_user_id.set(Some(user_id));
                                         set_edit_firstname.set(firstname.clone());
@@ -180,11 +197,11 @@ pub fn UserManagement() -> impl IntoView {
                                         set_edit_is_active.set(is_active);
                                         set_show_edit_modal.set(true);
                                     };
-                                    
+
                                     let delete_click = move |_| {
                                         on_delete(user_id);
                                     };
-                                    
+
                                     view! {
                                         <tr>
                                             <td>{name}</td>

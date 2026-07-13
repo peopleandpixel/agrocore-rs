@@ -20,4 +20,5 @@ default = []
 mongodb = ["dep:mongodb"]
 
 [dev-dependencies]
-mockall = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }

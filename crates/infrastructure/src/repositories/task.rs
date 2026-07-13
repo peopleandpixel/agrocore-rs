@@ -1,13 +1,13 @@
-use crate::repositories::base::{paginate, MongoRepository};
+use crate::repositories::base::{MongoRepository, paginate};
 use agrocore_domain::entities::task::{CreateTaskDataDto, TaskData};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::repositories::{Repository, RepositoryFuture};
 use agrocore_shared::{PaginatedResponse, Pagination, Result, SharedError};
 use chrono::Utc;
 use futures::StreamExt;
+use mongodb::Collection;
 use mongodb::bson::doc;
 use mongodb::options::FindOptions;
-use mongodb::Collection;
 use std::future::Future;
 use std::pin::Pin;
 use uuid::Uuid;

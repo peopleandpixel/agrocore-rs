@@ -6,8 +6,8 @@ use agrocore_domain::entities::worker_task_status::{
 use agrocore_domain::repositories::{RepositoryFuture, WorkerTaskStatusRepository};
 use agrocore_shared::SharedError;
 use chrono::Utc;
-use mongodb::bson::{doc, Document};
 use mongodb::Collection;
+use mongodb::bson::{Document, doc};
 use uuid::Uuid;
 
 #[derive(Clone)]

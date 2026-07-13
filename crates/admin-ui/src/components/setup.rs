@@ -1,6 +1,6 @@
 use crate::api;
 use crate::components::form::{
-    country_flag, is_valid_email, language_flag, normalize_phone, RequiredLabel, PHONE_PREFIXES,
+    PHONE_PREFIXES, RequiredLabel, country_flag, is_valid_email, language_flag, normalize_phone,
 };
 use crate::i18n::LANGUAGE_OPTIONS;
 use crate::i18n::{I18n, Language};

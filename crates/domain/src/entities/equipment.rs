@@ -8,7 +8,7 @@ use crate::entities::tenant::TenantId;
 use crate::repositories::VisibilityAwareEntity;
 
 #[cfg(feature = "mongodb")]
-use mongodb::bson::{doc, Document};
+use mongodb::bson::{Document, doc};
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Validate)]
 pub struct MaintenanceInterval {

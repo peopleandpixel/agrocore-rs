@@ -6,8 +6,8 @@ use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::repositories::{AnimalRepository, Repository, RepositoryFuture};
 use agrocore_shared::{PaginatedResponse, Pagination, SharedError};
 use chrono::Utc;
-use mongodb::bson::{doc, to_document};
 use mongodb::Collection;
+use mongodb::bson::{doc, to_document};
 use uuid::Uuid;
 
 pub struct AnimalRepo {

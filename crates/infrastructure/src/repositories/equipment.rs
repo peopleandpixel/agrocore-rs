@@ -4,8 +4,8 @@ use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::repositories::{EquipmentRepository, Repository, RepositoryFuture};
 use agrocore_shared::{PaginatedResponse, Pagination, SharedError};
 use chrono::Utc;
-use mongodb::bson::{doc, Document};
 use mongodb::Collection;
+use mongodb::bson::{Document, doc};
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -108,10 +108,16 @@ impl EquipmentRepository for EquipmentRepo {
                 d.insert("in_usage", v);
             }
             if let Some(v) = dto.maintenance_intervals {
-                d.insert("maintenance_intervals", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
+                d.insert(
+                    "maintenance_intervals",
+                    mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?,
+                );
             }
             if let Some(v) = dto.next_maintenance_date {
-                d.insert("next_maintenance_date", mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?);
+                d.insert(
+                    "next_maintenance_date",
+                    mongodb::bson::to_bson(&v).map_err(|e| SharedError::Database(e.to_string()))?,
+                );
             }
             if let Some(v) = dto.last_maintenance_hours {
                 d.insert("last_maintenance_hours", v);

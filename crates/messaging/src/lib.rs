@@ -137,7 +137,7 @@ impl MessagingClient {
                         "Failed to publish after {} attempts: {}",
                         max_attempts,
                         e
-                    ))
+                    ));
                 }
             }
         }

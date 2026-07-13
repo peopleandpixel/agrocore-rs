@@ -1,4 +1,4 @@
-use tracing_subscriber::{fmt, prelude::*, EnvFilter};
+use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
 pub fn init_telemetry(service_name: &str) {
     let env_filter = EnvFilter::try_from_default_env()

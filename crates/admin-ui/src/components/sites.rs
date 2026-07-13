@@ -32,11 +32,7 @@ pub fn SiteManagement() -> impl IntoView {
         let center = center.get();
         let variety = {
             let value = variety.get();
-            if value.is_empty() {
-                None
-            } else {
-                Some(value)
-            }
+            if value.is_empty() { None } else { Some(value) }
         };
         set_error.set(None);
 

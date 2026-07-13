@@ -90,8 +90,8 @@ fn test_fertilizer_record_validation() {
 
 #[test]
 fn test_order_validation() {
-    use crate::entities::order::CreateOrderDto;
     use crate::entities::OrderType;
+    use crate::entities::order::CreateOrderDto;
     use uuid::Uuid;
 
     let dto = CreateOrderDto {

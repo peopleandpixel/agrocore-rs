@@ -58,16 +58,23 @@ impl WorkerTaskStatus {
         // Alle gestoppt/paused = deren Status
         // Mixed = started (weil jemand aktiv)
         for s in statuses {
-            if s.status == WorkerTaskStatusType::Started || s.status == WorkerTaskStatusType::Paused {
+            if s.status == WorkerTaskStatusType::Started || s.status == WorkerTaskStatusType::Paused
+            {
                 return WorkerTaskStatusType::Started; // Jemand arbeitet bereits
             }
         }
         // Wenn keiner läuft, höchstwertigen Status zurückgeben
-        statuses.iter()
+        statuses
+            .iter()
             .map(|s| s.status.clone())
             .max_by(|a, b| {
-                let order = [WorkerTaskStatusType::Done, WorkerTaskStatusType::Stopped, 
-                          WorkerTaskStatusType::Paused, WorkerTaskStatusType::Started, WorkerTaskStatusType::New];
+                let order = [
+                    WorkerTaskStatusType::Done,
+                    WorkerTaskStatusType::Stopped,
+                    WorkerTaskStatusType::Paused,
+                    WorkerTaskStatusType::Started,
+                    WorkerTaskStatusType::New,
+                ];
                 let ia = order.iter().position(|x| x == a).unwrap_or(0);
                 let ib = order.iter().position(|x| x == b).unwrap_or(0);
                 ia.cmp(&ib)

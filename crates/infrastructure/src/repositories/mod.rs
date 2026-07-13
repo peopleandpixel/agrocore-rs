@@ -18,7 +18,7 @@ mod weather;
 mod worker_task_status;
 mod workforce;
 
-pub use base::{paginate, MongoRepository};
+pub use base::{MongoRepository, paginate};
 pub use compliance::{
     ApplicatorLicenseRepo, AuditLogRepo, ComplianceChecklistRepo, FertilizerRecordRepo,
     PlantProtectionRecordRepo,

@@ -1,5 +1,5 @@
-use crate::i18n::{I18n, Language};
 use crate::ViewMode;
+use crate::i18n::{I18n, Language};
 use icondata::*;
 use leptos::prelude::*;
 use leptos_icons::Icon;

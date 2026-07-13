@@ -22,11 +22,7 @@ pub fn EquipmentManagement() -> impl IntoView {
         let label = label.get();
         let code = {
             let value = code.get();
-            if value.is_empty() {
-                None
-            } else {
-                Some(value)
-            }
+            if value.is_empty() { None } else { Some(value) }
         };
         let equipment_type = equipment_type.get();
         set_error.set(None);

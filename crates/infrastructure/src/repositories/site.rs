@@ -4,8 +4,8 @@ use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::repositories::{Repository, RepositoryFuture, SiteRepository};
 use agrocore_shared::{PaginatedResponse, Pagination, Result, SharedError};
 use chrono::Utc;
-use mongodb::bson::{doc, Document};
 use mongodb::Collection;
+use mongodb::bson::{Document, doc};
 use std::future::Future;
 use std::pin::Pin;
 use uuid::Uuid;
@@ -123,9 +123,10 @@ impl SiteRepository for SiteRepo {
                 d.insert("gross_area", v);
             }
             if let Some(v) = dto.properties
-                && let Ok(bson_v) = mongodb::bson::to_bson(&v) {
-                    d.insert("properties", bson_v);
-                }
+                && let Ok(bson_v) = mongodb::bson::to_bson(&v)
+            {
+                d.insert("properties", bson_v);
+            }
             if let Some(v) = dto.is_active {
                 d.insert("is_active", v);
             }

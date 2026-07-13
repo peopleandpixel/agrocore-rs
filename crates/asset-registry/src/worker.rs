@@ -5,11 +5,6 @@ use serde::{Deserialize, Serialize};
 use tracing::info;
 use uuid::Uuid;
 
-#[inline]
-fn health_check_response() -> &'static [u8] {
-    b"{\"status\":\"ok\",\"service\":\"asset-registry\"}"
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub enum AssetRequest {
     GetEquipment { id: Uuid },
@@ -46,13 +41,13 @@ pub async fn start(_db: Database, nats_url: String) -> anyhow::Result<()> {
                 if let Ok(global_event) =
                     serde_json::from_slice::<Event<GlobalEvent>>(&message.payload)
                     && matches!(global_event.payload, GlobalEvent::HealthCheckRequested)
-                        && let Some(reply_to) = message.reply {
-                            let response =
-                                serde_json::json!({"status": "ok", "service": "asset-registry"});
-                            let _ = messaging
-                                .publish_raw(reply_to.as_str(), serde_json::to_vec(&response)?)
-                                .await;
-                        }
+                    && let Some(reply_to) = message.reply
+                {
+                    let response = serde_json::json!({"status": "ok", "service": "asset-registry"});
+                    let _ = messaging
+                        .publish_raw(reply_to.as_str(), serde_json::to_vec(&response)?)
+                        .await;
+                }
                 continue;
             }
         };

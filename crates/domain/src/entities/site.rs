@@ -10,7 +10,7 @@ use crate::repositories::VisibilityAwareEntity;
 #[cfg(feature = "mongodb")]
 use crate::entities::user::UserRole;
 #[cfg(feature = "mongodb")]
-use mongodb::bson::{doc, Document};
+use mongodb::bson::{Document, doc};
 use utoipa::ToSchema;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]

@@ -1,5 +1,5 @@
 use crate::repositories::auth_utils::{generate_jwt, hash_password, verify_password};
-use crate::repositories::base::{paginate, MongoRepository};
+use crate::repositories::base::{MongoRepository, paginate};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::{
     AuthResponse, CreateUserDto, LoginDto, UpdateUserDto, User, UserRole,
@@ -7,8 +7,8 @@ use agrocore_domain::entities::user::{
 use agrocore_domain::repositories::{Repository, RepositoryFuture};
 use agrocore_shared::{PaginatedResponse, Pagination, Result, SharedError};
 use chrono::Utc;
-use mongodb::bson::{doc, Document};
 use mongodb::Collection;
+use mongodb::bson::{Document, doc};
 use std::future::Future;
 use std::pin::Pin;
 use uuid::Uuid;
@@ -170,7 +170,12 @@ impl UserRepo {
         })
     }
 
-    pub fn update_refresh_token(&self, user_id: Uuid, refresh_token: &str, expires_at: chrono::DateTime<Utc>) -> Fut<bool> {
+    pub fn update_refresh_token(
+        &self,
+        user_id: Uuid,
+        refresh_token: &str,
+        expires_at: chrono::DateTime<Utc>,
+    ) -> Fut<bool> {
         let c = self.base.collection.clone();
         let rt = refresh_token.to_string();
         let expires = expires_at;
@@ -178,7 +183,7 @@ impl UserRepo {
             let result = c
                 .update_one(
                     doc! { "_id": user_id.to_string() },
-                    doc! { "$set": { "refresh_token": rt, "refresh_token_expires_at": expires } }
+                    doc! { "$set": { "refresh_token": rt, "refresh_token_expires_at": expires } },
                 )
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
