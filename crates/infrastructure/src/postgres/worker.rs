@@ -1,12 +1,11 @@
 use agrocore_domain::entities::workforce::{Worker, CreateWorkerDto, UpdateWorkerDto};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::UserRole;
-use agrocore_domain::repositories::{WorkerRepository, RepositoryFuture, SharedError};
-use agrocore_shared::{Result, PaginatedResponse, Pagination};
+use agrocore_domain::repositories::{WorkerRepository, RepositoryFuture, PaginatedResponse, Pagination};
+use agrocore_shared::{Result, SharedError};
+use chrono::Utc;
 use sqlx::PgPool;
 use uuid::Uuid;
-
-type Fut<T> = RepositoryFuture<T>;
 
 #[derive(Clone)]
 pub struct PgWorkerRepo {
@@ -20,17 +19,122 @@ impl PgWorkerRepo {
 }
 
 impl WorkerRepository for PgWorkerRepo {
-    fn find_by_id(&self, tid: TenantId, id: Uuid) -> Fut<Option<Worker>> {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Worker>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            Ok(None) // TODO
+            sqlx::query_as::<_, (Worker,)>("SELECT row_to_json(workers) FROM workers WHERE id = $1 AND tenant_id = $2")
+                .bind(id)
+                .bind(tid.to_string())
+                .fetch_optional(&pool)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?
+                .map(|(w,)| w)
+                .ok_or_else(|| SharedError::NotFound.to_error())
         })
     }
-    fn find_all(&self, tid: TenantId, p: Pagination) -> Fut<PaginatedResponse<Worker>> {
+
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        _user_id: Uuid,
+        _roles: &[UserRole],
+    ) -> RepositoryFuture<Option<Worker>> {
+        self.find_by_id(tid, id)
+    }
+
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Worker>> {
+        let pool = self.pool.clone();
+        let page = p.page.unwrap_or(0);
+        let per_page = p.per_page.unwrap_or(20);
+        let offset = page * per_page;
+
+        Box::pin(async move {
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM workers WHERE tenant_id = $1::uuid")
+                .bind(tid.to_string())
+                .fetch_one(&pool)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            let data: Vec<Worker> = sqlx::query_as("SELECT * FROM workers WHERE tenant_id = $1::uuid ORDER BY name LIMIT $2 OFFSET $3")
+                .bind(tid.to_string())
+                .bind(per_page as i32)
+                .bind(offset as i32)
+                .fetch_all(&pool)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
+            
+            Ok(PaginatedResponse {
+                data,
+                total: total as u64,
+                page,
+                per_page,
+                total_pages,
+            })
+        })
+    }
+
+    fn create(&self, tid: TenantId, dto: CreateWorkerDto, _by: Uuid) -> RepositoryFuture<Worker> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            Ok(PaginatedResponse { items: vec![], total: 0, page: p.page, limit: p.limit })
+            let now = Utc::now();
+            let id = Uuid::new_v4();
+
+            sqlx::query_as::<_, Worker>(
+                r#"INSERT INTO workers (id, tenant_id, name, hourly_rate, is_active, created_at, updated_at)
+                   VALUES ($1, $2, $3, $4, true, $5, $6)
+                   RETURNING *"#
+            )
+            .bind(id)
+            .bind(tid.to_string())
+            .bind(&dto.name)
+            .bind(dto.hourly_rate)
+            .bind(now)
+            .bind(now)
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
-    // ... remaining trait methods
+
+    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateWorkerDto, _by: Uuid) -> RepositoryFuture<Option<Worker>> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            let now = Utc::now();
+
+            sqlx::query_as::<_, Worker>(
+                r#"UPDATE workers SET
+                    name = COALESCE($1, name),
+                    hourly_rate = COALESCE($2, hourly_rate),
+                    updated_at = $3
+                   WHERE id = $4 AND tenant_id = $5
+                   RETURNING *"#
+            )
+            .bind(&dto.name)
+            .bind(dto.hourly_rate)
+            .bind(now)
+            .bind(id)
+            .bind(tid.to_string())
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
+        })
+    }
+
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            let result = sqlx::query("UPDATE workers SET is_active = false, updated_at = $1 WHERE id = $2 AND tenant_id = $3")
+                .bind(Utc::now())
+                .bind(id)
+                .bind(tid.to_string())
+                .execute(&pool)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
+            
+            Ok(result.rows_affected() > 0)
+        })
+    }
 }

@@ -6,11 +6,7 @@ use agrocore_shared::{Result, SharedError};
 use chrono::Utc;
 use serde_json;
 use sqlx::PgPool;
-use std::future::Future;
-use std::pin::Pin;
 use uuid::Uuid;
-
-type Fut<T> = Pin<Box<dyn Future<Output = Result<T>> + Send>>;
 
 #[derive(Clone)]
 pub struct PgTaskDataRepo {
@@ -27,14 +23,14 @@ impl TaskDataRepository for PgTaskDataRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<TaskData>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            let row = sqlx::query_as::<_, (TaskData,)>("SELECT row_to_json(task_data) FROM task_data WHERE id = $1 AND tenant_id = $2")
+            sqlx::query_as::<_, (TaskData,)>("SELECT row_to_json(task_data) FROM task_data WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
                 .bind(tid.to_string())
                 .fetch_optional(&pool)
                 .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
-
-            row.map(|(t,)| t).ok_or_else(|| SharedError::NotFound.to_error())
+                .map_err(|e| SharedError::Database(e.to_string()))?
+                .map(|(t,)| t)
+                .ok_or_else(|| SharedError::NotFound.to_error())
         })
     }
 
@@ -50,6 +46,10 @@ impl TaskDataRepository for PgTaskDataRepo {
 
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<TaskData>> {
         let pool = self.pool.clone();
+        let page = p.page.unwrap_or(0);
+        let per_page = p.per_page.unwrap_or(20);
+        let offset = page * per_page;
+
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM task_data WHERE tenant_id = $1::uuid")
                 .bind(tid.to_string())
@@ -57,15 +57,23 @@ impl TaskDataRepository for PgTaskDataRepo {
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let items: Vec<TaskData> = sqlx::query_as("SELECT * FROM task_data WHERE tenant_id = $1::uuid ORDER BY started_at DESC LIMIT $2 OFFSET $3")
+            let data: Vec<TaskData> = sqlx::query_as("SELECT * FROM task_data WHERE tenant_id = $1::uuid ORDER BY started_at DESC LIMIT $2 OFFSET $3")
                 .bind(tid.to_string())
-                .bind(p.limit as i32)
-                .bind(((p.page - 1) * p.limit) as i32)
+                .bind(per_page as i32)
+                .bind(offset as i32)
                 .fetch_all(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            Ok(PaginatedResponse { items, total, page: p.page, limit: p.limit })
+            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
+            
+            Ok(PaginatedResponse {
+                data,
+                total: total as u64,
+                page,
+                per_page,
+                total_pages,
+            })
         })
     }
 
@@ -75,10 +83,10 @@ impl TaskDataRepository for PgTaskDataRepo {
             let now = Utc::now();
             let id = Uuid::new_v4();
 
-            let task = sqlx::query_as::<_, TaskData>(
-                "INSERT INTO task_data (id, tenant_id, order_id, worker_id, site_id, description, started_at, ended_at, paused_at, resume_at, duration_minutes, machine_id, machine_hours, cost_center_id, area_covered, materials_used, observations, gps_track, photo_urls, created_at, updated_at) \
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) \
-                 RETURNING *"
+            sqlx::query_as::<_, TaskData>(
+                r#"INSERT INTO task_data (id, tenant_id, order_id, worker_id, site_id, description, started_at, ended_at, paused_at, resume_at, duration_minutes, machine_id, machine_hours, cost_center_id, area_covered, materials_used, observations, gps_track, photo_urls, created_at, updated_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+                   RETURNING *"#
             )
             .bind(id)
             .bind(tid.to_string())
@@ -103,16 +111,14 @@ impl TaskDataRepository for PgTaskDataRepo {
             .bind(now)
             .fetch_one(&pool)
             .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
-
-            Ok(task)
+            .map_err(|e| SharedError::Database(e.to_string()))?
         })
     }
 
     fn update(&self, tid: TenantId, id: Uuid, _dto: CreateTaskDataDto, _by: Uuid) -> RepositoryFuture<Option<TaskData>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            let task = sqlx::query_as::<_, TaskData>(
+            sqlx::query_as::<_, TaskData>(
                 r#"UPDATE task_data SET updated_at = $1 WHERE id = $2 AND tenant_id = $3 RETURNING *"#
             )
             .bind(Utc::now())
@@ -120,9 +126,7 @@ impl TaskDataRepository for PgTaskDataRepo {
             .bind(tid.to_string())
             .fetch_optional(&pool)
             .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
-
-            Ok(task)
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 

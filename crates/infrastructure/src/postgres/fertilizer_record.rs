@@ -1,13 +1,11 @@
 use agrocore_domain::entities::compliance::{CreateFertilizerRecordDto, FertilizerRecord};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::UserRole;
-use agrocore_domain::repositories::{RepositoryFuture, FertilizerRecordRepo};
+use agrocore_domain::repositories::{FertilizerRecordRepo, PaginatedResponse, Pagination, RepositoryFuture};
 use agrocore_shared::{Result, SharedError};
 use chrono::Utc;
 use sqlx::PgPool;
 use uuid::Uuid;
-
-type Fut<T> = std::pin::Pin<Box<dyn std::future::Future<Output = Result<T>> + Send>>;
 
 #[derive(Clone)]
 pub struct PgFertilizerRecordRepo {
@@ -22,13 +20,14 @@ impl PgFertilizerRecordRepo {
     pub fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<FertilizerRecord>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            let row = sqlx::query_as::<_, (FertilizerRecord,)>("SELECT row_to_json(fertilizer_records) FROM fertilizer_records WHERE id = $1 AND tenant_id = $2")
+            sqlx::query_as::<_, (FertilizerRecord,)>("SELECT row_to_json(fertilizer_records) FROM fertilizer_records WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
                 .bind(tid.to_string())
                 .fetch_optional(&pool)
                 .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
-            row.map(|(r,)| r).ok_or_else(|| SharedError::NotFound.to_error())
+                .map_err(|e| SharedError::Database(e.to_string()))?
+                .map(|(r,)| r)
+                .ok_or_else(|| SharedError::NotFound.to_error())
         })
     }
 
@@ -42,12 +41,12 @@ impl PgFertilizerRecordRepo {
         self.find_by_id(tid, id)
     }
 
-    pub fn find_all(
-        &self,
-        tid: TenantId,
-        p: agrocore_shared::Pagination,
-    ) -> RepositoryFuture<agrocore_shared::PaginatedResponse<FertilizerRecord>> {
+    pub fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<FertilizerRecord>> {
         let pool = self.pool.clone();
+        let page = p.page.unwrap_or(0);
+        let per_page = p.per_page.unwrap_or(20);
+        let offset = page * per_page;
+
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM fertilizer_records WHERE tenant_id = $1::uuid")
                 .bind(tid.to_string())
@@ -55,58 +54,49 @@ impl PgFertilizerRecordRepo {
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let items: Vec<FertilizerRecord> = sqlx::query_as("SELECT * FROM fertilizer_records WHERE tenant_id = $1::uuid ORDER BY application_date DESC LIMIT $2 OFFSET $3")
+            let data: Vec<FertilizerRecord> = sqlx::query_as("SELECT * FROM fertilizer_records WHERE tenant_id = $1::uuid ORDER BY application_date DESC LIMIT $2 OFFSET $3")
                 .bind(tid.to_string())
-                .bind(p.limit as i32)
-                .bind(((p.page - 1) * p.limit) as i32)
+                .bind(per_page as i32)
+                .bind(offset as i32)
                 .fetch_all(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            Ok(agrocore_shared::PaginatedResponse { items, total, page: p.page, limit: p.limit })
+            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
+            
+            Ok(PaginatedResponse {
+                data,
+                total: total as u64,
+                page,
+                per_page,
+                total_pages,
+            })
         })
     }
 
-    pub fn create(&self, tid: TenantId, dto: CreateFertilizerRecordDto) -> Fut<FertilizerRecord> {
+    pub fn create(&self, tid: TenantId, dto: CreateFertilizerRecordDto) -> RepositoryFuture<FertilizerRecord> {
         let pool = self.pool.clone();
         Box::pin(async move {
             let now = Utc::now();
-            let record = FertilizerRecord {
-                id: Uuid::new_v4(),
-                tenant_id: tid,
-                site_id: dto.site_id,
-                order_id: dto.order_id,
-                product_name: dto.product_name,
-                nutrient_n: dto.nutrient_n,
-                nutrient_p: dto.nutrient_p,
-                nutrient_k: dto.nutrient_k,
-                quantity_kg: dto.quantity_kg,
-                area_ha: dto.area_ha,
-                application_date: dto.application_date,
-                created_at: now,
-            };
-            
-            let rec = sqlx::query_as::<_, FertilizerRecord>(
-                "INSERT INTO fertilizer_records (id, tenant_id, site_id, order_id, product_name, nutrient_n, nutrient_p, nutrient_k, quantity_kg, area_ha, application_date, created_at) \
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *"
-            )
-            .bind(record.id)
+
+            sqlx::query_as::<_, FertilizerRecord>(
+                r#"INSERT INTO fertilizer_records (tenant_id, site_id, order_id, product_name, nutrient_n, nutrient_p, nutrient_k, quantity_kg, area_ha, application_date, created_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                   RETURNING *"#)
             .bind(tid.to_string())
-            .bind(record.site_id.to_string())
-            .bind(record.order_id.map(|u| u.to_string()))
-            .bind(&record.product_name)
-            .bind(record.nutrient_n)
-            .bind(record.nutrient_p)
-            .bind(record.nutrient_k)
-            .bind(record.quantity_kg)
-            .bind(record.area_ha)
-            .bind(record.application_date)
+            .bind(dto.site_id.to_string())
+            .bind(dto.order_id.map(|u| u.to_string()))
+            .bind(&dto.product_name)
+            .bind(dto.nutrient_n)
+            .bind(dto.nutrient_p)
+            .bind(dto.nutrient_k)
+            .bind(dto.quantity_kg)
+            .bind(dto.area_ha)
+            .bind(dto.application_date)
             .bind(now)
             .fetch_one(&pool)
             .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
-            
-            Ok(rec)
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 }
