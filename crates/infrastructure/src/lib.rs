@@ -4,25 +4,25 @@ mod postgres;
 use std::sync::Arc;
 
 pub use defaults::{default_bind_addr, default_nats_url};
+
+// PostgreSQL Re-exports
 pub use postgres::PostgresDb;
-
-pub use postgres::PgSiteRepo as SiteRepo;
-pub use postgres::PgUserRepo as UserRepo;
-pub use postgres::PgOrderRepo as OrderRepo;
-pub use postgres::PgTenantRepo as TenantRepo;
-pub use postgres::PgEquipmentRepo as EquipmentRepo;
-pub use postgres::PgAnimalRepo as AnimalRepo;
-pub use postgres::PgTaskDataRepo as TaskDataRepo;
-pub use postgres::PgWeatherStationRepo as WeatherStationRepo;
-pub use postgres::PgWeatherDataRepo as WeatherDataRepo;
-pub use postgres::PgFertilizerRecordRepo as FertilizerRecordRepo;
-pub use postgres::PgPlantProtectionRecordRepo as PlantProtectionRecordRepo;
-pub use postgres::PgHarvestSeasonRepo as HarvestSeasonRepo;
-pub use postgres::PgHarvestLotRepo as HarvestLotRepo;
-pub use postgres::PgHarvestDeliveryRepo as HarvestDeliveryRepo;
-
-// MongoDB removed - PostgreSQL only
-use postgres::PostgresDb;
+pub use postgres::PgSiteRepo;
+pub use postgres::PgUserRepo;
+pub use postgres::PgOrderRepo;
+pub use postgres::PgTenantRepo;
+pub use postgres::PgEquipmentRepo;
+pub use postgres::PgAnimalRepo;
+pub use postgres::PgTaskDataRepo;
+pub use postgres::PgWeatherStationRepo;
+pub use postgres::PgWeatherDataRepo;
+pub use postgres::PgFertilizerRecordRepo;
+pub use postgres::PgPlantProtectionRecordRepo;
+pub use postgres::PgHarvestSeasonRepo;
+pub use postgres::PgHarvestLotRepo;
+pub use postgres::PgHarvestDeliveryRepo;
+pub use postgres::PgVineyardRepo;
+pub use postgres::PgPhenologyRecordRepo;
 
 #[derive(Clone)]
 pub enum Database {
