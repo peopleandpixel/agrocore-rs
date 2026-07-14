@@ -4,6 +4,7 @@ use agrocore_domain::entities::{CropType, SiteType};
 use agrocore_domain::repositories::{PaginatedResponse, Pagination, RepositoryFuture, SiteRepository};
 use agrocore_shared::{Result, SharedError};
 use chrono::Utc;
+use serde_json;
 use sqlx::PgPool;
 use std::future::Future;
 use std::pin::Pin;

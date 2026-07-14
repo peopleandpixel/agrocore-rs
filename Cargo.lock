@@ -383,6 +383,7 @@ dependencies = [
  "jsonwebtoken",
  "mongodb",
  "serde",
+ "serde_json",
  "sqlx",
  "tokio",
  "uuid",
