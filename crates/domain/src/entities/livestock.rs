@@ -100,11 +100,3 @@ pub struct UpdateAnimalDto {
     pub weight_kg: Option<f64>,
 }
 
-// =============================================================================
-// VISIBILITY SECURITY: Animal Entity implements VisibilityAwareEntity
-// =============================================================================
-use crate::repositories::VisibilityAwareEntity;
-
-#[cfg(feature = "mongodb")]
-use mongodb::bson::{Document, doc};
-

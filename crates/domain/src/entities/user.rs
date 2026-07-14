@@ -138,7 +138,6 @@ pub struct UpdateUserDto {
 // =============================================================================
 // VISIBILITY SECURITY: User Entity implements VisibilityAwareEntity
 // =============================================================================
-use crate::repositories::VisibilityAwareEntity;
 
 #[cfg(feature = "mongodb")]
 use mongodb::bson::{Document, doc};

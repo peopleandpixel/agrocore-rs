@@ -1,7 +1,8 @@
 use agrocore_domain::entities::weather::{CreateWeatherDataDto, WeatherData};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::UserRole;
-use agrocore_domain::repositories::{WeatherDataRepository, PaginatedResponse, Pagination, RepositoryFuture};
+use agrocore_domain::repositories::{WeatherDataRepo, RepositoryFuture};
+use agrocore_shared::{PaginatedResponse, Pagination};;
 use agrocore_shared::{Result, SharedError};
 use sqlx::PgPool;
 use uuid::Uuid;

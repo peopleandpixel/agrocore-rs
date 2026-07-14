@@ -1,26 +1,26 @@
 use crate::postgres::{
     animal::PgAnimalRepo, cold_chain_log::PgColdChainLogRepo, equipment::PgEquipmentRepo,
     fertilizer_record::PgFertilizerRecordRepo, harvest_delivery::PgHarvestDeliveryRepo,
-    harvest_lot::PgHarvestLotRepo, harvest_season::PgHarvestSeasonRepo, kelter_delivery::PgKelterDeliveryRepo,
+    harvest_lot::PgHarvestLotRepo, harvest_season::PgHarvestSeasonRepo,
     olive_grove::PgOliveGroveRepo, olive_oil_record::PgOliveOilRecordRepo, order::PgOrderRepo,
     phenology_record::PgPhenologyRecordRepo, plant_protection_record::PgPlantProtectionRecordRepo,
-    site::PgSiteRepo, task_data::PgTaskDataRepo, tenant::PgTenantRepo, user::PgUserRepo,
+    site::PgSiteRepo, tenant::PgTenantRepo, user::PgUserRepo,
     vineyard::PgVineyardRepo, weather_data::PgWeatherDataRepo, weather_station::PgWeatherStationRepo,
-    worker::PgWorkerRepo,
+    worker::PgWorkerRepo, worker_location::PgWorkerLocationRepo, work_log::PgWorkLogRepo,
 };
 use agrocore_domain::repositories::{
     AnimalRepository, EquipmentRepository, FertilizerRecordRepo, HarvestDeliveryRepo, HarvestLotRepo, HarvestSeasonRepo,
     OliveGroveRepo, OliveOilRecordRepo, OrderRepository, PhenologyRecordRepo, PlantProtectionRecordRepo,
-    SiteRepository, TaskDataRepository, TenantRepository, UserRepository, VineyardRepo,
-    WeatherDataRepo, WeatherStationRepo, WorkerRepository,
+    SiteRepository, TenantRepository, UserRepository, VineyardRepo,
+    WaterQuotaRepo, WaterSourceRepo, WaterUsageRepo,
+    WeatherDataRepo, WeatherStationRepo, WorkerLocationRepo, WorkerRepo, WorkLogRepo,
+    PACApplicationRepo, CostCenterRepo, FinancialRecordRepo, ColdChainLogRepo,
 };
 use sqlx::PgPool;
 use std::sync::Arc;
 
 pub enum Database {
     Postgres(PostgresDb),
-    #[cfg(feature = "mongodb")]
-    Mongo(crate::Database),
 }
 
 /// PostgreSQL Database Wrapper
@@ -57,10 +57,6 @@ impl PostgresDb {
 
     pub fn animal_repo(&self) -> Arc<dyn AnimalRepository> {
         Arc::new(PgAnimalRepo::new(self.pool.clone()))
-    }
-
-    pub fn task_data_repo(&self) -> Arc<dyn TaskDataRepository> {
-        Arc::new(PgTaskDataRepo::new(self.pool.clone()))
     }
 
     // Weather repositories
@@ -107,24 +103,44 @@ impl PostgresDb {
         Arc::new(PgVineyardRepo::new(self.pool.clone()))
     }
 
-    // Kelter/repository
-    pub fn kelter_delivery_repo(&self) -> Arc<dyn crate::postgres::kelter_delivery::PgKelterDeliveryRepo> {
-        Arc::new(PgKelterDeliveryRepo::new(self.pool.clone()))
+    // Water repositories
+    pub fn water_source_repo(&self) -> Arc<dyn WaterSourceRepo> {
+        Arc::new(crate::postgres::water_source::PgWaterSourceRepo::new(self.pool.clone()))
     }
 
-    // Worker
-    pub fn worker_repo(&self) -> Arc<dyn WorkerRepository> {
+    pub fn water_usage_repo(&self) -> Arc<dyn WaterUsageRepo> {
+        Arc::new(crate::postgres::water_usage::PgWaterUsageRepo::new(self.pool.clone()))
+    }
+
+    pub fn water_quota_repo(&self) -> Arc<dyn WaterQuotaRepo> {
+        Arc::new(crate::postgres::water_quota::PgWaterQuotaRepo::new(self.pool.clone()))
+    }
+
+    // Worker repositories
+    pub fn worker_repo(&self) -> Arc<dyn WorkerRepo> {
         Arc::new(PgWorkerRepo::new(self.pool.clone()))
+    }
+
+    pub fn worker_location_repo(&self) -> Arc<dyn WorkerLocationRepo> {
+        Arc::new(PgWorkerLocationRepo::new(self.pool.clone()))
+    }
+
+    pub fn work_log_repo(&self) -> Arc<dyn WorkLogRepo> {
+        Arc::new(PgWorkLogRepo::new(self.pool.clone()))
     }
 
     // Phenology
     pub fn phenology_record_repo(&self) -> Arc<dyn PhenologyRecordRepo> {
         Arc::new(PgPhenologyRecordRepo::new(self.pool.clone()))
     }
-}
 
-// Re-exports
-pub use site::PgSiteRepo;
-pub use user::PgUserRepo;
-pub use order::PgOrderRepo;
-pub use tenant::PgTenantRepo;
+    // PAC
+    pub fn pac_application_repo(&self) -> Arc<dyn PACApplicationRepo> {
+        Arc::new(crate::postgres::pac_application::PgPACApplicationRepo::new(self.pool.clone()))
+    }
+
+    // ColdChain
+    pub fn cold_chain_log_repo(&self) -> Arc<dyn ColdChainLogRepo> {
+        Arc::new(PgColdChainLogRepo::new(self.pool.clone()))
+    }
+}

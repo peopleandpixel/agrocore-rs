@@ -7,7 +7,6 @@ use validator::Validate;
 use crate::entities::tenant::TenantId;
 #[cfg(feature = "mongodb")]
 use crate::entities::user::UserRole;
-use crate::repositories::VisibilityAwareEntity;
 
 #[cfg(feature = "mongodb")]
 use mongodb::bson::{Document, doc};

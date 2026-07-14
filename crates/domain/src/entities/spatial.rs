@@ -8,7 +8,6 @@ use validator::Validate;
 
 use crate::entities::site::GeoPoint;
 use crate::entities::tenant::TenantId;
-use crate::repositories::VisibilityAwareEntity;
 
 #[cfg(feature = "mongodb")]
 use crate::entities::user::UserRole;

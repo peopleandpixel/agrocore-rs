@@ -5,7 +5,6 @@ use validator::Validate;
 
 use crate::entities::tenant::TenantId;
 use crate::entities::{BbchStage, CropType, SiteType};
-use crate::repositories::VisibilityAwareEntity;
 
 #[cfg(feature = "mongodb")]
 use crate::entities::user::UserRole;

@@ -1,8 +1,9 @@
 use agrocore_domain::entities::weather::{CreateWeatherStationDto, WeatherStation};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::UserRole;
-use agrocore_domain::repositories::{WeatherStationRepository, RepositoryFuture, PaginatedResponse, Pagination};
-use agrocore_shared::{Result, SharedError};
+use agrocore_domain::repositories::{WeatherStationRepo, RepositoryFuture};
+use agrocore_shared::{PaginatedResponse, Pagination};;
+use agrocore_shared::{PaginatedResponse, Pagination, RepositoryFuture, Result, SharedError};
 use chrono::Utc;
 use serde_json;
 use sqlx::PgPool;

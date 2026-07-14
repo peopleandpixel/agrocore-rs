@@ -78,6 +78,14 @@ pub struct CreateVineyardDto {
     pub quality_grade: Option<QualityGrade>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct UpdateVineyardDto {
+    pub doc_area: Option<String>,
+    pub vintage: Option<i32>,
+    pub grape_variety: Option<String>,
+    pub quality_grade: Option<QualityGrade>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct CreateKelterDeliveryDto {
     pub vineyard_id: Uuid,

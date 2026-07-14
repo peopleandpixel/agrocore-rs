@@ -1,7 +1,8 @@
 use agrocore_domain::entities::livestock::{Animal, CreateAnimalDto, UpdateAnimalDto, TreatmentRecord, GrazingRecord};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::UserRole;
-use agrocore_domain::repositories::{AnimalRepository, PaginatedResponse, Pagination, RepositoryFuture};
+use agrocore_domain::repositories::{AnimalRepository, RepositoryFuture};
+use agrocore_shared::{PaginatedResponse, Pagination};
 use agrocore_shared::{Result, SharedError};
 use chrono::Utc;
 use sqlx::PgPool;

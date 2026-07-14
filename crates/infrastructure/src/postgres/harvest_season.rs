@@ -1,6 +1,6 @@
 use agrocore_domain::entities::harvest::HarvestSeason;
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::repositories::{HarvestSeasonRepository, PaginatedResponse, Pagination, RepositoryFuture};
+use agrocore_domain::repositories::{HarvestSeasonRepo, PaginatedResponse, Pagination, RepositoryFuture};
 use agrocore_shared::{Result, SharedError};
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -16,7 +16,7 @@ impl PgHarvestSeasonRepo {
     }
 }
 
-impl HarvestSeasonRepository for PgHarvestSeasonRepo {
+impl HarvestSeasonRepo for PgHarvestSeasonRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<HarvestSeason>> {
         let pool = self.pool.clone();
         let _ = (tid, id, pool);

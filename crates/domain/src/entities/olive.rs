@@ -65,3 +65,18 @@ pub struct CreateOliveOilRecordDto {
     pub mill_name: Option<String>,
     pub lot_number: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct UpdateOliveGroveDto {
+    pub variety: Option<String>,
+    pub tree_count: Option<u32>,
+    pub organic_certified: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct UpdateOliveOilRecordDto {
+    pub oil_grade: Option<OilGrade>,
+    pub acidity_pct: Option<f64>,
+    pub liters_produced: Option<f64>,
+    pub mill_name: Option<String>,
+}

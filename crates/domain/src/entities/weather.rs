@@ -1,16 +1,10 @@
 use crate::entities::BbchStage;
 use crate::entities::tenant::TenantId;
-#[cfg(feature = "mongodb")]
-use crate::entities::user::UserRole;
-use crate::repositories::VisibilityAwareEntity;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
-
-#[cfg(feature = "mongodb")]
-use mongodb::bson::{doc, Document};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum WeatherStationType {
@@ -25,7 +19,6 @@ pub enum WeatherStationType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
-#[schema(example = json!({"id": "550e8400-e29b-41d4-a716-446655440000", "tenant_id": "550e8400-e29b-41d4-a716-446655440000", "label": "Main Station", "station_type": "iot", "is_active": true, "created_at": "2023-01-01T00:00:00Z", "updated_at": "2023-01-01T00:00:00Z"}))]
 pub struct WeatherStation {
     pub id: Uuid,
     #[schema(value_type = String)]
@@ -44,7 +37,6 @@ pub struct WeatherStation {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct WeatherData {
@@ -102,6 +94,14 @@ pub struct CreateWeatherStationDto {
     pub model: Option<String>,
     pub serial_number: Option<String>,
     pub api_key_config: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+pub struct UpdateWeatherStationDto {
+    #[validate(length(min = 1, max = 100))]
+    pub label: Option<String>,
+    pub location: Option<crate::entities::site::GeoPoint>,
+    pub is_active: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]

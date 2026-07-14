@@ -1,6 +1,7 @@
 use agrocore_domain::entities::finance::{CostCenter, CreateCostCenterDto};
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::repositories::{CostCenterRepo, RepositoryFuture, PaginatedResponse, Pagination};
+use agrocore_domain::repositories::{CostCenterRepo, RepositoryFuture};
+use agrocore_shared::{PaginatedResponse, Pagination};
 use agrocore_shared::{Result, SharedError};
 use sqlx::PgPool;
 use uuid::Uuid;

@@ -91,3 +91,10 @@ pub struct CreateWaterUsageDto {
     pub irrigation_method: IrrigationMethod,
     pub efficiency_pct: Option<f64>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct UpdateWaterUsageDto {
+    pub volume_m3: Option<f64>,
+    pub irrigation_method: Option<IrrigationMethod>,
+    pub efficiency_pct: Option<f64>,
+}

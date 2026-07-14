@@ -1,7 +1,7 @@
 use agrocore_domain::entities::workforce::{Worker, CreateWorkerDto, UpdateWorkerDto};
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::entities::user::UserRole;
-use agrocore_domain::repositories::{WorkerRepository, RepositoryFuture, PaginatedResponse, Pagination};
+use agrocore_domain::repositories::{WorkerRepo, RepositoryFuture};
+use agrocore_shared::{PaginatedResponse, Pagination};
 use agrocore_shared::{Result, SharedError};
 use chrono::Utc;
 use sqlx::PgPool;
@@ -18,11 +18,11 @@ impl PgWorkerRepo {
     }
 }
 
-impl WorkerRepository for PgWorkerRepo {
+impl WorkerRepo for PgWorkerRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Worker>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, (Worker,)>("SELECT row_to_json(workers) FROM workers WHERE id = $1 AND tenant_id = $2")
+            sqlx::query_as::<_, (Worker,)>("SELECT row_to_json(workers) FROM workers WHERE id = $1 AND tenant_id = $2 AND is_active = true")
                 .bind(id)
                 .bind(tid.to_string())
                 .fetch_optional(&pool)
@@ -33,16 +33,6 @@ impl WorkerRepository for PgWorkerRepo {
         })
     }
 
-    fn find_by_id_visible(
-        &self,
-        tid: TenantId,
-        id: Uuid,
-        _user_id: Uuid,
-        _roles: &[UserRole],
-    ) -> RepositoryFuture<Option<Worker>> {
-        self.find_by_id(tid, id)
-    }
-
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Worker>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
@@ -50,13 +40,13 @@ impl WorkerRepository for PgWorkerRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM workers WHERE tenant_id = $1::uuid")
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM workers WHERE tenant_id = $1::uuid AND is_active = true")
                 .bind(tid.to_string())
                 .fetch_one(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<Worker> = sqlx::query_as("SELECT * FROM workers WHERE tenant_id = $1::uuid ORDER BY name LIMIT $2 OFFSET $3")
+            let data: Vec<Worker> = sqlx::query_as("SELECT * FROM workers WHERE tenant_id = $1::uuid AND is_active = true ORDER BY name LIMIT $2 OFFSET $3")
                 .bind(tid.to_string())
                 .bind(per_page as i32)
                 .bind(offset as i32)
@@ -76,7 +66,7 @@ impl WorkerRepository for PgWorkerRepo {
         })
     }
 
-    fn create(&self, tid: TenantId, dto: CreateWorkerDto, _by: Uuid) -> RepositoryFuture<Worker> {
+    fn create(&self, tid: TenantId, dto: CreateWorkerDto) -> RepositoryFuture<Worker> {
         let pool = self.pool.clone();
         Box::pin(async move {
             let now = Utc::now();
@@ -85,8 +75,7 @@ impl WorkerRepository for PgWorkerRepo {
             sqlx::query_as::<_, Worker>(
                 r#"INSERT INTO workers (id, tenant_id, name, hourly_rate, is_active, created_at, updated_at)
                    VALUES ($1, $2, $3, $4, true, $5, $6)
-                   RETURNING *"#
-            )
+                   RETURNING *"#)
             .bind(id)
             .bind(tid.to_string())
             .bind(&dto.name)
@@ -99,7 +88,7 @@ impl WorkerRepository for PgWorkerRepo {
         })
     }
 
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateWorkerDto, _by: Uuid) -> RepositoryFuture<Option<Worker>> {
+    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateWorkerDto) -> RepositoryFuture<Option<Worker>> {
         let pool = self.pool.clone();
         Box::pin(async move {
             let now = Utc::now();
@@ -110,8 +99,7 @@ impl WorkerRepository for PgWorkerRepo {
                     hourly_rate = COALESCE($2, hourly_rate),
                     updated_at = $3
                    WHERE id = $4 AND tenant_id = $5
-                   RETURNING *"#
-            )
+                   RETURNING *"#)
             .bind(&dto.name)
             .bind(dto.hourly_rate)
             .bind(now)

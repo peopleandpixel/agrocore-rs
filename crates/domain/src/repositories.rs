@@ -1,6 +1,5 @@
 use crate::entities::tenant::TenantId;
-use agrocore_shared::{PaginatedResponse, Pagination, Result};
-use serde::Serialize;
+pub use agrocore_shared::{PaginatedResponse, Pagination, Result};
 use std::future::Future;
 use std::pin::Pin;
 use uuid::Uuid;
@@ -10,21 +9,35 @@ use mockall::automock;
 
 pub type RepositoryFuture<T> = Pin<Box<dyn Future<Output = Result<T>> + Send>>;
 
+// User
 use crate::entities::user::{CreateUserDto, LoginDto, UpdateUserDto, User};
+// Order
 use crate::entities::order::{CreateOrderDto, MyTask, Order, UpdateOrderDto};
+// Tenant
 use crate::entities::tenant::{CreateTenantDto, Tenant, UpdateTenantDto};
+// Equipment
 use crate::entities::equipment::{CreateEquipmentDto, Equipment, UpdateEquipmentDto};
+// Site
 use crate::entities::site::{CreateSiteDto, Site, UpdateSiteDto};
-use crate::entities::spatial::SpatialObject;
+// Animal
 use crate::entities::livestock::{Animal, CreateAnimalDto, UpdateAnimalDto, TreatmentRecord, GrazingRecord};
+// Weather
 use crate::entities::weather::{WeatherStation, CreateWeatherStationDto, WeatherData, CreateWeatherDataDto, PhenologyRecord, CreatePhenologyRecordDto};
+// Plant Protection
 use crate::entities::plant_protection::{PlantProtectionRecord, CreatePlantProtectionDto};
-use crate::entities::harvest::{HarvestSeason, CreateHarvestSeasonDto, HarvestLot, CreateHarvestLotDto, HarvestDelivery, CreateHarvestDeliveryDto, ColdChainLog};
-use crate::entities::olive::{OliveGrove, CreateOliveGroveDto, OliveOilRecord, CreateOliveOilRecordDto};
-use crate::entities::vineyard::{Vineyard, CreateVineyardDto};
-use crate::entities::water::{WaterSource, CreateWaterSourceDto, WaterUsage, CreateWaterUsageDto, WaterQuota};
-use crate::entities::workforce::{Worker, CreateWorkerDto, WorkerLocation};
+// Harvest
+use crate::entities::harvest::{HarvestSeason, CreateHarvestSeasonDto, HarvestLot, CreateHarvestLotDto, UpdateHarvestLotDto, HarvestDelivery, CreateHarvestDeliveryDto, UpdateHarvestDeliveryDto, ColdChainLog, CreateColdChainLogDto};
+// Olive
+use crate::entities::olive::{OliveGrove, CreateOliveGroveDto, UpdateOliveGroveDto, OliveOilRecord, CreateOliveOilRecordDto, UpdateOliveOilRecordDto};
+// Vineyard
+use crate::entities::vineyard::{Vineyard, CreateVineyardDto, UpdateVineyardDto};
+// Water
+use crate::entities::water::{WaterSource, CreateWaterSourceDto, WaterUsage, CreateWaterUsageDto, UpdateWaterUsageDto, WaterQuota};
+// Workforce
+use crate::entities::workforce::{Worker, CreateWorkerDto, UpdateWorkerDto, WorkerLocation, CreateWorkerLocationDto, WorkLog, CreateWorkLogDto, UpdateWorkLogDto};
+// Finance
 use crate::entities::finance::{PACApplication, CreatePACApplicationDto, CostCenter, CreateCostCenterDto, FinancialRecord, CreateFinancialRecordDto};
+// Compliance
 use crate::entities::compliance::FertilizerRecord;
 
 #[cfg_attr(test, automock)]
@@ -205,6 +218,7 @@ pub trait WaterUsageRepo: Send + Sync {
 #[cfg_attr(test, automock)]
 pub trait WaterQuotaRepo: Send + Sync {
     fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<WaterQuota>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<WaterQuota>>;
     fn create(&self, tid: TenantId, _dto: serde_json::Value) -> RepositoryFuture<WaterQuota>;
 }
 
@@ -255,5 +269,5 @@ pub trait FinancialRecordRepo: Send + Sync {
 
 #[cfg_attr(test, automock)]
 pub trait ColdChainLogRepo: Send + Sync {
-    fn create(&self, tid: TenantId, _dto: serde_json::Value) -> RepositoryFuture<ColdChainLog>;
+    fn create(&self, tid: TenantId, dto: CreateColdChainLogDto) -> RepositoryFuture<ColdChainLog>;
 }

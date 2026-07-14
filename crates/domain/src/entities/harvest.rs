@@ -121,3 +121,17 @@ pub struct CreateColdChainLogDto {
     pub humidity_pct: Option<f64>,
     pub location: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct UpdateHarvestLotDto {
+    pub lot_number: Option<String>,
+    pub variety: Option<String>,
+    pub quality_target: Option<String>,
+    pub yield_kg: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct UpdateHarvestDeliveryDto {
+    pub quality_notes: Option<String>,
+    pub temperature_at_delivery: Option<f64>,
+}
