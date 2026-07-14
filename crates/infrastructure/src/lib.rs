@@ -23,6 +23,19 @@ pub use postgres::PgHarvestLotRepo;
 pub use postgres::PgHarvestDeliveryRepo;
 pub use postgres::PgVineyardRepo;
 pub use postgres::PgPhenologyRecordRepo;
+pub use postgres::PgKelterDeliveryRepo;
+pub use postgres::PgWaterSourceRepo;
+pub use postgres::PgWaterUsageRepo;
+pub use postgres::PgWaterQuotaRepo;
+pub use postgres::PgWorkerRepo;
+pub use postgres::PgWorkLogRepo;
+pub use postgres::PgWorkerLocationRepo;
+pub use postgres::PgCostCenterRepo;
+pub use postgres::PgFinancialRecordRepo;
+pub use postgres::PgPACApplicationRepo;
+pub use postgres::PgColdChainLogRepo;
+pub use postgres::PgOliveGroveRepo;
+pub use postgres::PgOliveOilRecordRepo;
 
 #[derive(Clone)]
 pub enum Database {
