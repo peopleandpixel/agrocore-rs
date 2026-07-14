@@ -45,17 +45,18 @@ impl WaterQuotaRepo for PgWaterQuotaRepo {
     }
     fn create(&self, tid: TenantId, dto: CreateWaterQuotaDto) -> RepositoryFuture<WaterQuota> {
         let pool = self.pool.clone();
+        let id = Uuid::new_v4();
         Box::pin(async move {
             let record = sqlx::query_as(
-                "INSERT INTO water_quotas (id, tenant_id, source_id, period_start, period_end, volume_m3, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *"
+                "INSERT INTO water_quotas (id, tenant_id, source_id, year, allocated_m3, used_m3, comunidad_id, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *"
             )
-            .bind(dto.id)
+            .bind(id)
             .bind(tid.to_string())
             .bind(dto.source_id)
-            .bind(dto.period_start)
-            .bind(dto.period_end)
-            .bind(dto.volume_m3)
-            .bind(chrono::Utc::now())
+            .bind(dto.year)
+            .bind(dto.allocated_m3)
+            .bind(0.0) // used_m3 starts at 0
+            .bind(dto.comunidad_id)
             .bind(chrono::Utc::now())
             .fetch_one(&pool)
             .await
