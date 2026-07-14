@@ -32,7 +32,7 @@ use crate::entities::olive::{OliveGrove, CreateOliveGroveDto, UpdateOliveGroveDt
 // Vineyard
 use crate::entities::vineyard::{Vineyard, CreateVineyardDto, UpdateVineyardDto};
 // Water
-use crate::entities::water::{WaterSource, CreateWaterSourceDto, WaterUsage, CreateWaterUsageDto, UpdateWaterUsageDto, WaterQuota};
+use crate::entities::water::{WaterSource, CreateWaterSourceDto, WaterUsage, CreateWaterUsageDto, UpdateWaterUsageDto, WaterQuota, CreateWaterQuotaDto};
 // Workforce
 use crate::entities::workforce::{Worker, CreateWorkerDto, UpdateWorkerDto, WorkerLocation, CreateWorkerLocationDto, WorkLog, CreateWorkLogDto, UpdateWorkLogDto};
 // Finance
@@ -218,8 +218,12 @@ pub trait WaterUsageRepo: Send + Sync {
 #[cfg_attr(test, automock)]
 pub trait WaterQuotaRepo: Send + Sync {
     fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<WaterQuota>>;
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<WaterQuota>>;
-    fn create(&self, tid: TenantId, _dto: serde_json::Value) -> RepositoryFuture<WaterQuota>;
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<WaterQuota>>;
+    fn create(&self, tid: TenantId, dto: CreateWaterQuotaDto) -> RepositoryFuture<WaterQuota>;
 }
 
 #[cfg_attr(test, automock)]
