@@ -40,7 +40,8 @@ pub enum DocArea {
     Custom(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, sqlx::Type)]
+#[sqlx(rename = "quality_grade", rename_all = "snake_case")]
 pub enum QualityGrade {
     Reserva,
     GrandeReserva,
@@ -48,6 +49,7 @@ pub enum QualityGrade {
     Superior,
     Classic,
     LateHarvest,
+    #[sqlx(rename = "custom")]
     Custom(String),
 }
 

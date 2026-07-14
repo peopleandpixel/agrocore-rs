@@ -133,7 +133,8 @@ impl BbchStage {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, sqlx::Type)]
+#[sqlx(rename = "order_status", rename_all = "snake_case")]
 pub enum OrderStatus {
     #[serde(rename = "draft")]
     Draft,
@@ -147,7 +148,8 @@ pub enum OrderStatus {
     Cancelled,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, sqlx::Type)]
+#[sqlx(rename = "order_type", rename_all = "snake_case")]
 pub enum OrderType {
     #[serde(rename = "plant_protection")]
     PlantProtection,

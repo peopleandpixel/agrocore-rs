@@ -6,9 +6,6 @@ use validator::Validate;
 
 use crate::entities::tenant::TenantId;
 
-#[cfg(feature = "mongodb")]
-use mongodb::bson::{Document, doc};
-
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Validate)]
 pub struct MaintenanceInterval {
     pub label: String,
@@ -31,7 +28,8 @@ pub struct Equipment {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, sqlx::Type)]
+#[sqlx(rename = "equipment_type", rename_all = "snake_case")]
 pub enum EquipmentType {
     Tractor,
     Sprayer,
@@ -40,6 +38,7 @@ pub enum EquipmentType {
     Plow,
     Trailer,
     Tool,
+    #[sqlx(rename = "other")]
     Other(String),
 }
 
@@ -68,4 +67,3 @@ impl Equipment {
     pub const PROP_WORKING_WIDTH: &'static str = "working_width";
     pub const PROP_FUEL_TYPE: &'static str = "fuel_type";
 }
-

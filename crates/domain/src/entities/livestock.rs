@@ -1,13 +1,13 @@
 use crate::entities::tenant::TenantId;
-#[cfg(feature = "mongodb")]
-use crate::entities::user::UserRole;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, sqlx::Type)]
+#[sqlx(rename = "animal_species", rename_all = "snake_case")]
 pub enum AnimalSpecies {
     #[serde(rename = "cattle")]
     Cattle,
@@ -21,11 +21,13 @@ pub enum AnimalSpecies {
     Poultry,
     #[serde(rename = "horse")]
     Horse,
+    #[sqlx(rename = "other")]
     #[serde(rename = "other")]
     Other(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, sqlx::Type)]
+#[sqlx(rename = "animal_status", rename_all = "snake_case")]
 pub enum AnimalStatus {
     #[serde(rename = "active")]
     Active,
@@ -45,11 +47,11 @@ pub struct Animal {
     pub species: AnimalSpecies,
     pub breed: Option<String>,
     #[validate(length(min = 1))]
-    pub identifier: String, // Ohrmarke, Name, etc.
+    pub identifier: String,
     pub birth_date: Option<DateTime<Utc>>,
     pub gender: Option<String>,
     pub status: AnimalStatus,
-    pub current_site_id: Option<Uuid>, // Aktuelle Weide/Stall
+    pub current_site_id: Option<Uuid>,
     pub group_id: Option<Uuid>,
     pub weight_kg: Option<f64>,
     pub last_weight_date: Option<DateTime<Utc>>,
@@ -63,11 +65,11 @@ pub struct Animal {
 pub struct TreatmentRecord {
     pub id: Uuid,
     pub date: DateTime<Utc>,
-    pub treatment_type: String, // Impfung, Entwurmung, etc.
+    pub treatment_type: String,
     pub medication: Option<String>,
     pub dosage: Option<String>,
     pub veterinarian: Option<String>,
-    pub withdrawal_days: Option<u32>, // Wartezeit
+    pub withdrawal_days: Option<u32>,
     pub notes: Option<String>,
 }
 
@@ -99,4 +101,3 @@ pub struct UpdateAnimalDto {
     pub group_id: Option<Uuid>,
     pub weight_kg: Option<f64>,
 }
-

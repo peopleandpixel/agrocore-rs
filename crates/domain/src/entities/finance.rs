@@ -5,8 +5,6 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::entities::tenant::TenantId;
-#[cfg(feature = "mongodb")]
-use crate::entities::user::UserRole;
 
 #[cfg(feature = "mongodb")]
 use mongodb::bson::{Document, doc};
@@ -28,7 +26,8 @@ pub struct PACApplication {
 }
 
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, sqlx::Type)]
+#[sqlx(rename = "pac_status", rename_all = "snake_case")]
 pub enum PACStatus {
     Draft,
     Submitted,
@@ -59,7 +58,8 @@ pub struct CostCenter {
 }
 
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, sqlx::Type)]
+#[sqlx(rename = "cost_center_type", rename_all = "snake_case")]
 pub enum CostCenterType {
     Site,
     Crop,
@@ -84,7 +84,8 @@ pub struct FinancialRecord {
 }
 
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, sqlx::Type)]
+#[sqlx(rename = "financial_record_type", rename_all = "snake_case")]
 pub enum FinancialRecordType {
     Expense,
     Income,

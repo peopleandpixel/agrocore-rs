@@ -40,3 +40,4 @@ actix-governor = "0.10"
 futures = "0.3"
 async-nats = "0.38"
 mockall = "0.13"
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono"] }

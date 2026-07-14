@@ -340,6 +340,7 @@ dependencies = [
  "mongodb",
  "serde",
  "serde_json",
+ "sqlx",
  "utoipa",
  "uuid",
  "validator",

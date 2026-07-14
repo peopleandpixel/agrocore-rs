@@ -22,7 +22,8 @@ pub struct WaterSource {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, sqlx::Type)]
+#[sqlx(rename = "water_source_type", rename_all = "snake_case")]
 pub enum WaterSourceType {
     Well,
     Reservoir,
@@ -31,6 +32,7 @@ pub enum WaterSourceType {
     ComunidadDeRegantes,
     RainwaterHarvesting,
     Desalination,
+    #[sqlx(rename = "custom")]
     Custom(String),
 }
 
@@ -47,7 +49,8 @@ pub struct WaterUsage {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, sqlx::Type)]
+#[sqlx(rename = "irrigation_method", rename_all = "snake_case")]
 pub enum IrrigationMethod {
     Drip,
     Sprinkler,
@@ -55,6 +58,7 @@ pub enum IrrigationMethod {
     Pivot,
     MicroSprinkler,
     Subsurface,
+    #[sqlx(rename = "custom")]
     Custom(String),
 }
 
@@ -92,9 +96,17 @@ pub struct CreateWaterUsageDto {
     pub efficiency_pct: Option<f64>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct UpdateWaterUsageDto {
     pub volume_m3: Option<f64>,
     pub irrigation_method: Option<IrrigationMethod>,
     pub efficiency_pct: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct CreateWaterQuotaDto {
+    pub source_id: Uuid,
+    pub year: i32,
+    pub allocated_m3: f64,
+    pub comunidad_id: Option<Uuid>,
 }

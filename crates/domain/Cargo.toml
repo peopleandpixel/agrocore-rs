@@ -15,12 +15,4 @@ validator = { workspace = true }
 geo = { workspace = true }
 mongodb = { workspace = true, optional = true }
 mockall = { workspace = true, optional = true }
-
-[features]
-default = []
-mongodb = ["dep:mongodb"]
-
-[dev-dependencies]
-chrono = { workspace = true }
-uuid = { workspace = true }
-mockall = { workspace = true }
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono"] }
