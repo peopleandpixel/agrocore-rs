@@ -58,6 +58,14 @@ pub struct CreateTenantDto {
     pub config: Option<TenantConfig>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct UpdateTenantDto {
+    pub name: Option<String>,
+    pub slug: Option<String>,
+    pub config: Option<TenantConfig>,
+    pub is_active: Option<bool>,
+}
+
 pub type TenantId = uuid::Uuid;
 
 #[cfg(test)]

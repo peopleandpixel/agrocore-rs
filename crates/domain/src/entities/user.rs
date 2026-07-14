@@ -143,21 +143,6 @@ use crate::repositories::VisibilityAwareEntity;
 #[cfg(feature = "mongodb")]
 use mongodb::bson::{Document, doc};
 
-impl VisibilityAwareEntity for User {
-    #[cfg(feature = "mongodb")]
-    fn visibility_filter(_user_id: Uuid, roles: &[UserRole]) -> Document {
-        // Admin/Manager sehen alle User im Tenant
-        // Worker sieht nur Nutzer, die Aufträge im selben Tenant haben
-        // Viewer hat selbe Tenant-Isolation
-        if roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager) {
-            doc! {} // Alle im Tenant sichtbar
-        } else {
-            // Worker/Viewer sehen nur Nutzer mit gleicher user_id (eigenes Profil)
-            // Diese Logik wird im Handler weiter ausgeführt
-            doc! {}
-        }
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct LoginDto {

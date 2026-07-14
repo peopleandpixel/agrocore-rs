@@ -352,17 +352,6 @@ pub enum TaskAutomationAction {
     Completed,
 }
 
-impl VisibilityAwareEntity for Order {
-    #[cfg(feature = "mongodb")]
-    fn visibility_filter(user_id: Uuid, roles: &[UserRole]) -> Document {
-        if roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager) {
-            doc! {}
-        } else {
-            // Worker can only see orders assigned to them
-            doc! { "assigned_worker_ids": user_id.to_string() }
-        }
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct OrderArticle {

@@ -130,20 +130,6 @@ impl Site {
     }
 }
 
-impl VisibilityAwareEntity for Site {
-    #[cfg(feature = "mongodb")]
-    fn visibility_filter(user_id: Uuid, roles: &[UserRole]) -> Document {
-        if roles.contains(&UserRole::Admin)
-            || roles.contains(&UserRole::Manager)
-            || roles.contains(&UserRole::Worker)
-        {
-            doc! {}
-        } else {
-            // Viewer can only see sites assigned to them (if any)
-            doc! { "assigned_user_ids": user_id.to_string() }
-        }
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct CreateSiteDto {

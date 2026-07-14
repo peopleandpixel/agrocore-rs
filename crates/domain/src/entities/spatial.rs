@@ -103,19 +103,6 @@ pub struct SpatialObject {
     pub updated_by: Option<Uuid>,
 }
 
-impl VisibilityAwareEntity for SpatialObject {
-    #[cfg(feature = "mongodb")]
-    fn visibility_filter(user_id: Uuid, roles: &[UserRole]) -> Document {
-        if roles.contains(&UserRole::Admin)
-            || roles.contains(&UserRole::Manager)
-            || roles.contains(&UserRole::Worker)
-        {
-            doc! {}
-        } else {
-            doc! { "assigned_user_ids": user_id.to_string() }
-        }
-    }
-}
 
 impl SpatialObject {
     pub fn contains_point(&self, point: &GeoPoint) -> bool {

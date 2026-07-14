@@ -70,9 +70,3 @@ impl Equipment {
     pub const PROP_FUEL_TYPE: &'static str = "fuel_type";
 }
 
-impl VisibilityAwareEntity for Equipment {
-    #[cfg(feature = "mongodb")]
-    fn visibility_filter(_user_id: Uuid, _roles: &[crate::entities::user::UserRole]) -> Document {
-        doc! {} // All visible for now
-    }
-}

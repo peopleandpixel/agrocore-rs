@@ -108,18 +108,3 @@ use crate::repositories::VisibilityAwareEntity;
 #[cfg(feature = "mongodb")]
 use mongodb::bson::{Document, doc};
 
-impl VisibilityAwareEntity for Animal {
-    #[cfg(feature = "mongodb")]
-    fn visibility_filter(_user_id: Uuid, roles: &[UserRole]) -> Document {
-        // Animal ist tenant-geschützt
-        // Worker sieht Tiere auf zugewiesenen Weiden (über Site-Zuordnung)
-        if roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager) {
-            doc! {}
-        } else if roles.contains(&UserRole::Worker) {
-            // Worker filtert über Site-Zuordnung - site.current_site_id und site.assigned_user_ids
-            doc! {} // Wird im Repository weiter geregelt
-        } else {
-            doc! {}
-        }
-    }
-}

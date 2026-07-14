@@ -45,17 +45,6 @@ pub struct WeatherStation {
     pub updated_at: DateTime<Utc>,
 }
 
-impl VisibilityAwareEntity for WeatherStation {
-    #[cfg(feature = "mongodb")]
-    fn visibility_filter(_user_id: Uuid, roles: &[UserRole]) -> Document {
-        if roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager) {
-            doc! {}
-        } else {
-            // Worker/Viewer sehen Wetterstationen allgemein (tenant-gesichert)
-            doc! {}
-        }
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct WeatherData {

@@ -40,21 +40,6 @@ pub struct TaskData {
 // =============================================================================
 // VISIBILITY SECURITY: TaskData Entity implements VisibilityAwareEntity
 // =============================================================================
-impl VisibilityAwareEntity for TaskData {
-    #[cfg(feature = "mongodb")]
-    fn visibility_filter(user_id: Uuid, roles: &[UserRole]) -> Document {
-        // Worker sieht nur Aufgaben, die ihm direkt zugewiesen sind (worker_id match)
-        if roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager) {
-            doc! {} // Alle Tasks im Tenant sichtbar
-        } else if roles.contains(&UserRole::Worker) {
-            // Worker filtert nach worker_id
-            doc! { "worker_id": user_id.to_string() }
-        } else {
-            // Viewer hat keinen Zugriff auf Tasks - zurückgeben leeres Set
-            doc! { "worker_id": "never-match-visibility" }
-        }
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct MaterialUsage {

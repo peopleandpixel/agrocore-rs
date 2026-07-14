@@ -19,13 +19,12 @@ use crate::entities::spatial::SpatialObject;
 use crate::entities::livestock::{Animal, CreateAnimalDto, UpdateAnimalDto, TreatmentRecord, GrazingRecord};
 use crate::entities::weather::{WeatherStation, CreateWeatherStationDto, WeatherData, CreateWeatherDataDto, PhenologyRecord, CreatePhenologyRecordDto};
 use crate::entities::plant_protection::{PlantProtectionRecord, CreatePlantProtectionDto};
-use crate::entities::harvest::{HarvestSeason, CreateHarvestSeasonDto, HarvestLot, CreateHarvestLotDto, HarvestDelivery, CreateHarvestDeliveryDto, UpdateHarvestDeliveryDto, UpdateHarvestLotDto};
-use crate::entities::olive::{OliveGrove, CreateOliveGroveDto, UpdateOliveGroveDto, OliveOilRecord, CreateOliveOilRecordDto, UpdateOliveOilRecordDto};
-use crate::entities::vineyard::{Vineyard, CreateVineyardDto, UpdateVineyardDto};
-use crate::entities::water::{WaterSource, CreateWaterSourceDto, WaterUsage, CreateWaterUsageDto, UpdateWaterUsageDto, WaterQuota};
-use crate::entities::workforce::{Worker, CreateWorkerDto, UpdateWorkerDto, WorkLog, CreateWorkLogDto, UpdateWorkLogDto, WorkerLocation, CreateWorkerLocationDto};
+use crate::entities::harvest::{HarvestSeason, CreateHarvestSeasonDto, HarvestLot, CreateHarvestLotDto, HarvestDelivery, CreateHarvestDeliveryDto, ColdChainLog};
+use crate::entities::olive::{OliveGrove, CreateOliveGroveDto, OliveOilRecord, CreateOliveOilRecordDto};
+use crate::entities::vineyard::{Vineyard, CreateVineyardDto};
+use crate::entities::water::{WaterSource, CreateWaterSourceDto, WaterUsage, CreateWaterUsageDto, WaterQuota};
+use crate::entities::workforce::{Worker, CreateWorkerDto, WorkerLocation};
 use crate::entities::finance::{PACApplication, CreatePACApplicationDto, CostCenter, CreateCostCenterDto, FinancialRecord, CreateFinancialRecordDto};
-use crate::entities::coldchain::ColdChainLog;
 use crate::entities::compliance::FertilizerRecord;
 
 #[cfg_attr(test, automock)]

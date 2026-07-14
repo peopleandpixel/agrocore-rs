@@ -28,14 +28,6 @@ pub struct PACApplication {
     pub updated_at: DateTime<Utc>,
 }
 
-impl VisibilityAwareEntity for PACApplication {
-    #[cfg(feature = "mongodb")]
-    fn visibility_filter(_user_id: Uuid, _roles: &[UserRole]) -> Document {
-        // Aktuell sehen alle Rollen im Tenant die PAC-Daten (inkl. Worker).
-        // Rollenspezifische Einschränkung folgt bei Bedarf.
-        doc! {}
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum PACStatus {
@@ -67,13 +59,6 @@ pub struct CostCenter {
     pub is_active: bool,
 }
 
-impl VisibilityAwareEntity for CostCenter {
-    #[cfg(feature = "mongodb")]
-    fn visibility_filter(_user_id: Uuid, _roles: &[UserRole]) -> Document {
-        // Kostenstellen sind für alle Rollen im Tenant sichtbar.
-        doc! {}
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum CostCenterType {
@@ -99,14 +84,6 @@ pub struct FinancialRecord {
     pub created_at: DateTime<Utc>,
 }
 
-impl VisibilityAwareEntity for FinancialRecord {
-    #[cfg(feature = "mongodb")]
-    fn visibility_filter(_user_id: Uuid, _roles: &[UserRole]) -> Document {
-        // Finanzsätze sind aktuell für alle Rollen im Tenant sichtbar.
-        // Rollenspezifische Einschränkung (z. B. Worker über Auftragsbezug) folgt bei Bedarf.
-        doc! {}
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum FinancialRecordType {
