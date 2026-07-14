@@ -1,31 +1,22 @@
-use agrocore_domain::entities::coldchain::ColdChainLog;
+use agrocore_domain::entities::coldchain::{ColdChainLog, CreateColdChainLogDto};
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::repositories::{ColdChainLogRepository, PaginatedResponse, Pagination, RepositoryFuture};
+use agrocore_domain::repositories::{ColdChainLogRepo, RepositoryFuture};
 use agrocore_shared::{Result, SharedError};
+use chrono::Utc;
 use sqlx::PgPool;
-use uuid::Uuid;
 
 #[derive(Clone)]
-pub struct PgColdChainLogRepo {
-    pool: PgPool,
-}
+pub struct PgColdChainLogRepo { pool: PgPool }
+impl PgColdChainLogRepo { pub fn new(pool: PgPool) -> Self { Self { pool } } }
 
-impl PgColdChainLogRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
-
-impl ColdChainLogRepository for PgColdChainLogRepo {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<ColdChainLog>> {
-        Box::pin(async move { Ok(None) })
-    }
-    fn find_all(&self, _tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<ColdChainLog>> {
-        let page = p.page.unwrap_or(0);
-        let per_page = p.per_page.unwrap_or(20);
-        Box::pin(async move { Ok(PaginatedResponse { data: vec![], total: 0, page, per_page, total_pages: 0 }) })
-    }
-    fn create(&self, _tid: TenantId, _dto: agrocore_domain::entities::coldchain::CreateColdChainLogDto) -> RepositoryFuture<ColdChainLog> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".to_string()).to_error()) })
+impl ColdChainLogRepo for PgColdChainLogRepo {
+    fn create(&self, tid: TenantId, dto: CreateColdChainLogDto) -> RepositoryFuture<ColdChainLog> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query_as::<_, ColdChainLog>(
+                "INSERT INTO cold_chain_logs (tenant_id, delivery_id, temperature_c, timestamp, notes) VALUES ($1, $2, $3, $4, $5) RETURNING *")
+            .bind(tid.to_string()).bind(dto.delivery_id.to_string()).bind(dto.temperature_c).bind(dto.timestamp).bind(&dto.notes)
+            .fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
 }
