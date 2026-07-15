@@ -799,6 +799,22 @@ pub async fn export_veterinary() -> Result<Vec<u8>, String> {
     get_bytes("/api/v1/reporting/export/veterinary", true).await
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AuditLogDto {
+    pub id: uuid::Uuid,
+    pub entity_type: String,
+    pub entity_id: uuid::Uuid,
+    pub action: String,
+    pub user_id: uuid::Uuid,
+    pub timestamp: String,
+    pub old_value: Option<serde_json::Value>,
+    pub new_value: Option<serde_json::Value>,
+}
+
+pub async fn fetch_audit_logs() -> Result<PaginatedResponse<AuditLogDto>, String> {
+    get_json("/api/v1/compliance/audit-logs", true).await
+}
+
 pub async fn create_order(req: CreateOrderRequest) -> Result<OrderDto, String> {
     post_json("/api/v1/orders", &req, true).await
 }

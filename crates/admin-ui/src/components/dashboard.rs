@@ -14,8 +14,8 @@ pub fn DashboardView() -> impl IntoView {
     let dashboard_label = t("dashboard");
     let welcome_prefix = t("dashboard_welcome_prefix");
     let simple_mode_text = t("dashboard_simple_mode_text");
-    let mode_full_label = t("mode_full");
-    let mode_simple_label = t("mode_simple");
+    let _mode_full_label = t("mode_full");
+    let _mode_simple_label = t("mode_simple");
     let tasks_label = t("tasks");
     let tasks_desc = t("dashboard_tasks_desc");
     let sites_label = t("sites");
@@ -39,7 +39,7 @@ pub fn DashboardView() -> impl IntoView {
     let wind_label = t("wind");
     let precipitation_label = t("precipitation");
     let view_mode = use_context::<ReadSignal<ViewMode>>().expect("view mode signal");
-    let set_view_mode = use_context::<WriteSignal<ViewMode>>().expect("set view mode signal");
+    let _set_view_mode = use_context::<WriteSignal<ViewMode>>().expect("set view mode signal");
     let company_profile = api::load_company_profile().unwrap_or_default();
     let company_name = company_profile
         .company_name
@@ -94,21 +94,6 @@ pub fn DashboardView() -> impl IntoView {
                 </div>
 
                 <div class="flex items-center gap-4">
-                    <div class="join border border-base-300">
-                        <button
-                            class=move || format!("join-item btn btn-sm {}", if view_mode.get() == ViewMode::Full { "btn-primary" } else { "" })
-                            on:click=move |_| set_view_mode.set(ViewMode::Full)
-                        >
-                            {mode_full_label.clone()}
-                        </button>
-                        <button
-                            class=move || format!("join-item btn btn-sm {}", if view_mode.get() == ViewMode::Simple { "btn-primary" } else { "" })
-                            on:click=move |_| set_view_mode.set(ViewMode::Simple)
-                        >
-                            {mode_simple_label.clone()}
-                        </button>
-                    </div>
-
                     <div class="badge badge-outline gap-2 p-4 hidden md:flex">
                         <Icon icon=LuActivity width="16" height="16" attr:class="text-success" />
                         {format!("{} {}", tasks_resource.read().as_ref().map(|t| t.total).unwrap_or(0), tasks_label)}

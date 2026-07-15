@@ -9,7 +9,7 @@ use crate::postgres::{
     compliance::PgComplianceChecklistRepo, cost_center::PgCostCenterRepo, financial_record::PgFinancialRecordRepo,
     vineyard::PgVineyardRepo, weather_data::PgWeatherDataRepo, weather_station::PgWeatherStationRepo,
     worker::PgWorkerRepo, worker_location::PgWorkerLocationRepo, work_log::PgWorkLogRepo,
-    worker_task_status::PgWorkerTaskStatusRepo,
+    worker_task_status::PgWorkerTaskStatusRepo, kelter_delivery::PgKelterDeliveryRepo,
 };
 use agrocore_domain::repositories::{
     AnimalRepository, EquipmentRepository, FertilizerRecordRepo, HarvestDeliveryRepo, HarvestLotRepo, HarvestSeasonRepo,
@@ -19,7 +19,7 @@ use agrocore_domain::repositories::{
     WeatherDataRepo, WeatherStationRepo, WorkerLocationRepo, WorkerRepo, WorkLogRepo,
     WorkerTaskStatusRepository, TaskDataRepository, SpatialObjectRepository,
     PACApplicationRepo, ColdChainLogRepo, AuditLogRepo, ComplianceChecklistRepo,
-    CostCenterRepo, FinancialRecordRepo,
+    CostCenterRepo, FinancialRecordRepo, KelterDeliveryRepo,
 };
 use sqlx::PgPool;
 use std::sync::Arc;
@@ -226,6 +226,12 @@ impl Database {
             Self::Postgres(db) => db.financial_record_repo(),
         }
     }
+
+    pub fn kelter_delivery_repo(&self) -> Arc<dyn KelterDeliveryRepo> {
+        match self {
+            Self::Postgres(db) => db.kelter_delivery_repo(),
+        }
+    }
 }
 
 /// PostgreSQL Database Wrapper
@@ -376,5 +382,9 @@ impl PostgresDb {
 
     pub fn compliance_checklist_repo(&self) -> Arc<dyn ComplianceChecklistRepo> {
         Arc::new(PgComplianceChecklistRepo::new(self.pool.clone()))
+    }
+
+    pub fn kelter_delivery_repo(&self) -> Arc<dyn KelterDeliveryRepo> {
+        Arc::new(PgKelterDeliveryRepo::new(self.pool.clone()))
     }
 }

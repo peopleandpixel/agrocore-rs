@@ -1517,6 +1517,17 @@ nav_analytics:
   ro: 'Analytics'
   uk: 'Аналітика'
   nl: 'Analyses'
+nav_audit:
+  en: 'Audit Logs'
+  de: 'Audit-Logs'
+  es: 'Audit Logs'
+  fr: 'Audit Logs'
+  pt: 'Audit Logs'
+  it: 'Audit Logs'
+  pl: 'Audit Logs'
+  ro: 'Audit Logs'
+  uk: 'Audit Logs'
+  nl: 'Audit Logs'
 nav_compliance:
   en: 'Compliance'
   de: 'Compliance'

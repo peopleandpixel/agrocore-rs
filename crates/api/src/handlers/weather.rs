@@ -8,26 +8,47 @@ use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
 use agrocore_domain::entities::weather::{
     CreatePhenologyRecordDto, CreateWeatherDataDto, CreateWeatherStationDto,
+    UpdatePhenologyRecordDto, UpdateWeatherDataDto, UpdateWeatherStationDto,
 };
 use agrocore_shared::SharedError;
 use uuid::Uuid;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
-        web::resource("/weather/stations")
-            .route(web::get().to(list_stations))
-            .route(web::post().to(create_station)),
-    )
-    .service(web::resource("/weather/stations/{id}").route(web::get().to(get_station)))
-    .service(
-        web::resource("/weather/data")
-            .route(web::get().to(list_weather_data))
-            .route(web::post().to(create_weather_data)),
-    )
-    .service(
-        web::resource("/weather/phenology")
-            .route(web::get().to(list_phenology))
-            .route(web::post().to(create_phenology)),
+        web::scope("/weather")
+            .service(
+                web::resource("/stations")
+                    .route(web::get().to(list_stations))
+                    .route(web::post().to(create_station)),
+            )
+            .service(
+                web::resource("/stations/{id}")
+                    .route(web::get().to(get_station))
+                    .route(web::put().to(update_station))
+                    .route(web::delete().to(delete_station)),
+            )
+            .service(
+                web::resource("/data")
+                    .route(web::get().to(list_weather_data))
+                    .route(web::post().to(create_weather_data)),
+            )
+            .service(
+                web::resource("/data/{id}")
+                    .route(web::get().to(get_weather_data))
+                    .route(web::put().to(update_weather_data))
+                    .route(web::delete().to(delete_weather_data)),
+            )
+            .service(
+                web::resource("/phenology")
+                    .route(web::get().to(list_phenology))
+                    .route(web::post().to(create_phenology)),
+            )
+            .service(
+                web::resource("/phenology/{id}")
+                    .route(web::get().to(get_phenology))
+                    .route(web::put().to(update_phenology))
+                    .route(web::delete().to(delete_phenology)),
+            ),
     );
 }
 
@@ -86,6 +107,38 @@ pub async fn get_station(
         .await?
         .ok_or_else(|| SharedError::NotFound("Station not found".into()))?;
     Ok(HttpResponse::Ok().json(station))
+}
+
+pub async fn update_station(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+    dto: web::Json<UpdateWeatherStationDto>,
+) -> Result<HttpResponse, ApiError> {
+    let station = state
+        .db
+        .weather_station_repo()
+        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Station not found".into()))?;
+    Ok(HttpResponse::Ok().json(station))
+}
+
+pub async fn delete_station(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let success = state
+        .db
+        .weather_station_repo()
+        .delete(auth.0.tenant_id, *id)
+        .await?;
+    if success {
+        Ok(HttpResponse::NoContent().finish())
+    } else {
+        Err(SharedError::NotFound("Station not found".into()).into())
+    }
 }
 
 #[utoipa::path(
@@ -165,6 +218,52 @@ pub async fn create_weather_data(
     Ok(HttpResponse::Created().json(wd))
 }
 
+pub async fn get_weather_data(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let data = state
+        .db
+        .weather_data_repo()
+        .find_by_id(auth.0.tenant_id, *id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Weather data not found".into()))?;
+    Ok(HttpResponse::Ok().json(data))
+}
+
+pub async fn update_weather_data(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+    dto: web::Json<UpdateWeatherDataDto>,
+) -> Result<HttpResponse, ApiError> {
+    let data = state
+        .db
+        .weather_data_repo()
+        .update(auth.0.tenant_id, *id, dto.into_inner())
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Weather data not found".into()))?;
+    Ok(HttpResponse::Ok().json(data))
+}
+
+pub async fn delete_weather_data(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let success = state
+        .db
+        .weather_data_repo()
+        .delete(auth.0.tenant_id, *id)
+        .await?;
+    if success {
+        Ok(HttpResponse::NoContent().finish())
+    } else {
+        Err(SharedError::NotFound("Weather data not found".into()).into())
+    }
+}
+
 #[utoipa::path(
     get,
     path = "/api/v1/weather/phenology",
@@ -216,4 +315,50 @@ pub async fn create_phenology(
         .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
         .await?;
     Ok(HttpResponse::Created().json(pr))
+}
+
+pub async fn get_phenology(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let record = state
+        .db
+        .phenology_record_repo()
+        .find_by_id(auth.0.tenant_id, *id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Phenology record not found".into()))?;
+    Ok(HttpResponse::Ok().json(record))
+}
+
+pub async fn update_phenology(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+    dto: web::Json<UpdatePhenologyRecordDto>,
+) -> Result<HttpResponse, ApiError> {
+    let record = state
+        .db
+        .phenology_record_repo()
+        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Phenology record not found".into()))?;
+    Ok(HttpResponse::Ok().json(record))
+}
+
+pub async fn delete_phenology(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let success = state
+        .db
+        .phenology_record_repo()
+        .delete(auth.0.tenant_id, *id)
+        .await?;
+    if success {
+        Ok(HttpResponse::NoContent().finish())
+    } else {
+        Err(SharedError::NotFound("Phenology record not found".into()).into())
+    }
 }

@@ -12,7 +12,7 @@ use crate::entities::site::GeoPoint;
 use crate::entities::tenant::TenantId;
 use crate::repositories::VisibilityAwareEntity;
 
-use crate::entities::user::UserRole;
+// use crate::entities::user::UserRole;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum SpatialObjectType {

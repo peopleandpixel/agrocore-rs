@@ -5,7 +5,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema, sqlx::FromRow)]
 pub struct HarvestSeason {
     pub id: Uuid,
     #[schema(value_type = String)]
@@ -16,9 +16,10 @@ pub struct HarvestSeason {
     pub end_date: Option<DateTime<Utc>>,
     pub is_active: bool,
     pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema, sqlx::FromRow)]
 pub struct HarvestLot {
     pub id: Uuid,
     #[schema(value_type = String)]
@@ -30,6 +31,7 @@ pub struct HarvestLot {
     pub variety: Option<String>,
     pub quality_target: Option<String>,
     pub total_weight_kg: f64,
+    #[sqlx(json)]
     pub status: LotStatus,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -47,7 +49,7 @@ pub enum LotStatus {
     Stored,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema, sqlx::FromRow)]
 pub struct HarvestDelivery {
     pub id: Uuid,
     #[schema(value_type = String)]
@@ -61,9 +63,11 @@ pub struct HarvestDelivery {
     pub vehicle_id: Option<String>,
     pub quality_notes: Option<String>,
     pub temperature_at_delivery: Option<f64>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema, sqlx::FromRow)]
 pub struct ColdChainLog {
     pub id: Uuid,
     #[schema(value_type = String)]
@@ -74,6 +78,7 @@ pub struct ColdChainLog {
     pub temperature_c: f64,
     pub humidity_pct: Option<f64>,
     pub location: Option<String>,
+    pub created_at: DateTime<Utc>,
 }
 
 // DTOs for Creation

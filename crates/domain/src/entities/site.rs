@@ -7,7 +7,7 @@ use crate::entities::tenant::TenantId;
 use crate::entities::{BbchStage, CropType, SiteType};
 use crate::repositories::VisibilityAwareEntity;
 
-use crate::entities::user::UserRole;
+// use crate::entities::user::UserRole;
 use utoipa::ToSchema;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]

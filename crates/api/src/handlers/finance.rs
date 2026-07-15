@@ -22,21 +22,32 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route(web::post().to(create_pac_application)),
             )
             .service(
-                web::resource("/pac-applications/{id}").route(web::get().to(get_pac_application)),
+                web::resource("/pac-applications/{id}")
+                    .route(web::get().to(get_pac_application))
+                    .route(web::put().to(update_pac_application))
+                    .route(web::delete().to(delete_pac_application)),
             )
             .service(
                 web::resource("/cost-centers")
                     .route(web::get().to(list_cost_centers))
                     .route(web::post().to(create_cost_center)),
             )
-            .service(web::resource("/cost-centers/{id}").route(web::get().to(get_cost_center)))
+            .service(
+                web::resource("/cost-centers/{id}")
+                    .route(web::get().to(get_cost_center))
+                    .route(web::put().to(update_cost_center))
+                    .route(web::delete().to(delete_cost_center)),
+            )
             .service(
                 web::resource("/financial-records")
                     .route(web::get().to(list_financial_records))
                     .route(web::post().to(create_financial_record)),
             )
             .service(
-                web::resource("/financial-records/{id}").route(web::get().to(get_financial_record)),
+                web::resource("/financial-records/{id}")
+                    .route(web::get().to(get_financial_record))
+                    .route(web::put().to(update_financial_record))
+                    .route(web::delete().to(delete_financial_record)),
             ),
     );
 }
@@ -119,6 +130,40 @@ pub async fn get_pac_application(
     Ok(HttpResponse::Ok().json(app))
 }
 
+pub async fn update_pac_application(
+    state: web::Data<AppState>,
+    auth: AuthExtractor,
+    id: web::Path<Uuid>,
+    dto: web::Json<agrocore_domain::entities::finance::UpdatePACApplicationDto>,
+) -> Result<HttpResponse, ApiError> {
+    let app = state
+        .db
+        .pac_application_repo()
+        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("PAC Application not found".into()))?;
+
+    Ok(HttpResponse::Ok().json(app))
+}
+
+pub async fn delete_pac_application(
+    state: web::Data<AppState>,
+    auth: AuthExtractor,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let success = state
+        .db
+        .pac_application_repo()
+        .delete(auth.0.tenant_id, *id)
+        .await?;
+
+    if success {
+        Ok(HttpResponse::NoContent().finish())
+    } else {
+        Err(SharedError::NotFound("PAC Application not found".into()).into())
+    }
+}
+
 #[utoipa::path(
     get,
     path = "/api/v1/finance/cost-centers",
@@ -197,6 +242,40 @@ pub async fn get_cost_center(
     Ok(HttpResponse::Ok().json(cc))
 }
 
+pub async fn update_cost_center(
+    state: web::Data<AppState>,
+    auth: AuthExtractor,
+    id: web::Path<Uuid>,
+    dto: web::Json<agrocore_domain::entities::finance::UpdateCostCenterDto>,
+) -> Result<HttpResponse, ApiError> {
+    let cc = state
+        .db
+        .cost_center_repo()
+        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Cost Center not found".into()))?;
+
+    Ok(HttpResponse::Ok().json(cc))
+}
+
+pub async fn delete_cost_center(
+    state: web::Data<AppState>,
+    auth: AuthExtractor,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let success = state
+        .db
+        .cost_center_repo()
+        .delete(auth.0.tenant_id, *id)
+        .await?;
+
+    if success {
+        Ok(HttpResponse::NoContent().finish())
+    } else {
+        Err(SharedError::NotFound("Cost Center not found".into()).into())
+    }
+}
+
 #[utoipa::path(
     get,
     path = "/api/v1/finance/financial-records",
@@ -273,4 +352,38 @@ pub async fn get_financial_record(
         .await?
         .ok_or_else(|| SharedError::NotFound("Not found".into()))?;
     Ok(HttpResponse::Ok().json(rec))
+}
+
+pub async fn update_financial_record(
+    state: web::Data<AppState>,
+    auth: AuthExtractor,
+    id: web::Path<Uuid>,
+    dto: web::Json<agrocore_domain::entities::finance::UpdateFinancialRecordDto>,
+) -> Result<HttpResponse, ApiError> {
+    let record = state
+        .db
+        .financial_record_repo()
+        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Financial Record not found".into()))?;
+
+    Ok(HttpResponse::Ok().json(record))
+}
+
+pub async fn delete_financial_record(
+    state: web::Data<AppState>,
+    auth: AuthExtractor,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let success = state
+        .db
+        .financial_record_repo()
+        .delete(auth.0.tenant_id, *id)
+        .await?;
+
+    if success {
+        Ok(HttpResponse::NoContent().finish())
+    } else {
+        Err(SharedError::NotFound("Financial Record not found".into()).into())
+    }
 }

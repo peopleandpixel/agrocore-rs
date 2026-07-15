@@ -16,7 +16,9 @@ impl PgUserRepo {
     }
 }
 
+use argon2::{Argon2, PasswordHasher, PasswordVerifier};
 use crate::postgres::error_mapper::map_db_error;
+use crate::jwt::generate_jwt;
 
 impl UserRepository for PgUserRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<User>> {
@@ -124,6 +126,11 @@ impl UserRepository for PgUserRepo {
             let mut tx = pool.begin().await.map_err(map_db_error)?;
             let id = Uuid::new_v4();
             
+            let password_hash = Argon2::default()
+                .hash_password(dto.password.as_bytes())
+                .map_err(|e| SharedError::Internal(format!("Hashing error: {}", e)))?
+                .to_string();
+
             let user = sqlx::query_as::<_, User>(
                 r#"INSERT INTO users (id, tenant_id, firstname, lastname, email, password_hash, roles, is_active, created_at, updated_at)
                    VALUES ($1, $2, $3, $4, $5, $6, $7, true, NOW(), NOW())
@@ -133,7 +140,7 @@ impl UserRepository for PgUserRepo {
             .bind(&dto.firstname)
             .bind(&dto.lastname)
             .bind(&dto.email)
-            .bind(&dto.password) // TODO: hash password
+            .bind(password_hash)
             .bind(serde_json::to_value(&dto.roles.unwrap_or_default()).unwrap())
             .fetch_one(&mut *tx)
             .await
@@ -221,16 +228,64 @@ impl UserRepository for PgUserRepo {
         })
     }
 
-    fn authenticate(&self, _dto: LoginDto) -> RepositoryFuture<AuthResponse> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+    fn authenticate(&self, dto: LoginDto) -> RepositoryFuture<AuthResponse> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            let user = sqlx::query_as::<_, User>(
+                r#"SELECT u.*, 
+                   COALESCE((SELECT json_agg(site_id) FROM user_sites WHERE user_id = u.id), '[]'::json) as assigned_site_ids
+                   FROM users u 
+                   WHERE u.email = $1 AND u.is_active = true"#)
+                .bind(&dto.email)
+                .fetch_optional(&pool)
+                .await
+                .map_err(map_db_error)?
+                .ok_or_else(|| SharedError::Unauthorized("Invalid credentials".into()))?;
+
+            Argon2::default()
+                .verify_password(dto.password.as_bytes(), user.password_hash.as_str())
+                .map_err(|_| SharedError::Unauthorized("Invalid credentials".into()))?;
+
+            let token = generate_jwt(&user)
+                .map_err(|e| SharedError::Internal(format!("Token generation failed: {}", e)))?;
+
+            Ok(AuthResponse {
+                token,
+                user_id: user.id,
+                tenant_id: user.tenant_id,
+                firstname: user.firstname,
+                lastname: user.lastname,
+                roles: user.roles,
+            })
+        })
     }
 
-    fn find_by_refresh_token(&self, _refresh_token: &str) -> RepositoryFuture<Option<User>> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+    fn find_by_refresh_token(&self, refresh_token: &str) -> RepositoryFuture<Option<User>> {
+        let pool = self.pool.clone();
+        let token = refresh_token.to_string();
+        Box::pin(async move {
+            sqlx::query_as::<_, User>(
+                r#"SELECT u.*, 
+                   COALESCE((SELECT json_agg(site_id) FROM user_sites WHERE user_id = u.id), '[]'::json) as assigned_site_ids
+                   FROM users u 
+                   WHERE u.refresh_token = $1 AND u.is_active = true"#)
+                .bind(token)
+                .fetch_optional(&pool)
+                .await
+                .map_err(map_db_error)
+        })
     }
 
-    fn invalidate_refresh_token(&self, _user_id: Uuid) -> RepositoryFuture<bool> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+    fn invalidate_refresh_token(&self, user_id: Uuid) -> RepositoryFuture<bool> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query("UPDATE users SET refresh_token = NULL, refresh_token_expires_at = NULL WHERE id = $1")
+                .bind(user_id)
+                .execute(&pool)
+                .await
+                .map(|r| r.rows_affected() > 0)
+                .map_err(map_db_error)
+        })
     }
 
     fn update_refresh_token(

@@ -1,4 +1,4 @@
-use agrocore_domain::entities::workforce::{WorkLog, CreateWorkLogDto};
+use agrocore_domain::entities::workforce::{WorkLog, CreateWorkLogDto, UpdateWorkLogDto};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::repositories::{WorkLogRepo, RepositoryFuture, PaginatedResponse, Pagination};
 use agrocore_shared::SharedError;

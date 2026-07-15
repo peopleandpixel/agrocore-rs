@@ -1,9 +1,11 @@
 use actix_web::web;
 
+pub mod agriculture;
 pub mod auth;
 pub mod compliance;
 pub mod equipment;
 pub mod finance;
+pub mod harvest;
 pub mod livestock;
 pub mod nutrition;
 pub mod orders;
@@ -106,7 +108,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .configure(finance::configure)
             .configure(reporting::configure)
             .configure(nutrition::configure)
-            .configure(livestock::configure),
+            .configure(harvest::configure)
+            .configure(livestock::configure)
+            .configure(agriculture::configure),
     );
 }
 

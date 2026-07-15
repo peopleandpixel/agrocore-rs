@@ -164,11 +164,46 @@ impl AnimalRepository for PgAnimalRepo {
         })
     }
 
-    fn add_treatment(&self, _tid: TenantId, _id: Uuid, _record: TreatmentRecord) -> Fut<bool> {
-        Box::pin(async move { Ok(false) })
+    fn add_treatment(&self, tid: TenantId, id: Uuid, record: TreatmentRecord) -> Fut<bool> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query(
+                r#"INSERT INTO animal_treatments (id, animal_id, tenant_id, treatment_date, treatment_type, medication, dosage, veterinarian, withdrawal_days, notes, created_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())"#)
+            .bind(record.id)
+            .bind(id)
+            .bind(tid.to_string())
+            .bind(record.date)
+            .bind(record.treatment_type)
+            .bind(record.medication)
+            .bind(record.dosage)
+            .bind(record.veterinarian)
+            .bind(record.withdrawal_days.map(|d| d as i32))
+            .bind(record.notes)
+            .execute(&pool)
+            .await
+            .map(|r| r.rows_affected() > 0)
+            .map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
 
-    fn add_grazing_record(&self, _tid: TenantId, _id: Uuid, _record: GrazingRecord) -> Fut<bool> {
-        Box::pin(async move { Ok(false) })
+    fn add_grazing_record(&self, tid: TenantId, id: Uuid, record: GrazingRecord) -> Fut<bool> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query(
+                r#"INSERT INTO animal_grazing_records (id, animal_id, tenant_id, site_id, start_date, end_date, notes, created_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())"#)
+            .bind(Uuid::new_v4())
+            .bind(id)
+            .bind(tid.to_string())
+            .bind(record.site_id)
+            .bind(record.start_date)
+            .bind(record.end_date)
+            .bind(record.notes)
+            .execute(&pool)
+            .await
+            .map(|r| r.rows_affected() > 0)
+            .map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
 }

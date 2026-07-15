@@ -4,6 +4,22 @@ Alle Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-15
+
+### Added
+- **Benutzerverwaltung:** Vollständige CRUD-Funktionalität für Benutzer inklusive Rollenübersicht in der Admin-UI.
+- **Audit-Log UI:** Neuer Bereich in der Admin-UI zur Anzeige der System-Audit-Logs (nur für Administratoren).
+- **Navigation:** Konsistente Sidebar-Navigation mit Zugriff auf alle Systembereiche (Flächen, Equipment, Aufträge, Livestock, Finanzen, Compliance).
+
+### Changed
+- **Modus-Umschalter:** Der Wechsel zwischen "Einfachem" und "Normalem" Modus wurde als zentraler Switch in die Sidebar verschoben.
+- **Flächen-Editor:** Verbesserte Kartenansicht beim Anlegen von Flächen mit größerem Dialogfenster (90% Viewport-Höhe) und wiederhergestellten Zeichenwerkzeugen.
+- **RBAC:** Menüpunkte und Aktionen in der Admin-UI werden nun basierend auf den Benutzerrollen (Admin, Manager, Worker) gefiltert.
+
+### Fixed
+- **Infrastruktur:** Fehlende Imports in der PostgreSQL-Implementierung (`UpdateWorkLogDto`) behoben.
+- **Admin-UI:** Diverse JavaScript-Fixes in der Leaflet-Integration zur Vermeidung von Initialisierungsfehlern.
+
 ## [0.2.0] - 2026-07-15
 
 ### Added

@@ -130,69 +130,71 @@ pub fn SiteManagement() -> impl IntoView {
 
             <Show when=move || show_add_modal.get()>
                 <div class="modal modal-open">
-                    <div class="modal-box w-11/12 max-w-5xl h-[700px] max-h-[90vh]">
+                    <div class="modal-box w-11/12 max-w-7xl h-[90vh] flex flex-col">
                         <h3 class="font-bold text-lg mb-4">"Neue Fläche anlegen"</h3>
 
-                        {move || error.get().map(|err| view! {
-                            <div class="alert alert-error mt-4">
-                                <span>{err}</span>
-                            </div>
-                        })}
+                        <div class="flex-1 overflow-y-auto pr-2">
+                            {move || error.get().map(|err| view! {
+                                <div class="alert alert-error mt-4">
+                                    <span>{err}</span>
+                                </div>
+                            })}
 
-                        <div class="form-control w-full mt-4">
-                            <label class="label"><RequiredLabel required=true>{"Name der Fläche"}</RequiredLabel></label>
-                            <input type="text" class="input input-bordered w-full" required on:input=move |ev| set_label.set(event_target_value(&ev)) />
-                        </div>
+                            <div class="form-control w-full mt-4">
+                                <label class="label"><RequiredLabel required=true>{"Name der Fläche"}</RequiredLabel></label>
+                                <input type="text" class="input input-bordered w-full" required on:input=move |ev| set_label.set(event_target_value(&ev)) />
+                            </div>
 
-                        <div class="grid grid-cols-2 gap-4 mt-4">
-                            <div class="form-control">
-                                <label class="label"><RequiredLabel required=true>{"Typ"}</RequiredLabel></label>
-                                <select class="select select-bordered w-full" required on:change=move |ev| set_site_type.set(event_target_value(&ev))>
-                                    <option value="vineyard">"Weinberg"</option>
-                                    <option value="field">"Ackerland"</option>
-                                    <option value="cork_oak_montado">"Korkeichen-Montado"</option>
-                                    <option value="holm_oak_montado">"Steineichen-Montado"</option>
-                                    <option value="olive_grove">"Olivenhain"</option>
-                                    <option value="orchard">"Obstgarten"</option>
-                                    <option value="almond_orchard">"Mandelhain"</option>
-                                    <option value="citrus_grove">"Zitrushain"</option>
-                                    <option value="pasture">"Weide"</option>
-                                    <option value="greenhouse">"Gewächshaus"</option>
-                                    <option value="other">"Sonstiges"</option>
-                                </select>
+                            <div class="grid grid-cols-2 gap-4 mt-4">
+                                <div class="form-control">
+                                    <label class="label"><RequiredLabel required=true>{"Typ"}</RequiredLabel></label>
+                                    <select class="select select-bordered w-full" required on:change=move |ev| set_site_type.set(event_target_value(&ev))>
+                                        <option value="vineyard">"Weinberg"</option>
+                                        <option value="field">"Ackerland"</option>
+                                        <option value="cork_oak_montado">"Korkeichen-Montado"</option>
+                                        <option value="holm_oak_montado">"Steineichen-Montado"</option>
+                                        <option value="olive_grove">"Olivenhain"</option>
+                                        <option value="orchard">"Obstgarten"</option>
+                                        <option value="almond_orchard">"Mandelhain"</option>
+                                        <option value="citrus_grove">"Zitrushain"</option>
+                                        <option value="pasture">"Weide"</option>
+                                        <option value="greenhouse">"Gewächshaus"</option>
+                                        <option value="other">"Sonstiges"</option>
+                                    </select>
+                                </div>
+                                <div class="form-control">
+                                    <label class="label"><RequiredLabel required=true>{"Kultur"}</RequiredLabel></label>
+                                    <select class="select select-bordered w-full" required on:change=move |ev| set_crop_type.set(event_target_value(&ev))>
+                                        <option value="grape">"Traube"</option>
+                                        <option value="olive">"Olive"</option>
+                                        <option value="grain">"Getreide"</option>
+                                        <option value="other">"Andere"</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="form-control">
-                                <label class="label"><RequiredLabel required=true>{"Kultur"}</RequiredLabel></label>
-                                <select class="select select-bordered w-full" required on:change=move |ev| set_crop_type.set(event_target_value(&ev))>
-                                    <option value="grape">"Traube"</option>
-                                    <option value="olive">"Olive"</option>
-                                    <option value="grain">"Getreide"</option>
-                                    <option value="other">"Andere"</option>
-                                </select>
-                            </div>
-                        </div>
 
-                        <div class="grid grid-cols-1 gap-4 mt-4">
-                            <div class="form-control">
-                                <label class="label"><span class="label-text">"Sorte"</span></label>
-                                <input type="text" class="input input-bordered w-full" on:input=move |ev| set_variety.set(event_target_value(&ev)) />
+                            <div class="grid grid-cols-1 gap-4 mt-4">
+                                <div class="form-control">
+                                    <label class="label"><span class="label-text">"Sorte"</span></label>
+                                    <input type="text" class="input input-bordered w-full" on:input=move |ev| set_variety.set(event_target_value(&ev)) />
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="mt-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="label-text font-medium">"Fläche zeichnen"</span>
-                                <span class="text-sm opacity-70">
-                                    {move || area.get().map(|value| format!("{:.2} ha", value)).unwrap_or_else(|| String::from("0.00 ha"))}
-                                </span>
+                            <div class="mt-4 pb-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="label-text font-medium">"Fläche zeichnen"</span>
+                                    <span class="text-sm opacity-70">
+                                        {move || area.get().map(|value| format!("{:.2} ha", value)).unwrap_or_else(|| String::from("0.00 ha"))}
+                                    </span>
+                                </div>
+                                <FieldPolygonEditor
+                                    on_change=move |new_boundary, new_area, new_center| {
+                                        set_boundary.set(new_boundary);
+                                        set_area.set(new_area);
+                                        set_center.set(new_center);
+                                    }
+                                />
                             </div>
-                            <FieldPolygonEditor
-                                on_change=move |new_boundary, new_area, new_center| {
-                                    set_boundary.set(new_boundary);
-                                    set_area.set(new_area);
-                                    set_center.set(new_center);
-                                }
-                            />
                         </div>
 
                         <div class="modal-action">

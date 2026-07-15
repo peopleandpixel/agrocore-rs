@@ -8,7 +8,7 @@ use crate::entities::tenant::TenantId;
 pub use crate::entities::{OrderStatus, OrderType};
 use crate::repositories::VisibilityAwareEntity;
 
-use crate::entities::user::UserRole;
+// use crate::entities::user::UserRole;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Validate)]
 pub struct WorkflowConfig {

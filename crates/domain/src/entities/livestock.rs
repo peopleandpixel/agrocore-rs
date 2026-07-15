@@ -1,5 +1,5 @@
 use crate::entities::tenant::TenantId;
-use crate::entities::user::UserRole;
+// use crate::entities::user::UserRole;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;

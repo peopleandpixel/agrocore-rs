@@ -3,6 +3,7 @@ mod components;
 mod i18n;
 
 use crate::components::analytics::AnalyticsPage;
+use crate::components::audit::AuditLogPage;
 use crate::components::compliance::CompliancePage;
 use crate::components::dashboard::DashboardView;
 use crate::components::equipment::EquipmentManagement;
@@ -175,6 +176,7 @@ fn AuthenticatedShell(
         i18n.t(lang.get().as_str(), "nav_analytics")
             .into_boxed_str(),
     );
+    let nav_audit: &'static str = Box::leak(i18n.t(lang.get().as_str(), "nav_audit").into_boxed_str());
     let nav_compliance: &'static str = Box::leak(
         i18n.t(lang.get().as_str(), "nav_compliance")
             .into_boxed_str(),
@@ -204,14 +206,6 @@ fn AuthenticatedShell(
                     </div>
                 </div>
 
-                <div class="flex gap-2 mb-8 p-4 bg-base-200 rounded-box">
-                    <button class="btn btn-sm btn-outline" on:click=move |_| {
-                        set_view_mode.set(if view_mode.get() == ViewMode::Full { ViewMode::Simple } else { ViewMode::Full });
-                    }>
-                        {move || if view_mode.get() == ViewMode::Full { simple_label.to_string() } else { full_label.to_string() }}
-                    </button>
-                </div>
-
                 <div class="w-full max-w-5xl">
                     <Router>
                         <Routes fallback=|| view! {{
@@ -226,6 +220,7 @@ fn AuthenticatedShell(
                             <Route path=path!("/finance") view=|| view! { <FinanceManagement /> } />
                             <Route path=path!("/equipment") view=|| view! { <EquipmentManagement /> } />
                             <Route path=path!("/analytics") view=|| view! { <AnalyticsPage /> } />
+                            <Route path=path!("/audit") view=|| view! { <AuditLogPage /> } />
                             <Route path=path!("/resources") view=|| view! { <ResourcesPage /> } />
                             <Route path=path!("/compliance") view=|| view! { <CompliancePage /> } />
                             <Route path=path!("/users") view=|| view! { <UserManagement /> } />
@@ -272,6 +267,9 @@ fn AuthenticatedShell(
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
                         <a href="/analytics"><Icon icon=LuChartBar width="20" height="20" />{nav_analytics}</a>
                     </li>
+                    <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin) { "" } else { "hidden" }>
+                        <a href="/audit"><Icon icon=LuHistory width="20" height="20" />{nav_audit}</a>
+                    </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
                         <a href="/compliance"><Icon icon=LuChartNoAxesColumn width="20" height="20" />{nav_compliance}</a>
                     </li>
@@ -286,6 +284,22 @@ fn AuthenticatedShell(
                     <li><a href="http://localhost:3001" target="_blank"><Icon icon=LuLayoutDashboard width="20" height="20" />{nav_grafana}</a></li>
                     <div class="mt-auto">
                         <div class="divider"></div>
+                        <li>
+                            <div class="flex justify-between items-center p-4">
+                                <div class="flex gap-2 text-base-content/70">
+                                    <Icon icon=ImMagicWand width="20" height="20" />
+                                    {move || if view_mode.get() == ViewMode::Full { simple_label.to_string() } else { full_label.to_string() }}
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    class="toggle toggle-primary toggle-sm"
+                                    checked=move || view_mode.get() == ViewMode::Simple
+                                    on:change=move |_| {
+                                        set_view_mode.set(if view_mode.get() == ViewMode::Full { ViewMode::Simple } else { ViewMode::Full });
+                                    }
+                                />
+                            </div>
+                        </li>
                         <li>
                             <a class="flex justify-between items-center" on:click=move |_| {
                                 set_theme.set(if theme.get() == Theme::Light { Theme::Dark } else { Theme::Light });

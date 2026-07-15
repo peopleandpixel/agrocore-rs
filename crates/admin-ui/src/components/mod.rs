@@ -1,4 +1,5 @@
 pub mod analytics;
+pub mod audit;
 pub mod compliance;
 pub mod dashboard;
 pub mod equipment;

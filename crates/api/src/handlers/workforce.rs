@@ -3,28 +3,55 @@ use crate::dto::PaginatedResponseDto;
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
-use chrono::Utc;
 use agrocore_domain::entities::order::TaskExecutionMode;
 use agrocore_domain::entities::site::GeoPoint;
-use agrocore_domain::entities::workforce::{CreateWorkerLocationDto, ReportLocationDto};
+use agrocore_domain::entities::workforce::{
+    CreateWorkerDto, CreateWorkerLocationDto, CreateWorkLogDto, ReportLocationDto, UpdateWorkerDto,
+    UpdateWorkLogDto,
+};
 use agrocore_messaging::{Event, GlobalEvent, SpatialPolygonEventKind, SpatialPresenceEvent};
+use agrocore_shared::{Pagination, SharedError};
+use chrono::{Utc};
 use std::collections::HashSet;
 use uuid::Uuid;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::resource("/workers").route(web::get().to(list_workers)))
-        .service(web::resource("/workers/logs").route(web::get().to(list_work_logs)))
-        .service(
-            web::resource("/workers/locations")
-                .route(web::get().to(get_latest_locations))
-                .route(web::post().to(report_location)),
-        );
+    cfg.service(
+        web::scope("/workforce")
+            .service(
+                web::resource("/workers")
+                    .route(web::get().to(list_workers))
+                    .route(web::post().to(create_worker)),
+            )
+            .service(
+                web::resource("/workers/{id}")
+                    .route(web::get().to(get_worker))
+                    .route(web::put().to(update_worker))
+                    .route(web::delete().to(delete_worker)),
+            )
+            .service(
+                web::resource("/logs")
+                    .route(web::get().to(list_work_logs))
+                    .route(web::post().to(create_work_log)),
+            )
+            .service(
+                web::resource("/logs/{id}")
+                    .route(web::get().to(get_work_log))
+                    .route(web::put().to(update_work_log))
+                    .route(web::delete().to(delete_work_log)),
+            )
+            .service(
+                web::resource("/locations")
+                    .route(web::get().to(get_latest_locations))
+                    .route(web::post().to(report_location)),
+            ),
+    );
 }
 
 pub async fn list_workers(
     state: web::Data<AppState>,
     auth: AuthUser,
-    query: web::Query<agrocore_shared::Pagination>,
+    query: web::Query<Pagination>,
 ) -> Result<HttpResponse, ApiError> {
     let result = state
         .db
@@ -40,10 +67,65 @@ pub async fn list_workers(
     }))
 }
 
+pub async fn create_worker(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    dto: web::Json<CreateWorkerDto>,
+) -> Result<HttpResponse, ApiError> {
+    let worker = state
+        .db
+        .worker_repo()
+        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .await?;
+    Ok(HttpResponse::Created().json(worker))
+}
+
+pub async fn get_worker(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let worker = state
+        .db
+        .worker_repo()
+        .find_by_id(auth.0.tenant_id, *id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Worker not found".into()))?;
+    Ok(HttpResponse::Ok().json(worker))
+}
+
+pub async fn update_worker(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+    dto: web::Json<UpdateWorkerDto>,
+) -> Result<HttpResponse, ApiError> {
+    let worker = state
+        .db
+        .worker_repo()
+        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Worker not found".into()))?;
+    Ok(HttpResponse::Ok().json(worker))
+}
+
+pub async fn delete_worker(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let success = state.db.worker_repo().delete(auth.0.tenant_id, *id).await?;
+    if success {
+        Ok(HttpResponse::NoContent().finish())
+    } else {
+        Err(SharedError::NotFound("Worker not found".into()).into())
+    }
+}
+
 pub async fn list_work_logs(
     state: web::Data<AppState>,
     auth: AuthUser,
-    query: web::Query<agrocore_shared::Pagination>,
+    query: web::Query<Pagination>,
 ) -> Result<HttpResponse, ApiError> {
     let result = state
         .db
@@ -57,6 +139,61 @@ pub async fn list_work_logs(
         per_page: result.per_page,
         total_pages: result.total_pages,
     }))
+}
+
+pub async fn create_work_log(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    dto: web::Json<CreateWorkLogDto>,
+) -> Result<HttpResponse, ApiError> {
+    let log = state
+        .db
+        .work_log_repo()
+        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .await?;
+    Ok(HttpResponse::Created().json(log))
+}
+
+pub async fn get_work_log(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let log = state
+        .db
+        .work_log_repo()
+        .find_by_id(auth.0.tenant_id, *id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Work log not found".into()))?;
+    Ok(HttpResponse::Ok().json(log))
+}
+
+pub async fn update_work_log(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+    dto: web::Json<UpdateWorkLogDto>,
+) -> Result<HttpResponse, ApiError> {
+    let log = state
+        .db
+        .work_log_repo()
+        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Work log not found".into()))?;
+    Ok(HttpResponse::Ok().json(log))
+}
+
+pub async fn delete_work_log(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let success = state.db.work_log_repo().delete(auth.0.tenant_id, *id).await?;
+    if success {
+        Ok(HttpResponse::NoContent().finish())
+    } else {
+        Err(SharedError::NotFound("Work log not found".into()).into())
+    }
 }
 
 pub async fn report_location(
