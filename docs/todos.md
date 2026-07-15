@@ -31,9 +31,11 @@
 
 ### 🔐 Sicherheit & Kern-Repositories
 - [x] **User Management:** Passwort-Hashing in `PgUserRepo::create` implementieren (derzeit Klartext).
+- [x] **Audit & Historie:** Umfassendes Auditing-System mit JSON-Diffs in Kern-Repositories implementiert.
+- [x] **Tenant Isolation:** Strikte Mandantentrennung auf Repository-Ebene sichergestellt.
 - [x] **Auftrags-Management (`PgOrderRepo`):**
     - [x] Sichtbarkeitslogik (Visibility Logic) in `find_by_id_visible` vervollständigen.
-    - [x] `find_my_tasks` implementieren (derzeit leere Liste).
+    - [x] `find_my_tasks` implementieren.
 - [x] **Viehwirtschaft (`PgAnimalRepo`):**
     - [x] `add_treatment` implementieren.
     - [x] `add_grazing_record` implementieren.

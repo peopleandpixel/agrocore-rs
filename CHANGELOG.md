@@ -5,18 +5,14 @@ Alle Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 ## [Unreleased]
 
 ### Added
-- Implementierung der PostgreSQL-Repositories für Finanzen (PAC-Anträge).
-- Implementierung der PostgreSQL-Repositories für Personal (Arbeitsprotokolle und Standorte).
-- Implementierung der PostgreSQL-Repositories für Ressourcen-Management (Wasserverbrauch).
-- Native PostGIS-Unterstützung für Geometriedaten (ersetzt manuelle WKT-Konvertierung).
-- Neue Geometrie-Typen `SpatialGeometry` und `GeoPoint` mit direkter `sqlx`-Anbindung.
-- `geozero` Crate zur effizienten Verarbeitung von räumlichen Daten.
-- Umfassende Indizierung für Performance-Optimierung (z.B. auf `tenant_id`, `is_active`).
-- Dynamische `updated_at` Trigger für alle Datenbanktabellen.
-- `error_mapper` zur Umwandlung von SQL-Fehlern in Domänen-Fehler.
-- Paginierung nach einheitlichem Standard über alle Repositories hinweg.
+- Umfassendes Auditing-System: Jede Erstellung, Änderung und Löschung von Kern-Entitäten (Orders, PAC-Applications, Worker) wird nun automatisch protokolliert.
+- Historien-Funktion mit Diff: Audit-Logs speichern den alten und neuen Zustand der Daten als JSON, was einen detaillierten Vergleich ermöglicht.
+- `PgAuditLogRepo`: Vollständige Implementierung für persistente Speicherung und Abfrage von Audit-Einträgen.
 
 ### Changed
+- Strikte Tenant-Isolation: Alle Datenbankabfragen validieren nun konsequent die `tenant_id`.
+- RBAC-Erweiterung: Sichtbarkeitsprüfungen (`find_by_id_visible`) in Repositories berücksichtigen nun Benutzerrollen (Admin, Manager, Worker).
+- Repository-Updates: `PgOrderRepo`, `PgPACApplicationRepo` und `PgWorkerRepo` nutzen nun das neue Auditing-System.
 - **Migration von MongoDB zu PostgreSQL abgeschlossen.**
 - Sämtliche Services (`api`, `reporting`, `weather`, `geometry`, `asset-registry`) nutzen nun PostgreSQL als primäre Datenbank.
 - Domänen-Modelle von MongoDB-spezifischen Attributen und Logiken bereinigt.

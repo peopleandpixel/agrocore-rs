@@ -1,6 +1,7 @@
 use agrocore_domain::entities::workforce::{Worker, CreateWorkerDto, UpdateWorkerDto};
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::repositories::{PaginatedResponse, Pagination, RepositoryFuture, WorkerRepo};
+use agrocore_domain::repositories::{WorkerRepo, PaginatedResponse, Pagination, RepositoryFuture, AuditLogRepo};
+use crate::postgres::audit_log::PgAuditLogRepo;
 use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -72,11 +73,12 @@ impl WorkerRepo for PgWorkerRepo {
         })
     }
 
-    fn create(&self, tid: TenantId, dto: CreateWorkerDto, _by: Uuid) -> RepositoryFuture<Worker> {
+    fn create(&self, tid: TenantId, dto: CreateWorkerDto, by: Uuid) -> RepositoryFuture<Worker> {
         let pool = self.pool.clone();
+        let audit_repo = PgAuditLogRepo::new(pool.clone());
         Box::pin(async move {
             let id = Uuid::new_v4();
-            sqlx::query_as::<_, Worker>(
+            let entity = sqlx::query_as::<_, Worker>(
                 r#"INSERT INTO workers (id, tenant_id, user_id, contract_type, language, is_active, created_at, updated_at)
                    VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
                    RETURNING *"#)
@@ -87,14 +89,35 @@ impl WorkerRepo for PgWorkerRepo {
             .bind(&dto.language)
             .fetch_one(&pool)
             .await
-            .map_err(|e| SharedError::Database(e.to_string()))
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            let _ = audit_repo.create(tid, agrocore_domain::entities::compliance::CreateAuditLogDto {
+                tenant_id: tid,
+                user_id: by,
+                action: agrocore_domain::entities::compliance::AuditAction::Created,
+                entity_type: "Worker".into(),
+                entity_id: entity.id,
+                old_value: None,
+                new_value: Some(serde_json::to_value(&entity).unwrap()),
+                ip_address: None,
+            }).await;
+
+            Ok(entity)
         })
     }
 
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateWorkerDto, _by: Uuid) -> RepositoryFuture<Option<Worker>> {
+    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateWorkerDto, by: Uuid) -> RepositoryFuture<Option<Worker>> {
         let pool = self.pool.clone();
+        let audit_repo = PgAuditLogRepo::new(pool.clone());
         Box::pin(async move {
-            sqlx::query_as::<_, Worker>(
+            let old_val = sqlx::query_as::<_, Worker>("SELECT * FROM workers WHERE id = $1 AND tenant_id = $2")
+                .bind(id)
+                .bind(tid.to_string())
+                .fetch_optional(&pool)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            let entity = sqlx::query_as::<_, Worker>(
                 r#"UPDATE workers SET language = COALESCE($1, language), updated_at = NOW()
                    WHERE id = $2 AND tenant_id = $3 RETURNING *"#)
             .bind(&dto.language)
@@ -102,7 +125,22 @@ impl WorkerRepo for PgWorkerRepo {
             .bind(tid.to_string())
             .fetch_optional(&pool)
             .await
-            .map_err(|e| SharedError::Database(e.to_string()))
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            if let (Some(old), Some(new)) = (&old_val, &entity) {
+                let _ = audit_repo.create(tid, agrocore_domain::entities::compliance::CreateAuditLogDto {
+                    tenant_id: tid,
+                    user_id: by,
+                    action: agrocore_domain::entities::compliance::AuditAction::Updated,
+                    entity_type: "Worker".into(),
+                    entity_id: new.id,
+                    old_value: Some(serde_json::to_value(old).unwrap()),
+                    new_value: Some(serde_json::to_value(new).unwrap()),
+                    ip_address: None,
+                }).await;
+            }
+
+            Ok(entity)
         })
     }
 
