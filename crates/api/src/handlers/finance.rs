@@ -86,7 +86,7 @@ pub async fn create_pac_application(
     let app = state
         .db
         .pac_application_repo()
-        .create(auth.0.tenant_id, dto.into_inner())
+        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
         .await?;
     Ok(HttpResponse::Created().json(app))
 }
@@ -164,7 +164,7 @@ pub async fn create_cost_center(
     let cc = state
         .db
         .cost_center_repo()
-        .create(auth.0.tenant_id, dto.into_inner())
+        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
         .await?;
     Ok(HttpResponse::Created().json(cc))
 }
@@ -242,7 +242,7 @@ pub async fn create_financial_record(
     let rec = state
         .db
         .financial_record_repo()
-        .create(auth.0.tenant_id, dto.into_inner())
+        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
         .await?;
     Ok(HttpResponse::Created().json(rec))
 }

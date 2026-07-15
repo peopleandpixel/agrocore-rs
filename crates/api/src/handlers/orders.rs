@@ -8,6 +8,7 @@ use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
 use agrocore_domain::entities::order::MyTask;
 use agrocore_domain::entities::workforce::CreateWorkLogDto;
+#[allow(unused_imports)]
 use agrocore_domain::repositories::WorkerTaskStatusRepository;
 use agrocore_domain::services::workflow::WorkflowService;
 use agrocore_messaging::{Event, GlobalEvent};
@@ -272,7 +273,7 @@ pub async fn complete_order(
         is_night_shift: false,
         breaks_taken: 0,
     };
-    if let Err(e) = state.db.work_log_repo().create(tenant_id, worklog).await {
+    if let Err(e) = state.db.work_log_repo().create(tenant_id, worklog, auth.0.user_id).await {
         tracing::warn!(
             "Failed to create worklog for completed order {}: {}",
             order_id,

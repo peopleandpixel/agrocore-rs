@@ -5,12 +5,16 @@ services:
       dockerfile: Dockerfile.base-build
     image: agrocore-build-base:latest
 
-  mongodb:
-    image: mongo:latest
+  postgres:
+    image: postgis/postgis:latest
     ports:
-      - "27017:27017"
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=agrocore
     volumes:
-      - mongodb_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
 
   nats:
     image: nats:latest
@@ -24,13 +28,12 @@ services:
       dockerfile: Dockerfile.api
     depends_on:
       - build-base
-      - mongodb
+      - postgres
       - nats
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=mongodb://mongodb:27017
-      - DATABASE_NAME=agrocore
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/agrocore
       - NATS_URL=nats://nats:4222
       - LISTEN_ADDR=0.0.0.0:3000
       - JWT_SECRET=dev-secret
@@ -43,10 +46,10 @@ services:
         SERVICE_NAME: agrocore-reporting-service
     depends_on:
       - build-base
-      - mongodb
+      - postgres
       - nats
     environment:
-      - MONGODB_URI=mongodb://mongodb:27017
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/agrocore
       - NATS_URL=nats://nats:4222
 
   weather-service:
@@ -57,10 +60,10 @@ services:
         SERVICE_NAME: agrocore-weather-service
     depends_on:
       - build-base
-      - mongodb
+      - postgres
       - nats
     environment:
-      - MONGODB_URI=mongodb://mongodb:27017
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/agrocore
       - NATS_URL=nats://nats:4222
 
   prometheus:
@@ -110,4 +113,4 @@ services:
       - api
 
 volumes:
-  mongodb_data:
+  postgres_data:

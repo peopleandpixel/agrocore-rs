@@ -21,9 +21,7 @@ spec:
         - containerPort: 3000
         env:
         - name: DATABASE_URL
-          value: "mongodb://mongodb-service:27017"
-        - name: DATABASE_NAME
-          value: "agrocore"
+          value: "postgres://postgres:postgres@postgres-service:5432/agrocore"
         - name: NATS_URL
           value: "nats://nats-service:4222"
         - name: LISTEN_ADDR

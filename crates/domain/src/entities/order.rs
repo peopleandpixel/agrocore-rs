@@ -5,12 +5,10 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::entities::tenant::TenantId;
-use crate::entities::{OrderStatus, OrderType};
+pub use crate::entities::{OrderStatus, OrderType};
+use crate::repositories::VisibilityAwareEntity;
 
-#[cfg(feature = "mongodb")]
 use crate::entities::user::UserRole;
-#[cfg(feature = "mongodb")]
-use mongodb::bson::{Document, doc};
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Validate)]
 pub struct WorkflowConfig {
@@ -130,30 +128,42 @@ fn last_day_of_month(year: i32, month: u32) -> u32 {
     (first_day_next_month - chrono::Duration::days(1)).day()
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
 pub struct Order {
     pub id: Uuid,
     pub tenant_id: TenantId,
     #[validate(length(min = 1, max = 200))]
     pub label: String,
+    #[sqlx(json)]
     pub order_type: OrderType,
+    #[sqlx(json)]
     pub status: OrderStatus,
+    #[sqlx(json)]
     pub site_ids: Vec<Uuid>,
+    #[sqlx(json)]
     pub assigned_worker_ids: Vec<Uuid>,
     pub planned_date: Option<DateTime<Utc>>,
     pub deadline_date: Option<DateTime<Utc>>,
     pub started_at: Option<DateTime<Utc>>,
     pub completed_at: Option<DateTime<Utc>>,
     pub last_completed_at: Option<DateTime<Utc>>,
+    #[sqlx(json)]
     pub recurrence: Option<RecurrenceRule>,
+    #[sqlx(json)]
     pub execution_policy: Option<TaskExecutionPolicy>,
+    #[sqlx(json)]
     pub automation_state: Option<TaskAutomationState>,
+    #[sqlx(json)]
     pub articles: Option<Vec<OrderArticle>>,
+    #[sqlx(json)]
     pub quantities: Option<serde_json::Value>,
     pub results: Option<String>,
+    #[sqlx(json)]
     pub weather: Option<WeatherInfo>,
+    #[sqlx(json)]
     pub custom_fields: Option<serde_json::Value>,
     pub parent_order_id: Option<Uuid>,
+    #[sqlx(json)]
     pub workflow_config: Option<WorkflowConfig>,
     pub cost_center_id: Option<Uuid>,
     pub is_active: bool,
@@ -351,6 +361,7 @@ pub enum TaskAutomationAction {
     Completed,
 }
 
+impl VisibilityAwareEntity for Order {}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct OrderArticle {

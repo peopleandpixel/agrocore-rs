@@ -6,7 +6,7 @@ use validator::Validate;
 
 use crate::entities::tenant::TenantId;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
 pub struct PlantProtectionRecord {
     pub id: Uuid,
     pub tenant_id: TenantId,
@@ -18,8 +18,8 @@ pub struct PlantProtectionRecord {
     pub total_quantity: f64,
     pub area_ha: f64,
     pub application_date: DateTime<Utc>,
-    pub pre_harvest_days: u32,
-    pub re_entry_days: u32,
+    pub pre_harvest_days: i32,
+    pub re_entry_days: i32,
     pub weather_conditions: Option<String>,
     pub applicator_license: Option<String>,
     pub created_at: DateTime<Utc>,
@@ -275,8 +275,24 @@ pub struct CreatePlantProtectionDto {
     #[validate(range(min = 0.0))]
     pub area_ha: f64,
     pub application_date: DateTime<Utc>,
-    pub pre_harvest_days: u32,
-    pub re_entry_days: u32,
+    pub pre_harvest_days: i32,
+    pub re_entry_days: i32,
+    pub weather_conditions: Option<String>,
+    pub applicator_license: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct UpdatePlantProtectionDto {
+    pub site_id: Option<Uuid>,
+    pub order_id: Option<Uuid>,
+    pub product_name: Option<String>,
+    pub active_substance: Option<String>,
+    pub dosage_per_ha: Option<f64>,
+    pub total_quantity: Option<f64>,
+    pub area_ha: Option<f64>,
+    pub application_date: Option<DateTime<Utc>>,
+    pub pre_harvest_days: Option<u32>,
+    pub re_entry_days: Option<u32>,
     pub weather_conditions: Option<String>,
     pub applicator_license: Option<String>,
 }
@@ -312,4 +328,14 @@ pub struct CreateApplicatorLicenseDto {
     pub issued_by: String,
     pub valid_from: DateTime<Utc>,
     pub valid_until: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct UpdateApplicatorLicenseDto {
+    pub license_type: Option<LicenseType>,
+    pub license_number: Option<String>,
+    pub issued_by: Option<String>,
+    pub valid_from: Option<DateTime<Utc>>,
+    pub valid_until: Option<DateTime<Utc>>,
+    pub is_active: Option<bool>,
 }

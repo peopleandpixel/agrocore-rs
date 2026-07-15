@@ -6,7 +6,7 @@ use validator::Validate;
 
 use crate::entities::tenant::TenantId;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
 pub struct User {
     pub id: Uuid,
     pub tenant_id: TenantId,
@@ -17,12 +17,14 @@ pub struct User {
     #[validate(email)]
     pub email: String,
     pub password_hash: String,
+    #[sqlx(json)]
     pub roles: Vec<UserRole>,
     pub is_active: bool,
     pub internal_cost_per_hour: Option<f64>,
     pub external_cost_per_hour: Option<f64>,
     pub color: Option<String>,
     pub language: Option<String>,
+    #[sqlx(json)]
     pub assigned_site_ids: Option<Vec<Uuid>>,
     pub last_login: Option<DateTime<Utc>>,
     pub refresh_token: Option<String>,
@@ -138,10 +140,10 @@ pub struct UpdateUserDto {
 // =============================================================================
 // VISIBILITY SECURITY: User Entity implements VisibilityAwareEntity
 // =============================================================================
+use crate::repositories::VisibilityAwareEntity;
 
-#[cfg(feature = "mongodb")]
-use mongodb::bson::{Document, doc};
 
+impl VisibilityAwareEntity for User {}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct LoginDto {

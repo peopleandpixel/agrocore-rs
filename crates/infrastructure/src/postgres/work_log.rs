@@ -1,7 +1,7 @@
 use agrocore_domain::entities::workforce::{WorkLog, CreateWorkLogDto};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::repositories::{WorkLogRepo, RepositoryFuture, PaginatedResponse, Pagination};
-use agrocore_shared::{Result, SharedError};
+use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -23,19 +23,22 @@ impl WorkLogRepo for PgWorkLogRepo {
             Ok(PaginatedResponse { data, total: total as u64, page, per_page, total_pages })
         })
     }
-    fn create(&self, tid: TenantId, dto: CreateWorkLogDto) -> RepositoryFuture<WorkLog> {
+    fn create(&self, tid: TenantId, dto: CreateWorkLogDto, _by: Uuid) -> RepositoryFuture<WorkLog> {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, WorkLog>(
                 "INSERT INTO work_logs (tenant_id, worker_id, task_id, date, hours, description) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *")
-            .bind(tid.to_string()).bind(dto.worker_id.to_string()).bind(dto.task_id.to_string()).bind(dto.date).bind(dto.hours).bind(&dto.description)
+            .bind(tid.to_string()).bind(dto.worker_id.to_string()).bind(None::<Uuid>).bind(dto.date).bind(dto.hours_worked).bind(&dto.task_description)
             .fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
         })
     }
-    fn update(&self, _tid: TenantId, _id: Uuid, _dto: agrocore_domain::entities::workforce::UpdateWorkLogDto) -> RepositoryFuture<Option<WorkLog>> {
+    fn update(&self, _tid: TenantId, _id: Uuid, _dto: agrocore_domain::entities::workforce::UpdateWorkLogDto, _by: Uuid) -> RepositoryFuture<Option<WorkLog>> {
         Box::pin(async move { Ok(None) })
     }
     fn delete(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<bool> {
         Box::pin(async move { Ok(false) })
+    }
+    fn find_by_worker(&self, _tid: TenantId, _worker_id: Uuid, _p: Pagination) -> RepositoryFuture<PaginatedResponse<agrocore_domain::entities::workforce::WorkLog>> {
+        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
     }
 }

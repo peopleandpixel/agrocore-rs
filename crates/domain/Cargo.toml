@@ -8,11 +8,11 @@ license.workspace = true
 agrocore-shared = { path = "../shared" }
 serde = { workspace = true }
 serde_json = { workspace = true }
-utoipa = { version = "5", features = ["chrono", "uuid"] }
+utoipa = { workspace = true }
 chrono = { workspace = true }
 uuid = { workspace = true }
 validator = { workspace = true }
 geo = { workspace = true }
-mongodb = { workspace = true, optional = true }
-mockall = { workspace = true, optional = true }
-sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono"] }
+mockall = { workspace = true }
+sqlx = { workspace = true }
+geozero = { workspace = true }

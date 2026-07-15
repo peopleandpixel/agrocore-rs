@@ -12,13 +12,13 @@ async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
     agrocore_shared::telemetry::init_telemetry("agrocore_asset_registry");
 
-    let mongodb_uri =
-        std::env::var("MONGODB_URI").unwrap_or_else(|_| "mongodb://localhost:27017".to_string());
+    let database_url =
+        std::env::var("DATABASE_URL").unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/agrocore".to_string());
     let nats_url =
         std::env::var("NATS_URL").unwrap_or_else(|_| "nats://localhost:4222".to_string());
     let bind_addr = std::env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:3004".to_string());
 
-    let db = Database::connect(&mongodb_uri, "agrocore").await?;
+    let db = Database::connect(&database_url).await?;
 
     println!("Asset Registry starting on {}...", bind_addr);
 

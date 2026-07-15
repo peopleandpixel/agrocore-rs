@@ -10,13 +10,13 @@ REPORTING_PORT="${REPORTING_PORT:-3002}"
 GEOMETRY_PORT="${GEOMETRY_PORT:-3003}"
 ASSET_REGISTRY_PORT="${ASSET_REGISTRY_PORT:-3004}"
 ADMIN_UI_PORT="${ADMIN_UI_PORT:-8080}"
-MONGO_PORT="${MONGO_PORT:-27017}"
+POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 NATS_PORT="${NATS_PORT:-4222}"
 NATS_MONITOR_PORT="${NATS_MONITOR_PORT:-8222}"
 DATABASE_NAME="${DATABASE_NAME:-agrocore}"
 JWT_SECRET="${JWT_SECRET:-dev-secret}"
 
-MONGODB_CONTAINER="agrocore-dev-mongodb"
+POSTGRES_CONTAINER="agrocore-dev-postgres"
 NATS_CONTAINER="agrocore-dev-nats"
 
 service_pids=()
@@ -34,7 +34,7 @@ cleanup() {
         wait "$pid" >/dev/null 2>&1 || true
     done
 
-    docker stop "$MONGODB_CONTAINER" "$NATS_CONTAINER" >/dev/null 2>&1 || true
+    docker stop "$POSTGRES_CONTAINER" "$NATS_CONTAINER" >/dev/null 2>&1 || true
 
     exit "$exit_code"
 }
@@ -71,13 +71,16 @@ start_service() {
 
 trap cleanup EXIT INT TERM
 
-docker rm -f "$MONGODB_CONTAINER" "$NATS_CONTAINER" >/dev/null 2>&1 || true
+docker rm -f "$POSTGRES_CONTAINER" "$NATS_CONTAINER" >/dev/null 2>&1 || true
 
-echo "Starting MongoDB..."
+echo "Starting PostgreSQL (PostGIS)..."
 docker run -d --rm \
-    --name "$MONGODB_CONTAINER" \
-    -p "${MONGO_PORT}:27017" \
-    mongo:latest >/dev/null
+    --name "$POSTGRES_CONTAINER" \
+    -p "${POSTGRES_PORT}:5432" \
+    -e POSTGRES_USER=postgres \
+    -e POSTGRES_PASSWORD=postgres \
+    -e POSTGRES_DB="$DATABASE_NAME" \
+    postgis/postgis:latest >/dev/null
 
 echo "Starting NATS..."
 docker run -d --rm \
@@ -86,15 +89,14 @@ docker run -d --rm \
     -p "${NATS_MONITOR_PORT}:8222" \
     nats:latest >/dev/null
 
-wait_for_port 127.0.0.1 "$MONGO_PORT" "MongoDB"
+wait_for_port 127.0.0.1 "$POSTGRES_PORT" "PostgreSQL"
 wait_for_port 127.0.0.1 "$NATS_PORT" "NATS"
 
 start_service \
     "API" \
     "$ROOT_DIR" \
     env \
-        DATABASE_URL="mongodb://127.0.0.1:${MONGO_PORT}" \
-        DATABASE_NAME="$DATABASE_NAME" \
+        DATABASE_URL="postgres://postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}" \
         LISTEN_ADDR="0.0.0.0:${API_PORT}" \
         NATS_URL="nats://127.0.0.1:${NATS_PORT}" \
         JWT_SECRET="$JWT_SECRET" \
@@ -104,7 +106,7 @@ start_service \
     "Reporting Service" \
     "$ROOT_DIR" \
     env \
-        MONGODB_URI="mongodb://127.0.0.1:${MONGO_PORT}" \
+        DATABASE_URL="postgres://postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}" \
         NATS_URL="nats://127.0.0.1:${NATS_PORT}" \
         LISTEN_ADDR="0.0.0.0:${REPORTING_PORT}" \
         cargo run -p agrocore-reporting-service
@@ -113,7 +115,7 @@ start_service \
     "Weather Service" \
     "$ROOT_DIR" \
     env \
-        MONGODB_URI="mongodb://127.0.0.1:${MONGO_PORT}" \
+        DATABASE_URL="postgres://postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}" \
         NATS_URL="nats://127.0.0.1:${NATS_PORT}" \
         LISTEN_ADDR="0.0.0.0:${WEATHER_PORT}" \
         cargo run -p agrocore-weather-service
@@ -122,7 +124,7 @@ start_service \
     "Geometry Service" \
     "$ROOT_DIR" \
     env \
-        MONGODB_URI="mongodb://127.0.0.1:${MONGO_PORT}" \
+        DATABASE_URL="postgres://postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}" \
         NATS_URL="nats://127.0.0.1:${NATS_PORT}" \
         LISTEN_ADDR="0.0.0.0:${GEOMETRY_PORT}" \
         cargo run -p agrocore-geometry-service
@@ -131,7 +133,7 @@ start_service \
     "Asset Registry" \
     "$ROOT_DIR" \
     env \
-        MONGODB_URI="mongodb://127.0.0.1:${MONGO_PORT}" \
+        DATABASE_URL="postgres://postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}" \
         NATS_URL="nats://127.0.0.1:${NATS_PORT}" \
         LISTEN_ADDR="0.0.0.0:${ASSET_REGISTRY_PORT}" \
         cargo run -p agrocore-asset-registry

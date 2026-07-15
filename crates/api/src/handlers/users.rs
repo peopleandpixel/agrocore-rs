@@ -105,7 +105,7 @@ pub async fn create_user(
     let u = state
         .db
         .user_repo()
-        .create(auth.0.tenant_id, dto.0.into())
+        .create(auth.0.tenant_id, dto.0.into(), auth.0.user_id)
         .await?;
     let event = Event::new("api".into(), GlobalEvent::UserCreated(u.clone()));
     let _ = state.messaging.publish("events.users", &event).await;
@@ -144,7 +144,7 @@ pub async fn update_user(
     let u = state
         .db
         .user_repo()
-        .update(auth.0.tenant_id, user_id, dto.0.into())
+        .update(auth.0.tenant_id, user_id, dto.0.into(), auth.0.user_id)
         .await?
         .ok_or_else(|| SharedError::NotFound("User not found".into()))?;
     let event = Event::new("api".into(), GlobalEvent::UserUpdated(u.clone()));

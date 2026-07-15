@@ -14,8 +14,6 @@ actix-web = "4"
 actix-cors = "0.7"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-mongodb = "3"
-bson = { version = "2", features = ["chrono-0_4"] }
 jsonwebtoken = { version = "10.4.0", features = ["rust_crypto"] }
 argon2 = "0.6.0-rc.8"
 rand = "0.10.1"
@@ -25,7 +23,7 @@ anyhow = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing-actix-web = "0.7"
-utoipa = { version = "5", features = ["actix_extras"] }
+utoipa = { version = "5", features = ["actix_extras", "uuid", "chrono"] }
 utoipa-swagger-ui = { version = "8", features = ["actix-web", "vendored"] }
 actix-web-prometheus = "0.1"
 chrono = { version = "0.4", features = ["serde"] }
@@ -40,4 +38,5 @@ actix-governor = "0.10"
 futures = "0.3"
 async-nats = "0.38"
 mockall = "0.13"
-sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono"] }
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono", "ipnetwork", "bigdecimal", "json"] }
+geozero = { version = "0.14", features = ["with-postgis-sqlx", "with-geo"] }

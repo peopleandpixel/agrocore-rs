@@ -1,4 +1,5 @@
 use crate::AppState;
+use uuid::Uuid;
 use crate::dto::CreateUserDto;
 use crate::error::ApiError;
 use actix_web::{HttpResponse, web};
@@ -73,7 +74,7 @@ pub async fn initial_setup(
     state
         .db
         .user_repo()
-        .create(tenant.id, admin_dto.into())
+        .create(tenant.id, admin_dto.into(), Uuid::nil())
         .await?;
     Ok(HttpResponse::Created().finish())
 }

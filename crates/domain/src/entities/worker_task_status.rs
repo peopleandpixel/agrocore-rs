@@ -30,11 +30,12 @@ impl std::fmt::Display for WorkerTaskStatusType {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct WorkerTaskStatus {
     pub task_id: Uuid,
     pub worker_id: Uuid,
     pub tenant_id: TenantId,
+    #[sqlx(json)]
     pub status: WorkerTaskStatusType,
     pub started_at: Option<DateTime<Utc>>,
     pub paused_at: Option<DateTime<Utc>>,

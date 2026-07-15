@@ -1,7 +1,8 @@
-use agrocore_domain::entities::finance::{PACApplication, CreatePACApplicationDto};
+use agrocore_domain::entities::finance::{PACApplication, CreatePACApplicationDto, UpdatePACApplicationDto};
+use agrocore_domain::entities::user::UserRole;
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::repositories::{PACApplicationRepo, RepositoryFuture, PaginatedResponse, Pagination};
-use agrocore_shared::{Result, SharedError};
+use agrocore_domain::repositories::{PACApplicationRepo, PaginatedResponse, Pagination, RepositoryFuture};
+use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -13,23 +14,28 @@ impl PACApplicationRepo for PgPACApplicationRepo {
     fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<PACApplication>> {
         Box::pin(async move { Ok(None) })
     }
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<PACApplication>> {
-        let pool = self.pool.clone();
-        let page = p.page.unwrap_or(0); let per_page = p.per_page.unwrap_or(20); let offset = page * per_page;
-        Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM pac_applications WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true)").bind(tid.to_string()).fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
-            let data: Vec<PACApplication> = sqlx::query_as("SELECT * FROM pac_applications WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true) LIMIT $2 OFFSET $3").bind(tid.to_string()).bind(per_page as i32).bind(offset as i32).fetch_all(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
-            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
-            Ok(PaginatedResponse { data, total: total as u64, page, per_page, total_pages })
-        })
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        _user_id: Uuid,
+        _roles: &[UserRole],
+    ) -> RepositoryFuture<Option<PACApplication>> {
+        self.find_by_id(tid, id)
     }
-    fn create(&self, tid: TenantId, dto: CreatePACApplicationDto) -> RepositoryFuture<PACApplication> {
-        let pool = self.pool.clone();
-        Box::pin(async move {
-            sqlx::query_as::<_, PACApplication>(
-                "INSERT INTO pac_applications (tenant_id, eco_scheme, hectares, application_date, status) VALUES ($1, $2, $3, $4, $5) RETURNING *")
-            .bind(tid.to_string()).bind(&dto.eco_scheme).bind(dto.hectares).bind(dto.application_date).bind(dto.status)
-            .fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
-        })
+    fn find_all(&self, _tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<PACApplication>> {
+        Box::pin(async move { Ok(PaginatedResponse { data: vec![], total: 0, page: p.page.unwrap_or(0), per_page: p.per_page.unwrap_or(20), total_pages: 0 }) })
+    }
+    fn create(&self, _tid: TenantId, _dto: CreatePACApplicationDto, _by: Uuid) -> RepositoryFuture<PACApplication> {
+        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+    }
+    fn update(&self, _tid: TenantId, _id: Uuid, _dto: UpdatePACApplicationDto, _by: Uuid) -> RepositoryFuture<Option<PACApplication>> {
+        Box::pin(async move { Ok(None) })
+    }
+    fn delete(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<bool> {
+        Box::pin(async move { Ok(false) })
+    }
+    fn find_by_year(&self, _tid: TenantId, _year: i32, _p: Pagination) -> RepositoryFuture<PaginatedResponse<PACApplication>> {
+        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
     }
 }

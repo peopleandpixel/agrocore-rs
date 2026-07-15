@@ -3,9 +3,10 @@ use crate::dto::PaginatedResponseDto;
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
+use chrono::Utc;
 use agrocore_domain::entities::order::TaskExecutionMode;
 use agrocore_domain::entities::site::GeoPoint;
-use agrocore_domain::entities::workforce::ReportLocationDto;
+use agrocore_domain::entities::workforce::{CreateWorkerLocationDto, ReportLocationDto};
 use agrocore_messaging::{Event, GlobalEvent, SpatialPolygonEventKind, SpatialPresenceEvent};
 use std::collections::HashSet;
 use uuid::Uuid;
@@ -75,10 +76,17 @@ pub async fn report_location(
     // Falls der User ein Worker ist, nutzen wir seine ID. Ansonsten müsste die ID im DTO sein,
     // aber laut Anforderung "Arbeiter sollen permanent ihre positionen melden können"
     // gehen wir davon aus, dass der Request vom Arbeiter selbst kommt.
+    let create_dto = CreateWorkerLocationDto {
+        worker_id: auth.0.user_id,
+        lat: location.lat,
+        lng: location.lng,
+        current_task_id: location.current_task_id,
+        timestamp: Utc::now(),
+    };
     let loc = state
         .db
         .worker_location_repo()
-        .report_location(auth.0.tenant_id, auth.0.user_id, location)
+        .create(auth.0.tenant_id, create_dto)
         .await?;
     let current_point = GeoPoint {
         lng: loc.lng,
@@ -92,14 +100,14 @@ pub async fn report_location(
     let current_objects = state
         .db
         .spatial_object_repo()
-        .query_containing_point(auth.0.tenant_id, current_point.clone(), None)
+        .find_containing_point(auth.0.tenant_id, current_point.clone(), None)
         .await
         .unwrap_or_default();
     let previous_objects = if let Some(previous_point) = previous_point {
         state
             .db
             .spatial_object_repo()
-            .query_containing_point(auth.0.tenant_id, previous_point, None)
+            .find_containing_point(auth.0.tenant_id, previous_point, None)
             .await
             .unwrap_or_default()
     } else {
@@ -278,7 +286,7 @@ pub async fn report_location(
                     if let Err(e) = state
                         .db
                         .work_log_repo()
-                        .create(auth.0.tenant_id, worklog)
+                        .create(auth.0.tenant_id, worklog, auth.0.user_id)
                         .await
                     {
                         tracing::warn!(

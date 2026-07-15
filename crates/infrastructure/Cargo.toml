@@ -7,9 +7,8 @@ license.workspace = true
 [dependencies]
 agrocore-domain = { path = "../domain" }
 agrocore-shared = { path = "../shared" }
-mongodb = { workspace = true, optional = true }
-bson = { workspace = true, optional = true }
-sqlx = { version = "0.8", features = ["postgres", "chrono", "uuid", "runtime-tokio-rustls", "json"], optional = true }
+sqlx = { workspace = true }
+geozero = { workspace = true }
 serde = { workspace = true }
 serde_json = "1.0"
 chrono = { workspace = true }
@@ -20,8 +19,7 @@ jsonwebtoken = { workspace = true }
 argon2 = { workspace = true }
 
 [features]
-default = ["postgres"]
-postgres = ["dep:sqlx"]
+default = []
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt", "macros"] }

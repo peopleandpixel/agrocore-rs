@@ -1,7 +1,7 @@
 use agrocore_domain::entities::water::WaterUsage;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::repositories::{WaterUsageRepo, RepositoryFuture, PaginatedResponse, Pagination};
-use agrocore_shared::{Result, SharedError};
+use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -23,18 +23,24 @@ impl WaterUsageRepo for PgWaterUsageRepo {
             Ok(PaginatedResponse { data, total: total as u64, page, per_page, total_pages })
         })
     }
-    fn create(&self, tid: TenantId, _dto: agrocore_domain::entities::water::CreateWaterUsageDto) -> RepositoryFuture<WaterUsage> {
+    fn create(&self, tid: TenantId, _dto: agrocore_domain::entities::water::CreateWaterUsageDto, _by: Uuid) -> RepositoryFuture<WaterUsage> {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, WaterUsage>("INSERT INTO water_usages (tenant_id, source_id, site_id, date, quantity_m3, irrigation_method) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *")
-            .bind(tid.to_string()).bind(None::<Uuid>).bind(None::<Uuid>).bind(chrono::Utc::now().date_naive()).bind(0.0).bind(&agrocore_domain::entities::water::IrrigationMethod::Drip.to_string())
+            .bind(tid.to_string()).bind(None::<Uuid>).bind(None::<Uuid>).bind(chrono::Utc::now().date_naive()).bind(0.0).bind(&serde_json::to_value(&agrocore_domain::entities::water::IrrigationMethod::Drip).unwrap())
             .fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
         })
     }
-    fn update(&self, _tid: TenantId, _id: Uuid, _dto: agrocore_domain::entities::water::UpdateWaterUsageDto) -> RepositoryFuture<Option<WaterUsage>> {
+    fn update(&self, _tid: TenantId, _id: Uuid, _dto: agrocore_domain::entities::water::UpdateWaterUsageDto, _by: Uuid) -> RepositoryFuture<Option<WaterUsage>> {
         Box::pin(async move { Ok(None) })
     }
     fn delete(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<bool> {
         Box::pin(async move { Ok(false) })
+    }
+    fn find_by_source(&self, _tid: TenantId, _source_id: Uuid, _p: Pagination) -> RepositoryFuture<PaginatedResponse<agrocore_domain::entities::water::WaterUsage>> {
+        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+    }
+    fn find_by_site(&self, _tid: TenantId, _site_id: Uuid, _p: Pagination) -> RepositoryFuture<PaginatedResponse<agrocore_domain::entities::water::WaterUsage>> {
+        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
     }
 }

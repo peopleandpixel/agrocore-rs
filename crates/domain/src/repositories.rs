@@ -1,277 +1,716 @@
 use crate::entities::tenant::TenantId;
 pub use agrocore_shared::{PaginatedResponse, Pagination, Result};
+use serde::Serialize;
 use std::future::Future;
 use std::pin::Pin;
 use uuid::Uuid;
 
 #[cfg(test)]
 use mockall::automock;
+use crate::entities::user::UserRole;
 
 pub type RepositoryFuture<T> = Pin<Box<dyn Future<Output = Result<T>> + Send>>;
 
-// User
-use crate::entities::user::{CreateUserDto, LoginDto, UpdateUserDto, User};
-// Order
-use crate::entities::order::{CreateOrderDto, MyTask, Order, UpdateOrderDto};
-// Tenant
-use crate::entities::tenant::{CreateTenantDto, Tenant, UpdateTenantDto};
-// Equipment
+pub trait VisibilityAwareEntity {}
+
+#[cfg_attr(test, automock)]
+pub trait Repository<T>: Send + Sync
+where
+    T: Serialize + Send + Sync + 'static,
+{
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<T>>;
+    fn find_all(
+        &self,
+        tid: TenantId,
+        pagination: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<T>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
 use crate::entities::equipment::{CreateEquipmentDto, Equipment, UpdateEquipmentDto};
-// Site
 use crate::entities::site::{CreateSiteDto, Site, UpdateSiteDto};
-// Animal
-use crate::entities::livestock::{Animal, CreateAnimalDto, UpdateAnimalDto, TreatmentRecord, GrazingRecord};
-// Weather
-use crate::entities::weather::{WeatherStation, CreateWeatherStationDto, WeatherData, CreateWeatherDataDto, PhenologyRecord, CreatePhenologyRecordDto};
-// Plant Protection
-use crate::entities::plant_protection::{PlantProtectionRecord, CreatePlantProtectionDto};
-// Harvest
-use crate::entities::harvest::{HarvestSeason, CreateHarvestSeasonDto, HarvestLot, CreateHarvestLotDto, UpdateHarvestLotDto, HarvestDelivery, CreateHarvestDeliveryDto, UpdateHarvestDeliveryDto, ColdChainLog, CreateColdChainLogDto};
-// Olive
-use crate::entities::olive::{OliveGrove, CreateOliveGroveDto, UpdateOliveGroveDto, OliveOilRecord, CreateOliveOilRecordDto, UpdateOliveOilRecordDto};
-// Vineyard
-use crate::entities::vineyard::{Vineyard, CreateVineyardDto, UpdateVineyardDto};
-// Water
-use crate::entities::water::{WaterSource, CreateWaterSourceDto, WaterUsage, CreateWaterUsageDto, UpdateWaterUsageDto, WaterQuota, CreateWaterQuotaDto};
-// Workforce
-use crate::entities::workforce::{Worker, CreateWorkerDto, UpdateWorkerDto, WorkerLocation, CreateWorkerLocationDto, WorkLog, CreateWorkLogDto, UpdateWorkLogDto};
-// Finance
-use crate::entities::finance::{PACApplication, CreatePACApplicationDto, CostCenter, CreateCostCenterDto, FinancialRecord, CreateFinancialRecordDto};
-// Compliance
-use crate::entities::compliance::FertilizerRecord;
-
-#[cfg_attr(test, automock)]
-pub trait UserRepository: Send + Sync {
-    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<User>>;
-    fn find_by_id_visible(&self, tid: TenantId, id: Uuid, user_id: Uuid, roles: &[crate::entities::user::UserRole]) -> RepositoryFuture<Option<User>>;
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<User>>;
-    fn find_all_visible(&self, tid: TenantId, p: Pagination, user_id: Uuid, roles: &[crate::entities::user::UserRole]) -> RepositoryFuture<PaginatedResponse<User>>;
-    fn find_by_email(&self, email: &str) -> RepositoryFuture<Option<User>>;
-    fn create(&self, tid: TenantId, dto: CreateUserDto, by: Uuid) -> RepositoryFuture<User>;
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateUserDto, by: Uuid) -> RepositoryFuture<Option<User>>;
-    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
-    fn authenticate(&self, dto: LoginDto) -> RepositoryFuture<crate::entities::user::AuthResponse>;
-    fn find_by_refresh_token(&self, refresh_token: &str) -> RepositoryFuture<Option<User>>;
-    fn invalidate_refresh_token(&self, user_id: Uuid) -> RepositoryFuture<bool>;
-}
-
-#[cfg_attr(test, automock)]
-pub trait OrderRepository: Send + Sync {
-    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Order>>;
-    fn find_by_id_visible(&self, tid: TenantId, id: Uuid, user_id: Uuid, roles: &[crate::entities::user::UserRole]) -> RepositoryFuture<Option<Order>>;
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Order>>;
-    fn find_all_visible(&self, tid: TenantId, p: Pagination, user_id: Uuid, roles: &[crate::entities::user::UserRole]) -> RepositoryFuture<PaginatedResponse<Order>>;
-    fn create(&self, tid: TenantId, dto: CreateOrderDto, by: Uuid) -> RepositoryFuture<Order>;
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateOrderDto, by: Uuid) -> RepositoryFuture<Option<Order>>;
-    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
-    fn find_my_tasks(&self, tid: TenantId, worker_id: Uuid) -> RepositoryFuture<Vec<MyTask>>;
-    fn find_assigned_to_worker(&self, tid: TenantId, worker_id: Uuid) -> RepositoryFuture<Vec<Order>>;
-}
-
-#[cfg_attr(test, automock)]
-pub trait TenantRepository: Send + Sync {
-    fn find_by_id(&self, id: Uuid) -> RepositoryFuture<Option<Tenant>>;
-    fn create(&self, dto: CreateTenantDto) -> RepositoryFuture<Tenant>;
-    fn update(&self, id: Uuid, dto: UpdateTenantDto) -> RepositoryFuture<Option<Tenant>>;
-    fn delete(&self, id: Uuid) -> RepositoryFuture<bool>;
-}
+use crate::entities::spatial::SpatialObject;
 
 #[cfg_attr(test, automock)]
 pub trait EquipmentRepository: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Equipment>>;
-    fn find_by_id_visible(&self, tid: TenantId, id: Uuid, user_id: Uuid, roles: &[crate::entities::user::UserRole]) -> RepositoryFuture<Option<Equipment>>;
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Equipment>>;
-    fn find_all_visible(&self, tid: TenantId, p: Pagination, user_id: Uuid, roles: &[crate::entities::user::UserRole]) -> RepositoryFuture<PaginatedResponse<Equipment>>;
-    fn create(&self, tid: TenantId, dto: CreateEquipmentDto, by: Uuid) -> RepositoryFuture<Equipment>;
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateEquipmentDto, by: Uuid) -> RepositoryFuture<Option<Equipment>>;
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[crate::entities::user::UserRole],
+    ) -> RepositoryFuture<Option<Equipment>>;
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<Equipment>>;
+    fn find_all_visible(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+        user_id: Uuid,
+        roles: &[crate::entities::user::UserRole],
+    ) -> RepositoryFuture<PaginatedResponse<Equipment>>;
+    fn create(
+        &self,
+        tid: TenantId,
+        dto: CreateEquipmentDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Equipment>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateEquipmentDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<Equipment>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
 #[cfg_attr(test, automock)]
 pub trait SiteRepository: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Site>>;
-    fn find_by_id_visible(&self, tid: TenantId, id: Uuid, user_id: Uuid, roles: &[crate::entities::user::UserRole]) -> RepositoryFuture<Option<Site>>;
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[crate::entities::user::UserRole],
+    ) -> RepositoryFuture<Option<Site>>;
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Site>>;
-    fn find_all_visible(&self, tid: TenantId, p: Pagination, user_id: Uuid, roles: &[crate::entities::user::UserRole]) -> RepositoryFuture<PaginatedResponse<Site>>;
+    fn find_all_visible(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+        user_id: Uuid,
+        roles: &[crate::entities::user::UserRole],
+    ) -> RepositoryFuture<PaginatedResponse<Site>>;
     fn create(&self, tid: TenantId, dto: CreateSiteDto, by: Uuid) -> RepositoryFuture<Site>;
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateSiteDto, by: Uuid) -> RepositoryFuture<Option<Site>>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateSiteDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<Site>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
 #[cfg_attr(test, automock)]
+pub trait SpatialObjectRepository: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<SpatialObject>>;
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<SpatialObject>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+    fn find_containing_point(
+        &self,
+        tid: TenantId,
+        point: crate::entities::site::GeoPoint,
+        site_id: Option<Uuid>,
+    ) -> RepositoryFuture<Vec<SpatialObject>>;
+}
+
+use crate::entities::livestock::{Animal, CreateAnimalDto, UpdateAnimalDto};
+
+#[cfg_attr(test, automock)]
 pub trait AnimalRepository: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Animal>>;
-    fn find_by_id_visible(&self, tid: TenantId, id: Uuid, user_id: Uuid, roles: &[crate::entities::user::UserRole]) -> RepositoryFuture<Option<Animal>>;
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[crate::entities::user::UserRole],
+    ) -> RepositoryFuture<Option<Animal>>;
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Animal>>;
     fn create(&self, tid: TenantId, dto: CreateAnimalDto, by: Uuid) -> RepositoryFuture<Animal>;
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateAnimalDto, by: Uuid) -> RepositoryFuture<Option<Animal>>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateAnimalDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<Animal>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
-    fn add_treatment(&self, tid: TenantId, id: Uuid, treatment: TreatmentRecord) -> RepositoryFuture<bool>;
-    fn add_grazing_record(&self, tid: TenantId, id: Uuid, record: GrazingRecord) -> RepositoryFuture<bool>;
+    fn add_treatment(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        treatment: crate::entities::livestock::TreatmentRecord,
+    ) -> RepositoryFuture<bool>;
+    fn add_grazing_record(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        record: crate::entities::livestock::GrazingRecord,
+    ) -> RepositoryFuture<bool>;
 }
+
+use crate::entities::worker_task_status::{
+    CreateWorkerTaskStatusDto, WorkerTaskStatus, WorkerTaskStatusType,
+};
+
+#[cfg_attr(test, automock)]
+pub trait WorkerTaskStatusRepository: Send + Sync {
+    fn find_by_task_and_worker(
+        &self,
+        tid: TenantId,
+        task_id: Uuid,
+        worker_id: Uuid,
+    ) -> RepositoryFuture<Option<WorkerTaskStatus>>;
+    fn find_all_for_task(
+        &self,
+        tid: TenantId,
+        task_id: Uuid,
+    ) -> RepositoryFuture<Vec<WorkerTaskStatus>>;
+    fn create(
+        &self,
+        tid: TenantId,
+        dto: CreateWorkerTaskStatusDto,
+    ) -> RepositoryFuture<WorkerTaskStatus>;
+    fn update_status(
+        &self,
+        tid: TenantId,
+        task_id: Uuid,
+        worker_id: Uuid,
+        status: WorkerTaskStatusType,
+    ) -> RepositoryFuture<Option<WorkerTaskStatus>>;
+}
+
+// --- Order Repository ---
+use crate::entities::order::{CreateOrderDto, Order, UpdateOrderDto};
+
+#[cfg_attr(test, automock)]
+pub trait OrderRepository: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Order>>;
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[crate::entities::user::UserRole],
+    ) -> RepositoryFuture<Option<Order>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Order>>;
+    fn find_all_visible(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+        user_id: Uuid,
+        roles: &[crate::entities::user::UserRole],
+    ) -> RepositoryFuture<PaginatedResponse<Order>>;
+    fn find_my_tasks(&self, tid: TenantId, user_id: Uuid) -> RepositoryFuture<Vec<Order>>;
+    fn create(&self, tid: TenantId, dto: CreateOrderDto, by: Uuid) -> RepositoryFuture<Order>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateOrderDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<Order>>;
+    fn find_assigned_to_worker(&self, tid: TenantId, worker_id: Uuid) -> RepositoryFuture<Vec<Order>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+// --- Tenant Repository ---
+use crate::entities::tenant::{CreateTenantDto, Tenant, UpdateTenantDto};
+
+#[cfg_attr(test, automock)]
+pub trait TenantRepository: Send + Sync {
+    fn find_by_id(&self, id: Uuid) -> RepositoryFuture<Option<Tenant>>;
+    fn find_all(&self, p: Pagination) -> RepositoryFuture<PaginatedResponse<Tenant>>;
+    fn create(&self, dto: CreateTenantDto) -> RepositoryFuture<Tenant>;
+    fn update(&self, id: Uuid, dto: UpdateTenantDto) -> RepositoryFuture<Option<Tenant>>;
+    fn delete(&self, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+// --- User Repository ---
+use crate::entities::user::{AuthResponse, CreateUserDto, LoginDto, UpdateUserDto, User};
+
+#[cfg_attr(test, automock)]
+pub trait UserRepository: Send + Sync {
+    fn count_all(&self) -> RepositoryFuture<i64>;
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<User>>;
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[UserRole],
+    ) -> RepositoryFuture<Option<User>>;
+    fn find_by_email(&self, email: &str) -> RepositoryFuture<Option<User>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<User>>;
+    fn find_all_visible(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+        user_id: Uuid,
+        roles: &[UserRole],
+    ) -> RepositoryFuture<PaginatedResponse<User>>;
+    fn create(&self, tid: TenantId, dto: CreateUserDto, by: Uuid) -> RepositoryFuture<User>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateUserDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<User>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+    fn authenticate(&self, dto: LoginDto) -> RepositoryFuture<AuthResponse>;
+    fn find_by_refresh_token(&self, refresh_token: &str) -> RepositoryFuture<Option<User>>;
+    fn invalidate_refresh_token(&self, user_id: Uuid) -> RepositoryFuture<bool>;
+    fn update_refresh_token(
+        &self,
+        user_id: Uuid,
+        token: &str,
+        expires_at: chrono::DateTime<chrono::Utc>,
+    ) -> RepositoryFuture<bool>;
+}
+
+// --- Plant Protection Repository ---
+use crate::entities::plant_protection::{
+    CreatePlantProtectionDto, PlantProtectionRecord, UpdatePlantProtectionDto,
+    ApplicatorLicense, CreateApplicatorLicenseDto, UpdateApplicatorLicenseDto,
+};
+
+#[cfg_attr(test, automock)]
+pub trait PlantProtectionRecordRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<PlantProtectionRecord>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<PlantProtectionRecord>>;
+    fn create(&self, tid: TenantId, dto: CreatePlantProtectionDto, by: Uuid) -> RepositoryFuture<PlantProtectionRecord>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdatePlantProtectionDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<PlantProtectionRecord>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+    fn find_applicator_license_by_user(&self, tid: TenantId, user_id: Uuid) -> RepositoryFuture<Option<ApplicatorLicense>>;
+    fn create_applicator_license(&self, tid: TenantId, dto: CreateApplicatorLicenseDto) -> RepositoryFuture<ApplicatorLicense>;
+    fn update_applicator_license(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateApplicatorLicenseDto,
+    ) -> RepositoryFuture<Option<ApplicatorLicense>>;
+}
+
+// --- Compliance Repository ---
+use crate::entities::compliance::{ComplianceChecklist, CreateComplianceChecklistDto, UpdateComplianceChecklistDto, AuditLog, CreateAuditLogDto};
+
+#[cfg_attr(test, automock)]
+pub trait ComplianceChecklistRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<ComplianceChecklist>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<ComplianceChecklist>>;
+    fn create(&self, tid: TenantId, dto: CreateComplianceChecklistDto, by: Uuid) -> RepositoryFuture<ComplianceChecklist>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateComplianceChecklistDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<ComplianceChecklist>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+#[cfg_attr(test, automock)]
+pub trait AuditLogRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<AuditLog>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<AuditLog>>;
+    fn create(&self, tid: TenantId, dto: CreateAuditLogDto) -> RepositoryFuture<AuditLog>;
+}
+
+// --- Weather Repository ---
+use crate::entities::weather::{WeatherStation, WeatherData, PhenologyRecord, CreateWeatherStationDto, CreateWeatherDataDto, CreatePhenologyRecordDto, UpdateWeatherStationDto, UpdateWeatherDataDto, UpdatePhenologyRecordDto};
 
 #[cfg_attr(test, automock)]
 pub trait WeatherStationRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WeatherStation>>;
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<WeatherStation>>;
-    fn create(&self, tid: TenantId, dto: CreateWeatherStationDto) -> RepositoryFuture<WeatherStation>;
-    fn update(&self, tid: TenantId, id: Uuid, _dto: serde_json::Value) -> RepositoryFuture<Option<WeatherStation>>;
+    fn create(&self, tid: TenantId, dto: CreateWeatherStationDto, by: Uuid) -> RepositoryFuture<WeatherStation>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateWeatherStationDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<WeatherStation>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
 #[cfg_attr(test, automock)]
 pub trait WeatherDataRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<WeatherData>>;
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WeatherData>>;
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<WeatherData>>;
+    fn find_by_station(&self, tid: TenantId, station_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<WeatherData>>;
     fn create(&self, tid: TenantId, dto: CreateWeatherDataDto) -> RepositoryFuture<WeatherData>;
-}
-
-#[cfg_attr(test, automock)]
-pub trait PhenologyRecordRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<PhenologyRecord>>;
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<PhenologyRecord>>;
-    fn create(&self, tid: TenantId, dto: CreatePhenologyRecordDto) -> RepositoryFuture<PhenologyRecord>;
-}
-
-#[cfg_attr(test, automock)]
-pub trait PlantProtectionRecordRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<PlantProtectionRecord>>;
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<PlantProtectionRecord>>;
-    fn create(&self, tid: TenantId, dto: CreatePlantProtectionDto) -> RepositoryFuture<PlantProtectionRecord>;
-    fn update(&self, tid: TenantId, id: Uuid, _dto: serde_json::Value) -> RepositoryFuture<Option<PlantProtectionRecord>>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateWeatherDataDto,
+    ) -> RepositoryFuture<Option<WeatherData>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
 #[cfg_attr(test, automock)]
-pub trait FertilizerRecordRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<FertilizerRecord>>;
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<FertilizerRecord>>;
-    fn create(&self, tid: TenantId, dto: crate::entities::compliance::CreateFertilizerRecordDto) -> RepositoryFuture<FertilizerRecord>;
+pub trait PhenologyRecordRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<PhenologyRecord>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<PhenologyRecord>>;
+    fn find_by_site(&self, tid: TenantId, site_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<PhenologyRecord>>;
+    fn create(&self, tid: TenantId, dto: CreatePhenologyRecordDto, by: Uuid) -> RepositoryFuture<PhenologyRecord>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdatePhenologyRecordDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<PhenologyRecord>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
+
+// --- Harvest Repository ---
+use crate::entities::harvest::{HarvestSeason, HarvestLot, HarvestDelivery, ColdChainLog, CreateHarvestSeasonDto, CreateHarvestLotDto, CreateHarvestDeliveryDto, CreateColdChainLogDto, UpdateHarvestSeasonDto, UpdateHarvestLotDto, UpdateHarvestDeliveryDto, UpdateColdChainLogDto};
 
 #[cfg_attr(test, automock)]
 pub trait HarvestSeasonRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<HarvestSeason>>;
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<HarvestSeason>>;
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<HarvestSeason>>;
-    fn create(&self, tid: TenantId, dto: CreateHarvestSeasonDto) -> RepositoryFuture<HarvestSeason>;
+    fn create(&self, tid: TenantId, dto: CreateHarvestSeasonDto, by: Uuid) -> RepositoryFuture<HarvestSeason>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateHarvestSeasonDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<HarvestSeason>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
 #[cfg_attr(test, automock)]
 pub trait HarvestLotRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<HarvestLot>>;
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<HarvestLot>>;
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<HarvestLot>>;
-    fn create(&self, tid: TenantId, dto: CreateHarvestLotDto) -> RepositoryFuture<HarvestLot>;
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateHarvestLotDto) -> RepositoryFuture<Option<HarvestLot>>;
+    fn find_by_season(&self, tid: TenantId, season_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<HarvestLot>>;
+    fn create(&self, tid: TenantId, dto: CreateHarvestLotDto, by: Uuid) -> RepositoryFuture<HarvestLot>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateHarvestLotDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<HarvestLot>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
 #[cfg_attr(test, automock)]
 pub trait HarvestDeliveryRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<HarvestDelivery>>;
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<HarvestDelivery>>;
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<HarvestDelivery>>;
-    fn create(&self, tid: TenantId, dto: CreateHarvestDeliveryDto) -> RepositoryFuture<HarvestDelivery>;
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateHarvestDeliveryDto) -> RepositoryFuture<Option<HarvestDelivery>>;
+    fn find_by_lot(&self, tid: TenantId, lot_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<HarvestDelivery>>;
+    fn create(&self, tid: TenantId, dto: CreateHarvestDeliveryDto, by: Uuid) -> RepositoryFuture<HarvestDelivery>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateHarvestDeliveryDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<HarvestDelivery>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
 #[cfg_attr(test, automock)]
+pub trait ColdChainLogRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<ColdChainLog>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<ColdChainLog>>;
+    fn find_by_lot(&self, tid: TenantId, lot_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<ColdChainLog>>;
+    fn create(&self, tid: TenantId, dto: CreateColdChainLogDto) -> RepositoryFuture<ColdChainLog>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateColdChainLogDto,
+    ) -> RepositoryFuture<Option<ColdChainLog>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+// --- Olive Repository ---
+use crate::entities::olive::{OliveGrove, OliveOilRecord, CreateOliveGroveDto, CreateOliveOilRecordDto, UpdateOliveGroveDto, UpdateOliveOilRecordDto};
+
+#[cfg_attr(test, automock)]
 pub trait OliveGroveRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<OliveGrove>>;
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<OliveGrove>>;
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<OliveGrove>>;
-    fn create(&self, tid: TenantId, dto: CreateOliveGroveDto) -> RepositoryFuture<OliveGrove>;
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateOliveGroveDto) -> RepositoryFuture<Option<OliveGrove>>;
+    fn find_by_site(&self, tid: TenantId, site_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<OliveGrove>>;
+    fn create(&self, tid: TenantId, dto: CreateOliveGroveDto, by: Uuid) -> RepositoryFuture<OliveGrove>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateOliveGroveDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<OliveGrove>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
 #[cfg_attr(test, automock)]
 pub trait OliveOilRecordRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<OliveOilRecord>>;
-    fn create(&self, tid: TenantId, dto: CreateOliveOilRecordDto) -> RepositoryFuture<OliveOilRecord>;
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateOliveOilRecordDto) -> RepositoryFuture<Option<OliveOilRecord>>;
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<OliveOilRecord>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<OliveOilRecord>>;
+    fn find_by_grove(&self, tid: TenantId, grove_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<OliveOilRecord>>;
+    fn create(&self, tid: TenantId, dto: CreateOliveOilRecordDto, by: Uuid) -> RepositoryFuture<OliveOilRecord>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateOliveOilRecordDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<OliveOilRecord>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
+// --- Water Repository ---
+use crate::entities::water::{WaterSource, WaterUsage, WaterQuota, CreateWaterSourceDto, CreateWaterUsageDto, CreateWaterQuotaDto, UpdateWaterSourceDto, UpdateWaterUsageDto, UpdateWaterQuotaDto};
+
 #[cfg_attr(test, automock)]
-pub trait VineyardRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<Vineyard>>;
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Vineyard>>;
-    fn create(&self, tid: TenantId, dto: CreateVineyardDto) -> RepositoryFuture<Vineyard>;
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateVineyardDto) -> RepositoryFuture<Option<Vineyard>>;
+pub trait WaterSourceRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WaterSource>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<WaterSource>>;
+    fn find_by_site(&self, tid: TenantId, site_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<WaterSource>>;
+    fn create(&self, tid: TenantId, dto: CreateWaterSourceDto, by: Uuid) -> RepositoryFuture<WaterSource>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateWaterSourceDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<WaterSource>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
 #[cfg_attr(test, automock)]
-pub trait WaterSourceRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<WaterSource>>;
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<WaterSource>>;
-    fn create(&self, tid: TenantId, dto: CreateWaterSourceDto) -> RepositoryFuture<WaterSource>;
-}
-
-#[cfg_attr(test, automock)]
 pub trait WaterUsageRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<WaterUsage>>;
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WaterUsage>>;
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<WaterUsage>>;
-    fn create(&self, tid: TenantId, dto: CreateWaterUsageDto) -> RepositoryFuture<WaterUsage>;
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateWaterUsageDto) -> RepositoryFuture<Option<WaterUsage>>;
+    fn find_by_source(&self, tid: TenantId, source_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<WaterUsage>>;
+    fn find_by_site(&self, tid: TenantId, site_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<WaterUsage>>;
+    fn create(&self, tid: TenantId, dto: CreateWaterUsageDto, by: Uuid) -> RepositoryFuture<WaterUsage>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateWaterUsageDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<WaterUsage>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
 #[cfg_attr(test, automock)]
 pub trait WaterQuotaRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<WaterQuota>>;
-    fn find_all(
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WaterQuota>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<WaterQuota>>;
+    fn find_by_source(&self, tid: TenantId, source_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<WaterQuota>>;
+    fn create(&self, tid: TenantId, dto: CreateWaterQuotaDto, by: Uuid) -> RepositoryFuture<WaterQuota>;
+    fn update(
         &self,
         tid: TenantId,
-        p: Pagination,
-    ) -> RepositoryFuture<PaginatedResponse<WaterQuota>>;
-    fn create(&self, tid: TenantId, dto: CreateWaterQuotaDto) -> RepositoryFuture<WaterQuota>;
-}
-
-#[cfg_attr(test, automock)]
-pub trait WorkerRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<Worker>>;
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Worker>>;
-    fn create(&self, tid: TenantId, dto: CreateWorkerDto) -> RepositoryFuture<Worker>;
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateWorkerDto) -> RepositoryFuture<Option<Worker>>;
+        id: Uuid,
+        dto: UpdateWaterQuotaDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<WaterQuota>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
+// --- Worker Repository ---
+use crate::entities::workforce::{Worker, WorkerLocation, WorkLog, CreateWorkerDto, UpdateWorkerDto, CreateWorkerLocationDto, CreateWorkLogDto, UpdateWorkLogDto};
+
 #[cfg_attr(test, automock)]
-pub trait WorkLogRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<WorkLog>>;
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<WorkLog>>;
-    fn create(&self, tid: TenantId, dto: CreateWorkLogDto) -> RepositoryFuture<WorkLog>;
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateWorkLogDto) -> RepositoryFuture<Option<WorkLog>>;
+pub trait WorkerRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Worker>>;
+    fn find_by_user_id(&self, tid: TenantId, user_id: Uuid) -> RepositoryFuture<Option<Worker>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Worker>>;
+    fn create(&self, tid: TenantId, dto: CreateWorkerDto, by: Uuid) -> RepositoryFuture<Worker>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateWorkerDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<Worker>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
 #[cfg_attr(test, automock)]
 pub trait WorkerLocationRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<WorkerLocation>>;
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WorkerLocation>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<WorkerLocation>>;
+    fn find_latest_by_worker(&self, tid: TenantId, worker_id: Uuid) -> RepositoryFuture<Option<WorkerLocation>>;
+    fn get_latest_locations(&self, tid: TenantId) -> RepositoryFuture<Vec<WorkerLocation>>;
     fn create(&self, tid: TenantId, dto: CreateWorkerLocationDto) -> RepositoryFuture<WorkerLocation>;
 }
 
 #[cfg_attr(test, automock)]
+pub trait WorkLogRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WorkLog>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<WorkLog>>;
+    fn find_by_worker(&self, tid: TenantId, worker_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<WorkLog>>;
+    fn create(&self, tid: TenantId, dto: CreateWorkLogDto, by: Uuid) -> RepositoryFuture<WorkLog>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateWorkLogDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<WorkLog>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+// --- Fertilizer Record Repository ---
+use crate::entities::fertilizer::{FertilizerRecord, CreateFertilizerRecordDto, UpdateFertilizerRecordDto};
+
+#[cfg_attr(test, automock)]
+pub trait FertilizerRecordRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<FertilizerRecord>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<FertilizerRecord>>;
+    fn find_by_site(&self, tid: TenantId, site_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<FertilizerRecord>>;
+    fn create(&self, tid: TenantId, dto: CreateFertilizerRecordDto, by: Uuid) -> RepositoryFuture<FertilizerRecord>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateFertilizerRecordDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<FertilizerRecord>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+// --- Finance Repository ---
+use crate::entities::finance::{PACApplication, CostCenter, FinancialRecord, CreatePACApplicationDto, UpdatePACApplicationDto, CreateCostCenterDto, UpdateCostCenterDto, CreateFinancialRecordDto, UpdateFinancialRecordDto};
+
+#[cfg_attr(test, automock)]
 pub trait PACApplicationRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<PACApplication>>;
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<PACApplication>>;
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[UserRole],
+    ) -> RepositoryFuture<Option<PACApplication>>;
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<PACApplication>>;
-    fn create(&self, tid: TenantId, dto: CreatePACApplicationDto) -> RepositoryFuture<PACApplication>;
+    fn find_by_year(&self, tid: TenantId, year: i32, p: Pagination) -> RepositoryFuture<PaginatedResponse<PACApplication>>;
+    fn create(&self, tid: TenantId, dto: CreatePACApplicationDto, by: Uuid) -> RepositoryFuture<PACApplication>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdatePACApplicationDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<PACApplication>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
 #[cfg_attr(test, automock)]
 pub trait CostCenterRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<CostCenter>>;
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<CostCenter>>;
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[UserRole],
+    ) -> RepositoryFuture<Option<CostCenter>>;
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<CostCenter>>;
-    fn create(&self, tid: TenantId, dto: CreateCostCenterDto) -> RepositoryFuture<CostCenter>;
+    fn create(&self, tid: TenantId, dto: CreateCostCenterDto, by: Uuid) -> RepositoryFuture<CostCenter>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateCostCenterDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<CostCenter>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
 #[cfg_attr(test, automock)]
 pub trait FinancialRecordRepo: Send + Sync {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<FinancialRecord>>;
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<FinancialRecord>>;
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[UserRole],
+    ) -> RepositoryFuture<Option<FinancialRecord>>;
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<FinancialRecord>>;
-    fn create(&self, tid: TenantId, dto: CreateFinancialRecordDto) -> RepositoryFuture<FinancialRecord>;
+    fn find_by_cost_center(&self, tid: TenantId, cost_center_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<FinancialRecord>>;
+    fn create(&self, tid: TenantId, dto: CreateFinancialRecordDto, by: Uuid) -> RepositoryFuture<FinancialRecord>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateFinancialRecordDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<FinancialRecord>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+// --- Vineyard Repository ---
+use crate::entities::vineyard::{Vineyard, KelterDelivery, CreateVineyardDto, UpdateVineyardDto, CreateKelterDeliveryDto, UpdateKelterDeliveryDto};
+
+#[cfg_attr(test, automock)]
+pub trait VineyardRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Vineyard>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Vineyard>>;
+    fn find_by_site(&self, tid: TenantId, site_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<Vineyard>>;
+    fn create(&self, tid: TenantId, dto: CreateVineyardDto, by: Uuid) -> RepositoryFuture<Vineyard>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateVineyardDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<Vineyard>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
 #[cfg_attr(test, automock)]
-pub trait ColdChainLogRepo: Send + Sync {
-    fn create(&self, tid: TenantId, dto: CreateColdChainLogDto) -> RepositoryFuture<ColdChainLog>;
+pub trait KelterDeliveryRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<KelterDelivery>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<KelterDelivery>>;
+    fn find_by_vineyard(&self, tid: TenantId, vineyard_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<KelterDelivery>>;
+    fn create(&self, tid: TenantId, dto: CreateKelterDeliveryDto, by: Uuid) -> RepositoryFuture<KelterDelivery>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateKelterDeliveryDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<KelterDelivery>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+// --- Task Data Repository ---
+use crate::entities::task::{TaskData, CreateTaskDataDto, UpdateTaskDataDto};
+
+#[cfg_attr(test, automock)]
+pub trait TaskDataRepository: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<TaskData>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<TaskData>>;
+    fn find_by_task(&self, tid: TenantId, task_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<TaskData>>;
+    fn find_by_worker(&self, tid: TenantId, worker_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<TaskData>>;
+    fn create(&self, tid: TenantId, dto: CreateTaskDataDto, by: Uuid) -> RepositoryFuture<TaskData>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateTaskDataDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<TaskData>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }

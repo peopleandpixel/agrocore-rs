@@ -10,7 +10,7 @@ async fn main() -> std::io::Result<()> {
     let bind_addr = std::env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:3000".into());
 
     tracing::info!("Connecting to PostgreSQL at {}", database_url);
-    let db = agrocore_infrastructure::postgres::PostgresDb::connect(&database_url)
+    let db = agrocore_infrastructure::PostgresDb::connect(&database_url)
         .await
         .map_err(|e| std::io::Error::other(e.to_string()))?;
 

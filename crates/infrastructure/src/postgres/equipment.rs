@@ -2,14 +2,14 @@ use agrocore_domain::entities::equipment::{CreateEquipmentDto, Equipment, Update
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::UserRole;
 use agrocore_domain::repositories::{PaginatedResponse, Pagination, RepositoryFuture, EquipmentRepository};
-use agrocore_shared::{Result, SharedError};
+use agrocore_shared::SharedError;
 use chrono::Utc;
 use sqlx::PgPool;
 use std::future::Future;
 use std::pin::Pin;
 use uuid::Uuid;
 
-type Fut<T> = Pin<Box<dyn Future<Output = Result<T>> + Send>>;
+type Fut<T> = Pin<Box<dyn Future<Output = agrocore_shared::Result<T>> + Send>>;
 
 #[derive(Clone)]
 pub struct PgEquipmentRepo {
@@ -26,39 +26,36 @@ impl EquipmentRepository for PgEquipmentRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Equipment>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            let row = sqlx::query_as::<_, (Equipment,)>("SELECT row_to_json(equipment) FROM equipment WHERE id = $1 AND tenant_id = $2")
+            sqlx::query_as::<_, Equipment>("SELECT * FROM equipment WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
                 .bind(tid.to_string())
                 .fetch_optional(&pool)
                 .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
-
-            Ok(row.map(|(e,)| e))
+                .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 
     fn find_by_id_visible(&self, tid: TenantId, id: Uuid, user_id: Uuid, roles: &[UserRole]) -> RepositoryFuture<Option<Equipment>> {
         let pool = self.pool.clone();
+        let roles_vec = roles.to_vec();
         Box::pin(async move {
-            let can_see_all = roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager);
+            let can_see_all = roles_vec.contains(&UserRole::Admin) || roles_vec.contains(&UserRole::Manager);
             
             if can_see_all {
-                let row = sqlx::query_as::<_, (Equipment,)>("SELECT row_to_json(equipment) FROM equipment WHERE id = $1 AND tenant_id = $2")
+                sqlx::query_as::<_, Equipment>("SELECT * FROM equipment WHERE id = $1 AND tenant_id = $2")
                     .bind(id)
                     .bind(tid.to_string())
                     .fetch_optional(&pool)
                     .await
-                    .map_err(|e| SharedError::Database(e.to_string()))?;
-                Ok(row.map(|(e,)| e))
+                    .map_err(|e| SharedError::Database(e.to_string()))
             } else {
-                let row = sqlx::query_as::<_, (Equipment,)>("SELECT row_to_json(equipment) FROM equipment WHERE id = $1 AND tenant_id = $2 AND assigned_to = $3")
+                sqlx::query_as::<_, Equipment>("SELECT * FROM equipment WHERE id = $1 AND tenant_id = $2 AND assigned_to = $3")
                     .bind(id)
                     .bind(tid.to_string())
                     .bind(user_id)
                     .fetch_optional(&pool)
                     .await
-                    .map_err(|e| SharedError::Database(e.to_string()))?;
-                Ok(row.map(|(e,)| e))
+                    .map_err(|e| SharedError::Database(e.to_string()))
             }
         })
     }
@@ -97,14 +94,15 @@ impl EquipmentRepository for PgEquipmentRepo {
         })
     }
 
-    fn find_all_visible(&self, tid: TenantId, p: Pagination, user_id: Uuid, roles: &[UserRole]) -> RepositoryFuture<PaginatedResponse<Equipment>> {
+    fn find_all_visible(&self, tid: TenantId, p: Pagination, _user_id: Uuid, roles: &[UserRole]) -> RepositoryFuture<PaginatedResponse<Equipment>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
+        let roles_vec = roles.to_vec();
 
         Box::pin(async move {
-            let can_see_all = roles.contains(&UserRole::Admin) || roles.contains(&UserRole::Manager);
+            let can_see_all = roles_vec.contains(&UserRole::Admin) || roles_vec.contains(&UserRole::Manager);
             
             if can_see_all {
                 let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM equipment WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true)")
@@ -163,12 +161,12 @@ impl EquipmentRepository for PgEquipmentRepo {
         Box::pin(async move {
             let now = Utc::now();
             let id = Uuid::new_v4();
-            let equipment_type = dto.equipment_type.map(|t| serde_json::to_string(&t).unwrap_or_else(|_| "{}".to_string()));
-            let maintenance_intervals = dto.maintenance_intervals.map(|m| serde_json::to_string(&m).unwrap_or_else(|_| "{}".to_string()));
+            let equipment_type = serde_json::to_string(&dto.equipment_type).unwrap_or_else(|_| "{}".to_string());
+            let maintenance_intervals = dto.maintenance_intervals.map(|m| serde_json::to_string(&m).unwrap_or_else(|_| "[]".to_string()));
 
             let equipment = sqlx::query_as::<_, Equipment>(
-                r#"INSERT INTO equipment (id, tenant_id, label, code, equipment_type, in_usage, maintenance_intervals, created_at, updated_at)
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                r#"INSERT INTO equipment (id, tenant_id, label, code, equipment_type, maintenance_intervals, created_at, updated_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                    RETURNING *"#
             )
             .bind(id)
@@ -176,7 +174,6 @@ impl EquipmentRepository for PgEquipmentRepo {
             .bind(&dto.label)
             .bind(&dto.code)
             .bind(equipment_type)
-            .bind(dto.in_usage.unwrap_or(false))
             .bind(maintenance_intervals)
             .bind(now)
             .bind(now)

@@ -1,40 +1,55 @@
-use agrocore_domain::entities::harvest::{HarvestLot, CreateHarvestLotDto};
+use agrocore_domain::entities::harvest::{HarvestLot, CreateHarvestLotDto, UpdateHarvestLotDto};
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::repositories::{HarvestLotRepo, RepositoryFuture, PaginatedResponse, Pagination};
-use agrocore_shared::{Result, SharedError};
+use agrocore_domain::repositories::{HarvestLotRepo, PaginatedResponse, Pagination, RepositoryFuture};
+use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
+type Fut<T> = RepositoryFuture<T>;
+
 #[derive(Clone)]
-pub struct PgHarvestLotRepo { pool: PgPool }
-impl PgHarvestLotRepo { pub fn new(pool: PgPool) -> Self { Self { pool } } }
+pub struct PgHarvestLotRepo {
+    pool: PgPool,
+}
+
+impl PgHarvestLotRepo {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+}
 
 impl HarvestLotRepo for PgHarvestLotRepo {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<HarvestLot>> {
-        Box::pin(async move { Ok(None) })
-    }
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<HarvestLot>> {
-        let pool = self.pool.clone();
-        let page = p.page.unwrap_or(0); let per_page = p.per_page.unwrap_or(20); let offset = page * per_page;
+    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> Fut<Option<HarvestLot>> {
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM harvest_lots WHERE tenant_id = $1::uuid").bind(tid.to_string()).fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
-            let data: Vec<HarvestLot> = sqlx::query_as("SELECT * FROM harvest_lots WHERE tenant_id = $1::uuid ORDER BY created_at DESC LIMIT $2 OFFSET $3").bind(tid.to_string()).bind(per_page as i32).bind(offset as i32).fetch_all(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
-            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
-            Ok(PaginatedResponse { data, total: total as u64, page, per_page, total_pages })
+            Ok(None) // TODO
         })
     }
-    fn create(&self, tid: TenantId, dto: CreateHarvestLotDto) -> RepositoryFuture<HarvestLot> {
-        let pool = self.pool.clone();
+
+    fn find_all(&self, _tid: TenantId, p: Pagination) -> Fut<PaginatedResponse<HarvestLot>> {
+        let page = p.page.unwrap_or(0);
+        let per_page = p.per_page.unwrap_or(20);
         Box::pin(async move {
-            sqlx::query_as::<_, HarvestLot>("INSERT INTO harvest_lots (tenant_id, site_id, season_id, label, harvested_at, yield_kg) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *")
-            .bind(tid.to_string()).bind(dto.site_id.to_string()).bind(dto.season_id.to_string()).bind(&dto.label).bind(dto.harvested_at).bind(dto.yield_kg)
-            .fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
+            Ok(PaginatedResponse { data: vec![], total: 0, page, per_page, total_pages: 0 })
         })
     }
-    fn update(&self, tid: TenantId, id: Uuid, _dto: agrocore_domain::entities::harvest::UpdateHarvestLotDto) -> RepositoryFuture<Option<HarvestLot>> {
+
+    fn find_by_season(&self, _tid: TenantId, _season_id: Uuid, p: Pagination) -> Fut<PaginatedResponse<HarvestLot>> {
+        let page = p.page.unwrap_or(0);
+        let per_page = p.per_page.unwrap_or(20);
+        Box::pin(async move {
+            Ok(PaginatedResponse { data: vec![], total: 0, page, per_page, total_pages: 0 })
+        })
+    }
+
+    fn create(&self, _tid: TenantId, _dto: CreateHarvestLotDto, _by: Uuid) -> Fut<HarvestLot> {
+        Box::pin(async move { Err(SharedError::Internal("TODO".into())) })
+    }
+
+    fn update(&self, _tid: TenantId, _id: Uuid, _dto: UpdateHarvestLotDto, _by: Uuid) -> Fut<Option<HarvestLot>> {
         Box::pin(async move { Ok(None) })
     }
-    fn delete(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<bool> {
+
+    fn delete(&self, _tid: TenantId, _id: Uuid) -> Fut<bool> {
         Box::pin(async move { Ok(false) })
     }
 }

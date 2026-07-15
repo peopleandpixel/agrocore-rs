@@ -36,7 +36,7 @@ AgroCore is designed for teams that need to record, check, and later evaluate op
 - Rust 2024
 - Actix Web for the API
 - Leptos for the Admin UI
-- MongoDB for persistence
+- PostgreSQL / PostGIS for persistence
 - NATS for messaging
 - Docker for local infrastructure
 

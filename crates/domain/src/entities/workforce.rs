@@ -6,14 +6,17 @@ use validator::Validate;
 
 use crate::entities::tenant::TenantId;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
 pub struct Worker {
     pub id: Uuid,
     pub tenant_id: TenantId,
     pub user_id: Uuid,
+    #[sqlx(json)]
     pub contract_type: ContractType,
     pub language: Option<String>,
+    #[sqlx(json)]
     pub skills: Vec<String>,
+    #[sqlx(json)]
     pub certifications: Vec<Certification>,
     pub emergency_contact: Option<String>,
     pub nationality: Option<String>,
@@ -42,7 +45,7 @@ pub struct Certification {
     pub certificate_number: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
 pub struct WorkLog {
     pub id: Uuid,
     pub tenant_id: TenantId,
@@ -54,7 +57,7 @@ pub struct WorkLog {
     pub task_description: String,
     pub site_id: Option<Uuid>,
     pub is_night_shift: bool,
-    pub breaks_taken: u32,
+    pub breaks_taken: i32,
     pub created_at: DateTime<Utc>,
 }
 
@@ -69,13 +72,23 @@ pub struct CreateWorkerDto {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct UpdateWorkerDto {
+    pub contract_type: Option<ContractType>,
+    pub language: Option<String>,
+    pub skills: Option<Vec<String>>,
+    pub certifications: Option<Vec<Certification>>,
+    pub emergency_contact: Option<String>,
+    pub nationality: Option<String>,
+    pub is_active: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
 pub struct WorkerLocation {
     pub id: Uuid,
     pub tenant_id: TenantId,
     pub worker_id: Uuid,
     pub lat: f64,
     pub lng: f64,
-    pub current_task_id: Option<Uuid>,
     pub timestamp: DateTime<Utc>,
 }
 
@@ -84,6 +97,15 @@ pub struct ReportLocationDto {
     pub lat: f64,
     pub lng: f64,
     pub current_task_id: Option<Uuid>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct CreateWorkerLocationDto {
+    pub worker_id: Uuid,
+    pub lat: f64,
+    pub lng: f64,
+    pub current_task_id: Option<Uuid>,
+    pub timestamp: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
@@ -99,31 +121,17 @@ pub struct CreateWorkLogDto {
     pub task_description: String,
     pub site_id: Option<Uuid>,
     pub is_night_shift: bool,
-    pub breaks_taken: u32,
+    pub breaks_taken: i32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct UpdateWorkerDto {
-    pub contract_type: Option<ContractType>,
-    pub language: Option<String>,
-    pub skills: Option<Vec<String>>,
-    pub emergency_contact: Option<String>,
-    pub nationality: Option<String>,
-    pub is_active: Option<bool>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct UpdateWorkLogDto {
+    pub date: Option<DateTime<Utc>>,
     pub hours_worked: Option<f64>,
     pub overtime_hours: Option<f64>,
     pub rest_period_hours: Option<f64>,
     pub task_description: Option<String>,
     pub site_id: Option<Uuid>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
-pub struct CreateWorkerLocationDto {
-    pub lat: f64,
-    pub lng: f64,
-    pub current_task_id: Option<Uuid>,
+    pub is_night_shift: Option<bool>,
+    pub breaks_taken: Option<u32>,
 }

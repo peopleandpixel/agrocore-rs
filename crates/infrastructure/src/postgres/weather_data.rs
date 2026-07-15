@@ -1,9 +1,7 @@
 use agrocore_domain::entities::weather::{CreateWeatherDataDto, WeatherData};
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::entities::user::UserRole;
 use agrocore_domain::repositories::{WeatherDataRepo, RepositoryFuture};
-use agrocore_shared::{PaginatedResponse, Pagination};;
-use agrocore_shared::{Result, SharedError};
+use agrocore_shared::{PaginatedResponse, Pagination, SharedError};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -16,22 +14,34 @@ impl PgWeatherDataRepo {
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
+}
 
-    pub fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WeatherData>> {
+impl WeatherDataRepo for PgWeatherDataRepo {
+    fn create(&self, tid: TenantId, dto: CreateWeatherDataDto) -> RepositoryFuture<WeatherData> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, (WeatherData,)>("SELECT row_to_json(weather_data) FROM weather_data WHERE id = $1 AND tenant_id = $2")
+            let id = Uuid::new_v4();
+            sqlx::query_as::<_, WeatherData>(
+                r#"INSERT INTO weather_data (id, station_id, tenant_id, timestamp, temperature_c, humidity_percent, precipitation_mm, wind_speed_kmh, wind_direction_deg, solar_radiation_wm2, pressure_hpa)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                   RETURNING *"#)
+            .bind(id).bind(dto.station_id.to_string()).bind(tid.to_string()).bind(dto.timestamp).bind(dto.temperature_c).bind(dto.humidity_percent).bind(dto.precipitation_mm).bind(dto.wind_speed_kmh).bind(dto.wind_direction_deg).bind(dto.solar_radiation_wm2).bind(dto.pressure_hpa)
+            .fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
+        })
+    }
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WeatherData>> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query_as::<_, WeatherData>("SELECT * FROM weather_data WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
                 .bind(tid.to_string())
                 .fetch_optional(&pool)
                 .await
-                .map_err(|e| SharedError::Database(e.to_string()))?
-                .map(|(w,)| w)
-                .ok_or_else(|| SharedError::NotFound.to_error())
+                .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 
-    pub fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<WeatherData>> {
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<WeatherData>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
@@ -64,7 +74,7 @@ impl PgWeatherDataRepo {
         })
     }
 
-    pub fn find_by_station(&self, tid: TenantId, station_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<WeatherData>> {
+    fn find_by_station(&self, tid: TenantId, station_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<WeatherData>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
@@ -99,29 +109,11 @@ impl PgWeatherDataRepo {
         })
     }
 
-    pub fn create(&self, tid: TenantId, dto: CreateWeatherDataDto) -> RepositoryFuture<WeatherData> {
-        let pool = self.pool.clone();
-        Box::pin(async move {
-            let id = Uuid::new_v4();
+    fn update(&self, _tid: TenantId, _id: Uuid, _dto: agrocore_domain::entities::weather::UpdateWeatherDataDto) -> RepositoryFuture<Option<WeatherData>> {
+        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+    }
 
-            sqlx::query_as::<_, WeatherData>(
-                r#"INSERT INTO weather_data (id, station_id, tenant_id, timestamp, temperature_c, humidity_percent, precipitation_mm, wind_speed_kmh, wind_direction_deg, solar_radiation_wm2, pressure_hpa)
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-                   RETURNING *"#)
-            .bind(id)
-            .bind(dto.station_id.to_string())
-            .bind(tid.to_string())
-            .bind(dto.timestamp)
-            .bind(dto.temperature_c)
-            .bind(dto.humidity_percent)
-            .bind(dto.precipitation_mm)
-            .bind(dto.wind_speed_kmh)
-            .bind(dto.wind_direction_deg)
-            .bind(dto.solar_radiation_wm2)
-            .bind(dto.pressure_hpa)
-            .fetch_one(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))
-        })
+    fn delete(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<bool> {
+        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
     }
 }

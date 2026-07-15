@@ -6,8 +6,8 @@ set -e
 echo "=== AGROCORE RS - LOCAL DEVELOPMENT ==="
 
 # Start Docker Services
-echo "Starting MongoDB, NATS, Grafana, API..."
-docker-compose up -d mongodb nats prometheus grafana api
+echo "Starting PostgreSQL, NATS, Grafana, API..."
+docker-compose up -d postgres nats prometheus grafana api
 
 # Wait for API
 echo "Waiting for API to be ready..."

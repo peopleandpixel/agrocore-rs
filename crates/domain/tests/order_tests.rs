@@ -1,8 +1,8 @@
 use agrocore_domain::entities::order::{
-    CreateOrderDto, Order, OrderStatus, OrderType, RecurrenceCadence, RecurrenceRule, TaskAutomationAction,
-    TaskAutomationState, TaskExecutionMode, TaskExecutionPolicy,
+    Order, OrderStatus, OrderType, RecurrenceCadence, RecurrenceRule, TaskAutomationAction,
+    TaskExecutionMode, TaskExecutionPolicy,
 };
-use chrono::{TimeZone, Utc};
+use chrono::{Datelike, TimeZone, Utc};
 use uuid::Uuid;
 
 fn sample_order(status: OrderStatus) -> Order {

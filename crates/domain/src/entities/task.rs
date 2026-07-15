@@ -4,13 +4,11 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::entities::tenant::TenantId;
-#[cfg(feature = "mongodb")]
 use crate::entities::user::UserRole;
+use crate::repositories::VisibilityAwareEntity;
 
-#[cfg(feature = "mongodb")]
-use mongodb::bson::{Document, doc};
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
 pub struct TaskData {
     pub id: Uuid,
     pub tenant_id: TenantId,
@@ -23,14 +21,17 @@ pub struct TaskData {
     pub ended_at: Option<DateTime<Utc>>,
     pub paused_at: Option<DateTime<Utc>>,
     pub resume_at: Option<DateTime<Utc>>,
-    pub duration_minutes: Option<u32>,
+    pub duration_minutes: Option<i32>,
     pub machine_id: Option<Uuid>,
     pub machine_hours: Option<f64>,
     pub cost_center_id: Option<Uuid>,
     pub area_covered: Option<f64>,
+    #[sqlx(json)]
     pub materials_used: Option<Vec<MaterialUsage>>,
     pub observations: Option<String>,
+    #[sqlx(json)]
     pub gps_track: Option<Vec<GpsPoint>>,
+    #[sqlx(json)]
     pub photo_urls: Option<Vec<String>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -39,6 +40,7 @@ pub struct TaskData {
 // =============================================================================
 // VISIBILITY SECURITY: TaskData Entity implements VisibilityAwareEntity
 // =============================================================================
+impl VisibilityAwareEntity for TaskData {}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct MaterialUsage {
@@ -66,7 +68,27 @@ pub struct CreateTaskDataDto {
     pub ended_at: Option<DateTime<Utc>>,
     pub paused_at: Option<DateTime<Utc>>,
     pub resume_at: Option<DateTime<Utc>>,
-    pub duration_minutes: Option<u32>,
+    pub duration_minutes: Option<i32>,
+    pub machine_id: Option<Uuid>,
+    pub machine_hours: Option<f64>,
+    pub cost_center_id: Option<Uuid>,
+    pub area_covered: Option<f64>,
+    pub materials_used: Option<Vec<MaterialUsage>>,
+    pub observations: Option<String>,
+    pub gps_track: Option<Vec<GpsPoint>>,
+    pub photo_urls: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, Default)]
+pub struct UpdateTaskDataDto {
+    pub order_id: Option<Uuid>,
+    pub site_id: Option<Uuid>,
+    pub description: Option<String>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub ended_at: Option<DateTime<Utc>>,
+    pub paused_at: Option<DateTime<Utc>>,
+    pub resume_at: Option<DateTime<Utc>>,
+    pub duration_minutes: Option<i32>,
     pub machine_id: Option<Uuid>,
     pub machine_hours: Option<f64>,
     pub cost_center_id: Option<Uuid>,

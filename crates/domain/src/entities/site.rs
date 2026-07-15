@@ -5,11 +5,9 @@ use validator::Validate;
 
 use crate::entities::tenant::TenantId;
 use crate::entities::{BbchStage, CropType, SiteType};
+use crate::repositories::VisibilityAwareEntity;
 
-#[cfg(feature = "mongodb")]
 use crate::entities::user::UserRole;
-#[cfg(feature = "mongodb")]
-use mongodb::bson::{Document, doc};
 use utoipa::ToSchema;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
@@ -30,6 +28,43 @@ pub struct GeoPoint {
     pub lng: f64,
     #[validate(range(min = -90.0, max = 90.0))]
     pub lat: f64,
+}
+
+impl sqlx::Type<sqlx::Postgres> for GeoPoint {
+    fn type_info() -> sqlx::postgres::PgTypeInfo {
+        sqlx::postgres::PgTypeInfo::with_name("geometry")
+    }
+}
+
+impl sqlx::postgres::PgHasArrayType for GeoPoint {
+    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
+        sqlx::postgres::PgTypeInfo::with_name("_geometry")
+    }
+}
+
+impl<'r> sqlx::Decode<'r, sqlx::Postgres> for GeoPoint {
+    fn decode(
+        value: sqlx::postgres::PgValueRef<'r>,
+    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        let wkb_wrapper: geozero::wkb::Decode<geo::Geometry<f64>> = sqlx::Decode::decode(value)?;
+        let geometry = wkb_wrapper.geometry.ok_or("Failed to decode geometry")?;
+        if let geo::Geometry::Point(p) = geometry {
+            Ok(GeoPoint { lng: p.x(), lat: p.y() })
+        } else {
+            Err("Expected Point geometry".into())
+        }
+    }
+}
+
+impl<'q> sqlx::Encode<'q, sqlx::Postgres> for GeoPoint {
+    fn encode_by_ref(
+        &self,
+        buf: &mut sqlx::postgres::PgArgumentBuffer,
+    ) -> Result<sqlx::encode::IsNull, Box<dyn std::error::Error + Send + Sync>> {
+        let geometry: geo::Geometry<f64> = geo::Geometry::Point(geo::Point::new(self.lng, self.lat));
+        let wkb_wrapper = geozero::wkb::Encode(geometry);
+        <geozero::wkb::Encode<geo::Geometry<f64>> as sqlx::Encode<'q, sqlx::Postgres>>::encode_by_ref(&wkb_wrapper, buf)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
@@ -64,22 +99,27 @@ pub struct SiteProperty {
     pub group: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
 pub struct Site {
     pub id: Uuid,
     pub tenant_id: TenantId,
     pub business_id: Option<Uuid>,
     #[validate(length(min = 1, max = 200))]
     pub label: String,
+    #[sqlx(json)]
     pub site_type: SiteType,
+    #[sqlx(json)]
     pub crop_type: CropType,
     pub variety: Option<String>,
     #[validate(range(min = 0.0))]
     pub area: f64,
     #[validate(range(min = 0.0))]
     pub gross_area: Option<f64>,
+    #[sqlx(json)]
     pub plots: Vec<Plot>,
+    #[sqlx(json)]
     pub row_config: Option<RowConfig>,
+    #[sqlx(json)]
     pub bbch_stage: Option<BbchStage>,
     pub planted_date: Option<DateTime<Utc>>,
     pub cleared_date: Option<DateTime<Utc>>,
@@ -89,11 +129,16 @@ pub struct Site {
     pub altitude: Option<f64>,
     pub organic: Option<bool>,
     pub organic_eligible: Option<bool>,
+    #[sqlx(skip)]
     pub center: Option<GeoPoint>,
+    #[sqlx(json)]
     pub sigpac_data: Option<SigpacData>,
     pub regepac_id: Option<String>,
+    #[sqlx(skip)]
     pub boundary: Option<Vec<GeoPoint>>,
+    #[sqlx(json)]
     pub properties: Option<Vec<SiteProperty>>,
+    #[sqlx(json)]
     pub custom_fields: Option<serde_json::Value>,
     pub note1: Option<String>,
     pub note2: Option<String>,
@@ -129,6 +174,7 @@ impl Site {
     }
 }
 
+impl VisibilityAwareEntity for Site {}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct CreateSiteDto {

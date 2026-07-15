@@ -1,6 +1,6 @@
 [Unit]
 Description=AgroCore Reporting Service
-After=network.target mongodb.service nats-server.service
+After=network.target postgresql.service nats-server.service
 
 [Service]
 Type=simple

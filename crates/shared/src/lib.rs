@@ -89,7 +89,8 @@ pub struct PaginatedResponse<T: Serialize> {
     pub total_pages: u64,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, ToSchema, sqlx::Type)]
+#[sqlx(transparent)]
 pub struct TenantId(pub Uuid);
 
 impl TenantId {
@@ -141,6 +142,10 @@ pub enum SharedError {
     Conflict(String),
     #[error("Database error: {0}")]
     Database(String),
+    #[error("Already exists: {0}")]
+    AlreadyExists(String),
+    #[error("Reference error: {0}")]
+    ReferenceError(String),
     #[error("Internal error: {0}")]
     Internal(String),
 }

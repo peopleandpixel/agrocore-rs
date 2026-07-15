@@ -1,18 +1,18 @@
 use chrono::{DateTime, Utc};
 use geo::prelude::{Contains, Intersects};
-use geo::{Coord, Distance, Haversine, LineString, Point, Polygon};
+use geo::{Coord, Distance, Haversine, LineString, Point, Polygon, MultiPolygon};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
+use geozero::wkb;
+use sqlx::postgres::PgTypeInfo;
 
 use crate::entities::site::GeoPoint;
 use crate::entities::tenant::TenantId;
+use crate::repositories::VisibilityAwareEntity;
 
-#[cfg(feature = "mongodb")]
 use crate::entities::user::UserRole;
-#[cfg(feature = "mongodb")]
-use mongodb::bson::{Document, doc};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum SpatialObjectType {
@@ -70,6 +70,80 @@ pub enum SpatialGeometry {
     },
 }
 
+impl sqlx::Type<sqlx::Postgres> for SpatialGeometry {
+    fn type_info() -> PgTypeInfo {
+        PgTypeInfo::with_name("geometry")
+    }
+}
+
+impl sqlx::postgres::PgHasArrayType for SpatialGeometry {
+    fn array_type_info() -> PgTypeInfo {
+        PgTypeInfo::with_name("_geometry")
+    }
+}
+
+impl<'r> sqlx::Decode<'r, sqlx::Postgres> for SpatialGeometry {
+    fn decode(
+        value: sqlx::postgres::PgValueRef<'r>,
+    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        let wkb_wrapper: wkb::Decode<geo::Geometry<f64>> = sqlx::Decode::decode(value)?;
+        let geometry = wkb_wrapper.geometry.ok_or("Failed to decode geometry")?;
+        
+        match geometry {
+            geo::Geometry::Point(p) => Ok(SpatialGeometry::Point {
+                point: GeoPoint { lng: p.x(), lat: p.y() },
+            }),
+            geo::Geometry::LineString(ls) => Ok(SpatialGeometry::LineString {
+                points: ls.0.into_iter().map(|c| GeoPoint { lng: c.x, lat: c.y }).collect(),
+            }),
+            geo::Geometry::Polygon(poly) => {
+                let exterior = poly.exterior().0.iter().map(|c| GeoPoint { lng: c.x, lat: c.y }).collect();
+                let holes = poly.interiors().iter().map(|ls| ls.0.iter().map(|c| GeoPoint { lng: c.x, lat: c.y }).collect()).collect();
+                Ok(SpatialGeometry::Polygon { exterior, holes })
+            },
+            geo::Geometry::MultiPolygon(mp) => {
+                let polygons = mp.0.into_iter().map(|poly| {
+                    let exterior = poly.exterior().0.iter().map(|c| GeoPoint { lng: c.x, lat: c.y }).collect();
+                    let holes = poly.interiors().iter().map(|ls| ls.0.iter().map(|c| GeoPoint { lng: c.x, lat: c.y }).collect()).collect();
+                    PolygonGeometry { exterior, holes }
+                }).collect();
+                Ok(SpatialGeometry::MultiPolygon { polygons })
+            },
+            _ => Err("Unsupported geometry type".into()),
+        }
+    }
+}
+
+impl<'q> sqlx::Encode<'q, sqlx::Postgres> for SpatialGeometry {
+    fn encode_by_ref(
+        &self,
+        buf: &mut sqlx::postgres::PgArgumentBuffer,
+    ) -> Result<sqlx::encode::IsNull, Box<dyn std::error::Error + Send + Sync>> {
+        let geometry: geo::Geometry<f64> = match self {
+            SpatialGeometry::Point { point } => geo::Geometry::Point(Point::new(point.lng, point.lat)),
+            SpatialGeometry::LineString { points } => {
+                geo::Geometry::LineString(LineString::from(points.iter().map(|p| (p.lng, p.lat)).collect::<Vec<_>>()))
+            },
+            SpatialGeometry::Polygon { exterior, holes } => {
+                let ext_ls = LineString::from(exterior.iter().map(|p| (p.lng, p.lat)).collect::<Vec<_>>());
+                let int_ls = holes.iter().map(|h| LineString::from(h.iter().map(|p| (p.lng, p.lat)).collect::<Vec<_>>())).collect();
+                geo::Geometry::Polygon(Polygon::new(ext_ls, int_ls))
+            },
+            SpatialGeometry::MultiPolygon { polygons } => {
+                let polys = polygons.iter().map(|p| {
+                    let ext_ls = LineString::from(p.exterior.iter().map(|p| (p.lng, p.lat)).collect::<Vec<_>>());
+                    let int_ls = p.holes.iter().map(|h| LineString::from(h.iter().map(|p| (p.lng, p.lat)).collect::<Vec<_>>())).collect();
+                    Polygon::new(ext_ls, int_ls)
+                }).collect();
+                geo::Geometry::MultiPolygon(MultiPolygon::new(polys))
+            }
+        };
+        
+        let wkb_wrapper = wkb::Encode(geometry);
+        <wkb::Encode<geo::Geometry<f64>> as sqlx::Encode<'q, sqlx::Postgres>>::encode_by_ref(&wkb_wrapper, buf)
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct SpatialProperty {
     pub key: String,
@@ -77,7 +151,7 @@ pub struct SpatialProperty {
     pub group: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
 pub struct SpatialObject {
     pub id: Uuid,
     pub tenant_id: TenantId,
@@ -85,13 +159,16 @@ pub struct SpatialObject {
     pub parent_id: Option<Uuid>,
     #[validate(length(min = 1, max = 200))]
     pub label: String,
+    #[sqlx(json)]
     pub object_type: SpatialObjectType,
     pub geometry: SpatialGeometry,
     #[validate(range(min = 0.0))]
     pub area: Option<f64>,
     #[validate(range(min = 0.0))]
     pub buffer_meters: Option<f64>,
+    #[sqlx(json)]
     pub properties: Option<Vec<SpatialProperty>>,
+    #[sqlx(json)]
     pub custom_fields: Option<serde_json::Value>,
     pub note: Option<String>,
     pub is_active: bool,
@@ -102,6 +179,7 @@ pub struct SpatialObject {
     pub updated_by: Option<Uuid>,
 }
 
+impl VisibilityAwareEntity for SpatialObject {}
 
 impl SpatialObject {
     pub fn contains_point(&self, point: &GeoPoint) -> bool {
@@ -207,10 +285,10 @@ fn to_closed_linestring(points: &[GeoPoint]) -> LineString<f64> {
         })
         .collect();
 
-    if let (Some(first), Some(last)) = (coords.first().copied(), coords.last().copied())
-        && first != last
-    {
-        coords.push(first);
+    let first = coords.first().copied();
+    let last = coords.last().copied();
+    if first == last && first.is_some() {
+        coords.push(first.unwrap());
     }
 
     LineString::from(coords)

@@ -61,11 +61,10 @@ pub async fn get_task(
 ) -> Result<HttpResponse, ApiError> {
     let task_id = *path;
     tracing::info!("Getting task {} for tenant: {}", task_id, auth.0.tenant_id);
-    let roles = auth.roles();
     let task = state
         .db
         .task_data_repo()
-        .find_by_id_visible(auth.0.tenant_id, task_id, auth.0.user_id, &roles)
+        .find_by_id(auth.0.tenant_id, task_id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Task not found".into()))?;
     Ok(HttpResponse::Ok().json(TaskDataDto::from(task)))
@@ -97,7 +96,7 @@ pub async fn create_task(
     let task = state
         .db
         .task_data_repo()
-        .create(auth.0.tenant_id, auth.0.user_id, dto.0.into())
+        .create(auth.0.tenant_id, dto.0.into(), auth.0.user_id)
         .await?;
     Ok(HttpResponse::Created().json(TaskDataDto::from(task)))
 }
@@ -129,7 +128,7 @@ pub async fn update_task(
     let task = state
         .db
         .task_data_repo()
-        .update(auth.0.tenant_id, task_id, dto.0.into())
+        .update(auth.0.tenant_id, task_id, dto.0.into(), auth.0.user_id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Task not found".into()))?;
     Ok(HttpResponse::Ok().json(TaskDataDto::from(task)))

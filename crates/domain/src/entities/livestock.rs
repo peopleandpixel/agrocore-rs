@@ -1,13 +1,12 @@
 use crate::entities::tenant::TenantId;
-
+use crate::entities::user::UserRole;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, sqlx::Type)]
-#[sqlx(rename = "animal_species", rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum AnimalSpecies {
     #[serde(rename = "cattle")]
     Cattle,
@@ -21,13 +20,11 @@ pub enum AnimalSpecies {
     Poultry,
     #[serde(rename = "horse")]
     Horse,
-    #[sqlx(rename = "other")]
     #[serde(rename = "other")]
     Other(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, sqlx::Type)]
-#[sqlx(rename = "animal_status", rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum AnimalStatus {
     #[serde(rename = "active")]
     Active,
@@ -39,23 +36,27 @@ pub enum AnimalStatus {
     Quarantine,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema, sqlx::FromRow)]
 pub struct Animal {
     pub id: Uuid,
     #[schema(value_type = String)]
     pub tenant_id: TenantId,
+    #[sqlx(json)]
     pub species: AnimalSpecies,
     pub breed: Option<String>,
     #[validate(length(min = 1))]
-    pub identifier: String,
+    pub identifier: String, // Ohrmarke, Name, etc.
     pub birth_date: Option<DateTime<Utc>>,
     pub gender: Option<String>,
+    #[sqlx(json)]
     pub status: AnimalStatus,
-    pub current_site_id: Option<Uuid>,
+    pub current_site_id: Option<Uuid>, // Aktuelle Weide/Stall
     pub group_id: Option<Uuid>,
     pub weight_kg: Option<f64>,
     pub last_weight_date: Option<DateTime<Utc>>,
+    #[sqlx(json)]
     pub treatments: Vec<TreatmentRecord>,
+    #[sqlx(json)]
     pub grazing_history: Vec<GrazingRecord>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -65,11 +66,11 @@ pub struct Animal {
 pub struct TreatmentRecord {
     pub id: Uuid,
     pub date: DateTime<Utc>,
-    pub treatment_type: String,
+    pub treatment_type: String, // Impfung, Entwurmung, etc.
     pub medication: Option<String>,
     pub dosage: Option<String>,
     pub veterinarian: Option<String>,
-    pub withdrawal_days: Option<u32>,
+    pub withdrawal_days: Option<u32>, // Wartezeit
     pub notes: Option<String>,
 }
 
@@ -101,3 +102,11 @@ pub struct UpdateAnimalDto {
     pub group_id: Option<Uuid>,
     pub weight_kg: Option<f64>,
 }
+
+// =============================================================================
+// VISIBILITY SECURITY: Animal Entity implements VisibilityAwareEntity
+// =============================================================================
+use crate::repositories::VisibilityAwareEntity;
+
+
+impl VisibilityAwareEntity for Animal {}

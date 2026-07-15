@@ -88,6 +88,14 @@ pub struct CreateHarvestSeasonDto {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct UpdateHarvestSeasonDto {
+    pub label: Option<String>,
+    pub start_date: Option<DateTime<Utc>>,
+    pub end_date: Option<DateTime<Utc>>,
+    pub is_active: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct CreateHarvestLotDto {
     pub season_id: Uuid,
     #[validate(length(min = 1))]
@@ -96,6 +104,17 @@ pub struct CreateHarvestLotDto {
     pub crop_type: String,
     pub variety: Option<String>,
     pub quality_target: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct UpdateHarvestLotDto {
+    pub lot_number: Option<String>,
+    pub site_ids: Option<Vec<Uuid>>,
+    pub crop_type: Option<String>,
+    pub variety: Option<String>,
+    pub quality_target: Option<String>,
+    pub total_weight_kg: Option<f64>,
+    pub status: Option<LotStatus>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
@@ -113,6 +132,19 @@ pub struct CreateHarvestDeliveryDto {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct UpdateHarvestDeliveryDto {
+    pub lot_id: Option<Uuid>,
+    pub delivery_date: Option<DateTime<Utc>>,
+    pub gross_weight_kg: Option<f64>,
+    pub net_weight_kg: Option<f64>,
+    pub tare_weight_kg: Option<f64>,
+    pub carrier_name: Option<String>,
+    pub vehicle_id: Option<String>,
+    pub quality_notes: Option<String>,
+    pub temperature_at_delivery: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct CreateColdChainLogDto {
     pub lot_id: Uuid,
     pub sensor_id: String,
@@ -122,16 +154,12 @@ pub struct CreateColdChainLogDto {
     pub location: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct UpdateHarvestLotDto {
-    pub lot_number: Option<String>,
-    pub variety: Option<String>,
-    pub quality_target: Option<String>,
-    pub yield_kg: Option<f64>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct UpdateHarvestDeliveryDto {
-    pub quality_notes: Option<String>,
-    pub temperature_at_delivery: Option<f64>,
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct UpdateColdChainLogDto {
+    pub lot_id: Option<Uuid>,
+    pub sensor_id: Option<String>,
+    pub recorded_at: Option<DateTime<Utc>>,
+    pub temperature_c: Option<f64>,
+    pub humidity_pct: Option<f64>,
+    pub location: Option<String>,
 }

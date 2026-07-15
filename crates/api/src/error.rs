@@ -34,6 +34,8 @@ impl ApiError {
             SharedError::Unauthorized(_) => "unauthorized",
             SharedError::Forbidden(_) => "forbidden",
             SharedError::Conflict(_) => "conflict",
+            SharedError::AlreadyExists(_) => "already_exists",
+            SharedError::ReferenceError(_) => "reference_error",
             SharedError::Database(_) | SharedError::Internal(_) => "internal",
         }
     }
@@ -47,6 +49,8 @@ impl ResponseError for ApiError {
             SharedError::Unauthorized(_) => StatusCode::UNAUTHORIZED,
             SharedError::Forbidden(_) => StatusCode::FORBIDDEN,
             SharedError::Conflict(_) => StatusCode::CONFLICT,
+            SharedError::AlreadyExists(_) => StatusCode::CONFLICT,
+            SharedError::ReferenceError(_) => StatusCode::BAD_REQUEST,
             SharedError::Database(_) | SharedError::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
             }

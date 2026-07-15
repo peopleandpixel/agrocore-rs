@@ -18,8 +18,8 @@ spec:
       - name: reporting
         image: agrocore-reporting:latest
         env:
-        - name: MONGODB_URI
-          value: "mongodb://mongodb-service:27017"
+        - name: DATABASE_URL
+          value: "postgres://postgres:postgres@postgres-service:5432/agrocore"
         - name: NATS_URL
           value: "nats://nats-service:4222"
         # Health checks for NATS workers are trickier without a sidecar or http endpoint.
@@ -45,7 +45,7 @@ spec:
       - name: weather
         image: agrocore-weather:latest
         env:
-        - name: MONGODB_URI
-          value: "mongodb://mongodb-service:27017"
+        - name: DATABASE_URL
+          value: "postgres://postgres:postgres@postgres-service:5432/agrocore"
         - name: NATS_URL
           value: "nats://nats-service:4222"

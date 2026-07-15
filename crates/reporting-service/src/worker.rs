@@ -96,7 +96,18 @@ pub async fn start_audit_worker(
         match event.payload {
             GlobalEvent::AuditLogCreated(audit_log) => {
                 info!("Received audit log event: {:?}", audit_log.id);
-                if let Err(e) = db.audit_log_repo().create_log(audit_log).await {
+                let tid = audit_log.tenant_id;
+                let dto = agrocore_domain::entities::compliance::CreateAuditLogDto {
+                    tenant_id: audit_log.tenant_id,
+                    user_id: audit_log.user_id,
+                    action: audit_log.action,
+                    entity_type: audit_log.entity_type,
+                    entity_id: audit_log.entity_id,
+                    old_value: audit_log.old_value,
+                    new_value: audit_log.new_value,
+                    ip_address: audit_log.ip_address,
+                };
+                if let Err(e) = db.audit_log_repo().create(tid, dto).await {
                     error!("Failed to save audit log to DB: {}", e);
                 }
             }

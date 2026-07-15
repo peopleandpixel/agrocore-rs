@@ -1,26 +1,26 @@
-use agrocore_domain::entities::workforce::{Worker, CreateWorkerDto, UpdateWorkerDto};
+use agrocore_domain::entities::compliance::{ComplianceChecklist, CreateComplianceChecklistDto, UpdateComplianceChecklistDto};
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::repositories::{PaginatedResponse, Pagination, RepositoryFuture, WorkerRepo};
+use agrocore_domain::repositories::{ComplianceChecklistRepo, PaginatedResponse, Pagination, RepositoryFuture};
 use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
 #[derive(Clone)]
-pub struct PgWorkerRepo {
+pub struct PgComplianceChecklistRepo {
     pool: PgPool,
 }
 
-impl PgWorkerRepo {
+impl PgComplianceChecklistRepo {
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
 
-impl WorkerRepo for PgWorkerRepo {
-    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Worker>> {
+impl ComplianceChecklistRepo for PgComplianceChecklistRepo {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<ComplianceChecklist>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, Worker>("SELECT * FROM workers WHERE id = $1 AND tenant_id = $2 AND is_active = true")
+            sqlx::query_as::<_, ComplianceChecklist>("SELECT * FROM compliance_checklists WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
                 .bind(tid.to_string())
                 .fetch_optional(&pool)
@@ -29,32 +29,20 @@ impl WorkerRepo for PgWorkerRepo {
         })
     }
 
-    fn find_by_user_id(&self, tid: TenantId, user_id: Uuid) -> RepositoryFuture<Option<Worker>> {
-        let pool = self.pool.clone();
-        Box::pin(async move {
-            sqlx::query_as::<_, Worker>("SELECT * FROM workers WHERE user_id = $1 AND tenant_id = $2 AND is_active = true")
-                .bind(user_id)
-                .bind(tid.to_string())
-                .fetch_optional(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))
-        })
-    }
-
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Worker>> {
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<ComplianceChecklist>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM workers WHERE tenant_id = $1::uuid AND is_active = true")
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM compliance_checklists WHERE tenant_id = $1::uuid")
                 .bind(tid.to_string())
                 .fetch_one(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<Worker> = sqlx::query_as("SELECT * FROM workers WHERE tenant_id = $1::uuid AND is_active = true LIMIT $2 OFFSET $3")
+            let data: Vec<ComplianceChecklist> = sqlx::query_as("SELECT * FROM compliance_checklists WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3")
                 .bind(tid.to_string())
                 .bind(per_page as i32)
                 .bind(offset as i32)
@@ -62,42 +50,46 @@ impl WorkerRepo for PgWorkerRepo {
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
+            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
+            
             Ok(PaginatedResponse {
                 data,
                 total: total as u64,
                 page,
                 per_page,
-                total_pages: ((total as f64 / per_page as f64).ceil() as u64),
+                total_pages,
             })
         })
     }
 
-    fn create(&self, tid: TenantId, dto: CreateWorkerDto, _by: Uuid) -> RepositoryFuture<Worker> {
+    fn create(&self, tid: TenantId, dto: CreateComplianceChecklistDto, _by: Uuid) -> RepositoryFuture<ComplianceChecklist> {
         let pool = self.pool.clone();
         Box::pin(async move {
             let id = Uuid::new_v4();
-            sqlx::query_as::<_, Worker>(
-                r#"INSERT INTO workers (id, tenant_id, user_id, contract_type, language, is_active, created_at, updated_at)
-                   VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
+            sqlx::query_as::<_, ComplianceChecklist>(
+                r#"INSERT INTO compliance_checklists (id, tenant_id, site_id, checklist_type, status, items, due_date, created_at, updated_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
                    RETURNING *"#)
             .bind(id)
             .bind(tid.to_string())
-            .bind(dto.user_id)
-            .bind(serde_json::to_value(&dto.contract_type).unwrap())
-            .bind(&dto.language)
+            .bind(dto.site_id)
+            .bind(serde_json::to_value(&dto.checklist_type).unwrap())
+            .bind(serde_json::to_value(&agrocore_domain::entities::compliance::ComplianceStatus::Pending).unwrap())
+            .bind(serde_json::to_value(&dto.items).unwrap())
+            .bind(dto.due_date)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateWorkerDto, _by: Uuid) -> RepositoryFuture<Option<Worker>> {
+    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateComplianceChecklistDto, _by: Uuid) -> RepositoryFuture<Option<ComplianceChecklist>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, Worker>(
-                r#"UPDATE workers SET language = COALESCE($1, language), updated_at = NOW()
+            sqlx::query_as::<_, ComplianceChecklist>(
+                r#"UPDATE compliance_checklists SET status = COALESCE($1, status), updated_at = NOW()
                    WHERE id = $2 AND tenant_id = $3 RETURNING *"#)
-            .bind(&dto.language)
+            .bind(dto.status.map(|s| serde_json::to_value(s).unwrap()))
             .bind(id)
             .bind(tid.to_string())
             .fetch_optional(&pool)
@@ -109,7 +101,7 @@ impl WorkerRepo for PgWorkerRepo {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query("UPDATE workers SET is_active = false WHERE id = $1 AND tenant_id = $2")
+            sqlx::query("DELETE FROM compliance_checklists WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
                 .bind(tid.to_string())
                 .execute(&pool)

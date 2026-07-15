@@ -15,35 +15,48 @@ impl WorkflowService {
             return follow_up_orders;
         }
 
-        if let Some(config) = &order.workflow_config
-            && let Some(trigger) = &config.trigger_status
-            && *trigger == next_status
-            && let Some(next_type) = &config.auto_next_order_type
-        {
-            let mut next_dto = CreateOrderDto {
-                label: format!("Folgeauftrag ({}): {}", next_type, order.label),
-                order_type: next_type.clone(),
-                site_ids: order.site_ids.clone(),
-                assigned_worker_ids: Some(order.assigned_worker_ids.clone()),
-                planned_date: None,
-                deadline_date: None,
-                articles: None,
-                quantities: None,
-                custom_fields: None,
-                parent_order_id: Some(order.id),
-                workflow_config: None, // Prevent infinite loops or chain them
-                recurrence: None,
-                execution_policy: None,
-                cost_center_id: order.cost_center_id,
-            };
+        let config = match &order.workflow_config {
+            Some(c) => c,
+            None => return follow_up_orders,
+        };
 
-            if let Some(delay) = config.delay_days {
-                let planned = Utc::now() + Duration::days(delay as i64);
-                next_dto.planned_date = Some(planned);
-            }
+        let trigger = match &config.trigger_status {
+            Some(t) => t,
+            None => return follow_up_orders,
+        };
 
-            follow_up_orders.push(next_dto);
+        if *trigger != next_status {
+            return follow_up_orders;
         }
+
+        let next_type = match &config.auto_next_order_type {
+            Some(nt) => nt,
+            None => return follow_up_orders,
+        };
+
+        let mut next_dto = CreateOrderDto {
+            label: format!("Folgeauftrag ({}): {}", next_type, order.label),
+            order_type: next_type.clone(),
+            site_ids: order.site_ids.clone(),
+            assigned_worker_ids: Some(order.assigned_worker_ids.clone()),
+            planned_date: None,
+            deadline_date: None,
+            articles: None,
+            quantities: None,
+            custom_fields: None,
+            parent_order_id: Some(order.id),
+            workflow_config: None, // Prevent infinite loops or chain them
+            recurrence: None,
+            execution_policy: None,
+            cost_center_id: order.cost_center_id,
+        };
+
+        if let Some(delay) = config.delay_days {
+            let planned = Utc::now() + Duration::days(delay as i64);
+            next_dto.planned_date = Some(planned);
+        }
+
+        follow_up_orders.push(next_dto);
 
         follow_up_orders
     }

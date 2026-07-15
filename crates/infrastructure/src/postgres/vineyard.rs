@@ -1,8 +1,7 @@
-use agrocore_domain::entities::vineyard::{CreateVineyardDto, Vineyard, UpdateVineyardDto};
+use agrocore_domain::entities::vineyard::{Vineyard, CreateVineyardDto, UpdateVineyardDto};
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::entities::user::UserRole;
 use agrocore_domain::repositories::{PaginatedResponse, Pagination, RepositoryFuture, VineyardRepo};
-use agrocore_shared::{Result, SharedError};
+use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -18,68 +17,104 @@ impl PgVineyardRepo {
 }
 
 impl VineyardRepo for PgVineyardRepo {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<Vineyard>> {
-        Box::pin(async move { Ok(None) })
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Vineyard>> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query_as::<_, Vineyard>("SELECT * FROM vineyards WHERE id = $1 AND tenant_id = $2")
+                .bind(id)
+                .bind(tid.to_string())
+                .fetch_optional(&pool)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
+
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Vineyard>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
+
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM vineyards WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true)")
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM vineyards WHERE tenant_id = $1::uuid")
                 .bind(tid.to_string())
                 .fetch_one(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
-            let data: Vec<Vineyard> = sqlx::query_as("SELECT * FROM vineyards WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true) LIMIT $2 OFFSET $3")
+
+            let data: Vec<Vineyard> = sqlx::query_as("SELECT * FROM vineyards WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3")
                 .bind(tid.to_string())
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
-            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
-            Ok(PaginatedResponse { data, total: total as u64, page, per_page, total_pages })
+
+            Ok(PaginatedResponse {
+                data,
+                total: total as u64,
+                page,
+                per_page,
+                total_pages: ((total as f64 / per_page as f64).ceil() as u64),
+            })
         })
     }
-    fn create(&self, tid: TenantId, dto: CreateVineyardDto) -> RepositoryFuture<Vineyard> {
+
+    fn find_by_site(&self, _tid: TenantId, _site_id: Uuid, _p: Pagination) -> RepositoryFuture<PaginatedResponse<Vineyard>> {
+        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+    }
+
+    fn create(&self, tid: TenantId, dto: CreateVineyardDto, _by: Uuid) -> RepositoryFuture<Vineyard> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, Vineyard>("INSERT INTO vineyards (tenant_id, name, hectares, doc_area, quality_grade) VALUES ($1, $2, $3, $4, $5) RETURNING *")
+            let id = Uuid::new_v4();
+            sqlx::query_as::<_, Vineyard>(
+                r#"INSERT INTO vineyards (id, tenant_id, site_id, doc_area, vintage, grape_variety, brix_at_harvest, ph_at_harvest, acidity, yield_tons, quality_grade, created_at, updated_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+                   RETURNING *"#)
+            .bind(id)
             .bind(tid.to_string())
-            .bind(&dto.name)
-            .bind(dto.hectares)
-            .bind(dto.doc_area)
-            .bind(dto.quality_grade)
+            .bind(dto.site_id)
+            .bind(&dto.doc_area)
+            .bind(dto.vintage)
+            .bind(&dto.grape_variety)
+            .bind(dto.brix_at_harvest)
+            .bind(dto.ph_at_harvest)
+            .bind(dto.acidity)
+            .bind(dto.yield_tons)
+            .bind(serde_json::to_value(&dto.quality_grade).unwrap())
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateVineyardDto) -> RepositoryFuture<Option<Vineyard>> {
+
+    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateVineyardDto, _by: Uuid) -> RepositoryFuture<Option<Vineyard>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, Vineyard>("UPDATE vineyards SET name = $1, hectares = $2, updated_at = NOW() WHERE tenant_id = $3 AND id = $4 RETURNING *")
-            .bind(&dto.name)
-            .bind(dto.hectares)
-            .bind(tid.to_string())
+            sqlx::query_as::<_, Vineyard>(
+                r#"UPDATE vineyards SET doc_area = COALESCE($1, doc_area), vintage = COALESCE($2, vintage), updated_at = NOW()
+                   WHERE id = $3 AND tenant_id = $4 RETURNING *"#)
+            .bind(&dto.doc_area)
+            .bind(dto.vintage)
             .bind(id)
+            .bind(tid.to_string())
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
+
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query("UPDATE vineyards SET is_active = false WHERE tenant_id = $1 AND id = $2")
-            .bind(tid.to_string())
-            .bind(id)
-            .execute(&pool)
-            .await
-            .map(|r| r.rows_affected() > 0)
-            .map_err(|e| SharedError::Database(e.to_string()))
+            sqlx::query("UPDATE vineyards SET is_active = false WHERE id = $1 AND tenant_id = $2")
+                .bind(id)
+                .bind(tid.to_string())
+                .execute(&pool)
+                .await
+                .map(|r| r.rows_affected() > 0)
+                .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 }

@@ -6,6 +6,7 @@ use actix_web::{HttpResponse, web};
 use agrocore_domain::entities::livestock::{
     Animal, CreateAnimalDto, GrazingRecord, TreatmentRecord, UpdateAnimalDto,
 };
+#[allow(unused_imports)]
 use agrocore_domain::repositories::AnimalRepository;
 use agrocore_shared::SharedError;
 use uuid::Uuid;

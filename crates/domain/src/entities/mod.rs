@@ -1,5 +1,6 @@
 pub mod compliance;
 pub mod equipment;
+pub mod fertilizer;
 pub mod finance;
 pub mod harvest;
 pub mod livestock;
@@ -133,8 +134,7 @@ impl BbchStage {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, sqlx::Type)]
-#[sqlx(rename = "order_status", rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum OrderStatus {
     #[serde(rename = "draft")]
     Draft,
@@ -148,8 +148,7 @@ pub enum OrderStatus {
     Cancelled,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, sqlx::Type)]
-#[sqlx(rename = "order_type", rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum OrderType {
     #[serde(rename = "plant_protection")]
     PlantProtection,

@@ -4,13 +4,14 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema, sqlx::FromRow)]
 pub struct Tenant {
     pub id: Uuid,
     #[validate(length(min = 1, max = 200))]
     pub name: String,
     #[validate(length(min = 1, max = 100))]
     pub slug: String,
+    #[sqlx(json)]
     pub config: TenantConfig,
     pub is_active: bool,
     pub created_at: DateTime<Utc>,
@@ -58,7 +59,7 @@ pub struct CreateTenantDto {
     pub config: Option<TenantConfig>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, Default)]
 pub struct UpdateTenantDto {
     pub name: Option<String>,
     pub slug: Option<String>,

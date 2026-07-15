@@ -83,7 +83,7 @@ pub async fn create_checklist(
     let checklist = state
         .db
         .compliance_checklist_repo()
-        .create(auth.0.tenant_id, dto.into_inner())
+        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
         .await?;
     Ok(HttpResponse::Created().json(checklist))
 }

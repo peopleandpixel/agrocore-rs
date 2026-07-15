@@ -568,7 +568,7 @@ impl From<TaskData> for TaskDataDto {
             description: t.description,
             started_at: t.started_at.to_rfc3339(),
             ended_at: t.ended_at.map(|d| d.to_rfc3339()),
-            duration_minutes: t.duration_minutes,
+            duration_minutes: t.duration_minutes.map(|d| d as u32),
             area_covered: t.area_covered,
             observations: t.observations,
             created_at: t.created_at.to_rfc3339(),
@@ -604,6 +604,17 @@ impl From<CreateTaskDataDto> for DomainCreateTaskDataDto {
             machine_id: None,
             machine_hours: None,
             cost_center_id: None,
+        }
+    }
+}
+
+impl From<CreateTaskDataDto> for agrocore_domain::entities::task::UpdateTaskDataDto {
+    fn from(dto: CreateTaskDataDto) -> Self {
+        Self {
+            order_id: Some(dto.order_id),
+            site_id: Some(dto.site_id),
+            description: Some(dto.description),
+            ..Default::default()
         }
     }
 }

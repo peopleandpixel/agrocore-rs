@@ -1,7 +1,7 @@
 use agrocore_domain::entities::water::{WaterQuota, CreateWaterQuotaDto};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::repositories::{WaterQuotaRepo, RepositoryFuture, PaginatedResponse, Pagination};
-use agrocore_shared::{Result, SharedError};
+use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -43,7 +43,7 @@ impl WaterQuotaRepo for PgWaterQuotaRepo {
             Ok(PaginatedResponse { data, total: total as u64, page, per_page, total_pages: 0 })
         })
     }
-    fn create(&self, tid: TenantId, dto: CreateWaterQuotaDto) -> RepositoryFuture<WaterQuota> {
+    fn create(&self, tid: TenantId, dto: CreateWaterQuotaDto, _by: Uuid) -> RepositoryFuture<WaterQuota> {
         let pool = self.pool.clone();
         let id = Uuid::new_v4();
         Box::pin(async move {
@@ -63,5 +63,14 @@ impl WaterQuotaRepo for PgWaterQuotaRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
             Ok(record)
         })
+    }
+    fn find_by_source(&self, _tid: TenantId, _source_id: Uuid, _p: Pagination) -> RepositoryFuture<PaginatedResponse<agrocore_domain::entities::water::WaterQuota>> {
+        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+    }
+    fn update(&self, _tid: TenantId, _id: Uuid, _dto: agrocore_domain::entities::water::UpdateWaterQuotaDto, _by: Uuid) -> RepositoryFuture<Option<agrocore_domain::entities::water::WaterQuota>> {
+        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+    }
+    fn delete(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<bool> {
+        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
     }
 }

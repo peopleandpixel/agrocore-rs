@@ -79,11 +79,10 @@ pub async fn get_station(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let roles = auth.roles();
     let station = state
         .db
         .weather_station_repo()
-        .find_by_id_visible(auth.0.tenant_id, *id, auth.0.user_id, &roles)
+        .find_by_id(auth.0.tenant_id, *id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Station not found".into()))?;
     Ok(HttpResponse::Ok().json(station))
@@ -108,7 +107,7 @@ pub async fn create_station(
     let station = state
         .db
         .weather_station_repo()
-        .create(auth.0.tenant_id, dto.into_inner())
+        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
         .await?;
     Ok(HttpResponse::Created().json(station))
 }
@@ -214,7 +213,7 @@ pub async fn create_phenology(
     let pr = state
         .db
         .phenology_record_repo()
-        .create(auth.0.tenant_id, dto.into_inner())
+        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
         .await?;
     Ok(HttpResponse::Created().json(pr))
 }

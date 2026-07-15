@@ -5,6 +5,8 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::entities::tenant::TenantId;
+use crate::repositories::VisibilityAwareEntity;
+
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Validate)]
 pub struct MaintenanceInterval {
@@ -13,14 +15,16 @@ pub struct MaintenanceInterval {
     pub interval_days: Option<u32>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
 pub struct Equipment {
     pub id: Uuid,
     pub tenant_id: TenantId,
     pub label: String,
     pub code: Option<String>,
+    #[sqlx(json)]
     pub equipment_type: EquipmentType,
     pub in_usage: bool,
+    #[sqlx(json)]
     pub maintenance_intervals: Option<Vec<MaintenanceInterval>>,
     pub next_maintenance_date: Option<DateTime<Utc>>,
     pub last_maintenance_hours: Option<f64>,
@@ -28,8 +32,7 @@ pub struct Equipment {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, sqlx::Type)]
-#[sqlx(rename = "equipment_type", rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum EquipmentType {
     Tractor,
     Sprayer,
@@ -38,7 +41,6 @@ pub enum EquipmentType {
     Plow,
     Trailer,
     Tool,
-    #[sqlx(rename = "other")]
     Other(String),
 }
 
@@ -67,3 +69,5 @@ impl Equipment {
     pub const PROP_WORKING_WIDTH: &'static str = "working_width";
     pub const PROP_FUEL_TYPE: &'static str = "fuel_type";
 }
+
+impl VisibilityAwareEntity for Equipment {}
