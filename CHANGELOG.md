@@ -5,6 +5,9 @@ Alle Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 ## [Unreleased]
 
 ### Added
+- Implementierung der PostgreSQL-Repositories für Finanzen (PAC-Anträge).
+- Implementierung der PostgreSQL-Repositories für Personal (Arbeitsprotokolle und Standorte).
+- Implementierung der PostgreSQL-Repositories für Ressourcen-Management (Wasserverbrauch).
 - Native PostGIS-Unterstützung für Geometriedaten (ersetzt manuelle WKT-Konvertierung).
 - Neue Geometrie-Typen `SpatialGeometry` und `GeoPoint` mit direkter `sqlx`-Anbindung.
 - `geozero` Crate zur effizienten Verarbeitung von räumlichen Daten.

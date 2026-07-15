@@ -27,6 +27,36 @@
 - [x] Livestock (Behandlungen, Bewegungsplanung, Futterbedarf)
 - [x] Analytics (Erntevorhersage, KPI-Berechnung)
 
+## 🔨 POSTGRES MIGRATION & STUBS (IN ARBEIT)
+
+### 🔐 Sicherheit & Kern-Repositories
+- [x] **User Management:** Passwort-Hashing in `PgUserRepo::create` implementieren (derzeit Klartext).
+- [x] **Auftrags-Management (`PgOrderRepo`):**
+    - [x] Sichtbarkeitslogik (Visibility Logic) in `find_by_id_visible` vervollständigen.
+    - [x] `find_my_tasks` implementieren (derzeit leere Liste).
+- [x] **Viehwirtschaft (`PgAnimalRepo`):**
+    - [x] `add_treatment` implementieren.
+    - [x] `add_grazing_record` implementieren.
+
+### 🚜 Ernte-Logistik (Kritisch - Derzeit fast nur Stubs)
+- [x] **Ernte-Chargen (`PgHarvestLotRepo`):** CRUD-Operationen (`create`, `update`, `delete`, `find_by_id`) implementieren.
+- [x] **Ernte-Lieferungen (`PgHarvestDeliveryRepo`):** `create` und `update` implementieren.
+- [x] **Ernte-Saison (`PgHarvestSeasonRepo`):** Sämtliche Repository-Methoden implementieren.
+- [x] **Kühlketten-Protokoll (`PgColdChainLogRepo`):** `create`, `update` und `delete` implementieren.
+
+### 📊 Finanzen & Personal
+- [x] **EU-Beihilfen (`PgPACApplicationRepo`):** `create`, `update`, `delete` und `find_by_year` implementiert.
+- [x] **Mitarbeiter-Standorte (`PgWorkerLocationRepo`):**
+    - [x] `find_all` implementiert.
+    - [x] `find_latest_by_worker` implementiert.
+    - [x] `get_latest_locations` implementiert.
+- [x] **Arbeitsprotokolle (`PgWorkLogRepo`):** `update`, `delete` und `find_by_worker` implementiert.
+
+### 💧 Ressourcen-Management
+- [x] **Wasserverbrauch (`PgWaterUsageRepo`):**
+    - [x] `update` und `delete` implementiert.
+    - [x] Spezialisierte Suchen (`find_by_source`, `find_by_site`) implementiert.
+
 ## 🔴 OFFEN (Infrastructure - Optionen)
 
 ### Deployment [ERLEDIGT]

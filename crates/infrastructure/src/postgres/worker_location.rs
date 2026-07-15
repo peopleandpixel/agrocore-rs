@@ -10,8 +10,14 @@ pub struct PgWorkerLocationRepo { pool: PgPool }
 impl PgWorkerLocationRepo { pub fn new(pool: PgPool) -> Self { Self { pool } } }
 
 impl WorkerLocationRepo for PgWorkerLocationRepo {
-    fn find_by_id(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<Option<WorkerLocation>> {
-        Box::pin(async move { Ok(None) })
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WorkerLocation>> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query_as::<_, WorkerLocation>(
+                "SELECT id, tenant_id, worker_id, ST_X(location) as lng, ST_Y(location) as lat, timestamp FROM worker_locations WHERE tenant_id = $1::uuid AND id = $2")
+            .bind(tid.to_string()).bind(id)
+            .fetch_optional(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
     fn create(&self, tid: TenantId, dto: CreateWorkerLocationDto) -> RepositoryFuture<WorkerLocation> {
         let pool = self.pool.clone();
@@ -22,13 +28,37 @@ impl WorkerLocationRepo for PgWorkerLocationRepo {
             .fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
         })
     }
-    fn find_all(&self, _tid: TenantId, _p: Pagination) -> RepositoryFuture<PaginatedResponse<agrocore_domain::entities::workforce::WorkerLocation>> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<WorkerLocation>> {
+        let pool = self.pool.clone();
+        let page = p.page.unwrap_or(0);
+        let per_page = p.per_page.unwrap_or(20);
+        let offset = page * per_page;
+        Box::pin(async move {
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM worker_locations WHERE tenant_id = $1::uuid")
+                .bind(tid.to_string()).fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<WorkerLocation> = sqlx::query_as(
+                "SELECT id, tenant_id, worker_id, ST_X(location) as lng, ST_Y(location) as lat, timestamp FROM worker_locations WHERE tenant_id = $1::uuid ORDER BY timestamp DESC LIMIT $2 OFFSET $3")
+                .bind(tid.to_string()).bind(per_page as i32).bind(offset as i32).fetch_all(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
+            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
+            Ok(PaginatedResponse { data, total: total as u64, page, per_page, total_pages })
+        })
     }
-    fn find_latest_by_worker(&self, _tid: Uuid, _worker_id: Uuid) -> RepositoryFuture<Option<agrocore_domain::entities::workforce::WorkerLocation>> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+    fn find_latest_by_worker(&self, tid: Uuid, worker_id: Uuid) -> RepositoryFuture<Option<WorkerLocation>> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query_as::<_, WorkerLocation>(
+                "SELECT id, tenant_id, worker_id, ST_X(location) as lng, ST_Y(location) as lat, timestamp FROM worker_locations WHERE tenant_id = $1::uuid AND worker_id = $2 ORDER BY timestamp DESC LIMIT 1")
+            .bind(tid.to_string()).bind(worker_id.to_string())
+            .fetch_optional(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
-    fn get_latest_locations(&self, _tid: Uuid) -> RepositoryFuture<Vec<agrocore_domain::entities::workforce::WorkerLocation>> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+    fn get_latest_locations(&self, tid: Uuid) -> RepositoryFuture<Vec<WorkerLocation>> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query_as::<_, WorkerLocation>(
+                "SELECT DISTINCT ON (worker_id) id, tenant_id, worker_id, ST_X(location) as lng, ST_Y(location) as lat, timestamp FROM worker_locations WHERE tenant_id = $1::uuid ORDER BY worker_id, timestamp DESC")
+            .bind(tid.to_string())
+            .fetch_all(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
 }
