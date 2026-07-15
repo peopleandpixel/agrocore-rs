@@ -4,6 +4,8 @@ Alle Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-15
+
 ### Added
 - Umfassendes Auditing-System: Jede Erstellung, Änderung und Löschung von Kern-Entitäten (Orders, PAC-Applications, Worker) wird nun automatisch protokolliert.
 - Historien-Funktion mit Diff: Audit-Logs speichern den alten und neuen Zustand der Daten als JSON, was einen detaillierten Vergleich ermöglicht.
