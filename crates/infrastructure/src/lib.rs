@@ -2,9 +2,9 @@
 #![allow(unused_imports)]
 #![allow(dead_code)]
 mod defaults;
-mod postgres;
 mod jwt;
+mod postgres;
 
 pub use defaults::{default_bind_addr, default_nats_url};
-pub use postgres::{PostgresDb, Database};
 pub use jwt::generate_jwt;
+pub use postgres::{Database, PostgresDb};

@@ -2,6 +2,7 @@ use agrocore_shared::SharedError;
 use sqlx::postgres::PgDatabaseError;
 
 pub fn map_db_error(e: sqlx::Error) -> SharedError {
+    #[allow(clippy::collapsible_if)]
     if let Some(pg_err) = e.as_database_error() {
         if let Some(db_err) = pg_err.try_downcast_ref::<PgDatabaseError>() {
             return match db_err.code() {

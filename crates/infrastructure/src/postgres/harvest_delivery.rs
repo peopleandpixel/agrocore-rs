@@ -1,4 +1,6 @@
-use agrocore_domain::entities::harvest::{HarvestDelivery, CreateHarvestDeliveryDto, UpdateHarvestDeliveryDto};
+use agrocore_domain::entities::harvest::{
+    CreateHarvestDeliveryDto, HarvestDelivery, UpdateHarvestDeliveryDto,
+};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::repositories::{HarvestDeliveryRepo, RepositoryFuture};
 use agrocore_shared::{PaginatedResponse, Pagination, SharedError};
@@ -22,12 +24,14 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> Fut<Option<HarvestDelivery>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, HarvestDelivery>("SELECT * FROM harvest_deliveries WHERE id = $1 AND tenant_id = $2")
-                .bind(id)
-                .bind(tid.to_string())
-                .fetch_optional(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))
+            sqlx::query_as::<_, HarvestDelivery>(
+                "SELECT * FROM harvest_deliveries WHERE id = $1 AND tenant_id = $2",
+            )
+            .bind(id)
+            .bind(tid.to_string())
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 
@@ -38,11 +42,13 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM harvest_deliveries WHERE tenant_id = $1::uuid")
-                .bind(tid.to_string())
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM harvest_deliveries WHERE tenant_id = $1::uuid",
+            )
+            .bind(tid.to_string())
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<HarvestDelivery> = sqlx::query_as("SELECT * FROM harvest_deliveries WHERE tenant_id = $1::uuid ORDER BY delivery_date DESC LIMIT $2 OFFSET $3")
                 .bind(tid.to_string())
@@ -52,7 +58,11 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
+            let total_pages = if total == 0 {
+                0
+            } else {
+                (total as f64 / per_page as f64).ceil() as u64
+            };
 
             Ok(PaginatedResponse {
                 data,
@@ -64,7 +74,12 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
         })
     }
 
-    fn find_by_lot(&self, tid: TenantId, lot_id: Uuid, p: Pagination) -> Fut<PaginatedResponse<HarvestDelivery>> {
+    fn find_by_lot(
+        &self,
+        tid: TenantId,
+        lot_id: Uuid,
+        p: Pagination,
+    ) -> Fut<PaginatedResponse<HarvestDelivery>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
@@ -87,7 +102,11 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
+            let total_pages = if total == 0 {
+                0
+            } else {
+                (total as f64 / per_page as f64).ceil() as u64
+            };
 
             Ok(PaginatedResponse {
                 data,
@@ -99,7 +118,12 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
         })
     }
 
-    fn create(&self, tid: TenantId, dto: CreateHarvestDeliveryDto, _by: Uuid) -> Fut<HarvestDelivery> {
+    fn create(
+        &self,
+        tid: TenantId,
+        dto: CreateHarvestDeliveryDto,
+        _by: Uuid,
+    ) -> Fut<HarvestDelivery> {
         let pool = self.pool.clone();
         Box::pin(async move {
             let id = Uuid::new_v4();
@@ -125,17 +149,25 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
         })
     }
 
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateHarvestDeliveryDto, _by: Uuid) -> Fut<Option<HarvestDelivery>> {
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateHarvestDeliveryDto,
+        _by: Uuid,
+    ) -> Fut<Option<HarvestDelivery>> {
         let pool = self.pool.clone();
         Box::pin(async move {
             // Need to handle net_weight calculation if gross or tare changes
-            let current = sqlx::query_as::<_, HarvestDelivery>("SELECT * FROM harvest_deliveries WHERE id = $1 AND tenant_id = $2")
-                .bind(id)
-                .bind(tid.to_string())
-                .fetch_optional(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
-            
+            let current = sqlx::query_as::<_, HarvestDelivery>(
+                "SELECT * FROM harvest_deliveries WHERE id = $1 AND tenant_id = $2",
+            )
+            .bind(id)
+            .bind(tid.to_string())
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
             if let Some(c) = current {
                 let gross = dto.gross_weight_kg.unwrap_or(c.gross_weight_kg);
                 let tare = dto.tare_weight_kg.unwrap_or(c.tare_weight_kg);
@@ -153,7 +185,8 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
                         quality_notes = COALESCE($8, quality_notes),
                         temperature_at_delivery = COALESCE($9, temperature_at_delivery),
                         updated_at = NOW()
-                    WHERE id = $10 AND tenant_id = $11 RETURNING *"#)
+                    WHERE id = $10 AND tenant_id = $11 RETURNING *"#,
+                )
                 .bind(dto.lot_id)
                 .bind(dto.delivery_date)
                 .bind(gross)

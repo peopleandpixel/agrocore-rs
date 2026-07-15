@@ -1,6 +1,10 @@
-use agrocore_domain::entities::weather::{CreatePhenologyRecordDto, PhenologyRecord, UpdatePhenologyRecordDto};
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::repositories::{PhenologyRecordRepo, PaginatedResponse, Pagination, RepositoryFuture};
+use agrocore_domain::entities::weather::{
+    CreatePhenologyRecordDto, PhenologyRecord, UpdatePhenologyRecordDto,
+};
+use agrocore_domain::repositories::{
+    PaginatedResponse, Pagination, PhenologyRecordRepo, RepositoryFuture,
+};
 use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -20,27 +24,35 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<PhenologyRecord>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, PhenologyRecord>("SELECT * FROM phenology_records WHERE id = $1 AND tenant_id = $2")
-                .bind(id)
-                .bind(tid.to_string())
-                .fetch_optional(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))
+            sqlx::query_as::<_, PhenologyRecord>(
+                "SELECT * FROM phenology_records WHERE id = $1 AND tenant_id = $2",
+            )
+            .bind(id)
+            .bind(tid.to_string())
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<PhenologyRecord>> {
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<PhenologyRecord>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM phenology_records WHERE tenant_id = $1::uuid")
-                .bind(tid.to_string())
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM phenology_records WHERE tenant_id = $1::uuid",
+            )
+            .bind(tid.to_string())
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<PhenologyRecord> = sqlx::query_as("SELECT * FROM phenology_records WHERE tenant_id = $1::uuid ORDER BY observation_date DESC LIMIT $2 OFFSET $3")
                 .bind(tid.to_string())
@@ -50,8 +62,12 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
-            
+            let total_pages = if total == 0 {
+                0
+            } else {
+                (total as f64 / per_page as f64).ceil() as u64
+            };
+
             Ok(PaginatedResponse {
                 data,
                 total: total as u64,
@@ -62,7 +78,12 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
         })
     }
 
-    fn find_by_site(&self, tid: TenantId, site_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<PhenologyRecord>> {
+    fn find_by_site(
+        &self,
+        tid: TenantId,
+        site_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<PhenologyRecord>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
@@ -85,8 +106,12 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
-            
+            let total_pages = if total == 0 {
+                0
+            } else {
+                (total as f64 / per_page as f64).ceil() as u64
+            };
+
             Ok(PaginatedResponse {
                 data,
                 total: total as u64,
@@ -97,7 +122,12 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
         })
     }
 
-    fn create(&self, tid: TenantId, dto: CreatePhenologyRecordDto, _by: Uuid) -> RepositoryFuture<PhenologyRecord> {
+    fn create(
+        &self,
+        tid: TenantId,
+        dto: CreatePhenologyRecordDto,
+        _by: Uuid,
+    ) -> RepositoryFuture<PhenologyRecord> {
         let pool = self.pool.clone();
         Box::pin(async move {
             let id = Uuid::new_v4();
@@ -118,7 +148,13 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
         })
     }
 
-    fn update(&self, _tid: TenantId, _id: Uuid, _dto: UpdatePhenologyRecordDto, _by: Uuid) -> RepositoryFuture<Option<PhenologyRecord>> {
+    fn update(
+        &self,
+        _tid: TenantId,
+        _id: Uuid,
+        _dto: UpdatePhenologyRecordDto,
+        _by: Uuid,
+    ) -> RepositoryFuture<Option<PhenologyRecord>> {
         Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
     }
 

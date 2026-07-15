@@ -95,7 +95,10 @@ fn overlapping_objects_all_match_the_same_position() {
         updated_by: None,
     };
 
-    let matches = agrocore_domain::entities::spatial::objects_containing_point([&field, &barn], &point(14.05, 47.05));
+    let matches = agrocore_domain::entities::spatial::objects_containing_point(
+        [&field, &barn],
+        &point(14.05, 47.05),
+    );
     assert_eq!(matches.len(), 2);
     assert!(matches.iter().any(|object| object.id == field.id));
     assert!(matches.iter().any(|object| object.id == barn.id));

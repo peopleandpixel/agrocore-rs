@@ -1,12 +1,12 @@
 use chrono::{DateTime, Utc};
 use geo::prelude::{Contains, Intersects};
-use geo::{Coord, Distance, Haversine, LineString, Point, Polygon, MultiPolygon};
+use geo::{Coord, Distance, Haversine, LineString, MultiPolygon, Point, Polygon};
+use geozero::wkb;
 use serde::{Deserialize, Serialize};
+use sqlx::postgres::PgTypeInfo;
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
-use geozero::wkb;
-use sqlx::postgres::PgTypeInfo;
 
 use crate::entities::site::GeoPoint;
 use crate::entities::tenant::TenantId;
@@ -88,27 +88,63 @@ impl<'r> sqlx::Decode<'r, sqlx::Postgres> for SpatialGeometry {
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let wkb_wrapper: wkb::Decode<geo::Geometry<f64>> = sqlx::Decode::decode(value)?;
         let geometry = wkb_wrapper.geometry.ok_or("Failed to decode geometry")?;
-        
+
         match geometry {
             geo::Geometry::Point(p) => Ok(SpatialGeometry::Point {
-                point: GeoPoint { lng: p.x(), lat: p.y() },
+                point: GeoPoint {
+                    lng: p.x(),
+                    lat: p.y(),
+                },
             }),
             geo::Geometry::LineString(ls) => Ok(SpatialGeometry::LineString {
-                points: ls.0.into_iter().map(|c| GeoPoint { lng: c.x, lat: c.y }).collect(),
+                points: ls
+                    .0
+                    .into_iter()
+                    .map(|c| GeoPoint { lng: c.x, lat: c.y })
+                    .collect(),
             }),
             geo::Geometry::Polygon(poly) => {
-                let exterior = poly.exterior().0.iter().map(|c| GeoPoint { lng: c.x, lat: c.y }).collect();
-                let holes = poly.interiors().iter().map(|ls| ls.0.iter().map(|c| GeoPoint { lng: c.x, lat: c.y }).collect()).collect();
+                let exterior = poly
+                    .exterior()
+                    .0
+                    .iter()
+                    .map(|c| GeoPoint { lng: c.x, lat: c.y })
+                    .collect();
+                let holes = poly
+                    .interiors()
+                    .iter()
+                    .map(|ls| {
+                        ls.0.iter()
+                            .map(|c| GeoPoint { lng: c.x, lat: c.y })
+                            .collect()
+                    })
+                    .collect();
                 Ok(SpatialGeometry::Polygon { exterior, holes })
-            },
+            }
             geo::Geometry::MultiPolygon(mp) => {
-                let polygons = mp.0.into_iter().map(|poly| {
-                    let exterior = poly.exterior().0.iter().map(|c| GeoPoint { lng: c.x, lat: c.y }).collect();
-                    let holes = poly.interiors().iter().map(|ls| ls.0.iter().map(|c| GeoPoint { lng: c.x, lat: c.y }).collect()).collect();
-                    PolygonGeometry { exterior, holes }
-                }).collect();
+                let polygons =
+                    mp.0.into_iter()
+                        .map(|poly| {
+                            let exterior = poly
+                                .exterior()
+                                .0
+                                .iter()
+                                .map(|c| GeoPoint { lng: c.x, lat: c.y })
+                                .collect();
+                            let holes = poly
+                                .interiors()
+                                .iter()
+                                .map(|ls| {
+                                    ls.0.iter()
+                                        .map(|c| GeoPoint { lng: c.x, lat: c.y })
+                                        .collect()
+                                })
+                                .collect();
+                            PolygonGeometry { exterior, holes }
+                        })
+                        .collect();
                 Ok(SpatialGeometry::MultiPolygon { polygons })
-            },
+            }
             _ => Err("Unsupported geometry type".into()),
         }
     }
@@ -120,27 +156,52 @@ impl<'q> sqlx::Encode<'q, sqlx::Postgres> for SpatialGeometry {
         buf: &mut sqlx::postgres::PgArgumentBuffer,
     ) -> Result<sqlx::encode::IsNull, Box<dyn std::error::Error + Send + Sync>> {
         let geometry: geo::Geometry<f64> = match self {
-            SpatialGeometry::Point { point } => geo::Geometry::Point(Point::new(point.lng, point.lat)),
-            SpatialGeometry::LineString { points } => {
-                geo::Geometry::LineString(LineString::from(points.iter().map(|p| (p.lng, p.lat)).collect::<Vec<_>>()))
-            },
+            SpatialGeometry::Point { point } => {
+                geo::Geometry::Point(Point::new(point.lng, point.lat))
+            }
+            SpatialGeometry::LineString { points } => geo::Geometry::LineString(LineString::from(
+                points.iter().map(|p| (p.lng, p.lat)).collect::<Vec<_>>(),
+            )),
             SpatialGeometry::Polygon { exterior, holes } => {
-                let ext_ls = LineString::from(exterior.iter().map(|p| (p.lng, p.lat)).collect::<Vec<_>>());
-                let int_ls = holes.iter().map(|h| LineString::from(h.iter().map(|p| (p.lng, p.lat)).collect::<Vec<_>>())).collect();
+                let ext_ls =
+                    LineString::from(exterior.iter().map(|p| (p.lng, p.lat)).collect::<Vec<_>>());
+                let int_ls = holes
+                    .iter()
+                    .map(|h| LineString::from(h.iter().map(|p| (p.lng, p.lat)).collect::<Vec<_>>()))
+                    .collect();
                 geo::Geometry::Polygon(Polygon::new(ext_ls, int_ls))
-            },
+            }
             SpatialGeometry::MultiPolygon { polygons } => {
-                let polys = polygons.iter().map(|p| {
-                    let ext_ls = LineString::from(p.exterior.iter().map(|p| (p.lng, p.lat)).collect::<Vec<_>>());
-                    let int_ls = p.holes.iter().map(|h| LineString::from(h.iter().map(|p| (p.lng, p.lat)).collect::<Vec<_>>())).collect();
-                    Polygon::new(ext_ls, int_ls)
-                }).collect();
+                let polys = polygons
+                    .iter()
+                    .map(|p| {
+                        let ext_ls = LineString::from(
+                            p.exterior
+                                .iter()
+                                .map(|p| (p.lng, p.lat))
+                                .collect::<Vec<_>>(),
+                        );
+                        let int_ls = p
+                            .holes
+                            .iter()
+                            .map(|h| {
+                                LineString::from(
+                                    h.iter().map(|p| (p.lng, p.lat)).collect::<Vec<_>>(),
+                                )
+                            })
+                            .collect();
+                        Polygon::new(ext_ls, int_ls)
+                    })
+                    .collect();
                 geo::Geometry::MultiPolygon(MultiPolygon::new(polys))
             }
         };
-        
+
         let wkb_wrapper = wkb::Encode(geometry);
-        <wkb::Encode<geo::Geometry<f64>> as sqlx::Encode<'q, sqlx::Postgres>>::encode_by_ref(&wkb_wrapper, buf)
+        <wkb::Encode<geo::Geometry<f64>> as sqlx::Encode<'q, sqlx::Postgres>>::encode_by_ref(
+            &wkb_wrapper,
+            buf,
+        )
     }
 }
 
@@ -285,10 +346,12 @@ fn to_closed_linestring(points: &[GeoPoint]) -> LineString<f64> {
         })
         .collect();
 
-    let first = coords.first().copied();
-    let last = coords.last().copied();
-    if first == last && first.is_some() {
-        coords.push(first.unwrap());
+    #[allow(clippy::collapsible_if)]
+    if let (Some(first_coord), Some(last_coord)) = (coords.first().copied(), coords.last().copied())
+    {
+        if first_coord != last_coord {
+            coords.push(first_coord);
+        }
     }
 
     LineString::from(coords)

@@ -7,7 +7,6 @@ use crate::entities::tenant::TenantId;
 // use crate::entities::user::UserRole;
 use crate::repositories::VisibilityAwareEntity;
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
 pub struct TaskData {
     pub id: Uuid,

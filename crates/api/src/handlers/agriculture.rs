@@ -68,7 +68,11 @@ pub async fn list_olive_groves(
     auth: AuthUser,
     query: web::Query<Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    let result = state.db.olive_grove_repo().find_all(auth.0.tenant_id, query.0).await?;
+    let result = state
+        .db
+        .olive_grove_repo()
+        .find_all(auth.0.tenant_id, query.0)
+        .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
         total: result.total,
@@ -83,7 +87,11 @@ pub async fn create_olive_grove(
     auth: AuthUser,
     dto: web::Json<CreateOliveGroveDto>,
 ) -> Result<HttpResponse, ApiError> {
-    let grove = state.db.olive_grove_repo().create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id).await?;
+    let grove = state
+        .db
+        .olive_grove_repo()
+        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .await?;
     Ok(HttpResponse::Created().json(grove))
 }
 
@@ -92,7 +100,11 @@ pub async fn get_olive_grove(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let grove = state.db.olive_grove_repo().find_by_id(auth.0.tenant_id, *id).await?
+    let grove = state
+        .db
+        .olive_grove_repo()
+        .find_by_id(auth.0.tenant_id, *id)
+        .await?
         .ok_or_else(|| SharedError::NotFound("Olive grove not found".into()))?;
     Ok(HttpResponse::Ok().json(grove))
 }
@@ -103,7 +115,11 @@ pub async fn update_olive_grove(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateOliveGroveDto>,
 ) -> Result<HttpResponse, ApiError> {
-    let grove = state.db.olive_grove_repo().update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id).await?
+    let grove = state
+        .db
+        .olive_grove_repo()
+        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .await?
         .ok_or_else(|| SharedError::NotFound("Olive grove not found".into()))?;
     Ok(HttpResponse::Ok().json(grove))
 }
@@ -113,7 +129,11 @@ pub async fn delete_olive_grove(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let success = state.db.olive_grove_repo().delete(auth.0.tenant_id, *id).await?;
+    let success = state
+        .db
+        .olive_grove_repo()
+        .delete(auth.0.tenant_id, *id)
+        .await?;
     if success {
         Ok(HttpResponse::NoContent().finish())
     } else {
@@ -127,7 +147,11 @@ pub async fn list_olive_oil_records(
     auth: AuthUser,
     query: web::Query<Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    let result = state.db.olive_oil_record_repo().find_all(auth.0.tenant_id, query.0).await?;
+    let result = state
+        .db
+        .olive_oil_record_repo()
+        .find_all(auth.0.tenant_id, query.0)
+        .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
         total: result.total,
@@ -142,7 +166,11 @@ pub async fn create_olive_oil_record(
     auth: AuthUser,
     dto: web::Json<CreateOliveOilRecordDto>,
 ) -> Result<HttpResponse, ApiError> {
-    let record = state.db.olive_oil_record_repo().create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id).await?;
+    let record = state
+        .db
+        .olive_oil_record_repo()
+        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .await?;
     Ok(HttpResponse::Created().json(record))
 }
 
@@ -151,7 +179,11 @@ pub async fn get_olive_oil_record(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let record = state.db.olive_oil_record_repo().find_by_id(auth.0.tenant_id, *id).await?
+    let record = state
+        .db
+        .olive_oil_record_repo()
+        .find_by_id(auth.0.tenant_id, *id)
+        .await?
         .ok_or_else(|| SharedError::NotFound("Olive oil record not found".into()))?;
     Ok(HttpResponse::Ok().json(record))
 }
@@ -162,7 +194,11 @@ pub async fn update_olive_oil_record(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateOliveOilRecordDto>,
 ) -> Result<HttpResponse, ApiError> {
-    let record = state.db.olive_oil_record_repo().update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id).await?
+    let record = state
+        .db
+        .olive_oil_record_repo()
+        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .await?
         .ok_or_else(|| SharedError::NotFound("Olive oil record not found".into()))?;
     Ok(HttpResponse::Ok().json(record))
 }
@@ -172,7 +208,11 @@ pub async fn delete_olive_oil_record(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let success = state.db.olive_oil_record_repo().delete(auth.0.tenant_id, *id).await?;
+    let success = state
+        .db
+        .olive_oil_record_repo()
+        .delete(auth.0.tenant_id, *id)
+        .await?;
     if success {
         Ok(HttpResponse::NoContent().finish())
     } else {
@@ -186,7 +226,11 @@ pub async fn list_vineyards(
     auth: AuthUser,
     query: web::Query<Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    let result = state.db.vineyard_repo().find_all(auth.0.tenant_id, query.0).await?;
+    let result = state
+        .db
+        .vineyard_repo()
+        .find_all(auth.0.tenant_id, query.0)
+        .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
         total: result.total,
@@ -201,7 +245,11 @@ pub async fn create_vineyard(
     auth: AuthUser,
     dto: web::Json<CreateVineyardDto>,
 ) -> Result<HttpResponse, ApiError> {
-    let v = state.db.vineyard_repo().create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id).await?;
+    let v = state
+        .db
+        .vineyard_repo()
+        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .await?;
     Ok(HttpResponse::Created().json(v))
 }
 
@@ -210,7 +258,11 @@ pub async fn get_vineyard(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let v = state.db.vineyard_repo().find_by_id(auth.0.tenant_id, *id).await?
+    let v = state
+        .db
+        .vineyard_repo()
+        .find_by_id(auth.0.tenant_id, *id)
+        .await?
         .ok_or_else(|| SharedError::NotFound("Vineyard not found".into()))?;
     Ok(HttpResponse::Ok().json(v))
 }
@@ -221,7 +273,11 @@ pub async fn update_vineyard(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateVineyardDto>,
 ) -> Result<HttpResponse, ApiError> {
-    let v = state.db.vineyard_repo().update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id).await?
+    let v = state
+        .db
+        .vineyard_repo()
+        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .await?
         .ok_or_else(|| SharedError::NotFound("Vineyard not found".into()))?;
     Ok(HttpResponse::Ok().json(v))
 }
@@ -231,7 +287,11 @@ pub async fn delete_vineyard(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let success = state.db.vineyard_repo().delete(auth.0.tenant_id, *id).await?;
+    let success = state
+        .db
+        .vineyard_repo()
+        .delete(auth.0.tenant_id, *id)
+        .await?;
     if success {
         Ok(HttpResponse::NoContent().finish())
     } else {
@@ -245,7 +305,11 @@ pub async fn list_kelter_deliveries(
     auth: AuthUser,
     query: web::Query<Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    let result = state.db.kelter_delivery_repo().find_all(auth.0.tenant_id, query.0).await?;
+    let result = state
+        .db
+        .kelter_delivery_repo()
+        .find_all(auth.0.tenant_id, query.0)
+        .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
         total: result.total,
@@ -260,7 +324,11 @@ pub async fn create_kelter_delivery(
     auth: AuthUser,
     dto: web::Json<CreateKelterDeliveryDto>,
 ) -> Result<HttpResponse, ApiError> {
-    let kd = state.db.kelter_delivery_repo().create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id).await?;
+    let kd = state
+        .db
+        .kelter_delivery_repo()
+        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .await?;
     Ok(HttpResponse::Created().json(kd))
 }
 
@@ -269,7 +337,11 @@ pub async fn get_kelter_delivery(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let kd = state.db.kelter_delivery_repo().find_by_id(auth.0.tenant_id, *id).await?
+    let kd = state
+        .db
+        .kelter_delivery_repo()
+        .find_by_id(auth.0.tenant_id, *id)
+        .await?
         .ok_or_else(|| SharedError::NotFound("Kelter delivery not found".into()))?;
     Ok(HttpResponse::Ok().json(kd))
 }
@@ -280,7 +352,11 @@ pub async fn update_kelter_delivery(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateKelterDeliveryDto>,
 ) -> Result<HttpResponse, ApiError> {
-    let kd = state.db.kelter_delivery_repo().update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id).await?
+    let kd = state
+        .db
+        .kelter_delivery_repo()
+        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .await?
         .ok_or_else(|| SharedError::NotFound("Kelter delivery not found".into()))?;
     Ok(HttpResponse::Ok().json(kd))
 }
@@ -290,7 +366,11 @@ pub async fn delete_kelter_delivery(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let success = state.db.kelter_delivery_repo().delete(auth.0.tenant_id, *id).await?;
+    let success = state
+        .db
+        .kelter_delivery_repo()
+        .delete(auth.0.tenant_id, *id)
+        .await?;
     if success {
         Ok(HttpResponse::NoContent().finish())
     } else {

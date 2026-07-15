@@ -1,4 +1,4 @@
-use agrocore_domain::services::nutrition::{Fertilizer, NutritionService, NutrientValues};
+use agrocore_domain::services::nutrition::{Fertilizer, NutrientValues, NutritionService};
 
 #[test]
 fn test_calculate_demand() {

@@ -1,5 +1,7 @@
 use agrocore_domain::entities::tenant::{CreateTenantDto, Tenant, UpdateTenantDto};
-use agrocore_domain::repositories::{PaginatedResponse, Pagination, RepositoryFuture, TenantRepository};
+use agrocore_domain::repositories::{
+    PaginatedResponse, Pagination, RepositoryFuture, TenantRepository,
+};
 use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -34,17 +36,19 @@ impl TenantRepository for PgTenantRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM tenants WHERE is_active = true")
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM tenants WHERE is_active = true")
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<Tenant> = sqlx::query_as("SELECT * FROM tenants WHERE is_active = true LIMIT $1 OFFSET $2")
-                .bind(per_page as i32)
-                .bind(offset as i32)
-                .fetch_all(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<Tenant> =
+                sqlx::query_as("SELECT * FROM tenants WHERE is_active = true LIMIT $1 OFFSET $2")
+                    .bind(per_page as i32)
+                    .bind(offset as i32)
+                    .fetch_all(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(PaginatedResponse {
                 data,
@@ -63,11 +67,12 @@ impl TenantRepository for PgTenantRepo {
             sqlx::query_as::<_, Tenant>(
                 r#"INSERT INTO tenants (id, name, slug, config, is_active, created_at, updated_at)
                    VALUES ($1, $2, $3, $4, true, NOW(), NOW())
-                   RETURNING *"#)
+                   RETURNING *"#,
+            )
             .bind(id)
             .bind(&dto.name)
             .bind(&dto.slug)
-            .bind(serde_json::to_value(&dto.config.unwrap_or_default()).unwrap())
+            .bind(serde_json::to_value(dto.config.unwrap_or_default()).unwrap())
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -79,7 +84,8 @@ impl TenantRepository for PgTenantRepo {
         Box::pin(async move {
             sqlx::query_as::<_, Tenant>(
                 r#"UPDATE tenants SET name = COALESCE($1, name), updated_at = NOW()
-                   WHERE id = $2 RETURNING *"#)
+                   WHERE id = $2 RETURNING *"#,
+            )
             .bind(&dto.name)
             .bind(id)
             .fetch_optional(&pool)

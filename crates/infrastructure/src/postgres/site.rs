@@ -1,12 +1,14 @@
-use sqlx::prelude::FromRow;
-use agrocore_domain::entities::{SiteType, CropType};
-use agrocore_domain::entities::site::{CreateSiteDto, Site, UpdateSiteDto, GeoPoint};
+use agrocore_domain::entities::site::{CreateSiteDto, GeoPoint, Site, UpdateSiteDto};
+use agrocore_domain::entities::spatial::SpatialObject;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::UserRole;
-use agrocore_domain::entities::spatial::SpatialObject;
-use agrocore_domain::repositories::{PaginatedResponse, Pagination, RepositoryFuture, SiteRepository, SpatialObjectRepository};
+use agrocore_domain::entities::{CropType, SiteType};
+use agrocore_domain::repositories::{
+    PaginatedResponse, Pagination, RepositoryFuture, SiteRepository, SpatialObjectRepository,
+};
 use agrocore_shared::SharedError;
 use sqlx::PgPool;
+use sqlx::prelude::FromRow;
 use std::future::Future;
 use std::pin::Pin;
 use uuid::Uuid;
@@ -35,7 +37,7 @@ impl SiteRepository for PgSiteRepo {
                    organic_eligible, sigpac_data, regepac_id, properties, custom_fields,
                    note1, note2, is_active, is_temporary, created_at, updated_at,
                    created_by, updated_by, center, boundary
-                   FROM sites WHERE id = $1 AND tenant_id = $2"#
+                   FROM sites WHERE id = $1 AND tenant_id = $2"#,
             )
             .bind(id)
             .bind(tid.to_string())
@@ -45,11 +47,18 @@ impl SiteRepository for PgSiteRepo {
         })
     }
 
-    fn find_by_id_visible(&self, tid: TenantId, id: Uuid, _user_id: Uuid, roles: &[UserRole]) -> RepositoryFuture<Option<Site>> {
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        _user_id: Uuid,
+        roles: &[UserRole],
+    ) -> RepositoryFuture<Option<Site>> {
         let pool = self.pool.clone();
         let roles_vec = roles.to_vec();
         Box::pin(async move {
-            let can_see_all = roles_vec.contains(&UserRole::Admin) || roles_vec.contains(&UserRole::Manager);
+            let can_see_all =
+                roles_vec.contains(&UserRole::Admin) || roles_vec.contains(&UserRole::Manager);
             if can_see_all {
                 sqlx::query_as::<_, Site>(
                     r#"SELECT id, tenant_id, business_id, label, site_type, crop_type, variety,
@@ -58,7 +67,7 @@ impl SiteRepository for PgSiteRepo {
                        organic_eligible, sigpac_data, regepac_id, properties, custom_fields,
                        note1, note2, is_active, is_temporary, created_at, updated_at,
                        created_by, updated_by, center, boundary
-                       FROM sites WHERE id = $1 AND tenant_id = $2"#
+                       FROM sites WHERE id = $1 AND tenant_id = $2"#,
                 )
                 .bind(id)
                 .bind(tid.to_string())
@@ -73,7 +82,7 @@ impl SiteRepository for PgSiteRepo {
                        organic_eligible, sigpac_data, regepac_id, properties, custom_fields,
                        note1, note2, is_active, is_temporary, created_at, updated_at,
                        created_by, updated_by, center, boundary
-                       FROM sites WHERE id = $1 AND tenant_id = $2"#
+                       FROM sites WHERE id = $1 AND tenant_id = $2"#,
                 )
                 .bind(id)
                 .bind(tid.to_string())
@@ -91,11 +100,12 @@ impl SiteRepository for PgSiteRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM sites WHERE tenant_id = $1::uuid")
-                .bind(tid.to_string())
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM sites WHERE tenant_id = $1::uuid")
+                    .bind(tid.to_string())
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Site> = sqlx::query_as(
                 r#"SELECT id, tenant_id, business_id, label, site_type, crop_type, variety,
@@ -104,14 +114,14 @@ impl SiteRepository for PgSiteRepo {
                    organic_eligible, sigpac_data, regepac_id, properties, custom_fields,
                    note1, note2, is_active, is_temporary, created_at, updated_at,
                    created_by, updated_by, center, boundary
-                   FROM sites WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3"#
-                )
-                .bind(tid.to_string())
-                .bind(per_page as i32)
-                .bind(offset as i32)
-                .fetch_all(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+                   FROM sites WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3"#,
+            )
+            .bind(tid.to_string())
+            .bind(per_page as i32)
+            .bind(offset as i32)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(PaginatedResponse {
                 data,
@@ -123,7 +133,13 @@ impl SiteRepository for PgSiteRepo {
         })
     }
 
-    fn find_all_visible(&self, tid: TenantId, p: Pagination, _user_id: Uuid, _roles: &[UserRole]) -> RepositoryFuture<PaginatedResponse<Site>> {
+    fn find_all_visible(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+        _user_id: Uuid,
+        _roles: &[UserRole],
+    ) -> RepositoryFuture<PaginatedResponse<Site>> {
         SiteRepository::find_all(self, tid, p)
     }
 
@@ -154,7 +170,13 @@ impl SiteRepository for PgSiteRepo {
         })
     }
 
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateSiteDto, _by: Uuid) -> RepositoryFuture<Option<Site>> {
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateSiteDto,
+        _by: Uuid,
+    ) -> RepositoryFuture<Option<Site>> {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, Site>(
@@ -169,7 +191,8 @@ impl SiteRepository for PgSiteRepo {
                    cleared_date, soil_type, slope, slope_facing, altitude, organic,
                    organic_eligible, sigpac_data, regepac_id, properties, custom_fields,
                    note1, note2, is_active, is_temporary, created_at, updated_at,
-                   created_by, updated_by, center, boundary"#)
+                   created_by, updated_by, center, boundary"#,
+            )
             .bind(&dto.label)
             .bind(&dto.center)
             .bind(&dto.boundary)
@@ -203,7 +226,7 @@ impl SpatialObjectRepository for PgSiteRepo {
                 r#"SELECT id, tenant_id, site_id, parent_id, label, object_type, geometry,
                    area, buffer_meters, properties, custom_fields, note, is_active,
                    is_temporary, created_at, updated_at, created_by, updated_by
-                   FROM spatial_objects WHERE id = $1 AND tenant_id = $2"#
+                   FROM spatial_objects WHERE id = $1 AND tenant_id = $2"#,
             )
             .bind(id)
             .bind(tid.to_string())
@@ -212,31 +235,37 @@ impl SpatialObjectRepository for PgSiteRepo {
             .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<SpatialObject>> {
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<SpatialObject>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM spatial_objects WHERE tenant_id = $1::uuid")
-                .bind(tid.to_string())
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM spatial_objects WHERE tenant_id = $1::uuid",
+            )
+            .bind(tid.to_string())
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<SpatialObject> = sqlx::query_as(
                 r#"SELECT id, tenant_id, site_id, parent_id, label, object_type, geometry,
                    area, buffer_meters, properties, custom_fields, note, is_active,
                    is_temporary, created_at, updated_at, created_by, updated_by
-                   FROM spatial_objects WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3"#
-                )
-                .bind(tid.to_string())
-                .bind(per_page as i32)
-                .bind(offset as i32)
-                .fetch_all(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+                   FROM spatial_objects WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3"#,
+            )
+            .bind(tid.to_string())
+            .bind(per_page as i32)
+            .bind(offset as i32)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(PaginatedResponse {
                 data,
@@ -250,16 +279,23 @@ impl SpatialObjectRepository for PgSiteRepo {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query("UPDATE spatial_objects SET is_active = false WHERE id = $1 AND tenant_id = $2")
-                .bind(id)
-                .bind(tid.to_string())
-                .execute(&pool)
-                .await
-                .map(|r| r.rows_affected() > 0)
-                .map_err(|e| SharedError::Database(e.to_string()))
+            sqlx::query(
+                "UPDATE spatial_objects SET is_active = false WHERE id = $1 AND tenant_id = $2",
+            )
+            .bind(id)
+            .bind(tid.to_string())
+            .execute(&pool)
+            .await
+            .map(|r| r.rows_affected() > 0)
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
-    fn find_containing_point(&self, tid: TenantId, point: GeoPoint, site_id: Option<Uuid>) -> RepositoryFuture<Vec<SpatialObject>> {
+    fn find_containing_point(
+        &self,
+        tid: TenantId,
+        point: GeoPoint,
+        site_id: Option<Uuid>,
+    ) -> RepositoryFuture<Vec<SpatialObject>> {
         let pool = self.pool.clone();
         Box::pin(async move {
             let mut query = String::from(
@@ -267,7 +303,7 @@ impl SpatialObjectRepository for PgSiteRepo {
                    area, buffer_meters, properties, custom_fields, note, is_active,
                    is_temporary, created_at, updated_at, created_by, updated_by
                    FROM spatial_objects 
-                   WHERE ST_Contains(geometry, $1) AND tenant_id = $2 AND is_active = true"#
+                   WHERE ST_Contains(geometry, $1) AND tenant_id = $2 AND is_active = true"#,
             );
             if site_id.is_some() {
                 query.push_str(" AND site_id = $3");
@@ -276,7 +312,7 @@ impl SpatialObjectRepository for PgSiteRepo {
             let mut q = sqlx::query_as::<_, SpatialObject>(&query)
                 .bind(&point)
                 .bind(tid.to_string());
-            
+
             if let Some(sid) = site_id {
                 q = q.bind(sid);
             }

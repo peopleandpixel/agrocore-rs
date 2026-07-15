@@ -65,7 +65,11 @@ pub async fn list_seasons(
     auth: AuthUser,
     p: web::Query<Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    let res = state.db.harvest_season_repo().find_all(auth.0.tenant_id, p.into_inner()).await?;
+    let res = state
+        .db
+        .harvest_season_repo()
+        .find_all(auth.0.tenant_id, p.into_inner())
+        .await?;
     Ok(HttpResponse::Ok().json(res))
 }
 
@@ -74,7 +78,11 @@ pub async fn create_season(
     auth: AuthUser,
     dto: web::Json<CreateHarvestSeasonDto>,
 ) -> Result<HttpResponse, ApiError> {
-    let res = state.db.harvest_season_repo().create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id).await?;
+    let res = state
+        .db
+        .harvest_season_repo()
+        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .await?;
     Ok(HttpResponse::Created().json(res))
 }
 
@@ -83,7 +91,11 @@ pub async fn get_season(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let res = state.db.harvest_season_repo().find_by_id(auth.0.tenant_id, id.into_inner()).await?
+    let res = state
+        .db
+        .harvest_season_repo()
+        .find_by_id(auth.0.tenant_id, id.into_inner())
+        .await?
         .ok_or_else(|| agrocore_shared::SharedError::NotFound("Season not found".into()))?;
     Ok(HttpResponse::Ok().json(res))
 }
@@ -94,7 +106,16 @@ pub async fn update_season(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateHarvestSeasonDto>,
 ) -> Result<HttpResponse, ApiError> {
-    let res = state.db.harvest_season_repo().update(auth.0.tenant_id, id.into_inner(), dto.into_inner(), auth.0.user_id).await?
+    let res = state
+        .db
+        .harvest_season_repo()
+        .update(
+            auth.0.tenant_id,
+            id.into_inner(),
+            dto.into_inner(),
+            auth.0.user_id,
+        )
+        .await?
         .ok_or_else(|| agrocore_shared::SharedError::NotFound("Season not found".into()))?;
     Ok(HttpResponse::Ok().json(res))
 }
@@ -104,7 +125,11 @@ pub async fn delete_season(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let deleted = state.db.harvest_season_repo().delete(auth.0.tenant_id, id.into_inner()).await?;
+    let deleted = state
+        .db
+        .harvest_season_repo()
+        .delete(auth.0.tenant_id, id.into_inner())
+        .await?;
     if deleted {
         Ok(HttpResponse::NoContent().finish())
     } else {
@@ -118,7 +143,11 @@ pub async fn list_lots(
     auth: AuthUser,
     p: web::Query<Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    let res = state.db.harvest_lot_repo().find_all(auth.0.tenant_id, p.into_inner()).await?;
+    let res = state
+        .db
+        .harvest_lot_repo()
+        .find_all(auth.0.tenant_id, p.into_inner())
+        .await?;
     Ok(HttpResponse::Ok().json(res))
 }
 
@@ -127,7 +156,11 @@ pub async fn create_lot(
     auth: AuthUser,
     dto: web::Json<CreateHarvestLotDto>,
 ) -> Result<HttpResponse, ApiError> {
-    let res = state.db.harvest_lot_repo().create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id).await?;
+    let res = state
+        .db
+        .harvest_lot_repo()
+        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .await?;
     Ok(HttpResponse::Created().json(res))
 }
 
@@ -136,7 +169,11 @@ pub async fn get_lot(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let res = state.db.harvest_lot_repo().find_by_id(auth.0.tenant_id, id.into_inner()).await?
+    let res = state
+        .db
+        .harvest_lot_repo()
+        .find_by_id(auth.0.tenant_id, id.into_inner())
+        .await?
         .ok_or_else(|| agrocore_shared::SharedError::NotFound("Lot not found".into()))?;
     Ok(HttpResponse::Ok().json(res))
 }
@@ -147,7 +184,16 @@ pub async fn update_lot(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateHarvestLotDto>,
 ) -> Result<HttpResponse, ApiError> {
-    let res = state.db.harvest_lot_repo().update(auth.0.tenant_id, id.into_inner(), dto.into_inner(), auth.0.user_id).await?
+    let res = state
+        .db
+        .harvest_lot_repo()
+        .update(
+            auth.0.tenant_id,
+            id.into_inner(),
+            dto.into_inner(),
+            auth.0.user_id,
+        )
+        .await?
         .ok_or_else(|| agrocore_shared::SharedError::NotFound("Lot not found".into()))?;
     Ok(HttpResponse::Ok().json(res))
 }
@@ -157,7 +203,11 @@ pub async fn delete_lot(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let deleted = state.db.harvest_lot_repo().delete(auth.0.tenant_id, id.into_inner()).await?;
+    let deleted = state
+        .db
+        .harvest_lot_repo()
+        .delete(auth.0.tenant_id, id.into_inner())
+        .await?;
     if deleted {
         Ok(HttpResponse::NoContent().finish())
     } else {
@@ -171,7 +221,11 @@ pub async fn list_deliveries(
     auth: AuthUser,
     p: web::Query<Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    let res = state.db.harvest_delivery_repo().find_all(auth.0.tenant_id, p.into_inner()).await?;
+    let res = state
+        .db
+        .harvest_delivery_repo()
+        .find_all(auth.0.tenant_id, p.into_inner())
+        .await?;
     Ok(HttpResponse::Ok().json(res))
 }
 
@@ -180,7 +234,11 @@ pub async fn create_delivery(
     auth: AuthUser,
     dto: web::Json<CreateHarvestDeliveryDto>,
 ) -> Result<HttpResponse, ApiError> {
-    let res = state.db.harvest_delivery_repo().create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id).await?;
+    let res = state
+        .db
+        .harvest_delivery_repo()
+        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .await?;
     Ok(HttpResponse::Created().json(res))
 }
 
@@ -189,7 +247,11 @@ pub async fn get_delivery(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let res = state.db.harvest_delivery_repo().find_by_id(auth.0.tenant_id, id.into_inner()).await?
+    let res = state
+        .db
+        .harvest_delivery_repo()
+        .find_by_id(auth.0.tenant_id, id.into_inner())
+        .await?
         .ok_or_else(|| agrocore_shared::SharedError::NotFound("Delivery not found".into()))?;
     Ok(HttpResponse::Ok().json(res))
 }
@@ -200,7 +262,16 @@ pub async fn update_delivery(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateHarvestDeliveryDto>,
 ) -> Result<HttpResponse, ApiError> {
-    let res = state.db.harvest_delivery_repo().update(auth.0.tenant_id, id.into_inner(), dto.into_inner(), auth.0.user_id).await?
+    let res = state
+        .db
+        .harvest_delivery_repo()
+        .update(
+            auth.0.tenant_id,
+            id.into_inner(),
+            dto.into_inner(),
+            auth.0.user_id,
+        )
+        .await?
         .ok_or_else(|| agrocore_shared::SharedError::NotFound("Delivery not found".into()))?;
     Ok(HttpResponse::Ok().json(res))
 }
@@ -210,7 +281,11 @@ pub async fn delete_delivery(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let deleted = state.db.harvest_delivery_repo().delete(auth.0.tenant_id, id.into_inner()).await?;
+    let deleted = state
+        .db
+        .harvest_delivery_repo()
+        .delete(auth.0.tenant_id, id.into_inner())
+        .await?;
     if deleted {
         Ok(HttpResponse::NoContent().finish())
     } else {
@@ -224,7 +299,11 @@ pub async fn list_cold_chain_logs(
     auth: AuthUser,
     p: web::Query<Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    let res = state.db.cold_chain_log_repo().find_all(auth.0.tenant_id, p.into_inner()).await?;
+    let res = state
+        .db
+        .cold_chain_log_repo()
+        .find_all(auth.0.tenant_id, p.into_inner())
+        .await?;
     Ok(HttpResponse::Ok().json(res))
 }
 
@@ -233,7 +312,11 @@ pub async fn create_cold_chain_log(
     auth: AuthUser,
     dto: web::Json<CreateColdChainLogDto>,
 ) -> Result<HttpResponse, ApiError> {
-    let res = state.db.cold_chain_log_repo().create(auth.0.tenant_id, dto.into_inner()).await?;
+    let res = state
+        .db
+        .cold_chain_log_repo()
+        .create(auth.0.tenant_id, dto.into_inner())
+        .await?;
     Ok(HttpResponse::Created().json(res))
 }
 
@@ -242,7 +325,11 @@ pub async fn get_cold_chain_log(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let res = state.db.cold_chain_log_repo().find_by_id(auth.0.tenant_id, id.into_inner()).await?
+    let res = state
+        .db
+        .cold_chain_log_repo()
+        .find_by_id(auth.0.tenant_id, id.into_inner())
+        .await?
         .ok_or_else(|| agrocore_shared::SharedError::NotFound("Log not found".into()))?;
     Ok(HttpResponse::Ok().json(res))
 }
@@ -253,7 +340,11 @@ pub async fn update_cold_chain_log(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateColdChainLogDto>,
 ) -> Result<HttpResponse, ApiError> {
-    let res = state.db.cold_chain_log_repo().update(auth.0.tenant_id, id.into_inner(), dto.into_inner()).await?
+    let res = state
+        .db
+        .cold_chain_log_repo()
+        .update(auth.0.tenant_id, id.into_inner(), dto.into_inner())
+        .await?
         .ok_or_else(|| agrocore_shared::SharedError::NotFound("Log not found".into()))?;
     Ok(HttpResponse::Ok().json(res))
 }
@@ -263,7 +354,11 @@ pub async fn delete_cold_chain_log(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let deleted = state.db.cold_chain_log_repo().delete(auth.0.tenant_id, id.into_inner()).await?;
+    let deleted = state
+        .db
+        .cold_chain_log_repo()
+        .delete(auth.0.tenant_id, id.into_inner())
+        .await?;
     if deleted {
         Ok(HttpResponse::NoContent().finish())
     } else {

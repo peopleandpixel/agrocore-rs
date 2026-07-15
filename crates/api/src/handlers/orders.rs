@@ -273,7 +273,12 @@ pub async fn complete_order(
         is_night_shift: false,
         breaks_taken: 0,
     };
-    if let Err(e) = state.db.work_log_repo().create(tenant_id, worklog, auth.0.user_id).await {
+    if let Err(e) = state
+        .db
+        .work_log_repo()
+        .create(tenant_id, worklog, auth.0.user_id)
+        .await
+    {
         tracing::warn!(
             "Failed to create worklog for completed order {}: {}",
             order_id,

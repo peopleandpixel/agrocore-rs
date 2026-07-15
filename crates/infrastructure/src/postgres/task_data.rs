@@ -1,6 +1,8 @@
-use agrocore_domain::entities::task::{TaskData, CreateTaskDataDto, UpdateTaskDataDto};
+use agrocore_domain::entities::task::{CreateTaskDataDto, TaskData, UpdateTaskDataDto};
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::repositories::{PaginatedResponse, Pagination, RepositoryFuture, TaskDataRepository};
+use agrocore_domain::repositories::{
+    PaginatedResponse, Pagination, RepositoryFuture, TaskDataRepository,
+};
 use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -20,35 +22,44 @@ impl TaskDataRepository for PgTaskDataRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<TaskData>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, TaskData>("SELECT * FROM task_data WHERE id = $1 AND tenant_id = $2")
-                .bind(id)
-                .bind(tid.to_string())
-                .fetch_optional(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))
+            sqlx::query_as::<_, TaskData>(
+                "SELECT * FROM task_data WHERE id = $1 AND tenant_id = $2",
+            )
+            .bind(id)
+            .bind(tid.to_string())
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<TaskData>> {
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<TaskData>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM task_data WHERE tenant_id = $1::uuid")
-                .bind(tid.to_string())
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM task_data WHERE tenant_id = $1::uuid")
+                    .bind(tid.to_string())
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<TaskData> = sqlx::query_as("SELECT * FROM task_data WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3")
-                .bind(tid.to_string())
-                .bind(per_page as i32)
-                .bind(offset as i32)
-                .fetch_all(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<TaskData> = sqlx::query_as(
+                "SELECT * FROM task_data WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3",
+            )
+            .bind(tid.to_string())
+            .bind(per_page as i32)
+            .bind(offset as i32)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(PaginatedResponse {
                 data,
@@ -60,19 +71,26 @@ impl TaskDataRepository for PgTaskDataRepo {
         })
     }
 
-    fn find_by_task(&self, tid: TenantId, task_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<TaskData>> {
+    fn find_by_task(
+        &self,
+        tid: TenantId,
+        task_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<TaskData>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM task_data WHERE tenant_id = $1::uuid AND order_id = $2::uuid")
-                .bind(tid.to_string())
-                .bind(task_id.to_string())
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM task_data WHERE tenant_id = $1::uuid AND order_id = $2::uuid",
+            )
+            .bind(tid.to_string())
+            .bind(task_id.to_string())
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<TaskData> = sqlx::query_as("SELECT * FROM task_data WHERE tenant_id = $1::uuid AND order_id = $2::uuid LIMIT $3 OFFSET $4")
                 .bind(tid.to_string())
@@ -93,7 +111,12 @@ impl TaskDataRepository for PgTaskDataRepo {
         })
     }
 
-    fn find_by_worker(&self, tid: TenantId, worker_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<TaskData>> {
+    fn find_by_worker(
+        &self,
+        tid: TenantId,
+        worker_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<TaskData>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
@@ -126,7 +149,12 @@ impl TaskDataRepository for PgTaskDataRepo {
         })
     }
 
-    fn create(&self, tid: TenantId, dto: CreateTaskDataDto, by: Uuid) -> RepositoryFuture<TaskData> {
+    fn create(
+        &self,
+        tid: TenantId,
+        dto: CreateTaskDataDto,
+        by: Uuid,
+    ) -> RepositoryFuture<TaskData> {
         let pool = self.pool.clone();
         Box::pin(async move {
             let id = Uuid::new_v4();
@@ -165,7 +193,13 @@ impl TaskDataRepository for PgTaskDataRepo {
         })
     }
 
-    fn update(&self, _tid: TenantId, _id: Uuid, _dto: UpdateTaskDataDto, _by: Uuid) -> RepositoryFuture<Option<TaskData>> {
+    fn update(
+        &self,
+        _tid: TenantId,
+        _id: Uuid,
+        _dto: UpdateTaskDataDto,
+        _by: Uuid,
+    ) -> RepositoryFuture<Option<TaskData>> {
         Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
     }
 

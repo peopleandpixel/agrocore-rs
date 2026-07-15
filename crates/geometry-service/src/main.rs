@@ -12,8 +12,8 @@ async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
     agrocore_shared::telemetry::init_telemetry("agrocore_geometry_service");
 
-    let database_url =
-        std::env::var("DATABASE_URL").unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/agrocore".to_string());
+    let database_url = std::env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/agrocore".to_string());
     let nats_url =
         std::env::var("NATS_URL").unwrap_or_else(|_| "nats://localhost:4222".to_string());
     let bind_addr = std::env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:3003".to_string());

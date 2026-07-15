@@ -1,6 +1,10 @@
-use agrocore_domain::entities::vineyard::{KelterDelivery, CreateKelterDeliveryDto, UpdateKelterDeliveryDto};
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::repositories::{PaginatedResponse, Pagination, RepositoryFuture, KelterDeliveryRepo};
+use agrocore_domain::entities::vineyard::{
+    CreateKelterDeliveryDto, KelterDelivery, UpdateKelterDeliveryDto,
+};
+use agrocore_domain::repositories::{
+    KelterDeliveryRepo, PaginatedResponse, Pagination, RepositoryFuture,
+};
 use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -28,7 +32,11 @@ impl KelterDeliveryRepo for PgKelterDeliveryRepo {
         })
     }
 
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<KelterDelivery>> {
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<KelterDelivery>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
@@ -40,12 +48,13 @@ impl KelterDeliveryRepo for PgKelterDeliveryRepo {
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<KelterDelivery> = sqlx::query_as("SELECT * FROM kelter_deliveries LIMIT $1 OFFSET $2")
-                .bind(per_page as i32)
-                .bind(offset as i32)
-                .fetch_all(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<KelterDelivery> =
+                sqlx::query_as("SELECT * FROM kelter_deliveries LIMIT $1 OFFSET $2")
+                    .bind(per_page as i32)
+                    .bind(offset as i32)
+                    .fetch_all(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(PaginatedResponse {
                 data,
@@ -57,26 +66,34 @@ impl KelterDeliveryRepo for PgKelterDeliveryRepo {
         })
     }
 
-    fn find_by_vineyard(&self, tid: TenantId, vineyard_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<KelterDelivery>> {
+    fn find_by_vineyard(
+        &self,
+        tid: TenantId,
+        vineyard_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<KelterDelivery>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM kelter_deliveries WHERE vineyard_id = $1")
-                .bind(vineyard_id)
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM kelter_deliveries WHERE vineyard_id = $1")
+                    .bind(vineyard_id)
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<KelterDelivery> = sqlx::query_as("SELECT * FROM kelter_deliveries WHERE vineyard_id = $1 LIMIT $2 OFFSET $3")
-                .bind(vineyard_id)
-                .bind(per_page as i32)
-                .bind(offset as i32)
-                .fetch_all(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<KelterDelivery> = sqlx::query_as(
+                "SELECT * FROM kelter_deliveries WHERE vineyard_id = $1 LIMIT $2 OFFSET $3",
+            )
+            .bind(vineyard_id)
+            .bind(per_page as i32)
+            .bind(offset as i32)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(PaginatedResponse {
                 data,
@@ -88,7 +105,12 @@ impl KelterDeliveryRepo for PgKelterDeliveryRepo {
         })
     }
 
-    fn create(&self, tid: TenantId, dto: CreateKelterDeliveryDto, by: Uuid) -> RepositoryFuture<KelterDelivery> {
+    fn create(
+        &self,
+        tid: TenantId,
+        dto: CreateKelterDeliveryDto,
+        by: Uuid,
+    ) -> RepositoryFuture<KelterDelivery> {
         let pool = self.pool.clone();
         Box::pin(async move {
             let id = Uuid::new_v4();
@@ -112,7 +134,13 @@ impl KelterDeliveryRepo for PgKelterDeliveryRepo {
         })
     }
 
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateKelterDeliveryDto, by: Uuid) -> RepositoryFuture<Option<KelterDelivery>> {
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateKelterDeliveryDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<KelterDelivery>> {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, KelterDelivery>(
@@ -126,7 +154,8 @@ impl KelterDeliveryRepo for PgKelterDeliveryRepo {
                     transport_company = COALESCE($7, transport_company),
                     temperature_c = COALESCE($8, temperature_c),
                     notes = COALESCE($9, notes)
-                   WHERE id = $10 RETURNING *"#)
+                   WHERE id = $10 RETURNING *"#,
+            )
             .bind(dto.vineyard_id)
             .bind(dto.delivery_date)
             .bind(dto.gross_weight_kg)

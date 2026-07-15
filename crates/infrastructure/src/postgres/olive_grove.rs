@@ -1,6 +1,8 @@
-use agrocore_domain::entities::olive::{OliveGrove, CreateOliveGroveDto, UpdateOliveGroveDto};
+use agrocore_domain::entities::olive::{CreateOliveGroveDto, OliveGrove, UpdateOliveGroveDto};
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::repositories::{OliveGroveRepo, PaginatedResponse, Pagination, RepositoryFuture};
+use agrocore_domain::repositories::{
+    OliveGroveRepo, PaginatedResponse, Pagination, RepositoryFuture,
+};
 use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -20,38 +22,51 @@ impl OliveGroveRepo for PgOliveGroveRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<OliveGrove>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, OliveGrove>("SELECT * FROM olive_groves WHERE id = $1 AND tenant_id = $2")
-                .bind(id)
-                .bind(tid.to_string())
-                .fetch_optional(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))
+            sqlx::query_as::<_, OliveGrove>(
+                "SELECT * FROM olive_groves WHERE id = $1 AND tenant_id = $2",
+            )
+            .bind(id)
+            .bind(tid.to_string())
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<OliveGrove>> {
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<OliveGrove>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM olive_groves WHERE tenant_id = $1::uuid")
-                .bind(tid.to_string())
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM olive_groves WHERE tenant_id = $1::uuid")
+                    .bind(tid.to_string())
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<OliveGrove> = sqlx::query_as("SELECT * FROM olive_groves WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3")
-                .bind(tid.to_string())
-                .bind(per_page as i32)
-                .bind(offset as i32)
-                .fetch_all(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<OliveGrove> = sqlx::query_as(
+                "SELECT * FROM olive_groves WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3",
+            )
+            .bind(tid.to_string())
+            .bind(per_page as i32)
+            .bind(offset as i32)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
-            
+            let total_pages = if total == 0 {
+                0
+            } else {
+                (total as f64 / per_page as f64).ceil() as u64
+            };
+
             Ok(PaginatedResponse {
                 data,
                 total: total as u64,
@@ -62,7 +77,12 @@ impl OliveGroveRepo for PgOliveGroveRepo {
         })
     }
 
-    fn find_by_site(&self, tid: TenantId, site_id: Uuid, p: Pagination) -> RepositoryFuture<PaginatedResponse<OliveGrove>> {
+    fn find_by_site(
+        &self,
+        tid: TenantId,
+        site_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<OliveGrove>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
@@ -85,8 +105,12 @@ impl OliveGroveRepo for PgOliveGroveRepo {
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
-            
+            let total_pages = if total == 0 {
+                0
+            } else {
+                (total as f64 / per_page as f64).ceil() as u64
+            };
+
             Ok(PaginatedResponse {
                 data,
                 total: total as u64,
@@ -97,7 +121,12 @@ impl OliveGroveRepo for PgOliveGroveRepo {
         })
     }
 
-    fn create(&self, tid: TenantId, dto: CreateOliveGroveDto, _by: Uuid) -> RepositoryFuture<OliveGrove> {
+    fn create(
+        &self,
+        tid: TenantId,
+        dto: CreateOliveGroveDto,
+        _by: Uuid,
+    ) -> RepositoryFuture<OliveGrove> {
         let pool = self.pool.clone();
         Box::pin(async move {
             let id = Uuid::new_v4();
@@ -109,7 +138,7 @@ impl OliveGroveRepo for PgOliveGroveRepo {
             .bind(tid.to_string())
             .bind(dto.site_id)
             .bind(&dto.variety)
-            .bind(dto.tree_count.map(|c| c as i32))
+            .bind(dto.tree_count)
             .bind(dto.planting_year)
             .bind(dto.organic_certified)
             .fetch_one(&pool)
@@ -118,14 +147,20 @@ impl OliveGroveRepo for PgOliveGroveRepo {
         })
     }
 
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateOliveGroveDto, _by: Uuid) -> RepositoryFuture<Option<OliveGrove>> {
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateOliveGroveDto,
+        _by: Uuid,
+    ) -> RepositoryFuture<Option<OliveGrove>> {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, OliveGrove>(
                 r#"UPDATE olive_groves SET variety = COALESCE($1, variety), tree_count = COALESCE($2, tree_count), updated_at = NOW()
                    WHERE id = $3 AND tenant_id = $4 RETURNING *"#)
             .bind(&dto.variety)
-            .bind(dto.tree_count.map(|c| c as i32))
+            .bind(dto.tree_count)
             .bind(id)
             .bind(tid.to_string())
             .fetch_optional(&pool)

@@ -1,7 +1,11 @@
-use agrocore_domain::entities::livestock::{Animal, CreateAnimalDto, UpdateAnimalDto, TreatmentRecord, GrazingRecord};
+use agrocore_domain::entities::livestock::{
+    Animal, CreateAnimalDto, GrazingRecord, TreatmentRecord, UpdateAnimalDto,
+};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::UserRole;
-use agrocore_domain::repositories::{AnimalRepository, RepositoryFuture, PaginatedResponse, Pagination};
+use agrocore_domain::repositories::{
+    AnimalRepository, PaginatedResponse, Pagination, RepositoryFuture,
+};
 use agrocore_shared::SharedError;
 use chrono::Utc;
 use sqlx::PgPool;
@@ -43,23 +47,28 @@ impl AnimalRepository for PgAnimalRepo {
         let pool = self.pool.clone();
         let roles_vec = roles.to_vec();
         Box::pin(async move {
-            let can_see_all = roles_vec.contains(&UserRole::Admin) || roles_vec.contains(&UserRole::Manager);
-            
+            let can_see_all =
+                roles_vec.contains(&UserRole::Admin) || roles_vec.contains(&UserRole::Manager);
+
             if can_see_all {
-                sqlx::query_as::<_, Animal>("SELECT * FROM animals WHERE id = $1 AND tenant_id = $2")
-                    .bind(id)
-                    .bind(tid.to_string())
-                    .fetch_optional(&pool)
-                    .await
-                    .map_err(|e| SharedError::Database(e.to_string()))
+                sqlx::query_as::<_, Animal>(
+                    "SELECT * FROM animals WHERE id = $1 AND tenant_id = $2",
+                )
+                .bind(id)
+                .bind(tid.to_string())
+                .fetch_optional(&pool)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))
             } else {
-                sqlx::query_as::<_, Animal>("SELECT * FROM animals WHERE id = $1 AND tenant_id = $2 AND id = $3")
-                    .bind(id)
-                    .bind(tid.to_string())
-                    .bind(user_id)
-                    .fetch_optional(&pool)
-                    .await
-                    .map_err(|e| SharedError::Database(e.to_string()))
+                sqlx::query_as::<_, Animal>(
+                    "SELECT * FROM animals WHERE id = $1 AND tenant_id = $2 AND id = $3",
+                )
+                .bind(id)
+                .bind(tid.to_string())
+                .bind(user_id)
+                .fetch_optional(&pool)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))
             }
         })
     }
@@ -85,8 +94,12 @@ impl AnimalRepository for PgAnimalRepo {
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
-            
+            let total_pages = if total == 0 {
+                0
+            } else {
+                (total as f64 / per_page as f64).ceil() as u64
+            };
+
             Ok(PaginatedResponse {
                 data,
                 total: total as u64,
@@ -122,7 +135,13 @@ impl AnimalRepository for PgAnimalRepo {
         })
     }
 
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateAnimalDto, _by: Uuid) -> Fut<Option<Animal>> {
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateAnimalDto,
+        _by: Uuid,
+    ) -> Fut<Option<Animal>> {
         let pool = self.pool.clone();
         Box::pin(async move {
             let now = Utc::now();
@@ -135,10 +154,15 @@ impl AnimalRepository for PgAnimalRepo {
                     current_site_id = COALESCE($4, current_site_id),
                     updated_at = $5
                    WHERE id = $6 AND tenant_id = $7
-                   RETURNING *"#)
+                   RETURNING *"#,
+            )
             .bind(&dto.identifier)
             .bind(&dto.breed)
-            .bind(dto.status.as_ref().map(|s| serde_json::to_value(s).unwrap()))
+            .bind(
+                dto.status
+                    .as_ref()
+                    .map(|s| serde_json::to_value(s).unwrap()),
+            )
             .bind(dto.current_site_id)
             .bind(now)
             .bind(id)
@@ -159,7 +183,7 @@ impl AnimalRepository for PgAnimalRepo {
                 .execute(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
-            
+
             Ok(result.rows_affected() > 0)
         })
     }
