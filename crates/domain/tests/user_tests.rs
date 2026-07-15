@@ -12,11 +12,7 @@ fn user_role_permissions_cover_core_branches() {
     assert!(!UserRole::Worker.has_permission(Resource::Order, Action::Delete, None));
     assert!(UserRole::Viewer.has_permission(Resource::User, Action::Read, None));
     assert!(!UserRole::Viewer.has_permission(Resource::User, Action::Update, None));
-    assert!(!UserRole::Custom(Uuid::new_v4()).has_permission(
-        Resource::Tenant,
-        Action::Read,
-        None
-    ));
+    assert!(!UserRole::Custom(Uuid::new_v4()).has_permission(Resource::Tenant, Action::Read, None));
 }
 
 #[test]

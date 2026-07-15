@@ -1,5 +1,5 @@
 // Integration Tests - Mock Repository für Site & Compliance
-// Nutzt In-Memory Implementierung statt echter MongoDB
+// Nutzt In-Memory Implementierung statt echter Datenbank
 
 use agrocore_api::dto::{CreateSiteDto, SiteDto, UpdateSiteDto};
 use agrocore_domain::entities::site::{Site, SiteType};

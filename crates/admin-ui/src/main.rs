@@ -176,7 +176,8 @@ fn AuthenticatedShell(
         i18n.t(lang.get().as_str(), "nav_analytics")
             .into_boxed_str(),
     );
-    let nav_audit: &'static str = Box::leak(i18n.t(lang.get().as_str(), "nav_audit").into_boxed_str());
+    let nav_audit: &'static str =
+        Box::leak(i18n.t(lang.get().as_str(), "nav_audit").into_boxed_str());
     let nav_compliance: &'static str = Box::leak(
         i18n.t(lang.get().as_str(), "nav_compliance")
             .into_boxed_str(),

@@ -1,25 +1,25 @@
 use crate::postgres::{
-    animal::PgAnimalRepo, cold_chain_log::PgColdChainLogRepo, equipment::PgEquipmentRepo,
-    fertilizer_record::PgFertilizerRecordRepo, harvest_delivery::PgHarvestDeliveryRepo,
+    animal::PgAnimalRepo, audit_log::PgAuditLogRepo, cold_chain_log::PgColdChainLogRepo,
+    compliance::PgComplianceChecklistRepo, cost_center::PgCostCenterRepo,
+    equipment::PgEquipmentRepo, fertilizer_record::PgFertilizerRecordRepo,
+    financial_record::PgFinancialRecordRepo, harvest_delivery::PgHarvestDeliveryRepo,
     harvest_lot::PgHarvestLotRepo, harvest_season::PgHarvestSeasonRepo,
-    olive_grove::PgOliveGroveRepo, olive_oil_record::PgOliveOilRecordRepo, order::PgOrderRepo,
+    kelter_delivery::PgKelterDeliveryRepo, olive_grove::PgOliveGroveRepo,
+    olive_oil_record::PgOliveOilRecordRepo, order::PgOrderRepo,
     phenology_record::PgPhenologyRecordRepo, plant_protection_record::PgPlantProtectionRecordRepo,
-    site::PgSiteRepo, tenant::PgTenantRepo, user::PgUserRepo, audit_log::PgAuditLogRepo,
-    task_data::PgTaskDataRepo,
-    compliance::PgComplianceChecklistRepo, cost_center::PgCostCenterRepo, financial_record::PgFinancialRecordRepo,
-    vineyard::PgVineyardRepo, weather_data::PgWeatherDataRepo, weather_station::PgWeatherStationRepo,
-    worker::PgWorkerRepo, worker_location::PgWorkerLocationRepo, work_log::PgWorkLogRepo,
-    worker_task_status::PgWorkerTaskStatusRepo, kelter_delivery::PgKelterDeliveryRepo,
+    site::PgSiteRepo, task_data::PgTaskDataRepo, tenant::PgTenantRepo, user::PgUserRepo,
+    vineyard::PgVineyardRepo, weather_data::PgWeatherDataRepo,
+    weather_station::PgWeatherStationRepo, work_log::PgWorkLogRepo, worker::PgWorkerRepo,
+    worker_location::PgWorkerLocationRepo, worker_task_status::PgWorkerTaskStatusRepo,
 };
 use agrocore_domain::repositories::{
-    AnimalRepository, EquipmentRepository, FertilizerRecordRepo, HarvestDeliveryRepo, HarvestLotRepo, HarvestSeasonRepo,
-    OliveGroveRepo, OliveOilRecordRepo, OrderRepository, PhenologyRecordRepo, PlantProtectionRecordRepo,
-    SiteRepository, TenantRepository, UserRepository, VineyardRepo,
-    WaterQuotaRepo, WaterSourceRepo, WaterUsageRepo,
-    WeatherDataRepo, WeatherStationRepo, WorkerLocationRepo, WorkerRepo, WorkLogRepo,
-    WorkerTaskStatusRepository, TaskDataRepository, SpatialObjectRepository,
-    PACApplicationRepo, ColdChainLogRepo, AuditLogRepo, ComplianceChecklistRepo,
-    CostCenterRepo, FinancialRecordRepo, KelterDeliveryRepo,
+    AnimalRepository, AuditLogRepo, ColdChainLogRepo, ComplianceChecklistRepo, CostCenterRepo,
+    EquipmentRepository, FertilizerRecordRepo, FinancialRecordRepo, HarvestDeliveryRepo,
+    HarvestLotRepo, HarvestSeasonRepo, KelterDeliveryRepo, OliveGroveRepo, OliveOilRecordRepo,
+    OrderRepository, PACApplicationRepo, PhenologyRecordRepo, PlantProtectionRecordRepo,
+    SiteRepository, SpatialObjectRepository, TaskDataRepository, TenantRepository, UserRepository,
+    VineyardRepo, WaterQuotaRepo, WaterSourceRepo, WaterUsageRepo, WeatherDataRepo,
+    WeatherStationRepo, WorkLogRepo, WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
 };
 use sqlx::PgPool;
 use std::sync::Arc;
@@ -317,15 +317,21 @@ impl PostgresDb {
 
     // Water repositories
     pub fn water_source_repo(&self) -> Arc<dyn WaterSourceRepo> {
-        Arc::new(crate::postgres::water_source::PgWaterSourceRepo::new(self.pool.clone()))
+        Arc::new(crate::postgres::water_source::PgWaterSourceRepo::new(
+            self.pool.clone(),
+        ))
     }
 
     pub fn water_usage_repo(&self) -> Arc<dyn WaterUsageRepo> {
-        Arc::new(crate::postgres::water_usage::PgWaterUsageRepo::new(self.pool.clone()))
+        Arc::new(crate::postgres::water_usage::PgWaterUsageRepo::new(
+            self.pool.clone(),
+        ))
     }
 
     pub fn water_quota_repo(&self) -> Arc<dyn WaterQuotaRepo> {
-        Arc::new(crate::postgres::water_quota::PgWaterQuotaRepo::new(self.pool.clone()))
+        Arc::new(crate::postgres::water_quota::PgWaterQuotaRepo::new(
+            self.pool.clone(),
+        ))
     }
 
     // Worker repositories
@@ -360,7 +366,9 @@ impl PostgresDb {
 
     // PAC
     pub fn pac_application_repo(&self) -> Arc<dyn PACApplicationRepo> {
-        Arc::new(crate::postgres::pac_application::PgPACApplicationRepo::new(self.pool.clone()))
+        Arc::new(crate::postgres::pac_application::PgPACApplicationRepo::new(
+            self.pool.clone(),
+        ))
     }
 
     // ColdChain

@@ -33,9 +33,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         web::resource("/compliance/plant-protection")
             .route(web::get().to(list_plant_protection_records)),
     )
-    .service(
-        web::resource("/compliance/audit-logs").route(web::get().to(list_audit_logs)),
-    );
+    .service(web::resource("/compliance/audit-logs").route(web::get().to(list_audit_logs)));
 }
 
 pub async fn list_checklists(
@@ -205,7 +203,11 @@ pub async fn list_audit_logs(
     auth: AuthUser,
     query: web::Query<Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    let result = state.db.audit_log_repo().find_all(auth.0.tenant_id, query.0).await?;
+    let result = state
+        .db
+        .audit_log_repo()
+        .find_all(auth.0.tenant_id, query.0)
+        .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
         total: result.total,

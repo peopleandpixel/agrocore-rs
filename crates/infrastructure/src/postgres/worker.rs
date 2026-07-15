@@ -1,7 +1,9 @@
-use agrocore_domain::entities::workforce::{Worker, CreateWorkerDto, UpdateWorkerDto};
-use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::repositories::{WorkerRepo, PaginatedResponse, Pagination, RepositoryFuture, AuditLogRepo};
 use crate::postgres::audit_log::PgAuditLogRepo;
+use agrocore_domain::entities::tenant::TenantId;
+use agrocore_domain::entities::workforce::{CreateWorkerDto, UpdateWorkerDto, Worker};
+use agrocore_domain::repositories::{
+    AuditLogRepo, PaginatedResponse, Pagination, RepositoryFuture, WorkerRepo,
+};
 use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -21,39 +23,49 @@ impl WorkerRepo for PgWorkerRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Worker>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, Worker>("SELECT * FROM workers WHERE id = $1 AND tenant_id = $2 AND is_active = true")
-                .bind(id)
-                .bind(tid.to_string())
-                .fetch_optional(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))
+            sqlx::query_as::<_, Worker>(
+                "SELECT * FROM workers WHERE id = $1 AND tenant_id = $2 AND is_active = true",
+            )
+            .bind(id)
+            .bind(tid.to_string())
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 
     fn find_by_user_id(&self, tid: TenantId, user_id: Uuid) -> RepositoryFuture<Option<Worker>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, Worker>("SELECT * FROM workers WHERE user_id = $1 AND tenant_id = $2 AND is_active = true")
-                .bind(user_id)
-                .bind(tid.to_string())
-                .fetch_optional(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))
+            sqlx::query_as::<_, Worker>(
+                "SELECT * FROM workers WHERE user_id = $1 AND tenant_id = $2 AND is_active = true",
+            )
+            .bind(user_id)
+            .bind(tid.to_string())
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Worker>> {
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<Worker>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM workers WHERE tenant_id = $1::uuid AND is_active = true")
-                .bind(tid.to_string())
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM workers WHERE tenant_id = $1::uuid AND is_active = true",
+            )
+            .bind(tid.to_string())
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Worker> = sqlx::query_as("SELECT * FROM workers WHERE tenant_id = $1::uuid AND is_active = true LIMIT $2 OFFSET $3")
                 .bind(tid.to_string())
@@ -91,35 +103,49 @@ impl WorkerRepo for PgWorkerRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let _ = audit_repo.create(tid, agrocore_domain::entities::compliance::CreateAuditLogDto {
-                tenant_id: tid,
-                user_id: by,
-                action: agrocore_domain::entities::compliance::AuditAction::Created,
-                entity_type: "Worker".into(),
-                entity_id: entity.id,
-                old_value: None,
-                new_value: Some(serde_json::to_value(&entity).unwrap()),
-                ip_address: None,
-            }).await;
+            let _ = audit_repo
+                .create(
+                    tid,
+                    agrocore_domain::entities::compliance::CreateAuditLogDto {
+                        tenant_id: tid,
+                        user_id: by,
+                        action: agrocore_domain::entities::compliance::AuditAction::Created,
+                        entity_type: "Worker".into(),
+                        entity_id: entity.id,
+                        old_value: None,
+                        new_value: Some(serde_json::to_value(&entity).unwrap()),
+                        ip_address: None,
+                    },
+                )
+                .await;
 
             Ok(entity)
         })
     }
 
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateWorkerDto, by: Uuid) -> RepositoryFuture<Option<Worker>> {
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateWorkerDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<Worker>> {
         let pool = self.pool.clone();
         let audit_repo = PgAuditLogRepo::new(pool.clone());
         Box::pin(async move {
-            let old_val = sqlx::query_as::<_, Worker>("SELECT * FROM workers WHERE id = $1 AND tenant_id = $2")
-                .bind(id)
-                .bind(tid.to_string())
-                .fetch_optional(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let old_val = sqlx::query_as::<_, Worker>(
+                "SELECT * FROM workers WHERE id = $1 AND tenant_id = $2",
+            )
+            .bind(id)
+            .bind(tid.to_string())
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let entity = sqlx::query_as::<_, Worker>(
                 r#"UPDATE workers SET language = COALESCE($1, language), updated_at = NOW()
-                   WHERE id = $2 AND tenant_id = $3 RETURNING *"#)
+                   WHERE id = $2 AND tenant_id = $3 RETURNING *"#,
+            )
             .bind(&dto.language)
             .bind(id)
             .bind(tid.to_string())
@@ -128,16 +154,21 @@ impl WorkerRepo for PgWorkerRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             if let (Some(old), Some(new)) = (&old_val, &entity) {
-                let _ = audit_repo.create(tid, agrocore_domain::entities::compliance::CreateAuditLogDto {
-                    tenant_id: tid,
-                    user_id: by,
-                    action: agrocore_domain::entities::compliance::AuditAction::Updated,
-                    entity_type: "Worker".into(),
-                    entity_id: new.id,
-                    old_value: Some(serde_json::to_value(old).unwrap()),
-                    new_value: Some(serde_json::to_value(new).unwrap()),
-                    ip_address: None,
-                }).await;
+                let _ = audit_repo
+                    .create(
+                        tid,
+                        agrocore_domain::entities::compliance::CreateAuditLogDto {
+                            tenant_id: tid,
+                            user_id: by,
+                            action: agrocore_domain::entities::compliance::AuditAction::Updated,
+                            entity_type: "Worker".into(),
+                            entity_id: new.id,
+                            old_value: Some(serde_json::to_value(old).unwrap()),
+                            new_value: Some(serde_json::to_value(new).unwrap()),
+                            ip_address: None,
+                        },
+                    )
+                    .await;
             }
 
             Ok(entity)

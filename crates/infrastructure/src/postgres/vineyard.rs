@@ -1,6 +1,8 @@
-use agrocore_domain::entities::vineyard::{Vineyard, CreateVineyardDto, UpdateVineyardDto};
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::repositories::{PaginatedResponse, Pagination, RepositoryFuture, VineyardRepo};
+use agrocore_domain::entities::vineyard::{CreateVineyardDto, UpdateVineyardDto, Vineyard};
+use agrocore_domain::repositories::{
+    PaginatedResponse, Pagination, RepositoryFuture, VineyardRepo,
+};
 use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -20,35 +22,44 @@ impl VineyardRepo for PgVineyardRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Vineyard>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, Vineyard>("SELECT * FROM vineyards WHERE id = $1 AND tenant_id = $2")
-                .bind(id)
-                .bind(tid.to_string())
-                .fetch_optional(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))
+            sqlx::query_as::<_, Vineyard>(
+                "SELECT * FROM vineyards WHERE id = $1 AND tenant_id = $2",
+            )
+            .bind(id)
+            .bind(tid.to_string())
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Vineyard>> {
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<Vineyard>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM vineyards WHERE tenant_id = $1::uuid")
-                .bind(tid.to_string())
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM vineyards WHERE tenant_id = $1::uuid")
+                    .bind(tid.to_string())
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<Vineyard> = sqlx::query_as("SELECT * FROM vineyards WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3")
-                .bind(tid.to_string())
-                .bind(per_page as i32)
-                .bind(offset as i32)
-                .fetch_all(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<Vineyard> = sqlx::query_as(
+                "SELECT * FROM vineyards WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3",
+            )
+            .bind(tid.to_string())
+            .bind(per_page as i32)
+            .bind(offset as i32)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(PaginatedResponse {
                 data,
@@ -60,11 +71,21 @@ impl VineyardRepo for PgVineyardRepo {
         })
     }
 
-    fn find_by_site(&self, _tid: TenantId, _site_id: Uuid, _p: Pagination) -> RepositoryFuture<PaginatedResponse<Vineyard>> {
+    fn find_by_site(
+        &self,
+        _tid: TenantId,
+        _site_id: Uuid,
+        _p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<Vineyard>> {
         Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
     }
 
-    fn create(&self, tid: TenantId, dto: CreateVineyardDto, _by: Uuid) -> RepositoryFuture<Vineyard> {
+    fn create(
+        &self,
+        tid: TenantId,
+        dto: CreateVineyardDto,
+        _by: Uuid,
+    ) -> RepositoryFuture<Vineyard> {
         let pool = self.pool.clone();
         Box::pin(async move {
             let id = Uuid::new_v4();
@@ -89,7 +110,13 @@ impl VineyardRepo for PgVineyardRepo {
         })
     }
 
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateVineyardDto, _by: Uuid) -> RepositoryFuture<Option<Vineyard>> {
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateVineyardDto,
+        _by: Uuid,
+    ) -> RepositoryFuture<Option<Vineyard>> {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, Vineyard>(

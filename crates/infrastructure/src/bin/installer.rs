@@ -42,7 +42,7 @@ fn main() -> io::Result<()> {
         let unit_content = format!(
             r#"[Unit]
 Description={}
-After=network.target mongodb.service nats-server.service
+After=network.target postgresql.service nats-server.service
 
 [Service]
 Type=simple

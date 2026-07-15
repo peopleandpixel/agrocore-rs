@@ -142,7 +142,6 @@ pub struct UpdateUserDto {
 // =============================================================================
 use crate::repositories::VisibilityAwareEntity;
 
-
 impl VisibilityAwareEntity for User {}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]

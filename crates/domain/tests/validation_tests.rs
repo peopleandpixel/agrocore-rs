@@ -1,9 +1,9 @@
 use agrocore_domain::entities::compliance::CreateFertilizerRecordDto;
 use agrocore_domain::entities::order::CreateOrderDto;
 use agrocore_domain::entities::site::{CreateSiteDto, GeoPoint};
-use agrocore_domain::entities::{CropType, OrderType, SiteType};
 use agrocore_domain::entities::user::CreateUserDto;
 use agrocore_domain::entities::workforce::CreateWorkLogDto;
+use agrocore_domain::entities::{CropType, OrderType, SiteType};
 use chrono::Utc;
 use uuid::Uuid;
 use validator::Validate;

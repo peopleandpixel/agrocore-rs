@@ -49,7 +49,10 @@ impl<'r> sqlx::Decode<'r, sqlx::Postgres> for GeoPoint {
         let wkb_wrapper: geozero::wkb::Decode<geo::Geometry<f64>> = sqlx::Decode::decode(value)?;
         let geometry = wkb_wrapper.geometry.ok_or("Failed to decode geometry")?;
         if let geo::Geometry::Point(p) = geometry {
-            Ok(GeoPoint { lng: p.x(), lat: p.y() })
+            Ok(GeoPoint {
+                lng: p.x(),
+                lat: p.y(),
+            })
         } else {
             Err("Expected Point geometry".into())
         }
@@ -61,7 +64,8 @@ impl<'q> sqlx::Encode<'q, sqlx::Postgres> for GeoPoint {
         &self,
         buf: &mut sqlx::postgres::PgArgumentBuffer,
     ) -> Result<sqlx::encode::IsNull, Box<dyn std::error::Error + Send + Sync>> {
-        let geometry: geo::Geometry<f64> = geo::Geometry::Point(geo::Point::new(self.lng, self.lat));
+        let geometry: geo::Geometry<f64> =
+            geo::Geometry::Point(geo::Point::new(self.lng, self.lat));
         let wkb_wrapper = geozero::wkb::Encode(geometry);
         <geozero::wkb::Encode<geo::Geometry<f64>> as sqlx::Encode<'q, sqlx::Postgres>>::encode_by_ref(&wkb_wrapper, buf)
     }

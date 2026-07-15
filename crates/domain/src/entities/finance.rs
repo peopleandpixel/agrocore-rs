@@ -8,7 +8,6 @@ use crate::entities::tenant::TenantId;
 // use crate::entities::user::UserRole;
 use crate::repositories::VisibilityAwareEntity;
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema, sqlx::FromRow)]
 pub struct PACApplication {
     pub id: Uuid,

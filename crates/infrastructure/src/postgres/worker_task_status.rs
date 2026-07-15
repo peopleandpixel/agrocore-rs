@@ -1,6 +1,8 @@
-use agrocore_domain::entities::worker_task_status::{CreateWorkerTaskStatusDto, WorkerTaskStatus, WorkerTaskStatusType};
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::repositories::{WorkerTaskStatusRepository, RepositoryFuture};
+use agrocore_domain::entities::worker_task_status::{
+    CreateWorkerTaskStatusDto, WorkerTaskStatus, WorkerTaskStatusType,
+};
+use agrocore_domain::repositories::{RepositoryFuture, WorkerTaskStatusRepository};
 use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -42,12 +44,14 @@ impl WorkerTaskStatusRepository for PgWorkerTaskStatusRepo {
     ) -> RepositoryFuture<Vec<WorkerTaskStatus>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, WorkerTaskStatus>("SELECT * FROM worker_task_statuses WHERE task_id = $1 AND tenant_id = $2")
-                .bind(task_id)
-                .bind(tid.to_string())
-                .fetch_all(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))
+            sqlx::query_as::<_, WorkerTaskStatus>(
+                "SELECT * FROM worker_task_statuses WHERE task_id = $1 AND tenant_id = $2",
+            )
+            .bind(task_id)
+            .bind(tid.to_string())
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 
@@ -86,7 +90,8 @@ impl WorkerTaskStatusRepository for PgWorkerTaskStatusRepo {
             sqlx::query_as::<_, WorkerTaskStatus>(
                 r#"UPDATE worker_task_statuses SET status = $1, updated_at = NOW()
                    WHERE task_id = $2 AND worker_id = $3 AND tenant_id = $4
-                   RETURNING *"#)
+                   RETURNING *"#,
+            )
             .bind(serde_json::to_value(&status).unwrap())
             .bind(task_id)
             .bind(worker_id)

@@ -6,12 +6,12 @@ use actix_web::{HttpResponse, web};
 use agrocore_domain::entities::order::TaskExecutionMode;
 use agrocore_domain::entities::site::GeoPoint;
 use agrocore_domain::entities::workforce::{
-    CreateWorkerDto, CreateWorkerLocationDto, CreateWorkLogDto, ReportLocationDto, UpdateWorkerDto,
-    UpdateWorkLogDto,
+    CreateWorkLogDto, CreateWorkerDto, CreateWorkerLocationDto, ReportLocationDto,
+    UpdateWorkLogDto, UpdateWorkerDto,
 };
 use agrocore_messaging::{Event, GlobalEvent, SpatialPolygonEventKind, SpatialPresenceEvent};
 use agrocore_shared::{Pagination, SharedError};
-use chrono::{Utc};
+use chrono::Utc;
 use std::collections::HashSet;
 use uuid::Uuid;
 
@@ -188,7 +188,11 @@ pub async fn delete_work_log(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let success = state.db.work_log_repo().delete(auth.0.tenant_id, *id).await?;
+    let success = state
+        .db
+        .work_log_repo()
+        .delete(auth.0.tenant_id, *id)
+        .await?;
     if success {
         Ok(HttpResponse::NoContent().finish())
     } else {

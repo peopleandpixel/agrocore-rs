@@ -1,5 +1,4 @@
 use crate::AppState;
-use uuid::Uuid;
 use crate::dto::CreateUserDto;
 use crate::error::ApiError;
 use actix_web::{HttpResponse, web};
@@ -8,6 +7,7 @@ use agrocore_domain::entities::user::UserRole;
 use agrocore_shared::SharedError;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
+use uuid::Uuid;
 use validator::Validate;
 
 #[derive(Serialize, ToSchema)]

@@ -1,4 +1,6 @@
-use agrocore_domain::entities::tenant::{CreateTenantDto, Module, Tenant, TenantConfig, TenantValidationRules};
+use agrocore_domain::entities::tenant::{
+    CreateTenantDto, Module, Tenant, TenantConfig, TenantValidationRules,
+};
 use chrono::Utc;
 use uuid::Uuid;
 use validator::Validate;

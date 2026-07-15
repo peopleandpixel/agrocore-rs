@@ -8,7 +8,6 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum WeatherStationType {
     #[serde(rename = "iot")]

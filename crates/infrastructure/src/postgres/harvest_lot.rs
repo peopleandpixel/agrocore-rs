@@ -1,6 +1,8 @@
-use agrocore_domain::entities::harvest::{HarvestLot, CreateHarvestLotDto, UpdateHarvestLotDto};
+use agrocore_domain::entities::harvest::{CreateHarvestLotDto, HarvestLot, UpdateHarvestLotDto};
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::repositories::{HarvestLotRepo, PaginatedResponse, Pagination, RepositoryFuture};
+use agrocore_domain::repositories::{
+    HarvestLotRepo, PaginatedResponse, Pagination, RepositoryFuture,
+};
 use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -22,12 +24,14 @@ impl HarvestLotRepo for PgHarvestLotRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> Fut<Option<HarvestLot>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, HarvestLot>("SELECT * FROM harvest_lots WHERE id = $1 AND tenant_id = $2")
-                .bind(id)
-                .bind(tid.to_string())
-                .fetch_optional(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))
+            sqlx::query_as::<_, HarvestLot>(
+                "SELECT * FROM harvest_lots WHERE id = $1 AND tenant_id = $2",
+            )
+            .bind(id)
+            .bind(tid.to_string())
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 
@@ -38,11 +42,12 @@ impl HarvestLotRepo for PgHarvestLotRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM harvest_lots WHERE tenant_id = $1::uuid")
-                .bind(tid.to_string())
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM harvest_lots WHERE tenant_id = $1::uuid")
+                    .bind(tid.to_string())
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<HarvestLot> = sqlx::query_as("SELECT * FROM harvest_lots WHERE tenant_id = $1::uuid ORDER BY created_at DESC LIMIT $2 OFFSET $3")
                 .bind(tid.to_string())
@@ -52,7 +57,11 @@ impl HarvestLotRepo for PgHarvestLotRepo {
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
+            let total_pages = if total == 0 {
+                0
+            } else {
+                (total as f64 / per_page as f64).ceil() as u64
+            };
 
             Ok(PaginatedResponse {
                 data,
@@ -64,19 +73,26 @@ impl HarvestLotRepo for PgHarvestLotRepo {
         })
     }
 
-    fn find_by_season(&self, tid: TenantId, season_id: Uuid, p: Pagination) -> Fut<PaginatedResponse<HarvestLot>> {
+    fn find_by_season(
+        &self,
+        tid: TenantId,
+        season_id: Uuid,
+        p: Pagination,
+    ) -> Fut<PaginatedResponse<HarvestLot>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM harvest_lots WHERE tenant_id = $1::uuid AND season_id = $2")
-                .bind(tid.to_string())
-                .bind(season_id)
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM harvest_lots WHERE tenant_id = $1::uuid AND season_id = $2",
+            )
+            .bind(tid.to_string())
+            .bind(season_id)
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<HarvestLot> = sqlx::query_as("SELECT * FROM harvest_lots WHERE tenant_id = $1::uuid AND season_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4")
                 .bind(tid.to_string())
@@ -87,7 +103,11 @@ impl HarvestLotRepo for PgHarvestLotRepo {
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
+            let total_pages = if total == 0 {
+                0
+            } else {
+                (total as f64 / per_page as f64).ceil() as u64
+            };
 
             Ok(PaginatedResponse {
                 data,
@@ -122,7 +142,13 @@ impl HarvestLotRepo for PgHarvestLotRepo {
         })
     }
 
-    fn update(&self, tid: TenantId, id: Uuid, dto: UpdateHarvestLotDto, _by: Uuid) -> Fut<Option<HarvestLot>> {
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateHarvestLotDto,
+        _by: Uuid,
+    ) -> Fut<Option<HarvestLot>> {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, HarvestLot>(
@@ -135,14 +161,19 @@ impl HarvestLotRepo for PgHarvestLotRepo {
                     total_weight_kg = COALESCE($6, total_weight_kg),
                     status = COALESCE($7, status),
                     updated_at = NOW()
-                   WHERE id = $8 AND tenant_id = $9 RETURNING *"#)
+                   WHERE id = $8 AND tenant_id = $9 RETURNING *"#,
+            )
             .bind(&dto.lot_number)
             .bind(&dto.site_ids)
             .bind(&dto.crop_type)
             .bind(&dto.variety)
             .bind(&dto.quality_target)
             .bind(dto.total_weight_kg)
-            .bind(dto.status.as_ref().map(|s| serde_json::to_value(s).unwrap()))
+            .bind(
+                dto.status
+                    .as_ref()
+                    .map(|s| serde_json::to_value(s).unwrap()),
+            )
             .bind(id)
             .bind(tid.to_string())
             .fetch_optional(&pool)

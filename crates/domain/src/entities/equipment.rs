@@ -7,7 +7,6 @@ use validator::Validate;
 use crate::entities::tenant::TenantId;
 use crate::repositories::VisibilityAwareEntity;
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Validate)]
 pub struct MaintenanceInterval {
     pub label: String,

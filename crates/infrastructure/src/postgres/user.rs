@@ -1,6 +1,10 @@
-use agrocore_domain::entities::user::{AuthResponse, CreateUserDto, LoginDto, UpdateUserDto, User, UserRole};
 use agrocore_domain::entities::tenant::TenantId;
-use agrocore_domain::repositories::{PaginatedResponse, Pagination, RepositoryFuture, UserRepository};
+use agrocore_domain::entities::user::{
+    AuthResponse, CreateUserDto, LoginDto, UpdateUserDto, User, UserRole,
+};
+use agrocore_domain::repositories::{
+    PaginatedResponse, Pagination, RepositoryFuture, UserRepository,
+};
 use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -16,9 +20,9 @@ impl PgUserRepo {
     }
 }
 
-use argon2::{Argon2, PasswordHasher, PasswordVerifier};
-use crate::postgres::error_mapper::map_db_error;
 use crate::jwt::generate_jwt;
+use crate::postgres::error_mapper::map_db_error;
+use argon2::{Argon2, PasswordHasher, PasswordVerifier};
 
 impl UserRepository for PgUserRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<User>> {
@@ -71,11 +75,13 @@ impl UserRepository for PgUserRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users WHERE tenant_id = $1::uuid AND is_active = true")
-                .bind(tid.to_string())
-                .fetch_one(&pool)
-                .await
-                .map_err(map_db_error)?;
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM users WHERE tenant_id = $1::uuid AND is_active = true",
+            )
+            .bind(tid.to_string())
+            .fetch_one(&pool)
+            .await
+            .map_err(map_db_error)?;
 
             let data: Vec<User> = sqlx::query_as(
                 r#"SELECT u.*, 
@@ -125,7 +131,7 @@ impl UserRepository for PgUserRepo {
         Box::pin(async move {
             let mut tx = pool.begin().await.map_err(map_db_error)?;
             let id = Uuid::new_v4();
-            
+
             let password_hash = Argon2::default()
                 .hash_password(dto.password.as_bytes())
                 .map_err(|e| SharedError::Internal(format!("Hashing error: {}", e)))?
@@ -141,13 +147,13 @@ impl UserRepository for PgUserRepo {
             .bind(&dto.lastname)
             .bind(&dto.email)
             .bind(password_hash)
-            .bind(serde_json::to_value(&dto.roles.unwrap_or_default()).unwrap())
+            .bind(serde_json::to_value(dto.roles.unwrap_or_default()).unwrap())
             .fetch_one(&mut *tx)
             .await
             .map_err(map_db_error)?;
 
             tx.commit().await.map_err(map_db_error)?;
-            
+
             // We need to return the user with assigned_site_ids (which is empty here)
             let mut user = user;
             user.assigned_site_ids = Some(vec![]);
@@ -165,14 +171,15 @@ impl UserRepository for PgUserRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             let mut tx = pool.begin().await.map_err(map_db_error)?;
-            
+
             sqlx::query(
                 r#"UPDATE users SET 
                    firstname = COALESCE($1, firstname), 
                    lastname = COALESCE($2, lastname), 
                    is_active = COALESCE($3, is_active),
                    updated_at = NOW()
-                   WHERE id = $4 AND tenant_id = $5"#)
+                   WHERE id = $4 AND tenant_id = $5"#,
+            )
             .bind(&dto.firstname)
             .bind(&dto.lastname)
             .bind(dto.is_active)
@@ -188,7 +195,7 @@ impl UserRepository for PgUserRepo {
                     .execute(&mut *tx)
                     .await
                     .map_err(map_db_error)?;
-                
+
                 for site_id in site_ids {
                     sqlx::query("INSERT INTO user_sites (user_id, site_id) VALUES ($1, $2)")
                         .bind(id)
@@ -297,14 +304,16 @@ impl UserRepository for PgUserRepo {
         let pool = self.pool.clone();
         let token = token.to_string();
         Box::pin(async move {
-            sqlx::query("UPDATE users SET refresh_token = $1, refresh_token_expires_at = $2 WHERE id = $3")
-                .bind(token)
-                .bind(expires_at)
-                .bind(user_id)
-                .execute(&pool)
-                .await
-                .map(|r| r.rows_affected() > 0)
-                .map_err(|e| SharedError::Database(e.to_string()))
+            sqlx::query(
+                "UPDATE users SET refresh_token = $1, refresh_token_expires_at = $2 WHERE id = $3",
+            )
+            .bind(token)
+            .bind(expires_at)
+            .bind(user_id)
+            .execute(&pool)
+            .await
+            .map(|r| r.rows_affected() > 0)
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 }

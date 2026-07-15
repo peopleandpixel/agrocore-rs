@@ -5,7 +5,7 @@
 ### Phase 1: Basis-API (MVP)
 - [x] Workspace-Struktur (shared, domain, infrastructure, api)
 - [x] Domain Entities (Tenant, User, Site, Order, TaskData)
-- [x] Infrastructure (MongoDB, Password Hashing, JWT)
+- [x] Infrastructure (PostgreSQL, Password Hashing, JWT)
 - [x] DTOs für API-Responses
 - [x] JWT Auth Middleware
 - [x] API Routes (Sites, Orders, Users, Tasks, Auth)

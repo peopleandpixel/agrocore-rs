@@ -108,5 +108,4 @@ pub struct UpdateAnimalDto {
 // =============================================================================
 use crate::repositories::VisibilityAwareEntity;
 
-
 impl VisibilityAwareEntity for Animal {}
