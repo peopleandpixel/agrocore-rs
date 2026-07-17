@@ -818,3 +818,45 @@ pub async fn fetch_audit_logs() -> Result<PaginatedResponse<AuditLogDto>, String
 pub async fn create_order(req: CreateOrderRequest) -> Result<OrderDto, String> {
     post_json("/api/v1/orders", &req, true).await
 }
+
+pub async fn delete_order(id: uuid::Uuid) -> Result<(), String> {
+    let req = Request::delete(&api_url(&format!("/api/v1/orders/{}", id)));
+    let req = with_auth(req);
+    let resp = req.send().await.map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    Ok(())
+}
+
+pub async fn delete_site(id: uuid::Uuid) -> Result<(), String> {
+    let req = Request::delete(&api_url(&format!("/api/v1/sites/{}", id)));
+    let req = with_auth(req);
+    let resp = req.send().await.map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    Ok(())
+}
+
+pub async fn impersonate_user(id: uuid::Uuid) -> Result<AuthResponse, String> {
+    post_json(&format!("/api/v1/auth/impersonate/{}", id), &serde_json::Value::Null, true).await
+}
+
+pub async fn stop_impersonation() -> Result<AuthResponse, String> {
+    post_json("/api/v1/auth/impersonate/stop", &serde_json::Value::Null, true).await
+}
+
+pub async fn delete_equipment(id: uuid::Uuid) -> Result<(), String> {
+    let req = Request::delete(&api_url(&format!("/api/v1/equipments/{}", id)));
+    let req = with_auth(req);
+    let resp = req.send().await.map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    Ok(())
+}
+
+pub async fn fetch_worker_tasks() -> Result<Vec<OrderDto>, String> {
+    get_json("/api/v1/orders/my-tasks", true).await
+}

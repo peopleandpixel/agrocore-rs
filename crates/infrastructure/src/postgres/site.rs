@@ -40,7 +40,7 @@ impl SiteRepository for PgSiteRepo {
                    FROM sites WHERE id = $1 AND tenant_id = $2"#,
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -70,7 +70,7 @@ impl SiteRepository for PgSiteRepo {
                        FROM sites WHERE id = $1 AND tenant_id = $2"#,
                 )
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .fetch_optional(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))
@@ -85,7 +85,7 @@ impl SiteRepository for PgSiteRepo {
                        FROM sites WHERE id = $1 AND tenant_id = $2"#,
                 )
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .fetch_optional(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))
@@ -101,8 +101,8 @@ impl SiteRepository for PgSiteRepo {
 
         Box::pin(async move {
             let total: i64 =
-                sqlx::query_scalar("SELECT COUNT(*) FROM sites WHERE tenant_id = $1::uuid")
-                    .bind(tid.to_string())
+                sqlx::query_scalar("SELECT COUNT(*) FROM sites WHERE tenant_id = $1")
+                    .bind(tid)
                     .fetch_one(&pool)
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
@@ -114,9 +114,9 @@ impl SiteRepository for PgSiteRepo {
                    organic_eligible, sigpac_data, regepac_id, properties, custom_fields,
                    note1, note2, is_active, is_temporary, created_at, updated_at,
                    created_by, updated_by, center, boundary
-                   FROM sites WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3"#,
+                   FROM sites WHERE tenant_id = $1 LIMIT $2 OFFSET $3"#,
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(per_page as i32)
             .bind(offset as i32)
             .fetch_all(&pool)
@@ -157,7 +157,7 @@ impl SiteRepository for PgSiteRepo {
                    note1, note2, is_active, is_temporary, created_at, updated_at,
                    created_by, updated_by, center, boundary"#)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(&dto.label)
             .bind(serde_json::to_value(&dto.site_type).unwrap())
             .bind(serde_json::to_value(&dto.crop_type).unwrap())
@@ -197,7 +197,7 @@ impl SiteRepository for PgSiteRepo {
             .bind(&dto.center)
             .bind(&dto.boundary)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -209,7 +209,7 @@ impl SiteRepository for PgSiteRepo {
         Box::pin(async move {
             sqlx::query("UPDATE sites SET is_active = false WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .execute(&pool)
                 .await
                 .map(|r| r.rows_affected() > 0)
@@ -229,7 +229,7 @@ impl SpatialObjectRepository for PgSiteRepo {
                    FROM spatial_objects WHERE id = $1 AND tenant_id = $2"#,
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -247,9 +247,9 @@ impl SpatialObjectRepository for PgSiteRepo {
 
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM spatial_objects WHERE tenant_id = $1::uuid",
+                "SELECT COUNT(*) FROM spatial_objects WHERE tenant_id = $1",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
@@ -258,9 +258,9 @@ impl SpatialObjectRepository for PgSiteRepo {
                 r#"SELECT id, tenant_id, site_id, parent_id, label, object_type, geometry,
                    area, buffer_meters, properties, custom_fields, note, is_active,
                    is_temporary, created_at, updated_at, created_by, updated_by
-                   FROM spatial_objects WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3"#,
+                   FROM spatial_objects WHERE tenant_id = $1 LIMIT $2 OFFSET $3"#,
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(per_page as i32)
             .bind(offset as i32)
             .fetch_all(&pool)
@@ -283,7 +283,7 @@ impl SpatialObjectRepository for PgSiteRepo {
                 "UPDATE spatial_objects SET is_active = false WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .execute(&pool)
             .await
             .map(|r| r.rows_affected() > 0)
@@ -311,7 +311,7 @@ impl SpatialObjectRepository for PgSiteRepo {
 
             let mut q = sqlx::query_as::<_, SpatialObject>(&query)
                 .bind(&point)
-                .bind(tid.to_string());
+                .bind(tid);
 
             if let Some(sid) = site_id {
                 q = q.bind(sid);

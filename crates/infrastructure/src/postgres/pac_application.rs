@@ -26,9 +26,9 @@ impl PACApplicationRepo for PgPACApplicationRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, PACApplication>(
-                "SELECT * FROM pac_applications WHERE tenant_id = $1::uuid AND id = $2",
+                "SELECT * FROM pac_applications WHERE tenant_id = $1 AND id = $2",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(id)
             .fetch_optional(&pool)
             .await
@@ -49,9 +49,9 @@ impl PACApplicationRepo for PgPACApplicationRepo {
                 roles_vec.contains(&UserRole::Admin) || roles_vec.contains(&UserRole::Manager);
             if can_see_all {
                 sqlx::query_as::<_, PACApplication>(
-                    "SELECT * FROM pac_applications WHERE tenant_id = $1::uuid AND id = $2",
+                    "SELECT * FROM pac_applications WHERE tenant_id = $1 AND id = $2",
                 )
-                .bind(tid.to_string())
+                .bind(tid)
                 .bind(id)
                 .fetch_optional(&pool)
                 .await
@@ -74,15 +74,15 @@ impl PACApplicationRepo for PgPACApplicationRepo {
         let offset = page * per_page;
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM pac_applications WHERE tenant_id = $1::uuid",
+                "SELECT COUNT(*) FROM pac_applications WHERE tenant_id = $1",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<PACApplication> = sqlx::query_as("SELECT * FROM pac_applications WHERE tenant_id = $1::uuid ORDER BY year DESC, created_at DESC LIMIT $2 OFFSET $3")
-                .bind(tid.to_string())
+            let data: Vec<PACApplication> = sqlx::query_as("SELECT * FROM pac_applications WHERE tenant_id = $1 ORDER BY year DESC, created_at DESC LIMIT $2 OFFSET $3")
+                .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)
@@ -117,7 +117,7 @@ impl PACApplicationRepo for PgPACApplicationRepo {
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *"
             )
             .bind(Uuid::new_v4())
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(dto.year)
             .bind(dto.application_number)
             .bind(serde_json::to_value(agrocore_domain::entities::finance::PACStatus::Draft).unwrap())
@@ -158,9 +158,9 @@ impl PACApplicationRepo for PgPACApplicationRepo {
         let audit_repo = PgAuditLogRepo::new(pool.clone());
         Box::pin(async move {
             let old_val = sqlx::query_as::<_, PACApplication>(
-                "SELECT * FROM pac_applications WHERE tenant_id = $1::uuid AND id = $2",
+                "SELECT * FROM pac_applications WHERE tenant_id = $1 AND id = $2",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(id)
             .fetch_optional(&pool)
             .await
@@ -189,10 +189,10 @@ impl PACApplicationRepo for PgPACApplicationRepo {
                 query.push_str(&format!(", documents_urls = ${}", idx + 2));
             }
 
-            query.push_str(" WHERE tenant_id = $1::uuid AND id = $2 RETURNING *");
+            query.push_str(" WHERE tenant_id = $1 AND id = $2 RETURNING *");
 
             let mut q = sqlx::query_as::<_, PACApplication>(&query)
-                .bind(tid.to_string())
+                .bind(tid)
                 .bind(id);
 
             if let Some(v) = dto.application_number {
@@ -243,17 +243,17 @@ impl PACApplicationRepo for PgPACApplicationRepo {
         Box::pin(async move {
             // Get old value for audit before deletion
             let old_val = sqlx::query_as::<_, PACApplication>(
-                "SELECT * FROM pac_applications WHERE tenant_id = $1::uuid AND id = $2",
+                "SELECT * FROM pac_applications WHERE tenant_id = $1 AND id = $2",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(id)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let res =
-                sqlx::query("DELETE FROM pac_applications WHERE tenant_id = $1::uuid AND id = $2")
-                    .bind(tid.to_string())
+                sqlx::query("DELETE FROM pac_applications WHERE tenant_id = $1 AND id = $2")
+                    .bind(tid)
                     .bind(id)
                     .execute(&pool)
                     .await
@@ -297,16 +297,16 @@ impl PACApplicationRepo for PgPACApplicationRepo {
         let offset = page * per_page;
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM pac_applications WHERE tenant_id = $1::uuid AND year = $2",
+                "SELECT COUNT(*) FROM pac_applications WHERE tenant_id = $1 AND year = $2",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(year)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<PACApplication> = sqlx::query_as("SELECT * FROM pac_applications WHERE tenant_id = $1::uuid AND year = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4")
-                .bind(tid.to_string())
+            let data: Vec<PACApplication> = sqlx::query_as("SELECT * FROM pac_applications WHERE tenant_id = $1 AND year = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4")
+                .bind(tid)
                 .bind(year)
                 .bind(per_page as i32)
                 .bind(offset as i32)

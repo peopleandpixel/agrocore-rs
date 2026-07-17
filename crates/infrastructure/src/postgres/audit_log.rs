@@ -23,9 +23,9 @@ impl AuditLogRepo for PgAuditLogRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, AuditLog>(
-                "SELECT * FROM audit_logs WHERE tenant_id = $1::uuid AND id = $2",
+                "SELECT * FROM audit_logs WHERE tenant_id = $1 AND id = $2",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(id)
             .fetch_optional(&pool)
             .await
@@ -44,14 +44,14 @@ impl AuditLogRepo for PgAuditLogRepo {
         let offset = page * per_page;
         Box::pin(async move {
             let total: i64 =
-                sqlx::query_scalar("SELECT COUNT(*) FROM audit_logs WHERE tenant_id = $1::uuid")
-                    .bind(tid.to_string())
+                sqlx::query_scalar("SELECT COUNT(*) FROM audit_logs WHERE tenant_id = $1")
+                    .bind(tid)
                     .fetch_one(&pool)
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<AuditLog> = sqlx::query_as("SELECT * FROM audit_logs WHERE tenant_id = $1::uuid ORDER BY created_at DESC LIMIT $2 OFFSET $3")
-                .bind(tid.to_string())
+            let data: Vec<AuditLog> = sqlx::query_as("SELECT * FROM audit_logs WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3")
+                .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)
@@ -82,7 +82,7 @@ impl AuditLogRepo for PgAuditLogRepo {
                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
                    RETURNING *"#)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(dto.user_id)
             .bind(serde_json::to_value(&dto.action).unwrap())
             .bind(&dto.entity_type)

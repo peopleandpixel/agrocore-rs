@@ -30,6 +30,12 @@ pub enum Database {
 }
 
 impl Database {
+    pub fn pool(&self) -> &PgPool {
+        match self {
+            Self::Postgres(db) => db.pool(),
+        }
+    }
+
     pub async fn connect(database_url: &str) -> anyhow::Result<Self> {
         let db = PostgresDb::connect(database_url).await?;
         Ok(Self::Postgres(db))
@@ -55,7 +61,7 @@ impl Database {
 
     pub fn tenant_repo(&self) -> Arc<dyn TenantRepository> {
         match self {
-            Self::Postgres(db) => db.tenant_repo(),
+            Self::Postgres(db) => Arc::new(PgTenantRepo::new(db.pool.clone())),
         }
     }
 
@@ -241,14 +247,46 @@ pub struct PostgresDb {
 }
 
 impl PostgresDb {
+    pub fn pool(&self) -> &PgPool {
+        &self.pool
+    }
+
     pub async fn connect(database_url: &str) -> anyhow::Result<Self> {
-        let pool = PgPool::connect(database_url).await?;
+        let mut retry_count = 0;
+        let max_retries = 10;
+        let pool = loop {
+            match PgPool::connect(database_url).await {
+                Ok(pool) => break pool,
+                Err(e) if retry_count < max_retries => {
+                    retry_count += 1;
+                    tracing::warn!(
+                        "Failed to connect to database (attempt {}/{}): {}. Retrying in 1s...",
+                        retry_count,
+                        max_retries,
+                        e
+                    );
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                }
+                Err(e) => {
+                    return Err(anyhow::anyhow!(
+                        "Failed to connect to database after {} attempts: {}",
+                        max_retries,
+                        e
+                    ));
+                }
+            }
+        };
+        sqlx::migrate!("../../migrations").run(&pool).await?;
         Ok(Self { pool })
     }
 
     // Core repositories
     pub fn site_repo(&self) -> Arc<dyn SiteRepository> {
         Arc::new(PgSiteRepo::new(self.pool.clone()))
+    }
+
+    pub fn map_db_error(e: sqlx::Error) -> agrocore_shared::SharedError {
+        crate::postgres::error_mapper::map_db_error(e)
     }
 
     pub fn user_repo(&self) -> Arc<dyn UserRepository> {

@@ -1,6 +1,5 @@
 use crate::api;
 use crate::components::form::RequiredLabel;
-use crate::i18n::{I18n, Language};
 use icondata::*;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
@@ -33,89 +32,13 @@ fn submit_order(
                 }
             });
         }
-        Err(_) => set_error.set(Some(String::from("Bitte eine gültige Flächen-ID wählen."))),
+        Err(_) => set_error.set(Some(String::from("Please choose a valid site ID."))),
     }
 }
 
 #[component]
 pub fn OrderList() -> impl IntoView {
-    let i18n = use_context::<I18n>().expect("i18n context");
-    let lang = use_context::<ReadSignal<Language>>().expect("lang signal");
-    let order_management = i18n.t(lang.get().as_str(), "order_management");
-    let new_order_btn = i18n.t(lang.get().as_str(), "new_order_btn");
-    let order_type_label = i18n.t(lang.get().as_str(), "order_type");
-    let description_label = i18n.t(lang.get().as_str(), "description");
-    let sites_label = i18n.t(lang.get().as_str(), "sites");
-    let actions_label = i18n.t(lang.get().as_str(), "actions");
-    let status_label = i18n.t(lang.get().as_str(), "status");
-    let _new_order_form = i18n.t(lang.get().as_str(), "new_order_form");
-    let _cancel_label = i18n.t(lang.get().as_str(), "cancel");
-    let _save_label = i18n.t(lang.get().as_str(), "save");
-    let _site_label = i18n.t(lang.get().as_str(), "site");
-    let _choose_site_label = i18n.t(lang.get().as_str(), "choose_site");
-    let _task_protection = i18n.t(lang.get().as_str(), "task_protection");
-    let _task_harvest = i18n.t(lang.get().as_str(), "task_harvest");
-    let _required_error = i18n.t(lang.get().as_str(), "validation_required");
-    let order_type_plant_protection: &'static str = Box::leak(
-        i18n.t(lang.get().as_str(), "order_type_plant_protection")
-            .into_boxed_str(),
-    );
-    let order_type_fertilization: &'static str = Box::leak(
-        i18n.t(lang.get().as_str(), "order_type_fertilization")
-            .into_boxed_str(),
-    );
-    let order_type_pruning: &'static str = Box::leak(
-        i18n.t(lang.get().as_str(), "order_type_pruning")
-            .into_boxed_str(),
-    );
-    let order_type_harvest: &'static str = Box::leak(
-        i18n.t(lang.get().as_str(), "order_type_harvest")
-            .into_boxed_str(),
-    );
-    let order_type_soil_work: &'static str = Box::leak(
-        i18n.t(lang.get().as_str(), "order_type_soil_work")
-            .into_boxed_str(),
-    );
-    let order_type_irrigation: &'static str = Box::leak(
-        i18n.t(lang.get().as_str(), "order_type_irrigation")
-            .into_boxed_str(),
-    );
-    let order_type_monitoring: &'static str = Box::leak(
-        i18n.t(lang.get().as_str(), "order_type_monitoring")
-            .into_boxed_str(),
-    );
-    let order_type_livestock_feeding: &'static str = Box::leak(
-        i18n.t(lang.get().as_str(), "order_type_livestock_feeding")
-            .into_boxed_str(),
-    );
-    let order_type_livestock_watering: &'static str = Box::leak(
-        i18n.t(lang.get().as_str(), "order_type_livestock_watering")
-            .into_boxed_str(),
-    );
-    let order_type_livestock_relocation: &'static str = Box::leak(
-        i18n.t(lang.get().as_str(), "order_type_livestock_relocation")
-            .into_boxed_str(),
-    );
-    let order_type_livestock_health_check: &'static str = Box::leak(
-        i18n.t(lang.get().as_str(), "order_type_livestock_health_check")
-            .into_boxed_str(),
-    );
-    let order_type_barn_cleaning: &'static str = Box::leak(
-        i18n.t(lang.get().as_str(), "order_type_barn_cleaning")
-            .into_boxed_str(),
-    );
-    let order_type_egg_collection: &'static str = Box::leak(
-        i18n.t(lang.get().as_str(), "order_type_egg_collection")
-            .into_boxed_str(),
-    );
-    let order_type_shearing: &'static str = Box::leak(
-        i18n.t(lang.get().as_str(), "order_type_shearing")
-            .into_boxed_str(),
-    );
-    let order_type_milking: &'static str = Box::leak(
-        i18n.t(lang.get().as_str(), "order_type_milking")
-            .into_boxed_str(),
-    );
+    let t = crate::i18n::use_i18n();
 
     let orders = LocalResource::new(|| async move { api::fetch_orders().await.ok() });
     let sites = LocalResource::new(|| async move { api::fetch_sites().await.ok() });
@@ -124,34 +47,22 @@ pub fn OrderList() -> impl IntoView {
     let (label, set_label) = signal(String::new());
     let (order_type, set_order_type) = signal(String::from("plant_protection"));
     let (site_id, set_site_id) = signal(String::new());
-    let order_type_text = move |value: &str| match value {
-        "plant_protection" => i18n.t(lang.get().as_str(), "order_type_plant_protection"),
-        "fertilization" => i18n.t(lang.get().as_str(), "order_type_fertilization"),
-        "pruning" => i18n.t(lang.get().as_str(), "order_type_pruning"),
-        "harvest" => i18n.t(lang.get().as_str(), "order_type_harvest"),
-        "soil_work" => i18n.t(lang.get().as_str(), "order_type_soil_work"),
-        "irrigation" => i18n.t(lang.get().as_str(), "order_type_irrigation"),
-        "monitoring" => i18n.t(lang.get().as_str(), "order_type_monitoring"),
-        "livestock_feeding" => i18n.t(lang.get().as_str(), "order_type_livestock_feeding"),
-        "livestock_watering" => i18n.t(lang.get().as_str(), "order_type_livestock_watering"),
-        "livestock_relocation" => i18n.t(lang.get().as_str(), "order_type_livestock_relocation"),
-        "livestock_health_check" => {
-            i18n.t(lang.get().as_str(), "order_type_livestock_health_check")
-        }
-        "barn_cleaning" => i18n.t(lang.get().as_str(), "order_type_barn_cleaning"),
-        "egg_collection" => i18n.t(lang.get().as_str(), "order_type_egg_collection"),
-        "shearing" => i18n.t(lang.get().as_str(), "order_type_shearing"),
-        "milking" => i18n.t(lang.get().as_str(), "order_type_milking"),
-        _ => value.to_string(),
+
+    let on_delete = move |id: uuid::Uuid| {
+        spawn_local(async move {
+            if api::delete_order(id).await.is_ok() {
+                let _ = window().location().reload();
+            }
+        });
     };
 
     view! {
         <div class="flex flex-col gap-6">
             <div class="flex justify-between items-center">
-                <h1 class="text-3xl font-bold">{order_management}</h1>
+                <h1 class="text-3xl font-bold">{crate::t!(t, "order_management")}</h1>
                 <button class="btn btn-primary" on:click=move |_| set_show_add_modal.set(true)>
                     <Icon icon=LuPlus width="20" height="20" />
-                    {new_order_btn}
+                    {crate::t!(t, "new_order_btn")}
                 </button>
             </div>
 
@@ -160,11 +71,12 @@ pub fn OrderList() -> impl IntoView {
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>{order_type_label}</th>
-                                <th>{description_label}</th>
-                                <th>{sites_label}</th>
-                                <th>{actions_label}</th>
-                                <th>{status_label}</th>
+                                <th>{crate::t!(t, "order_type")}</th>
+                                <th>{crate::t!(t, "description")}</th>
+                                <th>{crate::t!(t, "sites")}</th>
+                                <th>{crate::t!(t, "actions")}</th>
+                                <th>{crate::t!(t, "status")}</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -181,14 +93,28 @@ pub fn OrderList() -> impl IntoView {
                                         .unwrap_or_default()
                                 }
                                 key=|order| order.id
-                                children=move |order| view! {
-                                    <tr>
-                                        <td>{order_type_text(order.order_type.as_str())}</td>
-                                        <td>{order.label}</td>
-                                        <td>{order.site_ids.len()}</td>
-                                        <td>{order.assigned_worker_ids.len()}</td>
-                                        <td><div class="badge badge-outline">{order.status}</div></td>
-                                    </tr>
+                                children=move |order| {
+                                    let order_id = order.id;
+                                    let order_type_val = order.order_type.clone();
+                                    let order_label = order.label.clone();
+                                    let site_count = order.site_ids.len();
+                                    let worker_count = order.assigned_worker_ids.len();
+                                    let status_val = order.status.clone();
+
+                                    view! {
+                                        <tr>
+                                            <td>{move || t(&format!("order_type_{}", order_type_val))}</td>
+                                            <td>{order_label}</td>
+                                            <td>{site_count}</td>
+                                            <td>{worker_count}</td>
+                                            <td><div class="badge badge-outline">{status_val}</div></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-ghost text-error" on:click=move |_| on_delete(order_id)>
+                                                    <Icon icon=LuTrash2 width="16" height="16" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
                                 }
                             />
                         </tbody>
@@ -197,101 +123,104 @@ pub fn OrderList() -> impl IntoView {
             </div>
 
             <Show when=move || show_add_modal.get()>
-                {move || {
-                    view! {
-                        <div class="modal modal-open">
-                            <div class="modal-box">
-                                <h3 class="font-bold text-lg">"Neuer Auftrag"</h3>
+                <div class="modal modal-open">
+                    <div class="modal-box">
+                        <h3 class="font-bold text-lg">{crate::t!(t, "new_order_form")}</h3>
 
-                                {move || error.get().map(|err| view! {
-                                    <div class="alert alert-error mt-4">
-                                        <span>{err}</span>
-                                    </div>
-                                })}
+                        {move || error.get().map(|err| view! {
+                            <div class="alert alert-error mt-4">
+                                <span>{err}</span>
+                            </div>
+                        })}
 
-                                <div class="form-control w-full mt-4">
-                                    <label class="label">
-                                        <RequiredLabel required=true>
-                                            "Beschreibung"
-                                        </RequiredLabel>
-                                    </label>
-                                    <input type="text" class="input input-bordered w-full" required on:input=move |ev| set_label.set(event_target_value(&ev)) />
-                                </div>
+                        <div class="form-control w-full mt-4">
+                            <label class="label">
+                                <RequiredLabel required=true>
+                                    {crate::t!(t, "description")}
+                                </RequiredLabel>
+                            </label>
+                            <input type="text" class="input input-bordered w-full" required on:input=move |ev| set_label.set(event_target_value(&ev)) />
+                        </div>
 
-                                <div class="grid grid-cols-2 gap-4 mt-4">
-                                    <div class="form-control">
-                                        <label class="label">
-                                            <RequiredLabel required=true>
-                                                "Auftragstyp"
-                                            </RequiredLabel>
-                                        </label>
-                                        <select class="select select-bordered w-full" required on:change=move |ev| set_order_type.set(event_target_value(&ev))>
-                                            <option value="plant_protection">{order_type_plant_protection}</option>
-                                            <option value="fertilization">{order_type_fertilization}</option>
-                                            <option value="pruning">{order_type_pruning}</option>
-                                            <option value="harvest">{order_type_harvest}</option>
-                                            <option value="soil_work">{order_type_soil_work}</option>
-                                            <option value="irrigation">{order_type_irrigation}</option>
-                                            <option value="monitoring">{order_type_monitoring}</option>
-                                            <option value="livestock_feeding">{order_type_livestock_feeding}</option>
-                                            <option value="livestock_watering">{order_type_livestock_watering}</option>
-                                            <option value="livestock_relocation">{order_type_livestock_relocation}</option>
-                                            <option value="livestock_health_check">{order_type_livestock_health_check}</option>
-                                            <option value="barn_cleaning">{order_type_barn_cleaning}</option>
-                                            <option value="egg_collection">{order_type_egg_collection}</option>
-                                            <option value="shearing">{order_type_shearing}</option>
-                                            <option value="milking">{order_type_milking}</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-control">
-                                        <label class="label">
-                                            <RequiredLabel required=true>
-                                                "Fläche"
-                                            </RequiredLabel>
-                                        </label>
-                                        <select class="select select-bordered w-full" required on:change=move |ev| set_site_id.set(event_target_value(&ev))>
-                                            <option value="">"Bitte wählen"</option>
-                                            <For
-                                                each=move || {
-                                                    sites
-                                                        .read()
-                                                        .as_ref()
-                                                        .map(|s| {
-                                                            s.as_ref()
-                                                                .map(|page| page.data.clone())
-                                                                .unwrap_or_default()
-                                                        })
+                        <div class="grid grid-cols-2 gap-4 mt-4">
+                            <div class="form-control">
+                                <label class="label">
+                                    <RequiredLabel required=true>
+                                        {crate::t!(t, "order_type")}
+                                    </RequiredLabel>
+                                </label>
+                                <select class="select select-bordered w-full" required on:change=move |ev| set_order_type.set(event_target_value(&ev))>
+                                    <option value="plant_protection">{crate::t!(t, "order_type_plant_protection")}</option>
+                                    <option value="fertilization">{crate::t!(t, "order_type_fertilization")}</option>
+                                    <option value="pruning">{crate::t!(t, "order_type_pruning")}</option>
+                                    <option value="harvest">{crate::t!(t, "order_type_harvest")}</option>
+                                    <option value="soil_work">{crate::t!(t, "order_type_soil_work")}</option>
+                                    <option value="irrigation">{crate::t!(t, "order_type_irrigation")}</option>
+                                    <option value="monitoring">{crate::t!(t, "order_type_monitoring")}</option>
+                                    <option value="livestock_feeding">{crate::t!(t, "order_type_livestock_feeding")}</option>
+                                    <option value="livestock_watering">{crate::t!(t, "order_type_livestock_watering")}</option>
+                                    <option value="livestock_relocation">{crate::t!(t, "order_type_livestock_relocation")}</option>
+                                    <option value="livestock_health_check">{crate::t!(t, "order_type_livestock_health_check")}</option>
+                                    <option value="barn_cleaning">{crate::t!(t, "order_type_barn_cleaning")}</option>
+                                    <option value="egg_collection">{crate::t!(t, "order_type_egg_collection")}</option>
+                                    <option value="shearing">{crate::t!(t, "order_type_shearing")}</option>
+                                    <option value="milking">{crate::t!(t, "order_type_milking")}</option>
+                                </select>
+                            </div>
+                            <div class="form-control">
+                                <label class="label">
+                                    <RequiredLabel required=true>
+                                        {crate::t!(t, "site")}
+                                    </RequiredLabel>
+                                </label>
+                                <select class="select select-bordered w-full" required on:change=move |ev| set_site_id.set(event_target_value(&ev))>
+                                    <option value="">{crate::t!(t, "choose_site")}</option>
+                                    <For
+                                        each=move || {
+                                            sites
+                                                .read()
+                                                .as_ref()
+                                                .map(|s| {
+                                                    s.as_ref()
+                                                        .map(|page| page.data.clone())
                                                         .unwrap_or_default()
-                                                }
-                                                key=|site| site.id
-                                                children=move |site| view! {
-                                                    <option value=site.id.to_string()>{site.label}</option>
-                                                }
-                                            />
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="modal-action">
-                                    <button class="btn" on:click=move |_| set_show_add_modal.set(false)>"Abbrechen"</button>
-                                    <button class="btn btn-primary" on:click=move |_| {
-                                        let label_value = label.get();
-                                        let order_type_value = order_type.get();
-                                        let site_id_value = site_id.get();
-                                        set_error.set(None);
-
-                                        if label_value.trim().is_empty() || site_id_value.trim().is_empty() {
-                                            set_error.set(Some(String::from("Bitte alle Pflichtfelder ausfüllen.")));
-                                            return;
+                                                })
+                                                .unwrap_or_default()
                                         }
-
-                                        submit_order(label_value, order_type_value, site_id_value, set_error);
-                                    }>"Speichern"</button>
-                                </div>
+                                        key=|site| site.id
+                                        children=move |site| {
+                                            let site_id_val = site.id.to_string();
+                                            let site_label_val = site.label.clone();
+                                            view! {
+                                                <option value=site_id_val>{site_label_val}</option>
+                                            }
+                                        }
+                                    />
+                                </select>
                             </div>
                         </div>
-                    }.into_any()
-                }}
+
+                        <div class="modal-action">
+                            <button class="btn" on:click=move |_| set_show_add_modal.set(false)>{crate::t!(t, "cancel")}</button>
+                            <button class="btn btn-primary" on:click=move |_| {
+                                    let label_value = label.get();
+                                    let order_type_value = order_type.get();
+                                    let site_id_value = site_id.get();
+                                    set_error.set(None);
+
+                                    if label_value.trim().is_empty() || site_id_value.trim().is_empty() {
+                                        set_error.set(Some(t("validation_required")));
+                                        return;
+                                    }
+
+                                    submit_order(label_value, order_type_value, site_id_value, set_error);
+                                }
+                            >
+                                {crate::t!(t, "save")}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </Show>
         </div>
     }

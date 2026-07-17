@@ -25,8 +25,20 @@ impl WeatherDataRepo for PgWeatherDataRepo {
                 r#"INSERT INTO weather_data (id, station_id, tenant_id, timestamp, temperature_c, humidity_percent, precipitation_mm, wind_speed_kmh, wind_direction_deg, solar_radiation_wm2, pressure_hpa)
                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                    RETURNING *"#)
-            .bind(id).bind(dto.station_id.to_string()).bind(tid.to_string()).bind(dto.timestamp).bind(dto.temperature_c).bind(dto.humidity_percent).bind(dto.precipitation_mm).bind(dto.wind_speed_kmh).bind(dto.wind_direction_deg).bind(dto.solar_radiation_wm2).bind(dto.pressure_hpa)
-            .fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
+            .bind(id)
+            .bind(dto.station_id)
+            .bind(tid)
+            .bind(dto.timestamp)
+            .bind(dto.temperature_c)
+            .bind(dto.humidity_percent)
+            .bind(dto.precipitation_mm)
+            .bind(dto.wind_speed_kmh)
+            .bind(dto.wind_direction_deg)
+            .bind(dto.solar_radiation_wm2)
+            .bind(dto.pressure_hpa)
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WeatherData>> {
@@ -36,7 +48,7 @@ impl WeatherDataRepo for PgWeatherDataRepo {
                 "SELECT * FROM weather_data WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -55,14 +67,14 @@ impl WeatherDataRepo for PgWeatherDataRepo {
 
         Box::pin(async move {
             let total: i64 =
-                sqlx::query_scalar("SELECT COUNT(*) FROM weather_data WHERE tenant_id = $1::uuid")
-                    .bind(tid.to_string())
+                sqlx::query_scalar("SELECT COUNT(*) FROM weather_data WHERE tenant_id = $1")
+                    .bind(tid)
                     .fetch_one(&pool)
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<WeatherData> = sqlx::query_as("SELECT * FROM weather_data WHERE tenant_id = $1::uuid ORDER BY timestamp DESC LIMIT $2 OFFSET $3")
-                .bind(tid.to_string())
+            let data: Vec<WeatherData> = sqlx::query_as("SELECT * FROM weather_data WHERE tenant_id = $1 ORDER BY timestamp DESC LIMIT $2 OFFSET $3")
+                .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)
@@ -97,16 +109,16 @@ impl WeatherDataRepo for PgWeatherDataRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM weather_data WHERE tenant_id = $1::uuid AND station_id = $2::uuid")
-                .bind(tid.to_string())
-                .bind(station_id.to_string())
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM weather_data WHERE tenant_id = $1 AND station_id = $2")
+                .bind(tid)
+                .bind(station_id)
                 .fetch_one(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<WeatherData> = sqlx::query_as("SELECT * FROM weather_data WHERE tenant_id = $1::uuid AND station_id = $2::uuid ORDER BY timestamp DESC LIMIT $3 OFFSET $4")
-                .bind(tid.to_string())
-                .bind(station_id.to_string())
+            let data: Vec<WeatherData> = sqlx::query_as("SELECT * FROM weather_data WHERE tenant_id = $1 AND station_id = $2 ORDER BY timestamp DESC LIMIT $3 OFFSET $4")
+                .bind(tid)
+                .bind(station_id)
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)

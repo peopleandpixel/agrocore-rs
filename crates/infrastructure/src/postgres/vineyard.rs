@@ -26,7 +26,7 @@ impl VineyardRepo for PgVineyardRepo {
                 "SELECT * FROM vineyards WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -45,16 +45,16 @@ impl VineyardRepo for PgVineyardRepo {
 
         Box::pin(async move {
             let total: i64 =
-                sqlx::query_scalar("SELECT COUNT(*) FROM vineyards WHERE tenant_id = $1::uuid")
-                    .bind(tid.to_string())
+                sqlx::query_scalar("SELECT COUNT(*) FROM vineyards WHERE tenant_id = $1")
+                    .bind(tid)
                     .fetch_one(&pool)
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Vineyard> = sqlx::query_as(
-                "SELECT * FROM vineyards WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3",
+                "SELECT * FROM vineyards WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(per_page as i32)
             .bind(offset as i32)
             .fetch_all(&pool)
@@ -94,7 +94,7 @@ impl VineyardRepo for PgVineyardRepo {
                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
                    RETURNING *"#)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(dto.site_id)
             .bind(&dto.doc_area)
             .bind(dto.vintage)
@@ -125,7 +125,7 @@ impl VineyardRepo for PgVineyardRepo {
             .bind(&dto.doc_area)
             .bind(dto.vintage)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -137,7 +137,7 @@ impl VineyardRepo for PgVineyardRepo {
         Box::pin(async move {
             sqlx::query("UPDATE vineyards SET is_active = false WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .execute(&pool)
                 .await
                 .map(|r| r.rows_affected() > 0)

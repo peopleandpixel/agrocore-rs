@@ -1,16 +1,14 @@
 use crate::api;
-use crate::components::form::{RequiredLabel, is_valid_email};
 use icondata::*;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
 use leptos_icons::Icon;
 use uuid::Uuid;
+use crate::components::form::{RequiredLabel, is_valid_email};
 
 #[component]
 pub fn UserManagement() -> impl IntoView {
-    let i18n = use_context::<crate::i18n::I18n>().expect("i18n context");
-    let lang = use_context::<ReadSignal<crate::i18n::Language>>().expect("lang signal");
-    let t = move |key: &str| i18n.t(lang.get().as_str(), key);
+    let t = crate::i18n::use_i18n();
 
     let users = LocalResource::new(|| async move { api::fetch_users().await.ok() });
 
@@ -47,14 +45,12 @@ pub fn UserManagement() -> impl IntoView {
             || email.trim().is_empty()
             || password.trim().is_empty()
         {
-            set_add_error.set(Some(String::from("Bitte alle Pflichtfelder ausfüllen.")));
+            set_add_error.set(Some(t("validation_required")));
             return;
         }
 
         if !is_valid_email(&email) {
-            set_add_error.set(Some(String::from(
-                "Bitte eine gültige E-Mail-Adresse eingeben.",
-            )));
+            set_add_error.set(Some(t("validation_invalid_email")));
             return;
         }
 
@@ -130,21 +126,34 @@ pub fn UserManagement() -> impl IntoView {
         });
     };
 
+    let on_impersonate = move |id: Uuid| {
+        spawn_local(async move {
+            match api::impersonate_user(id).await {
+                Ok(resp) => {
+                    api::set_auth_token(&resp.token);
+                    api::set_user_role(&resp.roles.first().cloned().unwrap_or_else(|| String::from("Viewer")));
+                    let _ = window().location().set_href("/");
+                }
+                Err(_) => {}
+            }
+        });
+    };
+
     view! {
         <div class="flex flex-col gap-6">
             <div class="flex justify-between items-center">
                 <div>
-                    <h1 class="text-3xl font-bold">{move || t("users")}</h1>
-                    <p class="text-base-content/60">"Verwalten Sie Teammitglieder und deren Zugriffsberechtigungen."</p>
+                    <h1 class="text-3xl font-bold">{crate::t!(t, "users")}</h1>
+                    <p class="text-base-content/60">{crate::t!(t, "users_desc")}</p>
                 </div>
                 <div class="flex gap-2">
                     <button class="btn btn-outline" on:click=move |_| set_show_permissions_modal.set(true)>
                         <Icon icon=LuShield width="20" height="20" />
-                        "Rollen-Rechte"
+                        {crate::t!(t, "role_permissions")}
                     </button>
                     <button class="btn btn-primary" on:click=move |_| set_show_add_modal.set(true)>
                         <Icon icon=LuUserPlus width="20" height="20" />
-                        "Benutzer einladen"
+                        {crate::t!(t, "invite_user")}
                     </button>
                 </div>
             </div>
@@ -154,11 +163,11 @@ pub fn UserManagement() -> impl IntoView {
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>"Name"</th>
-                                <th>"E-Mail"</th>
-                                <th>"Rolle"</th>
-                                <th>"Status"</th>
-                                <th>"Letzter Login"</th>
+                                <th>{crate::t!(t, "name")}</th>
+                                <th>{crate::t!(t, "email")}</th>
+                                <th>{crate::t!(t, "role")}</th>
+                                <th>{crate::t!(t, "status")}</th>
+                                <th>{crate::t!(t, "last_login")}</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -202,15 +211,22 @@ pub fn UserManagement() -> impl IntoView {
                                         on_delete(user_id);
                                     };
 
+                                    let impersonate_click = move |_| {
+                                        on_impersonate(user_id);
+                                    };
+
                                     view! {
                                         <tr>
                                             <td>{name}</td>
                                             <td>{email_for_view}</td>
                                             <td><div class="badge badge-primary">{role}</div></td>
-                                            <td>{if is_active { "Aktiv" } else { "Inaktiv" }}</td>
+                                            <td>{if is_active { t("active") } else { t("inactive") }}</td>
                                             <td>{last_login}</td>
                                             <td>
                                                 <div class="flex gap-2 justify-end">
+                                                    <button class="btn btn-sm btn-ghost" on:click=impersonate_click title=move || t("impersonate")>
+                                                        <Icon icon=LuCircleUser width="16" height="16" />
+                                                    </button>
                                                     <button class="btn btn-sm btn-ghost" on:click=edit_click>
                                                         <Icon icon=LuPencil width="16" height="16" />
                                                     </button>
@@ -232,7 +248,7 @@ pub fn UserManagement() -> impl IntoView {
             <Show when=move || show_add_modal.get()>
                 <div class="modal modal-open">
                     <div class="modal-box max-w-2xl">
-                        <h3 class="font-bold text-lg">"Benutzer einladen"</h3>
+                        <h3 class="font-bold text-lg">{crate::t!(t, "invite_user")}</h3>
 
                         {move || add_error.get().map(|err| view! {
                             <div class="alert alert-error mt-4">
@@ -242,39 +258,39 @@ pub fn UserManagement() -> impl IntoView {
 
                         <div class="grid grid-cols-2 gap-4 mt-4">
                             <div class="form-control">
-                                <label class="label"><RequiredLabel required=true>{"Vorname"}</RequiredLabel></label>
+                                <label class="label"><RequiredLabel required=true>{crate::t!(t, "first_name")}</RequiredLabel></label>
                                 <input type="text" class="input input-bordered w-full" required on:input=move |ev| set_add_firstname.set(event_target_value(&ev)) />
                             </div>
                             <div class="form-control">
-                                <label class="label"><RequiredLabel required=true>{"Nachname"}</RequiredLabel></label>
+                                <label class="label"><RequiredLabel required=true>{crate::t!(t, "last_name")}</RequiredLabel></label>
                                 <input type="text" class="input input-bordered w-full" required on:input=move |ev| set_add_lastname.set(event_target_value(&ev)) />
                             </div>
                         </div>
 
                         <div class="form-control mt-4">
-                            <label class="label"><RequiredLabel required=true>{"E-Mail"}</RequiredLabel></label>
+                            <label class="label"><RequiredLabel required=true>{crate::t!(t, "email")}</RequiredLabel></label>
                             <input type="email" class="input input-bordered w-full" required on:input=move |ev| set_add_email.set(event_target_value(&ev)) />
                         </div>
 
                         <div class="grid grid-cols-2 gap-4 mt-4">
                             <div class="form-control">
-                                <label class="label"><RequiredLabel required=true>{"Passwort"}</RequiredLabel></label>
+                                <label class="label"><RequiredLabel required=true>{crate::t!(t, "password")}</RequiredLabel></label>
                                 <input type="password" class="input input-bordered w-full" required minlength="8" on:input=move |ev| set_add_password.set(event_target_value(&ev)) />
                             </div>
                             <div class="form-control">
-                                <label class="label"><RequiredLabel required=true>{"Rolle"}</RequiredLabel></label>
+                                <label class="label"><RequiredLabel required=true>{crate::t!(t, "role")}</RequiredLabel></label>
                                 <select class="select select-bordered w-full" required on:change=move |ev| set_add_role.set(event_target_value(&ev))>
-                                    <option value="Admin">"Admin"</option>
-                                    <option value="Manager">"Manager"</option>
-                                    <option value="Worker" selected>"Worker"</option>
-                                    <option value="Viewer">"Viewer"</option>
+                                    <option value="Admin">{crate::t!(t, "role_admin")}</option>
+                                    <option value="Manager">{crate::t!(t, "role_manager")}</option>
+                                    <option value="Worker" selected>{crate::t!(t, "role_worker")}</option>
+                                    <option value="Viewer">{crate::t!(t, "role_viewer")}</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="modal-action">
-                            <button class="btn" on:click=move |_| set_show_add_modal.set(false)> "Abbrechen" </button>
-                            <button class="btn btn-primary" on:click=on_create> "Speichern" </button>
+                            <button class="btn" on:click=move |_| set_show_add_modal.set(false)> {crate::t!(t, "cancel")} </button>
+                            <button class="btn btn-primary" on:click=on_create> {crate::t!(t, "save")} </button>
                         </div>
                     </div>
                 </div>
@@ -284,7 +300,7 @@ pub fn UserManagement() -> impl IntoView {
             <Show when=move || show_edit_modal.get()>
                 <div class="modal modal-open">
                     <div class="modal-box max-w-2xl">
-                        <h3 class="font-bold text-lg">"Benutzer bearbeiten"</h3>
+                        <h3 class="font-bold text-lg">{crate::t!(t, "edit_user")}</h3>
 
                         {move || edit_error.get().map(|err| view! {
                             <div class="alert alert-error mt-4">
@@ -294,42 +310,42 @@ pub fn UserManagement() -> impl IntoView {
 
                         <div class="grid grid-cols-2 gap-4 mt-4">
                             <div class="form-control">
-                                <label class="label"><span class="label-text">{"Vorname"}</span></label>
+                                <label class="label"><span class="label-text">{crate::t!(t, "first_name")}</span></label>
                                 <input type="text" class="input input-bordered w-full" prop:value=move || edit_firstname.get() on:input=move |ev| set_edit_firstname.set(event_target_value(&ev)) />
                             </div>
                             <div class="form-control">
-                                <label class="label"><span class="label-text">{"Nachname"}</span></label>
+                                <label class="label"><span class="label-text">{crate::t!(t, "last_name")}</span></label>
                                 <input type="text" class="input input-bordered w-full" prop:value=move || edit_lastname.get() on:input=move |ev| set_edit_lastname.set(event_target_value(&ev)) />
                             </div>
                         </div>
 
                         <div class="form-control mt-4">
-                            <label class="label"><span class="label-text">{"E-Mail"}</span></label>
+                            <label class="label"><span class="label-text">{crate::t!(t, "email")}</span></label>
                             <input type="email" class="input input-bordered w-full" prop:value=move || edit_email.get() on:input=move |ev| set_edit_email.set(event_target_value(&ev)) />
                         </div>
 
                         <div class="grid grid-cols-2 gap-4 mt-4">
                             <div class="form-control">
-                                <label class="label"><span class="label-text">{"Rolle"}</span></label>
+                                <label class="label"><span class="label-text">{crate::t!(t, "role")}</span></label>
                                 <select class="select select-bordered w-full" on:change=move |ev| set_edit_role.set(event_target_value(&ev))>
-                                    <option value="Admin">"Admin"</option>
-                                    <option value="Manager">"Manager"</option>
-                                    <option value="Worker">"Worker"</option>
-                                    <option value="Viewer">"Viewer"</option>
+                                    <option value="Admin" selected=move || edit_role.get() == "Admin">{crate::t!(t, "role_admin")}</option>
+                                    <option value="Manager" selected=move || edit_role.get() == "Manager">{crate::t!(t, "role_manager")}</option>
+                                    <option value="Worker" selected=move || edit_role.get() == "Worker">{crate::t!(t, "role_worker")}</option>
+                                    <option value="Viewer" selected=move || edit_role.get() == "Viewer">{crate::t!(t, "role_viewer")}</option>
                                 </select>
                             </div>
                             <div class="form-control">
-                                <label class="label"><span class="label-text">{"Status"}</span></label>
+                                <label class="label"><span class="label-text">{crate::t!(t, "status")}</span></label>
                                 <select class="select select-bordered w-full" on:change=move |ev| set_edit_is_active.set(event_target_value(&ev) == "true")>
-                                    <option value="true" selected=move || edit_is_active.get()> "Aktiv"</option>
-                                    <option value="false" selected=move || !edit_is_active.get()> "Inaktiv"</option>
+                                    <option value="true" selected=move || edit_is_active.get()> {crate::t!(t, "active")}</option>
+                                    <option value="false" selected=move || !edit_is_active.get()> {crate::t!(t, "inactive")}</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="modal-action">
-                            <button class="btn" on:click=move |_| set_show_edit_modal.set(false)> "Abbrechen" </button>
-                            <button class="btn btn-primary" on:click=on_update> "Speichern" </button>
+                            <button class="btn" on:click=move |_| set_show_edit_modal.set(false)> {crate::t!(t, "cancel")} </button>
+                            <button class="btn btn-primary" on:click=on_update> {crate::t!(t, "save")} </button>
                         </div>
                     </div>
                 </div>
@@ -339,72 +355,72 @@ pub fn UserManagement() -> impl IntoView {
             <Show when=move || show_permissions_modal.get()>
                 <div class="modal modal-open">
                     <div class="modal-box w-11/12 max-w-4xl">
-                        <h3 class="font-bold text-lg mb-4">"Rollen und Rechte Übersicht"</h3>
+                        <h3 class="font-bold text-lg mb-4">{crate::t!(t, "role_permissions_overview")}</h3>
                         <p class="text-base-content/60 mb-4">
-                            "Jede Rolle hat fest definierte Berechtigungen. Die Rechte können nicht einzeln vergeben werden - nur die Rolle des Benutzers."
+                            {crate::t!(t, "role_permissions_desc")}
                         </p>
 
                         <div class="overflow-x-auto">
                             <table class="table table-sm">
                                 <thead>
                                     <tr>
-                                        <th>"Rolle"</th>
-                                        <th>"Beschreibung"</th>
-                                        <th>"Flächen"</th>
-                                        <th>"Equipment"</th>
-                                        <th>"Aufträge"</th>
-                                        <th>"Benutzer"</th>
-                                        <th>"Finanzen"</th>
-                                        <th>"Analytics"</th>
+                                        <th>{crate::t!(t, "role")}</th>
+                                        <th>{crate::t!(t, "description")}</th>
+                                        <th>{crate::t!(t, "sites")}</th>
+                                        <th>{crate::t!(t, "equipment")}</th>
+                                        <th>{crate::t!(t, "orders")}</th>
+                                        <th>{crate::t!(t, "users")}</th>
+                                        <th>{crate::t!(t, "finance")}</th>
+                                        <th>{crate::t!(t, "analytics")}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td><strong>"Admin"</strong></td>
-                                        <td class="text-xs">"Vollzugriff auf alle Bereiche und Benutzerverwaltung"</td>
-                                        <td class="text-xs">"create, read, update, delete"</td>
-                                        <td class="text-xs">"create, read, update, delete"</td>
-                                        <td class="text-xs">"create, read, update, delete"</td>
-                                        <td class="text-xs">"create, read, update, delete"</td>
-                                        <td class="text-xs">"create, read, update, delete"</td>
-                                        <td class="text-xs">"create, read, update, delete"</td>
+                                        <td><strong>{crate::t!(t, "role_admin")}</strong></td>
+                                        <td class="text-xs">{crate::t!(t, "role_admin_desc")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_all")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_all")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_all")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_all")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_all")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_all")}</td>
                                     </tr>
                                     <tr>
-                                        <td><strong>"Manager"</strong></td>
-                                        <td class="text-xs">"Verwaltung ohne Benutzer-Rechte"</td>
-                                        <td class="text-xs">"create, read, update, delete"</td>
-                                        <td class="text-xs">"create, read, update, delete"</td>
-                                        <td class="text-xs">"create, read, update, delete"</td>
-                                        <td class="text-xs">"read"</td>
-                                        <td class="text-xs">"create, read, update"</td>
-                                        <td class="text-xs">"create, read"</td>
+                                        <td><strong>{crate::t!(t, "role_manager")}</strong></td>
+                                        <td class="text-xs">{crate::t!(t, "role_manager_desc")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_all")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_all")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_all")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_read")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_read_update")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_read_create")}</td>
                                     </tr>
                                     <tr>
-                                        <td><strong>"Worker"</strong></td>
-                                        <td class="text-xs">"Eingabe und Ansicht eigener Daten"</td>
-                                        <td class="text-xs">"read"</td>
-                                        <td class="text-xs">"read"</td>
-                                        <td class="text-xs">"read"</td>
-                                        <td class="text-xs">"read"</td>
-                                        <td class="text-xs">"—"</td>
-                                        <td class="text-xs">"—"</td>
+                                        <td><strong>{crate::t!(t, "role_worker")}</strong></td>
+                                        <td class="text-xs">{crate::t!(t, "role_worker_desc")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_read")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_read")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_read")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_read")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_none")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_none")}</td>
                                     </tr>
                                     <tr>
-                                        <td><strong>"Viewer"</strong></td>
-                                        <td class="text-xs">"Nur-Lese-Zugang"</td>
-                                        <td class="text-xs">"read"</td>
-                                        <td class="text-xs">"read"</td>
-                                        <td class="text-xs">"read"</td>
-                                        <td class="text-xs">"—"</td>
-                                        <td class="text-xs">"read"</td>
-                                        <td class="text-xs">"read"</td>
+                                        <td><strong>{crate::t!(t, "role_viewer")}</strong></td>
+                                        <td class="text-xs">{crate::t!(t, "role_viewer_desc")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_read")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_read")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_read")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_none")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_read")}</td>
+                                        <td class="text-xs">{crate::t!(t, "permissions_read")}</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
 
                         <div class="modal-action">
-                            <button class="btn" on:click=move |_| set_show_permissions_modal.set(false)> "Schließen" </button>
+                            <button class="btn" on:click=move |_| set_show_permissions_modal.set(false)> {crate::t!(t, "close")} </button>
                         </div>
                     </div>
                 </div>

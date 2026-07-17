@@ -22,9 +22,9 @@ impl WaterUsageRepo for PgWaterUsageRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, WaterUsage>(
-                "SELECT * FROM water_usages WHERE tenant_id = $1::uuid AND id = $2",
+                "SELECT * FROM water_usages WHERE tenant_id = $1 AND id = $2",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(id)
             .fetch_optional(&pool)
             .await
@@ -42,14 +42,14 @@ impl WaterUsageRepo for PgWaterUsageRepo {
         let offset = page * per_page;
         Box::pin(async move {
             let total: i64 =
-                sqlx::query_scalar("SELECT COUNT(*) FROM water_usages WHERE tenant_id = $1::uuid")
-                    .bind(tid.to_string())
+                sqlx::query_scalar("SELECT COUNT(*) FROM water_usages WHERE tenant_id = $1")
+                    .bind(tid)
                     .fetch_one(&pool)
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<WaterUsage> = sqlx::query_as("SELECT * FROM water_usages WHERE tenant_id = $1::uuid ORDER BY usage_date DESC, created_at DESC LIMIT $2 OFFSET $3")
-                .bind(tid.to_string())
+            let data: Vec<WaterUsage> = sqlx::query_as("SELECT * FROM water_usages WHERE tenant_id = $1 ORDER BY usage_date DESC, created_at DESC LIMIT $2 OFFSET $3")
+                .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)
@@ -83,7 +83,7 @@ impl WaterUsageRepo for PgWaterUsageRepo {
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *"
             )
             .bind(Uuid::new_v4())
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(dto.source_id)
             .bind(dto.site_id)
             .bind(dto.usage_date)
@@ -138,10 +138,10 @@ impl WaterUsageRepo for PgWaterUsageRepo {
             }
 
             query.push_str(&parts.join(", "));
-            query.push_str(" WHERE tenant_id = $1::uuid AND id = $2 RETURNING *");
+            query.push_str(" WHERE tenant_id = $1 AND id = $2 RETURNING *");
 
             let mut q = sqlx::query_as::<_, WaterUsage>(&query)
-                .bind(tid.to_string())
+                .bind(tid)
                 .bind(id);
 
             if let Some(v) = dto.source_id {
@@ -172,8 +172,8 @@ impl WaterUsageRepo for PgWaterUsageRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             let res =
-                sqlx::query("DELETE FROM water_usages WHERE tenant_id = $1::uuid AND id = $2")
-                    .bind(tid.to_string())
+                sqlx::query("DELETE FROM water_usages WHERE tenant_id = $1 AND id = $2")
+                    .bind(tid)
                     .bind(id)
                     .execute(&pool)
                     .await
@@ -193,16 +193,16 @@ impl WaterUsageRepo for PgWaterUsageRepo {
         let offset = page * per_page;
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM water_usages WHERE tenant_id = $1::uuid AND source_id = $2",
+                "SELECT COUNT(*) FROM water_usages WHERE tenant_id = $1 AND source_id = $2",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(source_id)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<WaterUsage> = sqlx::query_as("SELECT * FROM water_usages WHERE tenant_id = $1::uuid AND source_id = $2 ORDER BY usage_date DESC, created_at DESC LIMIT $3 OFFSET $4")
-                .bind(tid.to_string())
+            let data: Vec<WaterUsage> = sqlx::query_as("SELECT * FROM water_usages WHERE tenant_id = $1 AND source_id = $2 ORDER BY usage_date DESC, created_at DESC LIMIT $3 OFFSET $4")
+                .bind(tid)
                 .bind(source_id)
                 .bind(per_page as i32)
                 .bind(offset as i32)
@@ -236,16 +236,16 @@ impl WaterUsageRepo for PgWaterUsageRepo {
         let offset = page * per_page;
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM water_usages WHERE tenant_id = $1::uuid AND site_id = $2",
+                "SELECT COUNT(*) FROM water_usages WHERE tenant_id = $1 AND site_id = $2",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(site_id)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<WaterUsage> = sqlx::query_as("SELECT * FROM water_usages WHERE tenant_id = $1::uuid AND site_id = $2 ORDER BY usage_date DESC, created_at DESC LIMIT $3 OFFSET $4")
-                .bind(tid.to_string())
+            let data: Vec<WaterUsage> = sqlx::query_as("SELECT * FROM water_usages WHERE tenant_id = $1 AND site_id = $2 ORDER BY usage_date DESC, created_at DESC LIMIT $3 OFFSET $4")
+                .bind(tid)
                 .bind(site_id)
                 .bind(per_page as i32)
                 .bind(offset as i32)

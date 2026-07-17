@@ -22,10 +22,10 @@ impl WaterQuotaRepo for PgWaterQuotaRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             let row = sqlx::query_as(
-                "SELECT * FROM water_quotas WHERE id = $1::uuid AND tenant_id = $2::uuid",
+                "SELECT * FROM water_quotas WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
@@ -43,15 +43,15 @@ impl WaterQuotaRepo for PgWaterQuotaRepo {
         let offset = page * per_page;
         Box::pin(async move {
             let total: i64 =
-                sqlx::query_scalar("SELECT COUNT(*) FROM water_quotas WHERE tenant_id = $1::uuid")
-                    .bind(tid.to_string())
+                sqlx::query_scalar("SELECT COUNT(*) FROM water_quotas WHERE tenant_id = $1")
+                    .bind(tid)
                     .fetch_one(&pool)
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
             let data: Vec<WaterQuota> = sqlx::query_as(
-                "SELECT * FROM water_quotas WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3",
+                "SELECT * FROM water_quotas WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(per_page as i32)
             .bind(offset as i32)
             .fetch_all(&pool)
@@ -79,7 +79,7 @@ impl WaterQuotaRepo for PgWaterQuotaRepo {
                 "INSERT INTO water_quotas (id, tenant_id, source_id, year, allocated_m3, used_m3, comunidad_id, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *"
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(dto.source_id)
             .bind(dto.year)
             .bind(dto.allocated_m3)

@@ -23,6 +23,7 @@ pub struct WorkerLocation {
     pub timestamp: DateTime<Utc>,
 }
 
+#[allow(dead_code)]
 fn js_point_to_geo_point(value: &JsValue) -> Option<crate::api::GeoPoint> {
     if value.is_null() || value.is_undefined() {
         return None;
@@ -33,6 +34,7 @@ fn js_point_to_geo_point(value: &JsValue) -> Option<crate::api::GeoPoint> {
     Some(crate::api::GeoPoint { lat, lng })
 }
 
+#[allow(dead_code)]
 fn js_points_to_geo_points(value: &JsValue) -> Option<Vec<crate::api::GeoPoint>> {
     if value.is_null() || value.is_undefined() {
         return None;
@@ -51,6 +53,7 @@ fn js_points_to_geo_points(value: &JsValue) -> Option<Vec<crate::api::GeoPoint>>
     }
 }
 
+#[allow(dead_code)]
 fn js_number_to_option(value: &JsValue) -> Option<f64> {
     if value.is_null() || value.is_undefined() {
         None
@@ -59,17 +62,17 @@ fn js_number_to_option(value: &JsValue) -> Option<f64> {
     }
 }
 
-#[component]
+#[allow(dead_code, non_snake_case)]
 pub fn FieldPolygonEditor<F>(on_change: F) -> impl IntoView
 where
-    F: Fn(Option<Vec<crate::api::GeoPoint>>, Option<f64>, Option<crate::api::GeoPoint>) + 'static,
+    F: Fn(Option<Vec<crate::api::GeoPoint>>, Option<f64>, Option<crate::api::GeoPoint>) + 'static + Clone,
 {
     let map_ref = NodeRef::<leptos::html::Div>::new();
-    let on_change = std::rc::Rc::new(on_change);
+    let on_change_rc = std::rc::Rc::new(on_change);
 
     Effect::new(move |_| {
         if let Some(el) = map_ref.get() {
-            let on_change = on_change.clone();
+            let on_change = on_change_rc.clone();
             let callback = Closure::wrap(Box::new(
                 move |boundary: JsValue, area: JsValue, center: JsValue| {
                     let boundary = js_points_to_geo_points(&boundary);
@@ -97,6 +100,7 @@ where
 
 #[component]
 pub fn MapView() -> impl IntoView {
+    let t = crate::i18n::use_i18n();
     let map_ref = NodeRef::<leptos::html::Div>::new();
     let (locations, _set_locations) = signal(Vec::<WorkerLocation>::new());
 
@@ -109,15 +113,15 @@ pub fn MapView() -> impl IntoView {
     view! {
         <div class="flex flex-col gap-4 h-full">
             <div class="flex justify-between items-center">
-                <h1 class="text-3xl font-bold">"Mitarbeiter-Karte (OSM)"</h1>
+                <h1 class="text-3xl font-bold">{crate::t!(t, "worker_map_osm")}</h1>
                 <div class="flex gap-4">
                     <div class="flex items-center gap-2">
                         <div class="w-3 h-3 rounded-full bg-success"></div>
-                        <span class="text-sm">"In Aufgabe"</span>
+                        <span class="text-sm">{crate::t!(t, "in_task")}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="w-3 h-3 rounded-full bg-neutral"></div>
-                        <span class="text-sm">"Bereit / Idle"</span>
+                        <span class="text-sm">{crate::t!(t, "ready_idle")}</span>
                     </div>
                 </div>
             </div>
@@ -130,17 +134,17 @@ pub fn MapView() -> impl IntoView {
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                 {move || locations.get().into_iter().map(|loc| {
                     let status_class = if loc.current_task_id.is_some() { "badge-success" } else { "badge-ghost" };
-                    let status_text = if loc.current_task_id.is_some() { "In Aufgabe" } else { "Bereit" };
+                    let status_text = if loc.current_task_id.is_some() { t("in_task") } else { t("ready_idle") };
                     view! {
                         <div class="card bg-base-100 shadow-xl compact">
                             <div class="card-body">
                                 <div class="flex items-center gap-3">
                                     <div class=format!("w-3 h-3 rounded-full {}", if loc.current_task_id.is_some() { "bg-success" } else { "bg-neutral" })></div>
-                                    <h2 class="card-title text-sm">"Mitarbeiter " {loc.worker_id.to_string()[..8].to_string()}</h2>
+                                    <h2 class="card-title text-sm">{crate::t!(t, "worker")} " " {loc.worker_id.to_string()[..8].to_string()}</h2>
                                     <span class=format!("badge badge-xs ml-auto {}", status_class)>{status_text}</span>
                                 </div>
-                                <p class="text-[10px] opacity-50">"Pos: " {format!("{:.4}, {:.4}", loc.lat, loc.lng)}</p>
-                                <p class="text-[10px] opacity-50">"Zuletzt gemeldet: " {loc.timestamp.format("%H:%M:%S").to_string()}</p>
+                                <p class="text-[10px] opacity-50">{crate::t!(t, "position")}: {format!("{:.4}, {:.4}", loc.lat, loc.lng)}</p>
+                                <p class="text-[10px] opacity-50">{crate::t!(t, "last_reported")}: {loc.timestamp.format("%H:%M:%S").to_string()}</p>
                             </div>
                         </div>
                     }

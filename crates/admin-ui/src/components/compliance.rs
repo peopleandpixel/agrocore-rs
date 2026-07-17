@@ -10,7 +10,7 @@ use leptos_icons::Icon;
 pub fn CompliancePage() -> impl IntoView {
     let i18n = use_context::<I18n>().expect("i18n context");
     let lang = use_context::<ReadSignal<Language>>().expect("lang signal");
-    let t = |key: &str| i18n.t(lang.get().as_str(), key);
+    let t = move |key: &str| i18n.t(lang.get().as_str(), key);
     let title = t("compliance_certification");
     let description = t("manage_requirements");
     let export_report = t("export_report");
@@ -159,8 +159,8 @@ pub fn CompliancePage() -> impl IntoView {
                                 <select class="select select-bordered w-full" prop:value=move || checklist_type.get() on:change=move |ev| set_checklist_type.set(event_target_value(&ev))>
                                     <option value="GlobalGAP">"GlobalGAP"</option>
                                     <option value="GAP">"GAP"</option>
-                                    <option value="Organic">"Organic"</option>
-                                    <option value="HACCP">"HACCP"</option>
+                                    <option value="Organic">{t("organic")}</option>
+                                    <option value="HACCP">{t("haccp")}</option>
                                 </select>
                             </div>
                             <div class="form-control">

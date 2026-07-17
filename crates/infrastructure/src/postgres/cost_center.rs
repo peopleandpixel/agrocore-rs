@@ -25,7 +25,7 @@ impl CostCenterRepo for PgCostCenterRepo {
                 "SELECT * FROM cost_centers WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -52,15 +52,15 @@ impl CostCenterRepo for PgCostCenterRepo {
         let offset = page * per_page;
         Box::pin(async move {
             let total: i64 =
-                sqlx::query_scalar("SELECT COUNT(*) FROM cost_centers WHERE tenant_id = $1::uuid")
-                    .bind(tid.to_string())
+                sqlx::query_scalar("SELECT COUNT(*) FROM cost_centers WHERE tenant_id = $1")
+                    .bind(tid)
                     .fetch_one(&pool)
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
             let data: Vec<CostCenter> = sqlx::query_as(
-                "SELECT * FROM cost_centers WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3",
+                "SELECT * FROM cost_centers WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(per_page as i32)
             .bind(offset as i32)
             .fetch_all(&pool)
@@ -84,7 +84,7 @@ impl CostCenterRepo for PgCostCenterRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, CostCenter>("INSERT INTO cost_centers (tenant_id, label, cost_center_type, code, reference_id) VALUES ($1, $2, $3, $4, $5) RETURNING *")
-            .bind(tid.to_string()).bind(&dto.label).bind(serde_json::to_value(&dto.cost_center_type).unwrap()).bind(&dto.code).bind(dto.reference_id)
+            .bind(tid).bind(&dto.label).bind(serde_json::to_value(&dto.cost_center_type).unwrap()).bind(&dto.code).bind(dto.reference_id)
             .fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
         })
     }

@@ -33,7 +33,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
                 "SELECT * FROM plant_protection_records WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -52,15 +52,15 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
 
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM plant_protection_records WHERE tenant_id = $1::uuid",
+                "SELECT COUNT(*) FROM plant_protection_records WHERE tenant_id = $1",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<PlantProtectionRecord> = sqlx::query_as("SELECT * FROM plant_protection_records WHERE tenant_id = $1::uuid ORDER BY application_date DESC LIMIT $2 OFFSET $3")
-                .bind(tid.to_string())
+            let data: Vec<PlantProtectionRecord> = sqlx::query_as("SELECT * FROM plant_protection_records WHERE tenant_id = $1 ORDER BY application_date DESC LIMIT $2 OFFSET $3")
+                .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)
@@ -97,7 +97,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
                    RETURNING *"#)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(dto.site_id)
             .bind(dto.order_id)
             .bind(&dto.product_name)
@@ -131,7 +131,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
             )
             .bind(&dto.product_name)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -143,7 +143,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
         Box::pin(async move {
             sqlx::query("DELETE FROM plant_protection_records WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .execute(&pool)
                 .await
                 .map(|r| r.rows_affected() > 0)

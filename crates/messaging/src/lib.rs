@@ -38,6 +38,7 @@ pub enum GlobalEvent {
     UserCreated(User),
     UserUpdated(User),
     UserDeleted(Uuid),
+    TenantCreated(agrocore_domain::entities::tenant::Tenant),
     SpatialPolygonEntered(SpatialPresenceEvent),
     SpatialPolygonIn(SpatialPresenceEvent),
     SpatialPolygonLeft(SpatialPresenceEvent),
@@ -100,7 +101,31 @@ pub struct MessagingClient {
 impl MessagingClient {
     pub async fn connect(url: &str) -> anyhow::Result<Self> {
         info!("Connecting to NATS at {}", url);
-        let client = async_nats::connect(url).await?;
+        let mut retry_count = 0;
+        let max_retries = 10;
+
+        let client = loop {
+            match async_nats::connect(url).await {
+                Ok(client) => break client,
+                Err(e) if retry_count < max_retries => {
+                    retry_count += 1;
+                    tracing::warn!(
+                        "Failed to connect to NATS (attempt {}/{}): {}. Retrying in 1s...",
+                        retry_count,
+                        max_retries,
+                        e
+                    );
+                    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                }
+                Err(e) => {
+                    return Err(anyhow::anyhow!(
+                        "Failed to connect to NATS after {} attempts: {}",
+                        max_retries,
+                        e
+                    ));
+                }
+            }
+        };
 
         let circuit_breaker = Config::new().build();
 

@@ -30,7 +30,7 @@ impl WorkerTaskStatusRepository for PgWorkerTaskStatusRepo {
             sqlx::query_as::<_, WorkerTaskStatus>("SELECT * FROM worker_task_statuses WHERE task_id = $1 AND worker_id = $2 AND tenant_id = $3")
                 .bind(task_id)
                 .bind(worker_id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .fetch_optional(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))
@@ -48,7 +48,7 @@ impl WorkerTaskStatusRepository for PgWorkerTaskStatusRepo {
                 "SELECT * FROM worker_task_statuses WHERE task_id = $1 AND tenant_id = $2",
             )
             .bind(task_id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_all(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -68,7 +68,7 @@ impl WorkerTaskStatusRepository for PgWorkerTaskStatusRepo {
                    VALUES ($1, $2, $3, $4, $5, NOW())
                    RETURNING *"#)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(dto.task_id)
             .bind(dto.worker_id)
             .bind(serde_json::to_value(&WorkerTaskStatusType::New).unwrap())
@@ -95,7 +95,7 @@ impl WorkerTaskStatusRepository for PgWorkerTaskStatusRepo {
             .bind(serde_json::to_value(&status).unwrap())
             .bind(task_id)
             .bind(worker_id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))

@@ -28,7 +28,7 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
                 "SELECT * FROM harvest_deliveries WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -43,15 +43,15 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
 
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM harvest_deliveries WHERE tenant_id = $1::uuid",
+                "SELECT COUNT(*) FROM harvest_deliveries WHERE tenant_id = $1",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<HarvestDelivery> = sqlx::query_as("SELECT * FROM harvest_deliveries WHERE tenant_id = $1::uuid ORDER BY delivery_date DESC LIMIT $2 OFFSET $3")
-                .bind(tid.to_string())
+            let data: Vec<HarvestDelivery> = sqlx::query_as("SELECT * FROM harvest_deliveries WHERE tenant_id = $1 ORDER BY delivery_date DESC LIMIT $2 OFFSET $3")
+                .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)
@@ -86,15 +86,15 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM harvest_deliveries WHERE tenant_id = $1::uuid AND lot_id = $2")
-                .bind(tid.to_string())
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM harvest_deliveries WHERE tenant_id = $1 AND lot_id = $2")
+                .bind(tid)
                 .bind(lot_id)
                 .fetch_one(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<HarvestDelivery> = sqlx::query_as("SELECT * FROM harvest_deliveries WHERE tenant_id = $1::uuid AND lot_id = $2 ORDER BY delivery_date DESC LIMIT $3 OFFSET $4")
-                .bind(tid.to_string())
+            let data: Vec<HarvestDelivery> = sqlx::query_as("SELECT * FROM harvest_deliveries WHERE tenant_id = $1 AND lot_id = $2 ORDER BY delivery_date DESC LIMIT $3 OFFSET $4")
+                .bind(tid)
                 .bind(lot_id)
                 .bind(per_page as i32)
                 .bind(offset as i32)
@@ -133,7 +133,7 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
                    RETURNING *"#)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(dto.lot_id)
             .bind(dto.delivery_date)
             .bind(dto.gross_weight_kg)
@@ -163,7 +163,7 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
                 "SELECT * FROM harvest_deliveries WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
@@ -197,7 +197,7 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
                 .bind(&dto.quality_notes)
                 .bind(dto.temperature_at_delivery)
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .fetch_optional(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))
@@ -212,7 +212,7 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
         Box::pin(async move {
             sqlx::query("DELETE FROM harvest_deliveries WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .execute(&pool)
                 .await
                 .map(|r| r.rows_affected() > 0)

@@ -76,9 +76,9 @@ pub const LANGUAGE_OPTIONS: [(Language, &str, &str); 10] = [
     (Language::UK, "uk", "language_uk"),
 ];
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Copy)]
 pub struct I18n {
-    translations: HashMap<String, HashMap<String, String>>,
+    translations: Option<&'static HashMap<String, HashMap<String, String>>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -93,18 +93,40 @@ impl I18n {
     pub fn new() -> Self {
         let file: LocaleFile = serde_yaml::from_str(include_str!("../locales/app.yml"))
             .expect("failed to load admin-ui locales");
+        let translations = Box::leak(Box::new(file.translations));
         Self {
-            translations: file.translations,
+            translations: Some(translations),
         }
     }
 
     pub fn t(&self, lang: &str, key: &str) -> String {
         self.translations
-            .get(key)
+            .and_then(|translations| translations.get(key))
             .and_then(|translations| translations.get(lang))
             .cloned()
             .unwrap_or_else(|| key.to_string())
     }
+}
+
+pub fn use_i18n() -> impl Fn(&str) -> String + Clone + Copy {
+    use leptos::prelude::Get;
+    let i18n = leptos::prelude::use_context::<I18n>().expect("i18n context");
+    let lang = leptos::prelude::use_context::<leptos::prelude::ReadSignal<Language>>().expect("lang signal");
+
+    move |key: &str| {
+        let lang_code = lang.get().as_str();
+        i18n.t(lang_code, key)
+    }
+}
+
+#[macro_export]
+macro_rules! t {
+    ($t:expr, $key:expr) => {
+        {
+            let t = $t.clone();
+            move || t($key)
+        }
+    };
 }
 
 #[cfg(test)]
@@ -170,9 +192,11 @@ mod tests {
     #[test]
     fn every_supported_language_has_the_same_key_set() {
         let i18n = I18n::new();
-        let Some(reference) = i18n.translations.get("setup_title") else {
-            panic!("missing reference key setup_title");
-        };
+        let reference = i18n
+            .translations
+            .expect("translations")
+            .get("setup_title")
+            .expect("missing reference key setup_title");
 
         let reference_locales: HashSet<&str> = reference.keys().map(String::as_str).collect();
         assert_eq!(reference_locales.len(), supported_language_codes().len());
@@ -184,7 +208,7 @@ mod tests {
             );
         }
 
-        for (key, locales) in &i18n.translations {
+        for (key, locales) in i18n.translations.expect("translations") {
             let locale_set: HashSet<&str> = locales.keys().map(String::as_str).collect();
             assert_eq!(
                 locale_set, reference_locales,

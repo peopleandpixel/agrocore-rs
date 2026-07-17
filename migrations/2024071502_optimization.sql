@@ -10,6 +10,15 @@ CREATE TABLE user_sites (
     PRIMARY KEY (user_id, site_id)
 );
 
+-- Daten migrieren
+INSERT INTO user_sites (user_id, site_id)
+SELECT id, (jsonb_array_elements_text(assigned_site_ids))::UUID
+FROM users
+WHERE assigned_site_ids IS NOT NULL AND jsonb_array_length(assigned_site_ids) > 0;
+
+-- Alte Spalte entfernen
+ALTER TABLE users DROP COLUMN assigned_site_ids;
+
 -- Falls orders.site_ids noch als Array existiert (in 20240101_init.sql gesehen), order_sites existiert aber auch schon dort.
 -- Wir stellen sicher, dass order_sites die primäre Quelle ist.
 

@@ -28,7 +28,7 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
                 "SELECT * FROM phenology_records WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -47,15 +47,15 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
 
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM phenology_records WHERE tenant_id = $1::uuid",
+                "SELECT COUNT(*) FROM phenology_records WHERE tenant_id = $1",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<PhenologyRecord> = sqlx::query_as("SELECT * FROM phenology_records WHERE tenant_id = $1::uuid ORDER BY observation_date DESC LIMIT $2 OFFSET $3")
-                .bind(tid.to_string())
+            let data: Vec<PhenologyRecord> = sqlx::query_as("SELECT * FROM phenology_records WHERE tenant_id = $1 ORDER BY observation_date DESC LIMIT $2 OFFSET $3")
+                .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)
@@ -90,16 +90,16 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM phenology_records WHERE tenant_id = $1::uuid AND site_id = $2::uuid")
-                .bind(tid.to_string())
-                .bind(site_id.to_string())
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM phenology_records WHERE tenant_id = $1 AND site_id = $2")
+                .bind(tid)
+                .bind(site_id)
                 .fetch_one(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<PhenologyRecord> = sqlx::query_as("SELECT * FROM phenology_records WHERE tenant_id = $1::uuid AND site_id = $2::uuid ORDER BY observation_date DESC LIMIT $3 OFFSET $4")
-                .bind(tid.to_string())
-                .bind(site_id.to_string())
+            let data: Vec<PhenologyRecord> = sqlx::query_as("SELECT * FROM phenology_records WHERE tenant_id = $1 AND site_id = $2 ORDER BY observation_date DESC LIMIT $3 OFFSET $4")
+                .bind(tid)
+                .bind(site_id)
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)
@@ -136,7 +136,7 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
                    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
                    RETURNING *"#)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(dto.site_id)
             .bind(dto.observation_date)
             .bind(serde_json::to_value(&dto.stage).unwrap())

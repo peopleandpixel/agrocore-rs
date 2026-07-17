@@ -30,7 +30,7 @@ impl AnimalRepository for PgAnimalRepo {
         Box::pin(async move {
             sqlx::query_as::<_, Animal>("SELECT * FROM animals WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .fetch_optional(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))
@@ -55,7 +55,7 @@ impl AnimalRepository for PgAnimalRepo {
                     "SELECT * FROM animals WHERE id = $1 AND tenant_id = $2",
                 )
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .fetch_optional(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))
@@ -64,7 +64,7 @@ impl AnimalRepository for PgAnimalRepo {
                     "SELECT * FROM animals WHERE id = $1 AND tenant_id = $2 AND id = $3",
                 )
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .bind(user_id)
                 .fetch_optional(&pool)
                 .await
@@ -80,14 +80,14 @@ impl AnimalRepository for PgAnimalRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM animals WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true)")
-                .bind(tid.to_string())
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM animals WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true)")
+                .bind(tid)
                 .fetch_one(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<Animal> = sqlx::query_as("SELECT * FROM animals WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true) ORDER BY created_at DESC LIMIT $2 OFFSET $3")
-                .bind(tid.to_string())
+            let data: Vec<Animal> = sqlx::query_as("SELECT * FROM animals WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY created_at DESC LIMIT $2 OFFSET $3")
+                .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)
@@ -121,7 +121,7 @@ impl AnimalRepository for PgAnimalRepo {
                    VALUES ($1, $2, $3, $4, $5, $6, $7, true, $8, $9)
                    RETURNING *"#)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(&dto.identifier)
             .bind(serde_json::to_value(&dto.species).unwrap())
             .bind(&dto.breed)
@@ -166,7 +166,7 @@ impl AnimalRepository for PgAnimalRepo {
             .bind(dto.current_site_id)
             .bind(now)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -179,7 +179,7 @@ impl AnimalRepository for PgAnimalRepo {
             let result = sqlx::query("UPDATE animals SET is_active = false, updated_at = $1 WHERE id = $2 AND tenant_id = $3")
                 .bind(Utc::now())
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .execute(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
@@ -196,7 +196,7 @@ impl AnimalRepository for PgAnimalRepo {
                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())"#)
             .bind(record.id)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(record.date)
             .bind(record.treatment_type)
             .bind(record.medication)
@@ -219,7 +219,7 @@ impl AnimalRepository for PgAnimalRepo {
                    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())"#)
             .bind(Uuid::new_v4())
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(record.site_id)
             .bind(record.start_date)
             .bind(record.end_date)

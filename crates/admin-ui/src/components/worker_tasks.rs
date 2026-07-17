@@ -1,70 +1,55 @@
-use crate::api::{TaskData, fetch_my_tasks};
-use crate::i18n::{I18n, Language};
-use icondata::*;
+use crate::api;
+// use icondata::*;
 use leptos::prelude::*;
-use leptos_icons::Icon;
+// use leptos_icons::Icon;
 
 #[component]
 pub fn WorkerTasksPage() -> impl IntoView {
-    let i18n = use_context::<I18n>().expect("i18n context");
-    let lang = use_context::<ReadSignal<Language>>().expect("lang signal");
-
-    let title = i18n.t(lang.get().as_str(), "my_tasks");
-    let start_label = i18n.t(lang.get().as_str(), "start");
-    let stop_label = i18n.t(lang.get().as_str(), "stop");
-    let complete_label = i18n.t(lang.get().as_str(), "complete");
-
-    let tasks = LocalResource::new(|| async move { fetch_my_tasks().await.ok() });
+    let t = crate::i18n::use_i18n();
+    let tasks = LocalResource::new(|| async move { api::fetch_worker_tasks().await.unwrap_or_default() });
 
     view! {
-        <div class="flex flex-col gap-4">
-            <h1 class="text-2xl font-bold">{title}</h1>
+        <div class="flex flex-col gap-6">
+            <div>
+                <h1 class="text-3xl font-bold">{crate::t!(t, "nav_my_tasks")}</h1>
+                <p class="text-base-content/60">{crate::t!(t, "worker_tasks_desc")}</p>
+            </div>
 
-            <Suspense fallback=move || view! { <div class="loading loading-spinner"></div> }>
-                <div class="grid gap-4">
-                    <For
-                        each=move || {
-                            tasks
-                                .read()
-                                .as_ref()
-                                .map(|opt| {
-                                    opt.as_ref()
-                                        .map(|t| t.data.clone())
-                                        .unwrap_or_default()
-                                })
-                                .unwrap_or_default()
-                        }
-                        key=|task| task.id
-                        children=move |task: TaskData| {
-                            let description = task.description;
-                            let start_l = start_label.clone();
-                            let stop_l = stop_label.clone();
-                            let complete_l = complete_label.clone();
-                            view! {
-                                <div class="card bg-base-100 shadow">
-                                    <div class="card-body">
-                                        <h2 class="card-title">{description}</h2>
-                                        <div class="card-actions justify-end">
-                                            <button class="btn btn-success btn-sm">
-                                                <Icon icon=LuPlay width="16" height="16" />
-                                                {start_l}
-                                            </button>
-                                            <button class="btn btn-error btn-sm">
-                                                <Icon icon=LuPause width="16" height="16" />
-                                                {stop_l}
-                                            </button>
-                                            <button class="btn btn-primary btn-sm">
-                                                <Icon icon=LuCheck width="16" height="16" />
-                                                {complete_l}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        }
-                    />
+            <div class="card bg-base-100 shadow">
+                <div class="overflow-x-auto">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>{crate::t!(t, "order_type")}</th>
+                                <th>{crate::t!(t, "description")}</th>
+                                <th>{crate::t!(t, "status")}</th>
+                                <th>{crate::t!(t, "actions")}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <For
+                                each=move || tasks.get().unwrap_or_default()
+                                key=|task| task.id
+                                children=move |task| {
+                                    let order_type = task.order_type.clone();
+                                    let label = task.label.clone();
+                                    let status = task.status.clone();
+                                    view! {
+                                        <tr>
+                                            <td>{move || t(&format!("order_type_{}", order_type))}</td>
+                                            <td>{label}</td>
+                                            <td><div class="badge badge-sm">{status}</div></td>
+                                            <td>
+                                                <button class="btn btn-xs btn-primary">{crate::t!(t, "start_task")}</button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            />
+                        </tbody>
+                    </table>
                 </div>
-            </Suspense>
+            </div>
         </div>
     }
 }

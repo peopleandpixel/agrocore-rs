@@ -30,9 +30,7 @@ pub fn FinanceManagement() -> impl IntoView {
         set_error.set(None);
 
         if application_number.trim().is_empty() || total_eligible_area <= 0.0 {
-            set_error.set(Some(String::from(
-                "Bitte Antragsnummer und Fläche ausfüllen.",
-            )));
+            set_error.set(Some(t("validation_required")));
             return;
         }
 
@@ -59,9 +57,7 @@ pub fn FinanceManagement() -> impl IntoView {
         set_error.set(None);
 
         if booking_description.trim().is_empty() || amount == -450.0 {
-            set_error.set(Some(String::from(
-                "Bitte Beschreibung und Betrag ausfüllen.",
-            )));
+            set_error.set(Some(t("validation_required")));
             return;
         }
 
@@ -85,9 +81,7 @@ pub fn FinanceManagement() -> impl IntoView {
             };
 
             let Some(cost_center_id) = cost_center_id else {
-                set_error.set(Some(String::from(
-                    "Kostenstelle konnte nicht bestimmt werden.",
-                )));
+                set_error.set(Some(t("error_unknown")));
                 return;
             };
 
@@ -113,31 +107,31 @@ pub fn FinanceManagement() -> impl IntoView {
 
     view! {
         <div class="flex flex-col gap-6">
-            <h1 class="text-3xl font-bold">{move || t("finance_and_pac")}</h1>
+            <h1 class="text-3xl font-bold">{move || t("nav_finance")}</h1>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div class="card bg-base-100 shadow">
                     <div class="card-body">
-                        <h2 class="card-title">"PAC-Anträge"</h2>
+                        <h2 class="card-title">{move || t("pac_applications")}</h2>
                         <div class="space-y-4 mt-4">
                             <div class="alert alert-info">
-                                <span>{move || format!("{} Anträge vorhanden.", pac_applications.read().as_ref().map(|page| page.as_ref().map(|p| p.total).unwrap_or(0)).unwrap_or(0))}</span>
+                                <span>{move || format!("{} {}", pac_applications.read().as_ref().map(|page| page.as_ref().map(|p| p.total).unwrap_or(0)).unwrap_or(0), t("pac_applications"))}</span>
                             </div>
-                            <button class="btn btn-outline btn-sm w-full" on:click=move |_| set_show_pac_modal.set(true)>"Neuer Antrag"</button>
+                            <button class="btn btn-outline btn-sm w-full" on:click=move |_| set_show_pac_modal.set(true)>{move || t("new_application")}</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="card bg-base-100 shadow">
                     <div class="card-body">
-                        <h2 class="card-title">"Kostenstellen"</h2>
+                        <h2 class="card-title">{move || t("cost_centers")}</h2>
                         <div class="overflow-x-auto mt-4">
                             <table class="table table-xs">
                                 <thead>
                                     <tr>
-                                        <th>"Name"</th>
-                                        <th>"Typ"</th>
-                                        <th>"Saldo"</th>
+                                        <th>{move || t("name")}</th>
+                                        <th>{move || t("type")}</th>
+                                        <th>{move || t("balance")}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -146,7 +140,7 @@ pub fn FinanceManagement() -> impl IntoView {
                                             let label = center
                                                 .get("label")
                                                 .and_then(|v| v.as_str())
-                                                .unwrap_or("Kostenstelle")
+                                                .unwrap_or_else(|| "General")
                                                 .to_string();
                                             let center_type = center
                                                 .get("cost_center_type")
@@ -175,10 +169,10 @@ pub fn FinanceManagement() -> impl IntoView {
 
                 <div class="card bg-base-100 shadow border-t-4 border-accent">
                     <div class="card-body">
-                        <h2 class="card-title">"Finanz-Quicklink"</h2>
-                        <p class="text-sm">"Erfassen Sie schnell neue Einnahmen oder Ausgaben."</p>
+                        <h2 class="card-title">{move || t("finance_quicklink")}</h2>
+                        <p class="text-sm">{move || t("finance_quicklink_desc")}</p>
                         <div class="card-actions justify-end mt-4">
-                            <button class="btn btn-accent btn-sm" on:click=move |_| set_show_booking_modal.set(true)>"Buchung erstellen"</button>
+                            <button class="btn btn-accent btn-sm" on:click=move |_| set_show_booking_modal.set(true)>{move || t("create_booking")}</button>
                         </div>
                     </div>
                 </div>
@@ -186,15 +180,15 @@ pub fn FinanceManagement() -> impl IntoView {
 
             <div class="card bg-base-100 shadow">
                 <div class="card-body">
-                    <h2 class="card-title mb-4">"Letzte Finanzaufzeichnungen"</h2>
+                    <h2 class="card-title mb-4">{move || t("last_financial_records")}</h2>
                     <div class="overflow-x-auto">
                         {move || financial_records.read().as_ref().and_then(|result| result.as_ref()).map(|page| view! {
                             <table class="table w-full">
                                 <thead>
                                     <tr>
-                                        <th>"Datum"</th>
-                                        <th>"Beschreibung"</th>
-                                        <th>"Betrag"</th>
+                                        <th>{move || t("date")}</th>
+                                        <th>{move || t("description")}</th>
+                                        <th>{move || t("amount")}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -211,7 +205,7 @@ pub fn FinanceManagement() -> impl IntoView {
                             </table>
                         }.into_any()).unwrap_or_else(|| view! {
                             <div class="alert alert-ghost">
-                                <span>"Noch keine Finanzbuchungen vorhanden."</span>
+                                <span>{move || t("no_financial_records")}</span>
                             </div>
                         }.into_any())}
                     </div>
@@ -221,23 +215,23 @@ pub fn FinanceManagement() -> impl IntoView {
             <Show when=move || show_pac_modal.get()>
                 <div class="modal modal-open">
                     <div class="modal-box">
-                        <h3 class="font-bold text-lg">"PAC-Antrag erstellen"</h3>
+                        <h3 class="font-bold text-lg">{move || t("create_pac_application_title")}</h3>
                         {move || error.get().map(|err| view! {
                             <div class="alert alert-error mt-4">
                                 <span>{err}</span>
                             </div>
                         })}
                         <div class="form-control w-full mt-4">
-                            <label class="label"><RequiredLabel required=true>{"Antragsnummer"}</RequiredLabel></label>
+                            <label class="label"><RequiredLabel required=true>{move || t("application_number")}</RequiredLabel></label>
                             <input type="text" class="input input-bordered w-full" required prop:value=move || application_number.get() on:input=move |ev| set_application_number.set(event_target_value(&ev)) />
                         </div>
                         <div class="form-control w-full mt-4">
-                            <label class="label"><RequiredLabel required=true>{"Förderfähige Fläche (ha)"}</RequiredLabel></label>
+                            <label class="label"><RequiredLabel required=true>{move || t("site_area")}</RequiredLabel></label>
                             <input type="number" step="0.1" class="input input-bordered w-full" required prop:value=move || eligible_area.get() on:input=move |ev| set_eligible_area.set(event_target_value(&ev)) />
                         </div>
                         <div class="modal-action">
-                            <button class="btn" on:click=move |_| set_show_pac_modal.set(false)>"Abbrechen"</button>
-                            <button class="btn btn-primary" on:click=on_create_pac>"Speichern"</button>
+                            <button class="btn" on:click=move |_| set_show_pac_modal.set(false)>{move || t("cancel")}</button>
+                            <button class="btn btn-primary" on:click=on_create_pac>{move || t("save")}</button>
                         </div>
                     </div>
                 </div>
@@ -246,23 +240,23 @@ pub fn FinanceManagement() -> impl IntoView {
             <Show when=move || show_booking_modal.get()>
                 <div class="modal modal-open">
                     <div class="modal-box">
-                        <h3 class="font-bold text-lg">"Buchung erstellen"</h3>
+                        <h3 class="font-bold text-lg">{move || t("create_booking")}</h3>
                         {move || error.get().map(|err| view! {
                             <div class="alert alert-error mt-4">
                                 <span>{err}</span>
                             </div>
                         })}
                         <div class="form-control w-full mt-4">
-                            <label class="label"><RequiredLabel required=true>{"Beschreibung"}</RequiredLabel></label>
+                            <label class="label"><RequiredLabel required=true>{move || t("description")}</RequiredLabel></label>
                             <input type="text" class="input input-bordered w-full" required prop:value=move || booking_description.get() on:input=move |ev| set_booking_description.set(event_target_value(&ev)) />
                         </div>
                         <div class="form-control w-full mt-4">
-                            <label class="label"><RequiredLabel required=true>{"Betrag"}</RequiredLabel></label>
+                            <label class="label"><RequiredLabel required=true>{move || t("amount")}</RequiredLabel></label>
                             <input type="number" step="0.01" class="input input-bordered w-full" required prop:value=move || booking_amount.get() on:input=move |ev| set_booking_amount.set(event_target_value(&ev)) />
                         </div>
                         <div class="modal-action">
-                            <button class="btn" on:click=move |_| set_show_booking_modal.set(false)>"Abbrechen"</button>
-                            <button class="btn btn-primary" on:click=on_create_booking>"Speichern"</button>
+                            <button class="btn" on:click=move |_| set_show_booking_modal.set(false)>{move || t("cancel")}</button>
+                            <button class="btn btn-primary" on:click=on_create_booking>{move || t("save")}</button>
                         </div>
                     </div>
                 </div>

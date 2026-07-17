@@ -20,9 +20,9 @@ impl WorkLogRepo for PgWorkLogRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, WorkLog>(
-                "SELECT * FROM work_logs WHERE tenant_id = $1::uuid AND id = $2",
+                "SELECT * FROM work_logs WHERE tenant_id = $1 AND id = $2",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(id)
             .fetch_optional(&pool)
             .await
@@ -40,14 +40,14 @@ impl WorkLogRepo for PgWorkLogRepo {
         let offset = page * per_page;
         Box::pin(async move {
             let total: i64 =
-                sqlx::query_scalar("SELECT COUNT(*) FROM work_logs WHERE tenant_id = $1::uuid")
-                    .bind(tid.to_string())
+                sqlx::query_scalar("SELECT COUNT(*) FROM work_logs WHERE tenant_id = $1")
+                    .bind(tid)
                     .fetch_one(&pool)
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<WorkLog> = sqlx::query_as("SELECT * FROM work_logs WHERE tenant_id = $1::uuid ORDER BY date DESC, created_at DESC LIMIT $2 OFFSET $3")
-                .bind(tid.to_string())
+            let data: Vec<WorkLog> = sqlx::query_as("SELECT * FROM work_logs WHERE tenant_id = $1 ORDER BY date DESC, created_at DESC LIMIT $2 OFFSET $3")
+                .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)
@@ -76,7 +76,7 @@ impl WorkLogRepo for PgWorkLogRepo {
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *"
             )
             .bind(Uuid::new_v4())
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(dto.worker_id)
             .bind(dto.date)
             .bind(dto.hours_worked)
@@ -142,10 +142,10 @@ impl WorkLogRepo for PgWorkLogRepo {
             }
 
             query.push_str(&parts.join(", "));
-            query.push_str(" WHERE tenant_id = $1::uuid AND id = $2 RETURNING *");
+            query.push_str(" WHERE tenant_id = $1 AND id = $2 RETURNING *");
 
             let mut q = sqlx::query_as::<_, WorkLog>(&query)
-                .bind(tid.to_string())
+                .bind(tid)
                 .bind(id);
 
             if let Some(v) = dto.date {
@@ -181,8 +181,8 @@ impl WorkLogRepo for PgWorkLogRepo {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            let res = sqlx::query("DELETE FROM work_logs WHERE tenant_id = $1::uuid AND id = $2")
-                .bind(tid.to_string())
+            let res = sqlx::query("DELETE FROM work_logs WHERE tenant_id = $1 AND id = $2")
+                .bind(tid)
                 .bind(id)
                 .execute(&pool)
                 .await
@@ -202,16 +202,16 @@ impl WorkLogRepo for PgWorkLogRepo {
         let offset = page * per_page;
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM work_logs WHERE tenant_id = $1::uuid AND worker_id = $2",
+                "SELECT COUNT(*) FROM work_logs WHERE tenant_id = $1 AND worker_id = $2",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(worker_id)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<WorkLog> = sqlx::query_as("SELECT * FROM work_logs WHERE tenant_id = $1::uuid AND worker_id = $2 ORDER BY date DESC, created_at DESC LIMIT $3 OFFSET $4")
-                .bind(tid.to_string())
+            let data: Vec<WorkLog> = sqlx::query_as("SELECT * FROM work_logs WHERE tenant_id = $1 AND worker_id = $2 ORDER BY date DESC, created_at DESC LIMIT $3 OFFSET $4")
+                .bind(tid)
                 .bind(worker_id)
                 .bind(per_page as i32)
                 .bind(offset as i32)

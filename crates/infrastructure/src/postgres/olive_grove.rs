@@ -26,7 +26,7 @@ impl OliveGroveRepo for PgOliveGroveRepo {
                 "SELECT * FROM olive_groves WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -45,16 +45,16 @@ impl OliveGroveRepo for PgOliveGroveRepo {
 
         Box::pin(async move {
             let total: i64 =
-                sqlx::query_scalar("SELECT COUNT(*) FROM olive_groves WHERE tenant_id = $1::uuid")
-                    .bind(tid.to_string())
+                sqlx::query_scalar("SELECT COUNT(*) FROM olive_groves WHERE tenant_id = $1")
+                    .bind(tid)
                     .fetch_one(&pool)
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<OliveGrove> = sqlx::query_as(
-                "SELECT * FROM olive_groves WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3",
+                "SELECT * FROM olive_groves WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(per_page as i32)
             .bind(offset as i32)
             .fetch_all(&pool)
@@ -89,16 +89,16 @@ impl OliveGroveRepo for PgOliveGroveRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM olive_groves WHERE tenant_id = $1::uuid AND site_id = $2::uuid")
-                .bind(tid.to_string())
-                .bind(site_id.to_string())
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM olive_groves WHERE tenant_id = $1 AND site_id = $2")
+                .bind(tid)
+                .bind(site_id)
                 .fetch_one(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<OliveGrove> = sqlx::query_as("SELECT * FROM olive_groves WHERE tenant_id = $1::uuid AND site_id = $2::uuid LIMIT $3 OFFSET $4")
-                .bind(tid.to_string())
-                .bind(site_id.to_string())
+            let data: Vec<OliveGrove> = sqlx::query_as("SELECT * FROM olive_groves WHERE tenant_id = $1 AND site_id = $2 LIMIT $3 OFFSET $4")
+                .bind(tid)
+                .bind(site_id)
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)
@@ -135,7 +135,7 @@ impl OliveGroveRepo for PgOliveGroveRepo {
                    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
                    RETURNING *"#)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(dto.site_id)
             .bind(&dto.variety)
             .bind(dto.tree_count)
@@ -162,7 +162,7 @@ impl OliveGroveRepo for PgOliveGroveRepo {
             .bind(&dto.variety)
             .bind(dto.tree_count)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -174,7 +174,7 @@ impl OliveGroveRepo for PgOliveGroveRepo {
         Box::pin(async move {
             sqlx::query("DELETE FROM olive_groves WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .execute(&pool)
                 .await
                 .map(|r| r.rows_affected() > 0)

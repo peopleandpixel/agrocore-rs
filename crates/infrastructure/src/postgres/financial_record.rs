@@ -26,7 +26,7 @@ impl FinancialRecordRepo for PgFinancialRecordRepo {
                 "SELECT * FROM financial_records WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -52,8 +52,8 @@ impl FinancialRecordRepo for PgFinancialRecordRepo {
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM financial_records WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true)").bind(tid.to_string()).fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
-            let data: Vec<FinancialRecord> = sqlx::query_as("SELECT * FROM financial_records WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true) ORDER BY date DESC LIMIT $2 OFFSET $3").bind(tid.to_string()).bind(per_page as i32).bind(offset as i32).fetch_all(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM financial_records WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true)").bind(tid).fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<FinancialRecord> = sqlx::query_as("SELECT * FROM financial_records WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY date DESC LIMIT $2 OFFSET $3").bind(tid).bind(per_page as i32).bind(offset as i32).fetch_all(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
             let total_pages = if total == 0 {
                 0
             } else {
@@ -86,7 +86,7 @@ impl FinancialRecordRepo for PgFinancialRecordRepo {
         Box::pin(async move {
             sqlx::query_as::<_, FinancialRecord>(
                 "INSERT INTO financial_records (tenant_id, cost_center_id, record_type, amount, currency, date, category, description, reference_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *")
-            .bind(tid.to_string()).bind(dto.cost_center_id).bind(serde_json::to_value(&dto.record_type).unwrap()).bind(dto.amount).bind(dto.currency).bind(dto.date).bind(dto.category).bind(&dto.description).bind(dto.reference_id)
+            .bind(tid).bind(dto.cost_center_id).bind(serde_json::to_value(&dto.record_type).unwrap()).bind(dto.amount).bind(dto.currency).bind(dto.date).bind(dto.category).bind(&dto.description).bind(dto.reference_id)
             .fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
         })
     }

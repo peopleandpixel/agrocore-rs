@@ -14,7 +14,6 @@ enum SetupStep {
     Admin,
     Tenant,
     Company,
-    Resources,
 }
 
 fn setup_t(i18n: &I18n, lang: Language, key: &str) -> String {
@@ -245,103 +244,97 @@ pub fn SetupAssistant() -> impl IntoView {
     let (company_phone_prefix, set_company_phone_prefix) = signal(String::from("+351"));
     let (company_phone_local, set_company_phone_local) = signal(String::new());
 
-    let (resource_type, set_resource_type) = signal("field_management".to_string());
     let i18n_for_title = i18n.clone();
     let i18n_for_wizard_language = i18n.clone();
     let i18n_for_admin_step = i18n.clone();
     let i18n_for_tenant_step = i18n.clone();
     let i18n_for_company_step = i18n.clone();
-    let i18n_for_resources_step = i18n.clone();
     let i18n_for_language_options = i18n.clone();
     let setup_title = move || setup_t(&i18n_for_title, lang.get(), "setup_title");
     let wizard_language = move || setup_t(&i18n_for_wizard_language, lang.get(), "wizard_language");
     let finish_label = setup_t(&i18n, lang.get(), "finish_setup");
     let i18n_for_welcome = i18n.clone();
-    let setup_welcome = move || setup_t(&i18n_for_welcome, lang.get(), "setup_welcome");
+    let _setup_welcome = move || setup_t(&i18n_for_welcome, lang.get(), "setup_welcome");
     let starting_setup_label_loading = setup_t(&i18n, lang.get(), "starting_setup");
     let setup_progress = move || match step.get() {
-        SetupStep::Admin => 25,
-        SetupStep::Tenant => 50,
-        SetupStep::Company => 75,
-        SetupStep::Resources => 100,
+        SetupStep::Admin => 33,
+        SetupStep::Tenant => 66,
+        SetupStep::Company => 100,
     };
     view! {
-        <div class="min-h-screen bg-base-200">
-            <div class="mx-auto grid min-h-screen w-full max-w-7xl items-start gap-6 px-4 py-6 lg:grid-cols-[20rem_minmax(0,1fr)]">
-                <aside class="space-y-4 self-start lg:sticky lg:top-6">
-                    <div class="card bg-base-100 shadow-xl border border-base-300">
-                        <div class="card-body gap-5">
-                            <div class="flex items-center gap-4">
-                                <img
-                                    src=setup_logo_data_url()
-                                    alt="AgroCore Logo"
-                                    class="w-16 h-16 rounded-box border border-base-300 bg-base-200 p-2 object-contain"
-                                />
-                                <div>
-                                    <h1 class="text-3xl font-black text-primary leading-tight">"AgroCore"</h1>
-                                    <p class="text-sm text-base-content/70">{move || setup_title()}</p>
+        <div class="min-h-screen bg-base-200 flex items-center justify-center p-4">
+            <div class="w-full max-w-4xl space-y-8">
+                <div class="text-center space-y-4">
+                    <div class="flex flex-col items-center gap-4">
+                        <img
+                            src=setup_logo_data_url()
+                            alt="AgroCore Logo"
+                            class="w-24 h-24 rounded-2xl shadow-xl bg-base-100 p-3 object-contain border border-base-300"
+                        />
+                        <div>
+                            <h1 class="text-5xl font-black text-primary tracking-tight">"AgroCore"</h1>
+                            <p class="text-lg text-base-content/60 font-medium mt-2">{move || setup_title()}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid lg:grid-cols-[1fr_2fr] gap-8 items-start">
+                    <div class="space-y-6">
+                        <div class="card bg-base-100/50 backdrop-blur-xl border border-base-300 shadow-xl overflow-hidden">
+                            <div class="card-body p-6">
+                                <ul class="steps steps-vertical w-full">
+                                    <li class=move || format!("step {}", if step.get() >= SetupStep::Admin { "step-primary" } else { "" })>{move || setup_t(&i18n_for_admin_step, lang.get(), "setup_step_admin")}</li>
+                                    <li class=move || format!("step {}", if step.get() >= SetupStep::Tenant { "step-primary" } else { "" })>{move || setup_t(&i18n_for_tenant_step, lang.get(), "setup_step_tenant")}</li>
+                                    <li class=move || format!("step {}", if step.get() >= SetupStep::Company { "step-primary" } else { "" })>{move || setup_t(&i18n_for_company_step, lang.get(), "setup_step_company")}</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card bg-base-100/50 backdrop-blur-xl border border-base-300 shadow-xl">
+                            <div class="card-body p-6 gap-4">
+                                <div class="flex items-center gap-2 text-sm font-bold opacity-70">
+                                    <Icon icon=LuGlobe width="16" height="16" />
+                                    <span>{move || wizard_language()}</span>
                                 </div>
-                            </div>
-
-                            <div class="alert alert-info">
-                                <Icon icon=LuShieldCheck width="20" height="20" />
-                                <span>{move || setup_welcome()}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card bg-base-100 shadow border border-base-300">
-                        <div class="card-body gap-4">
-                            <div class="flex items-center gap-2">
-                                <Icon icon=LuGlobe width="18" height="18" />
-                                <span class="font-semibold">{move || wizard_language()}</span>
-                                <span class="badge ml-auto">{move || language_flag(lang.get().as_str())}</span>
-                            </div>
-                            <select
-                                class="select select-bordered w-full"
-                                prop:value=move || lang.get().as_str().to_string()
-                                on:change=move |ev| {
-                                    let value = event_target_value(&ev);
-                                    set_lang.set(Language::from_str(&value));
-                                    if let Some(storage) = window().local_storage().ok().flatten() {
-                                        let _ = storage.set_item("agrocore.lang", &value);
+                                <select
+                                    class="select select-bordered select-sm w-full"
+                                    prop:value=move || lang.get().as_str().to_string()
+                                    on:change=move |ev| {
+                                        let value = event_target_value(&ev);
+                                        set_lang.set(Language::from_str(&value));
+                                        if let Some(storage) = window().local_storage().ok().flatten() {
+                                            let _ = storage.set_item("agrocore.lang", &value);
+                                        }
                                     }
-                                }
-                            >
-                                {LANGUAGE_OPTIONS.iter().map(|(language, code, label_key)| {
-                                    let i18n = i18n_for_language_options.clone();
-                                    let selected = move || lang.get() == *language;
-                                    view! {
-                                        <option value=*code selected=selected>
-                                            {move || format!("{} {}", language_flag(code), i18n.t(lang.get().as_str(), label_key))}
-                                        </option>
-                                    }
-                                }).collect::<Vec<_>>()}
-                            </select>
+                                >
+                                    {LANGUAGE_OPTIONS.iter().map(|(language, code, label_key)| {
+                                        let i18n = i18n_for_language_options.clone();
+                                        let selected = move || lang.get() == *language;
+                                        view! {
+                                            <option value=*code selected=selected>
+                                                {move || format!("{} {}", language_flag(code), i18n.t(lang.get().as_str(), label_key))}
+                                            </option>
+                                        }
+                                    }).collect::<Vec<_>>()}
+                                </select>
+                            </div>
                         </div>
+                        {move || setup_error.get().map(|err| view! {
+                            <div class="alert alert-error shadow-lg">
+                                <Icon icon=LuTriangleAlert width="20" height="20" />
+                                <span>{err}</span>
+                            </div>
+                        })}
                     </div>
 
-                    <div class="card bg-base-100 shadow border border-base-300">
-                        <div class="card-body gap-4">
-                            <ul class="steps steps-vertical w-full">
-                                <li class=move || format!("step {}", if step.get() >= SetupStep::Admin { "step-primary" } else { "" })>{move || setup_t(&i18n_for_admin_step, lang.get(), "setup_step_admin")}</li>
-                                <li class=move || format!("step {}", if step.get() >= SetupStep::Tenant { "step-primary" } else { "" })>{move || setup_t(&i18n_for_tenant_step, lang.get(), "setup_step_tenant")}</li>
-                                <li class=move || format!("step {}", if step.get() >= SetupStep::Company { "step-primary" } else { "" })>{move || setup_t(&i18n_for_company_step, lang.get(), "setup_step_company")}</li>
-                                <li class=move || format!("step {}", if step.get() >= SetupStep::Resources { "step-primary" } else { "" })>{move || setup_t(&i18n_for_resources_step, lang.get(), "setup_step_resources")}</li>
-                            </ul>
-                            <progress class="progress progress-primary w-full" value=setup_progress max="100"></progress>
-                            {move || setup_error.get().map(|err| view! {
-                                <div class="alert alert-error">
-                                    <span>{err}</span>
-                                </div>
-                            })}
+                    <div class="card bg-base-100 shadow-2xl border border-base-300 overflow-hidden">
+                        <div class="h-2 bg-base-200 w-full">
+                            <div
+                                class="h-full bg-primary transition-all duration-500 ease-in-out"
+                                style:width=move || format!("{}%", setup_progress())
+                            ></div>
                         </div>
-                    </div>
-                </aside>
-
-                <main class="flex items-start">
-                    <div class="card w-full bg-base-100 shadow-2xl border border-base-300">
-                        <div class="card-body gap-6">
+                        <div class="card-body p-8 gap-6">
                             {move || {
                         let current_lang = lang.get();
                         let i18n_for_t = i18n.clone();
@@ -352,16 +345,9 @@ pub fn SetupAssistant() -> impl IntoView {
                         let setup_tenant_desc = t("setup_tenant_desc");
                         let setup_company_title = t("setup_company_title");
                         let setup_company_desc = t("setup_company_desc");
-                        let setup_resources_title = t("setup_resources_title");
-                        let setup_resources_desc = t("setup_resources_desc");
                         let setup_admin_help = t("setup_admin_help");
                         let setup_tenant_help = t("setup_tenant_help");
                         let setup_company_help = t("setup_company_help");
-                        let setup_resources_help = t("setup_resources_help");
-                        let setup_resource_type = t("setup_resource_type");
-                        let setup_equipment = t("setup_equipment");
-                        let setup_first_machine = t("setup_first_machine");
-                        let setup_first_machine_placeholder = t("first_machine_placeholder");
                         let optional_label = t("optional_label");
                         let first_name_label = t("first_name");
                         let last_name_label = t("last_name");
@@ -374,16 +360,13 @@ pub fn SetupAssistant() -> impl IntoView {
                         let company_country_label = t("company_country");
                         let company_email_label = t("company_email");
                         let company_phone_label = t("company_phone");
-                        let field_management_label = t("field_management");
-                        let task_protection_label = t("task_protection");
-                        let resources_label = t("resources");
                         let continue_label = t("continue");
                         let required_error = t("validation_required");
                         let invalid_email_error = t("validation_invalid_email");
                         let invalid_phone_error = t("validation_invalid_phone");
                         let invalid_slug_error = t("validation_invalid_slug");
-                        let starting_setup_label_loading_class = starting_setup_label_loading.clone();
-                        let starting_setup_label_loading_disabled = starting_setup_label_loading.clone();
+                        let _starting_setup_label_loading_class = starting_setup_label_loading.clone();
+                        let _starting_setup_label_loading_disabled = starting_setup_label_loading.clone();
                         let starting_setup_label_status = starting_setup_label_loading.clone();
                         let submit_i18n = i18n.clone();
                         let submit_i18n_status = i18n.clone();
@@ -622,99 +605,6 @@ pub fn SetupAssistant() -> impl IntoView {
                                                     }
                                                 }
                                                 set_setup_error.set(None);
-                                                set_step.set(SetupStep::Resources);
-                                            }
-                                        >
-                                            {continue_label.clone()}
-                                        </button>
-                                    </div>
-                                </div>
-                            }
-                            .into_any(),
-
-                            SetupStep::Resources => view! {
-                                <div class="space-y-6">
-                                    <div>
-                                        <h3 class="text-lg font-semibold">{setup_resources_title.clone()}</h3>
-                                        <p class="text-sm text-base-content/70">{setup_resources_desc.clone()}</p>
-                                        <p class="mt-2 text-sm leading-6 text-base-content/60">
-                                            {setup_resources_help.clone()}
-                                        </p>
-                                    </div>
-
-                                    <div class="grid gap-3 md:grid-cols-3">
-                                        <label class="card border border-base-300 bg-base-100 shadow-sm cursor-pointer transition-colors hover:border-primary/60 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                                            <div class="card-body p-4">
-                                                <div class="flex items-center justify-between gap-3">
-                                                    <div>
-                                                        <div class="font-semibold">{field_management_label.clone()}</div>
-                                                        <div class="text-xs text-base-content/60">{setup_resource_type.clone()}</div>
-                                                    </div>
-                                                    <input
-                                                        type="radio"
-                                                        class="radio radio-primary"
-                                                        name="resource_type"
-                                                        value="field_management"
-                                                        prop:checked=move || resource_type.get() == "field_management"
-                                                        on:change=move |_| set_resource_type.set(String::from("field_management"))
-                                                    />
-                                                </div>
-                                            </div>
-                                        </label>
-
-                                        <label class="card border border-base-300 bg-base-100 shadow-sm cursor-pointer transition-colors hover:border-primary/60 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                                            <div class="card-body p-4">
-                                                <div class="flex items-center justify-between gap-3">
-                                                    <div>
-                                                        <div class="font-semibold">{task_protection_label.clone()}</div>
-                                                        <div class="text-xs text-base-content/60">{setup_resources_desc.clone()}</div>
-                                                    </div>
-                                                    <input
-                                                        type="radio"
-                                                        class="radio radio-primary"
-                                                        name="resource_type"
-                                                        value="PlantProtection"
-                                                        prop:checked=move || resource_type.get() == "PlantProtection"
-                                                        on:change=move |_| set_resource_type.set(String::from("PlantProtection"))
-                                                    />
-                                                </div>
-                                            </div>
-                                        </label>
-
-                                        <label class="card border border-base-300 bg-base-100 shadow-sm cursor-pointer transition-colors hover:border-primary/60 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                                            <div class="card-body p-4">
-                                                <div class="flex items-center justify-between gap-3">
-                                                    <div>
-                                                        <div class="font-semibold">{resources_label.clone()}</div>
-                                                        <div class="text-xs text-base-content/60">{setup_equipment.clone()}</div>
-                                                    </div>
-                                                    <input
-                                                        type="radio"
-                                                        class="radio radio-primary"
-                                                        name="resource_type"
-                                                        value="CostTracking"
-                                                        prop:checked=move || resource_type.get() == "CostTracking"
-                                                        on:change=move |_| set_resource_type.set(String::from("CostTracking"))
-                                                    />
-                                                </div>
-                                            </div>
-                                        </label>
-                                    </div>
-
-                                    <div class="divider my-0">{setup_equipment.clone()}</div>
-                                    <div class="form-control w-full">
-                                        <label class="label">
-                                            <span class="label-text">{setup_first_machine.clone()}</span>
-                                        </label>
-                                        <input type="text" placeholder={setup_first_machine_placeholder.clone()} class="input input-bordered w-full" autocomplete="off" />
-                                    </div>
-
-                                    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
-                                        <button
-                                            class="btn btn-success min-w-40"
-                                            class:loading=move || matches!(setup_status.get(), Some(Err(msg)) if msg == starting_setup_label_loading_class)
-                                            prop:disabled=move || matches!(setup_status.get(), Some(Err(msg)) if msg == starting_setup_label_loading_disabled)
-                                            on:click=move |_| {
                                                 submit_setup(
                                                     submit_i18n.clone(),
                                                     lang.get(),
@@ -735,18 +625,21 @@ pub fn SetupAssistant() -> impl IntoView {
                                                 );
                                             }
                                         >
+                                            <Icon icon=LuCircleCheck width="20" height="20" />
                                             {finish_label.clone()}
                                         </button>
                                     </div>
 
                                     {move || match setup_status.get() {
                                         Some(Err(msg)) if msg == starting_setup_label_status => view! {
-                                            <div class="alert alert-info">
+                                            <div class="alert alert-info shadow-lg border-info/20">
+                                                <div class="loading loading-spinner loading-md"></div>
                                                 <span>{setup_t(&submit_i18n_status, lang.get(), "redirecting")}</span>
                                             </div>
                                         }.into_any(),
                                         Some(Err(msg)) => view! {
-                                            <div class="alert alert-error">
+                                            <div class="alert alert-error shadow-lg border-error/20">
+                                                <Icon icon=LuCircleAlert width="20" height="20" />
                                                 <span>{msg}</span>
                                             </div>
                                         }.into_any(),
@@ -760,7 +653,7 @@ pub fn SetupAssistant() -> impl IntoView {
                             }}}
                         </div>
                     </div>
-                </main>
+                </div>
             </div>
         </div>
     }

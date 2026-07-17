@@ -32,7 +32,7 @@ impl EquipmentRepository for PgEquipmentRepo {
                 "SELECT * FROM equipment WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -57,7 +57,7 @@ impl EquipmentRepository for PgEquipmentRepo {
                     "SELECT * FROM equipment WHERE id = $1 AND tenant_id = $2",
                 )
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .fetch_optional(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))
@@ -66,7 +66,7 @@ impl EquipmentRepository for PgEquipmentRepo {
                     "SELECT * FROM equipment WHERE id = $1 AND tenant_id = $2 AND assigned_to = $3",
                 )
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .bind(user_id)
                 .fetch_optional(&pool)
                 .await
@@ -87,14 +87,14 @@ impl EquipmentRepository for PgEquipmentRepo {
         Box::pin(async move {
             let offset = page * per_page;
 
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM equipment WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true)")
-                .bind(tid.to_string())
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM equipment WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true)")
+                .bind(tid)
                 .fetch_one(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let items: Vec<Equipment> = sqlx::query_as("SELECT * FROM equipment WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true) ORDER BY label LIMIT $2 OFFSET $3")
-                .bind(tid.to_string())
+            let items: Vec<Equipment> = sqlx::query_as("SELECT * FROM equipment WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY label LIMIT $2 OFFSET $3")
+                .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)
@@ -135,14 +135,14 @@ impl EquipmentRepository for PgEquipmentRepo {
                 roles_vec.contains(&UserRole::Admin) || roles_vec.contains(&UserRole::Manager);
 
             if can_see_all {
-                let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM equipment WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true)")
-                    .bind(tid.to_string())
+                let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM equipment WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true)")
+                    .bind(tid)
                     .fetch_one(&pool)
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-                let items: Vec<Equipment> = sqlx::query_as("SELECT * FROM equipment WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true) ORDER BY label LIMIT $2 OFFSET $3")
-                    .bind(tid.to_string())
+                let items: Vec<Equipment> = sqlx::query_as("SELECT * FROM equipment WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY label LIMIT $2 OFFSET $3")
+                    .bind(tid)
                     .bind(per_page as i32)
                     .bind(offset as i32)
                     .fetch_all(&pool)
@@ -163,14 +163,14 @@ impl EquipmentRepository for PgEquipmentRepo {
                     total_pages,
                 })
             } else {
-                let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM equipment WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true)")
-                    .bind(tid.to_string())
+                let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM equipment WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true)")
+                    .bind(tid)
                     .fetch_one(&pool)
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-                let items: Vec<Equipment> = sqlx::query_as("SELECT * FROM equipment WHERE tenant_id = $1::uuid AND (is_active IS NULL OR is_active = true) ORDER BY label LIMIT $2 OFFSET $3")
-                    .bind(tid.to_string())
+                let items: Vec<Equipment> = sqlx::query_as("SELECT * FROM equipment WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY label LIMIT $2 OFFSET $3")
+                    .bind(tid)
                     .bind(per_page as i32)
                     .bind(offset as i32)
                     .fetch_all(&pool)
@@ -216,7 +216,7 @@ impl EquipmentRepository for PgEquipmentRepo {
                    RETURNING *"#
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(&dto.label)
             .bind(&dto.code)
             .bind(equipment_type)
@@ -273,7 +273,7 @@ impl EquipmentRepository for PgEquipmentRepo {
             .bind(dto.last_maintenance_hours)
             .bind(now)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
@@ -288,7 +288,7 @@ impl EquipmentRepository for PgEquipmentRepo {
             let result = sqlx::query("UPDATE equipment SET is_active = false, updated_at = $1 WHERE id = $2 AND tenant_id = $3")
                 .bind(Utc::now())
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .execute(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;

@@ -28,7 +28,7 @@ impl ComplianceChecklistRepo for PgComplianceChecklistRepo {
                 "SELECT * FROM compliance_checklists WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -47,17 +47,17 @@ impl ComplianceChecklistRepo for PgComplianceChecklistRepo {
 
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM compliance_checklists WHERE tenant_id = $1::uuid",
+                "SELECT COUNT(*) FROM compliance_checklists WHERE tenant_id = $1",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<ComplianceChecklist> = sqlx::query_as(
-                "SELECT * FROM compliance_checklists WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3",
+                "SELECT * FROM compliance_checklists WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(per_page as i32)
             .bind(offset as i32)
             .fetch_all(&pool)
@@ -94,7 +94,7 @@ impl ComplianceChecklistRepo for PgComplianceChecklistRepo {
                    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
                    RETURNING *"#)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(dto.site_id)
             .bind(serde_json::to_value(&dto.checklist_type).unwrap())
             .bind(serde_json::to_value(&agrocore_domain::entities::compliance::ComplianceStatus::Pending).unwrap())
@@ -120,7 +120,7 @@ impl ComplianceChecklistRepo for PgComplianceChecklistRepo {
                    WHERE id = $2 AND tenant_id = $3 RETURNING *"#)
             .bind(dto.status.map(|s| serde_json::to_value(s).unwrap()))
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -132,7 +132,7 @@ impl ComplianceChecklistRepo for PgComplianceChecklistRepo {
         Box::pin(async move {
             sqlx::query("DELETE FROM compliance_checklists WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .execute(&pool)
                 .await
                 .map(|r| r.rows_affected() > 0)

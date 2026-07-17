@@ -26,7 +26,7 @@ impl OrderRepository for PgOrderRepo {
         Box::pin(async move {
             sqlx::query_as::<_, Order>("SELECT * FROM orders WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .fetch_optional(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))
@@ -48,7 +48,7 @@ impl OrderRepository for PgOrderRepo {
             if can_see_all {
                 sqlx::query_as::<_, Order>("SELECT * FROM orders WHERE id = $1 AND tenant_id = $2")
                     .bind(id)
-                    .bind(tid.to_string())
+                    .bind(tid)
                     .fetch_optional(&pool)
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))
@@ -58,7 +58,7 @@ impl OrderRepository for PgOrderRepo {
                     "SELECT * FROM orders WHERE id = $1 AND tenant_id = $2 AND assigned_to = $3",
                 )
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .bind(user_id)
                 .fetch_optional(&pool)
                 .await
@@ -75,14 +75,14 @@ impl OrderRepository for PgOrderRepo {
 
         Box::pin(async move {
             let total: i64 =
-                sqlx::query_scalar("SELECT COUNT(*) FROM orders WHERE tenant_id = $1::uuid")
-                    .bind(tid.to_string())
+                sqlx::query_scalar("SELECT COUNT(*) FROM orders WHERE tenant_id = $1")
+                    .bind(tid)
                     .fetch_one(&pool)
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<Order> = sqlx::query_as("SELECT * FROM orders WHERE tenant_id = $1::uuid ORDER BY created_at DESC LIMIT $2 OFFSET $3")
-                .bind(tid.to_string())
+            let data: Vec<Order> = sqlx::query_as("SELECT * FROM orders WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3")
+                .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)
@@ -119,7 +119,7 @@ impl OrderRepository for PgOrderRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, Order>("SELECT * FROM orders WHERE tenant_id = $1 AND assigned_to = $2 AND is_active = true")
-                .bind(tid.to_string())
+                .bind(tid)
                 .bind(user_id)
                 .fetch_all(&pool)
                 .await
@@ -137,7 +137,7 @@ impl OrderRepository for PgOrderRepo {
                    VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), true)
                    RETURNING *"#)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(&dto.label)
             .bind(serde_json::to_value(&dto.order_type).unwrap())
             .bind(serde_json::to_value(agrocore_domain::entities::OrderStatus::Planned).unwrap())
@@ -180,7 +180,7 @@ impl OrderRepository for PgOrderRepo {
             let old_order =
                 sqlx::query_as::<_, Order>("SELECT * FROM orders WHERE id = $1 AND tenant_id = $2")
                     .bind(id)
-                    .bind(tid.to_string())
+                    .bind(tid)
                     .fetch_optional(&pool)
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
@@ -191,7 +191,7 @@ impl OrderRepository for PgOrderRepo {
             )
             .bind(&dto.label)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
@@ -226,7 +226,7 @@ impl OrderRepository for PgOrderRepo {
         Box::pin(async move {
             sqlx::query("UPDATE orders SET is_active = false WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .execute(&pool)
                 .await
                 .map(|r| r.rows_affected() > 0)
@@ -238,10 +238,10 @@ impl OrderRepository for PgOrderRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, Order>(
-                "SELECT * FROM orders WHERE tenant_id = $1::uuid AND assigned_to = $2::uuid",
+                "SELECT * FROM orders WHERE tenant_id = $1 AND assigned_to = $2",
             )
-            .bind(tid.to_string())
-            .bind(worker_id.to_string())
+            .bind(tid)
+            .bind(worker_id)
             .fetch_all(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))

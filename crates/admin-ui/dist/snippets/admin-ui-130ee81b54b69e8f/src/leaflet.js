@@ -108,7 +108,9 @@ export function initPolygonEditor(el, onChange, onLocation) {
         L.popup().setLatLng(center).setContent('Ihr Standort').openOn(map);
 
         // Notify parent about user location
-        onLocation({ lat: center[0], lng: center[1] });
+        if (typeof onLocation === 'function') {
+            onLocation({ lat: center[0], lng: center[1] });
+        }
 
         // Handle container resize for proper map rendering in modal
         setTimeout(() => {

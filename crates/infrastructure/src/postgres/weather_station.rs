@@ -28,7 +28,7 @@ impl WeatherStationRepo for PgWeatherStationRepo {
                 "SELECT * FROM weather_stations WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -47,17 +47,17 @@ impl WeatherStationRepo for PgWeatherStationRepo {
 
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM weather_stations WHERE tenant_id = $1::uuid",
+                "SELECT COUNT(*) FROM weather_stations WHERE tenant_id = $1",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<WeatherStation> = sqlx::query_as(
-                "SELECT * FROM weather_stations WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3",
+                "SELECT * FROM weather_stations WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(per_page as i32)
             .bind(offset as i32)
             .fetch_all(&pool)
@@ -94,7 +94,7 @@ impl WeatherStationRepo for PgWeatherStationRepo {
                    VALUES ($1, $2, $3, $4, $5, $6, $7, true, NOW(), NOW())
                    RETURNING *"#)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(&dto.label)
             .bind(serde_json::to_value(&dto.station_type).unwrap())
             .bind(&dto.manufacturer)
@@ -121,7 +121,7 @@ impl WeatherStationRepo for PgWeatherStationRepo {
             .bind(&dto.label)
             .bind(dto.is_active)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -133,7 +133,7 @@ impl WeatherStationRepo for PgWeatherStationRepo {
         Box::pin(async move {
             sqlx::query("DELETE FROM weather_stations WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .execute(&pool)
                 .await
                 .map(|r| r.rows_affected() > 0)

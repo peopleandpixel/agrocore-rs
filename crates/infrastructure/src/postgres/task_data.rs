@@ -26,7 +26,7 @@ impl TaskDataRepository for PgTaskDataRepo {
                 "SELECT * FROM task_data WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -45,16 +45,16 @@ impl TaskDataRepository for PgTaskDataRepo {
 
         Box::pin(async move {
             let total: i64 =
-                sqlx::query_scalar("SELECT COUNT(*) FROM task_data WHERE tenant_id = $1::uuid")
-                    .bind(tid.to_string())
+                sqlx::query_scalar("SELECT COUNT(*) FROM task_data WHERE tenant_id = $1")
+                    .bind(tid)
                     .fetch_one(&pool)
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<TaskData> = sqlx::query_as(
-                "SELECT * FROM task_data WHERE tenant_id = $1::uuid LIMIT $2 OFFSET $3",
+                "SELECT * FROM task_data WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(per_page as i32)
             .bind(offset as i32)
             .fetch_all(&pool)
@@ -84,17 +84,17 @@ impl TaskDataRepository for PgTaskDataRepo {
 
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM task_data WHERE tenant_id = $1::uuid AND order_id = $2::uuid",
+                "SELECT COUNT(*) FROM task_data WHERE tenant_id = $1 AND order_id = $2",
             )
-            .bind(tid.to_string())
-            .bind(task_id.to_string())
+            .bind(tid)
+            .bind(task_id)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<TaskData> = sqlx::query_as("SELECT * FROM task_data WHERE tenant_id = $1::uuid AND order_id = $2::uuid LIMIT $3 OFFSET $4")
-                .bind(tid.to_string())
-                .bind(task_id.to_string())
+            let data: Vec<TaskData> = sqlx::query_as("SELECT * FROM task_data WHERE tenant_id = $1 AND order_id = $2 LIMIT $3 OFFSET $4")
+                .bind(tid)
+                .bind(task_id)
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)
@@ -123,16 +123,16 @@ impl TaskDataRepository for PgTaskDataRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM task_data WHERE tenant_id = $1::uuid AND worker_id = $2::uuid")
-                .bind(tid.to_string())
-                .bind(worker_id.to_string())
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM task_data WHERE tenant_id = $1 AND worker_id = $2")
+                .bind(tid)
+                .bind(worker_id)
                 .fetch_one(&pool)
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<TaskData> = sqlx::query_as("SELECT * FROM task_data WHERE tenant_id = $1::uuid AND worker_id = $2::uuid LIMIT $3 OFFSET $4")
-                .bind(tid.to_string())
-                .bind(worker_id.to_string())
+            let data: Vec<TaskData> = sqlx::query_as("SELECT * FROM task_data WHERE tenant_id = $1 AND worker_id = $2 LIMIT $3 OFFSET $4")
+                .bind(tid)
+                .bind(worker_id)
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)
@@ -169,7 +169,7 @@ impl TaskDataRepository for PgTaskDataRepo {
                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW(), NOW())
                    RETURNING *"#)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(dto.order_id)
             .bind(by)
             .bind(dto.site_id)

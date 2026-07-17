@@ -90,6 +90,11 @@ docker run -d --rm \
     nats:latest >/dev/null
 
 wait_for_port 127.0.0.1 "$POSTGRES_PORT" "PostgreSQL"
+echo "Waiting for PostgreSQL to be ready..."
+until docker exec "$POSTGRES_CONTAINER" pg_isready -U postgres >/dev/null 2>&1; do
+    sleep 1
+done
+
 wait_for_port 127.0.0.1 "$NATS_PORT" "NATS"
 
 start_service \

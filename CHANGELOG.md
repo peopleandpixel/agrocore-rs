@@ -4,6 +4,13 @@ Alle Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-07-17
+
+### Fixed
+- **Admin-UI:** Komplette Überarbeitung und Modernisierung der `sites.rs` Komponente (Leptos 0.7/0.8 API), Behebung von Kompilierfehlern und Typ-Inferenz-Problemen.
+- **Entwicklungs-Stack:** `dev.sh` wartet nun explizit auf die Einsatzbereitschaft von PostgreSQL (`pg_isready`), um Startfehler zu vermeiden.
+- **Infrastruktur:** Implementierung von Retry-Mechanismen für Datenbank- (PostgreSQL) und Messaging-Verbindungen (NATS), um die Robustheit beim Systemstart zu erhöhen.
+
 ## [0.3.0] - 2026-07-15
 
 ### Added

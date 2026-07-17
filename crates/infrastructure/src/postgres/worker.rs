@@ -27,7 +27,7 @@ impl WorkerRepo for PgWorkerRepo {
                 "SELECT * FROM workers WHERE id = $1 AND tenant_id = $2 AND is_active = true",
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -41,7 +41,7 @@ impl WorkerRepo for PgWorkerRepo {
                 "SELECT * FROM workers WHERE user_id = $1 AND tenant_id = $2 AND is_active = true",
             )
             .bind(user_id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -60,15 +60,15 @@ impl WorkerRepo for PgWorkerRepo {
 
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM workers WHERE tenant_id = $1::uuid AND is_active = true",
+                "SELECT COUNT(*) FROM workers WHERE tenant_id = $1 AND is_active = true",
             )
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<Worker> = sqlx::query_as("SELECT * FROM workers WHERE tenant_id = $1::uuid AND is_active = true LIMIT $2 OFFSET $3")
-                .bind(tid.to_string())
+            let data: Vec<Worker> = sqlx::query_as("SELECT * FROM workers WHERE tenant_id = $1 AND is_active = true LIMIT $2 OFFSET $3")
+                .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
                 .fetch_all(&pool)
@@ -95,7 +95,7 @@ impl WorkerRepo for PgWorkerRepo {
                    VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
                    RETURNING *"#)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .bind(dto.user_id)
             .bind(serde_json::to_value(&dto.contract_type).unwrap())
             .bind(&dto.language)
@@ -137,7 +137,7 @@ impl WorkerRepo for PgWorkerRepo {
                 "SELECT * FROM workers WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
@@ -148,7 +148,7 @@ impl WorkerRepo for PgWorkerRepo {
             )
             .bind(&dto.language)
             .bind(id)
-            .bind(tid.to_string())
+            .bind(tid)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
@@ -180,7 +180,7 @@ impl WorkerRepo for PgWorkerRepo {
         Box::pin(async move {
             sqlx::query("UPDATE workers SET is_active = false WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
-                .bind(tid.to_string())
+                .bind(tid)
                 .execute(&pool)
                 .await
                 .map(|r| r.rows_affected() > 0)
