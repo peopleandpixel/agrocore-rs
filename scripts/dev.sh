@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 API_PORT="${API_PORT:-3000}"
-WEATHER_PORT="${WEATHER_PORT:-3001}"
+WEATHER_PORT="${WEATHER_PORT:-3010}"
 REPORTING_PORT="${REPORTING_PORT:-3002}"
 GEOMETRY_PORT="${GEOMETRY_PORT:-3003}"
 ASSET_REGISTRY_PORT="${ASSET_REGISTRY_PORT:-3004}"
@@ -45,15 +45,24 @@ wait_for_port() {
     local label="$3"
 
     for _ in $(seq 1 30); do
-        if (echo >"/dev/tcp/${host}/${port}") >/dev/null 2>&1; then
+        if timeout 1 bash -c "cat < /dev/null > /dev/tcp/${host}/${port}" 2>/dev/null; then
             return 0
         fi
-
         sleep 1
     done
 
     echo "Timed out waiting for ${label} on ${host}:${port}" >&2
     exit 1
+}
+
+check_port() {
+    local port="$1"
+    local label="$2"
+    if timeout 1 bash -c "cat < /dev/null > /dev/tcp/127.0.0.1/${port}" 2>/dev/null; then
+        echo "Error: Port $port ($label) is already in use." >&2
+        return 1
+    fi
+    return 0
 }
 
 start_service() {
@@ -65,11 +74,19 @@ start_service() {
     (
         cd "$workdir"
         exec "$@"
-    ) &
+    ) > "$ROOT_DIR/target/${label// /-}.log" 2>&1 &
     service_pids+=("$!")
 }
 
 trap cleanup EXIT INT TERM
+
+mkdir -p "$ROOT_DIR/target"
+
+echo "Checking ports..."
+check_port "$POSTGRES_PORT" "PostgreSQL" || exit 1
+check_port "$NATS_PORT" "NATS" || exit 1
+check_port "$API_PORT" "API" || exit 1
+check_port "$ADMIN_UI_PORT" "Admin UI" || exit 1
 
 docker rm -f "$POSTGRES_CONTAINER" "$NATS_CONTAINER" >/dev/null 2>&1 || true
 
@@ -147,14 +164,24 @@ start_service \
     "Admin UI" \
     "$ROOT_DIR/crates/admin-ui" \
     env \
-        AGROCORE_API_BASE_URL="http://127.0.0.1:${API_PORT}" \
-        trunk serve --port "$ADMIN_UI_PORT"
+        AGROCORE_API_BASE_URL="http://localhost:${API_PORT}" \
+        trunk serve --port "$ADMIN_UI_PORT" --address 0.0.0.0
 
-echo
 echo "Stack is up."
 echo "API:      http://localhost:${API_PORT}"
 echo "Admin UI: http://localhost:${ADMIN_UI_PORT}"
+echo "Logs:     target/*.log"
 echo "Stop it with Ctrl-C."
 
-wait -n "${service_pids[@]}"
-exit $?
+while true; do
+    for i in "${!service_pids[@]}"; do
+        pid="${service_pids[$i]}"
+        if ! kill -0 "$pid" 2>/dev/null; then
+            wait "$pid"
+            exit_code=$?
+            echo "Service ${i} (PID $pid) exited with code $exit_code"
+            exit "$exit_code"
+        fi
+    done
+    sleep 2
+done

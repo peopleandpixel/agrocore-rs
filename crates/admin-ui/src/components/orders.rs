@@ -1,5 +1,6 @@
 use crate::api;
 use crate::components::form::RequiredLabel;
+use crate::components::toast::{ToastContext, ToastType};
 use icondata::*;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
@@ -10,6 +11,9 @@ fn submit_order(
     order_type: String,
     site_id: String,
     set_error: WriteSignal<Option<String>>,
+    toast_context: ToastContext,
+    i18n: crate::i18n::I18n,
+    lang: String,
 ) {
     match uuid::Uuid::parse_str(&site_id) {
         Ok(site_uuid) => {
@@ -26,19 +30,30 @@ fn submit_order(
                 .await
                 {
                     Ok(_) => {
+                        toast_context.add_toast.run((i18n.t(&lang, "order_created"), ToastType::Success));
                         let _ = window().location().reload();
                     }
-                    Err(e) => set_error.set(Some(e)),
+                    Err(e) => {
+                        toast_context.add_toast.run((e.clone(), ToastType::Error));
+                        set_error.set(Some(e));
+                    }
                 }
             });
         }
-        Err(_) => set_error.set(Some(String::from("Please choose a valid site ID."))),
+        Err(_) => {
+            let msg = String::from("Please choose a valid site ID.");
+            toast_context.add_toast.run((msg.clone(), ToastType::Warning));
+            set_error.set(Some(msg));
+        }
     }
 }
 
 #[component]
 pub fn OrderList() -> impl IntoView {
     let t = crate::i18n::use_i18n();
+    let i18n = use_context::<crate::i18n::I18n>().expect("i18n context");
+    let lang = use_context::<ReadSignal<crate::i18n::Language>>().expect("lang signal");
+    let toast_context = use_context::<ToastContext>().expect("ToastContext not provided");
 
     let orders = LocalResource::new(|| async move { api::fetch_orders().await.ok() });
     let sites = LocalResource::new(|| async move { api::fetch_sites().await.ok() });
@@ -50,8 +65,14 @@ pub fn OrderList() -> impl IntoView {
 
     let on_delete = move |id: uuid::Uuid| {
         spawn_local(async move {
-            if api::delete_order(id).await.is_ok() {
-                let _ = window().location().reload();
+            match api::delete_order(id).await {
+                Ok(_) => {
+                    toast_context.add_toast.run((t("order_deleted").to_string(), ToastType::Success));
+                    let _ = window().location().reload();
+                }
+                Err(e) => {
+                    toast_context.add_toast.run((e, ToastType::Error));
+                }
             }
         });
     };
@@ -209,11 +230,11 @@ pub fn OrderList() -> impl IntoView {
                                     set_error.set(None);
 
                                     if label_value.trim().is_empty() || site_id_value.trim().is_empty() {
-                                        set_error.set(Some(t("validation_required")));
+                                        toast_context.add_toast.run((t("validation_required").to_string(), ToastType::Warning));
                                         return;
                                     }
 
-                                    submit_order(label_value, order_type_value, site_id_value, set_error);
+                                    submit_order(label_value, order_type_value, site_id_value, set_error, toast_context, i18n, lang.get().as_str().to_string());
                                 }
                             >
                                 {crate::t!(t, "save")}

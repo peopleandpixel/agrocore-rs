@@ -109,6 +109,21 @@ setup_step_company:
   ro: Companie
   uk: Компанія
   nl: Bedrijf
+site_created:
+  en: Site created successfully
+  de: Fläche erfolgreich erstellt
+site_deleted:
+  en: Site deleted successfully
+  de: Fläche erfolgreich gelöscht
+setup_complete:
+  en: Setup completed successfully
+  de: Konfiguration erfolgreich abgeschlossen
+order_created:
+  en: Order created successfully
+  de: Auftrag erfolgreich erstellt
+order_deleted:
+  en: Order deleted successfully
+  de: Auftrag erfolgreich gelöscht
 setup_step_resources:
   en: Resources
   de: Ressourcen
@@ -2408,16 +2423,16 @@ nav_compliance:
   uk: Відповідність
   nl: Naleving
 nav_users:
-  en: Users
-  de: Benutzer
-  es: Users
-  fr: Users
-  pt: Users
-  it: Utenti
-  pl: Użytkownicy
-  ro: Utilizatori
-  uk: Користувачі
-  nl: Gebruikers
+  en: Users & Roles
+  de: Benutzer & Rollen
+  es: Usuarios y Roles
+  fr: Utilisateurs et Rôles
+  pt: Usuários e Funções
+  it: Utenti e Ruoli
+  pl: Użytkownicy i Role
+  ro: Utilizatori și Roluri
+  uk: Користувачі та Ролі
+  nl: Gebruikers & Rollen
 nav_settings:
   en: Settings
   de: Einstellungen

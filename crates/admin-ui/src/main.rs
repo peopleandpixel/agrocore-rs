@@ -19,6 +19,7 @@ use crate::components::users::UserManagement;
 use crate::components::weather::WeatherManagement;
 use crate::components::wizard::WizardView;
 use crate::components::worker_tasks::WorkerTasksPage;
+use crate::components::toast::{ToastContainer, provide_toast_context};
 use icondata::*;
 use leptos::prelude::*;
 use leptos_icons::Icon;
@@ -59,11 +60,11 @@ impl Theme {
 pub fn App() -> impl IntoView {
     let initial_role = api::user_role()
         .as_deref()
-        .map(|role| match role {
-            "Admin" => UserRole::Admin,
-            "Manager" => UserRole::Manager,
-            "Worker" => UserRole::Worker,
-            "Viewer" => UserRole::Viewer,
+        .map(|role| match role.to_lowercase().as_str() {
+            "admin" => UserRole::Admin,
+            "manager" => UserRole::Manager,
+            "worker" => UserRole::Worker,
+            "viewer" => UserRole::Viewer,
             _ => UserRole::Viewer,
         })
         .unwrap_or(UserRole::Viewer);
@@ -97,6 +98,7 @@ pub fn App() -> impl IntoView {
     provide_context(lang);
     provide_context(set_lang);
     provide_context(i18n_engine.clone());
+    provide_toast_context();
 
     Effect::new(move |_| {
         use web_sys::window;
@@ -109,6 +111,7 @@ pub fn App() -> impl IntoView {
     });
 
     view! {
+        <ToastContainer />
         <Show when=move || initialized() fallback=|| view! { <crate::components::setup::SetupAssistant /> }>
             <Show when=move || has_token() fallback=|| view! { <LoginView /> }>
                 <AuthenticatedShell
@@ -177,7 +180,7 @@ fn AuthenticatedShell(
                     }}
                 </div>
 
-                <div class="w-full max-w-5xl">
+                <div class="w-full max-w-5xl animate-fade-in" id="main-content">
                     <Router>
                         <Routes fallback=move || {
                             let t = t;
@@ -209,6 +212,9 @@ fn AuthenticatedShell(
                 <ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content flex flex-col">
                     <li class="mb-4 text-2xl font-bold p-4">{crate::t!(t, "app_title")}</li>
                     <li><a href="/"><Icon icon=LuLayoutDashboard width="20" height="20" />{crate::t!(t, "nav_dashboard")}</a></li>
+                    <li class=move || if user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager { "" } else { "hidden" }>
+                        <a href="/users"><Icon icon=LuUsers width="20" height="20" />{crate::t!(t, "nav_users")}</a>
+                    </li>
                     <li class=move || if view_mode.get() == ViewMode::Simple { "" } else { "hidden" }>
                         <a href="/wizard" class="bg-primary text-primary-content font-bold"><Icon icon=ImMagicWand width="20" height="20" />{crate::t!(t, "nav_wizard")}</a>
                     </li>
@@ -244,9 +250,6 @@ fn AuthenticatedShell(
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
                         <a href="/compliance"><Icon icon=LuChartNoAxesColumn width="20" height="20" />{crate::t!(t, "nav_compliance")}</a>
-                    </li>
-                    <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
-                        <a href="/users"><Icon icon=LuUsers width="20" height="20" />{crate::t!(t, "nav_users")}</a>
                     </li>
                     <li><a href="/settings"><Icon icon=LuSettings width="20" height="20" />{crate::t!(t, "nav_settings")}</a></li>
                     // Worker-only navigation

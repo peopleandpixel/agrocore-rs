@@ -4,6 +4,7 @@ use crate::components::form::{
 };
 use crate::i18n::LANGUAGE_OPTIONS;
 use crate::i18n::{I18n, Language};
+use crate::components::toast::{ToastContext, ToastType};
 use icondata::*;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
@@ -26,7 +27,7 @@ fn setup_logo_data_url() -> &'static str {
     static LOGO_DATA_URL: OnceLock<String> = OnceLock::new();
     LOGO_DATA_URL
         .get_or_init(|| {
-            let bytes = include_bytes!("../../public/logo.png");
+            let bytes = include_bytes!("../../public/logo_trans.png");
             const TABLE: &[u8; 64] =
                 b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
             let mut encoded = String::with_capacity(bytes.len().div_ceil(3) * 4);
@@ -84,6 +85,7 @@ fn submit_setup(
     company_phone_local: String,
     set_setup_status: WriteSignal<Option<Result<(), String>>>,
     set_setup_error: WriteSignal<Option<String>>,
+    toast_context: crate::components::toast::ToastContext,
 ) {
     let required = setup_t(&i18n, lang, "validation_required");
     let invalid_email = setup_t(&i18n, lang, "validation_invalid_email");
@@ -195,18 +197,33 @@ fn submit_setup(
             {
                 Ok(auth) => {
                     api::set_auth_token(&auth.token);
+                    let primary_role = auth
+                        .roles
+                        .iter()
+                        .find(|role| {
+                            matches!(
+                                role.to_lowercase().as_str(),
+                                "admin" | "manager" | "worker" | "viewer"
+                            )
+                        })
+                        .cloned()
+                        .unwrap_or_else(|| String::from("Viewer"));
+                    api::set_user_role(&primary_role);
                     api::save_company_profile(&company_profile);
                     if let Some(storage) = window().local_storage().ok().flatten() {
                         let _ = storage.set_item("agrocore.lang", &selected_language);
                     }
                     set_setup_status.set(Some(Ok(())));
+                    toast_context.add_toast.run((setup_t(&i18n, lang, "setup_complete"), crate::components::toast::ToastType::Success));
                     let _ = window().location().reload();
                 }
                 Err(e) => {
+                    toast_context.add_toast.run((e.clone(), crate::components::toast::ToastType::Error));
                     set_setup_status.set(Some(Err(e)));
                 }
             },
             Err(e) => {
+                toast_context.add_toast.run((e.clone(), crate::components::toast::ToastType::Error));
                 set_setup_status.set(Some(Err(e)));
             }
         }
@@ -244,97 +261,80 @@ pub fn SetupAssistant() -> impl IntoView {
     let (company_phone_prefix, set_company_phone_prefix) = signal(String::from("+351"));
     let (company_phone_local, set_company_phone_local) = signal(String::new());
 
+    let toast_context = use_context::<ToastContext>().expect("ToastContext not provided");
+
     let i18n_for_title = i18n.clone();
-    let i18n_for_wizard_language = i18n.clone();
     let i18n_for_admin_step = i18n.clone();
     let i18n_for_tenant_step = i18n.clone();
     let i18n_for_company_step = i18n.clone();
     let i18n_for_language_options = i18n.clone();
     let setup_title = move || setup_t(&i18n_for_title, lang.get(), "setup_title");
-    let wizard_language = move || setup_t(&i18n_for_wizard_language, lang.get(), "wizard_language");
-    let finish_label = setup_t(&i18n, lang.get(), "finish_setup");
+    let finish_label = move || setup_t(&i18n, lang.get(), "finish_setup");
     let i18n_for_welcome = i18n.clone();
     let _setup_welcome = move || setup_t(&i18n_for_welcome, lang.get(), "setup_welcome");
-    let starting_setup_label_loading = setup_t(&i18n, lang.get(), "starting_setup");
+    let starting_setup_label_loading = move || setup_t(&i18n, lang.get(), "starting_setup");
+    let starting_setup_label_loading_memo = starting_setup_label_loading.clone();
+    let is_submitting = Memo::new(move |_| {
+        matches!(setup_status.get(), Some(Err(ref msg)) if msg == &starting_setup_label_loading_memo())
+    });
     let setup_progress = move || match step.get() {
         SetupStep::Admin => 33,
         SetupStep::Tenant => 66,
         SetupStep::Company => 100,
     };
     view! {
-        <div class="min-h-screen bg-base-200 flex items-center justify-center p-4">
-            <div class="w-full max-w-4xl space-y-8">
-                <div class="text-center space-y-4">
-                    <div class="flex flex-col items-center gap-4">
-                        <img
-                            src=setup_logo_data_url()
-                            alt="AgroCore Logo"
-                            class="w-24 h-24 rounded-2xl shadow-xl bg-base-100 p-3 object-contain border border-base-300"
-                        />
-                        <div>
-                            <h1 class="text-5xl font-black text-primary tracking-tight">"AgroCore"</h1>
-                            <p class="text-lg text-base-content/60 font-medium mt-2">{move || setup_title()}</p>
-                        </div>
+        <div class="min-h-screen bg-base-200 flex flex-col items-center justify-center p-4 relative">
+            <div class="absolute top-6 right-6 z-50">
+                <select
+                    class="select select-bordered select-sm"
+                    prop:value=move || lang.get().as_str().to_string()
+                    on:change=move |ev| {
+                        let value = event_target_value(&ev);
+                        set_lang.set(Language::from_str(&value));
+                        if let Some(storage) = window().local_storage().ok().flatten() {
+                            let _ = storage.set_item("agrocore.lang", &value);
+                        }
+                    }
+                >
+                    {LANGUAGE_OPTIONS.iter().map(|(language, code, label_key)| {
+                        let i18n = i18n_for_language_options.clone();
+                        let selected = move || lang.get() == *language;
+                        view! {
+                            <option value=*code selected=selected>
+                                {move || format!("{} {}", language_flag(code), i18n.t(lang.get().as_str(), label_key))}
+                            </option>
+                        }
+                    }).collect::<Vec<_>>()}
+                </select>
+            </div>
+
+            <div class="text-center space-y-4 mb-8">
+                <div class="flex flex-col items-center gap-4">
+
+                                    <img
+                                        src=setup_logo_data_url()
+                                        alt="AgroCore Logo"
+                                        class=move || format!("w-48 h-48 p-3 object-contain {}", if is_submitting.get() { "pulse" } else { "" })
+                                    />
+
+
+
+
+                    <div>
+                        <p class="text-lg text-base-content/60 font-medium mt-2">{move || setup_title()}</p>
                     </div>
                 </div>
+            </div>
 
-                <div class="grid lg:grid-cols-[1fr_2fr] gap-8 items-start">
-                    <div class="space-y-6">
-                        <div class="card bg-base-100/50 backdrop-blur-xl border border-base-300 shadow-xl overflow-hidden">
-                            <div class="card-body p-6">
-                                <ul class="steps steps-vertical w-full">
-                                    <li class=move || format!("step {}", if step.get() >= SetupStep::Admin { "step-primary" } else { "" })>{move || setup_t(&i18n_for_admin_step, lang.get(), "setup_step_admin")}</li>
-                                    <li class=move || format!("step {}", if step.get() >= SetupStep::Tenant { "step-primary" } else { "" })>{move || setup_t(&i18n_for_tenant_step, lang.get(), "setup_step_tenant")}</li>
-                                    <li class=move || format!("step {}", if step.get() >= SetupStep::Company { "step-primary" } else { "" })>{move || setup_t(&i18n_for_company_step, lang.get(), "setup_step_company")}</li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <div class="card bg-base-100/50 backdrop-blur-xl border border-base-300 shadow-xl">
-                            <div class="card-body p-6 gap-4">
-                                <div class="flex items-center gap-2 text-sm font-bold opacity-70">
-                                    <Icon icon=LuGlobe width="16" height="16" />
-                                    <span>{move || wizard_language()}</span>
-                                </div>
-                                <select
-                                    class="select select-bordered select-sm w-full"
-                                    prop:value=move || lang.get().as_str().to_string()
-                                    on:change=move |ev| {
-                                        let value = event_target_value(&ev);
-                                        set_lang.set(Language::from_str(&value));
-                                        if let Some(storage) = window().local_storage().ok().flatten() {
-                                            let _ = storage.set_item("agrocore.lang", &value);
-                                        }
-                                    }
-                                >
-                                    {LANGUAGE_OPTIONS.iter().map(|(language, code, label_key)| {
-                                        let i18n = i18n_for_language_options.clone();
-                                        let selected = move || lang.get() == *language;
-                                        view! {
-                                            <option value=*code selected=selected>
-                                                {move || format!("{} {}", language_flag(code), i18n.t(lang.get().as_str(), label_key))}
-                                            </option>
-                                        }
-                                    }).collect::<Vec<_>>()}
-                                </select>
-                            </div>
-                        </div>
-                        {move || setup_error.get().map(|err| view! {
-                            <div class="alert alert-error shadow-lg">
-                                <Icon icon=LuTriangleAlert width="20" height="20" />
-                                <span>{err}</span>
-                            </div>
-                        })}
+            <div class="w-full max-w-2xl space-y-8">
+                <div class="card bg-base-100 shadow-2xl border border-base-300 overflow-hidden">
+                    <div class="h-2 bg-base-200 w-full">
+                        <div
+                            class="h-full bg-primary transition-all duration-500 ease-in-out"
+                            style:width=move || format!("{}%", setup_progress())
+                        ></div>
                     </div>
-
-                    <div class="card bg-base-100 shadow-2xl border border-base-300 overflow-hidden">
-                        <div class="h-2 bg-base-200 w-full">
-                            <div
-                                class="h-full bg-primary transition-all duration-500 ease-in-out"
-                                style:width=move || format!("{}%", setup_progress())
-                            ></div>
-                        </div>
-                        <div class="card-body p-8 gap-6">
+                    <div class="card-body p-8 gap-6">
                             {move || {
                         let current_lang = lang.get();
                         let i18n_for_t = i18n.clone();
@@ -372,7 +372,7 @@ pub fn SetupAssistant() -> impl IntoView {
                         let submit_i18n_status = i18n.clone();
                         match step.get() {
                             SetupStep::Admin => view! {
-                                <div class="space-y-5">
+                                <div class="space-y-5 animate-slide-up">
                                     <div>
                                         <h3 class="text-lg font-semibold">{setup_admin_title.clone()}</h3>
                                         <p class="text-sm text-base-content/70">{setup_admin_desc.clone()}</p>
@@ -432,16 +432,18 @@ pub fn SetupAssistant() -> impl IntoView {
                                                     || email.trim().is_empty()
                                                     || password.trim().is_empty()
                                                 {
-                                                    set_setup_error.set(Some(required_error.clone()));
+                                                    toast_context.add_toast.run((required_error.clone(), ToastType::Warning));
                                                     return;
                                                 }
                                                 if !is_valid_email(&email) {
-                                                    set_setup_error.set(Some(invalid_email_error.clone()));
+                                                    toast_context.add_toast.run((invalid_email_error.clone(), ToastType::Warning));
                                                     return;
                                                 }
                                                 set_setup_error.set(None);
                                                 set_step.set(SetupStep::Tenant);
+                                                toast_context.add_toast.run((setup_tenant_title.clone(), ToastType::Info));
                                             }
+                                            disabled=move || is_submitting.get()
                                         >
                                             {continue_label.clone()}
                                         </button>
@@ -451,7 +453,7 @@ pub fn SetupAssistant() -> impl IntoView {
                             .into_any(),
 
                             SetupStep::Tenant => view! {
-                                <div class="space-y-5">
+                                <div class="space-y-5 animate-slide-up">
                                     <div>
                                         <h3 class="text-lg font-semibold">{setup_tenant_title.clone()}</h3>
                                         <p class="text-sm text-base-content/70">{setup_tenant_desc.clone()}</p>
@@ -485,16 +487,18 @@ pub fn SetupAssistant() -> impl IntoView {
                                                 let name = tenant_name.get();
                                                 let slug = tenant_slug.get();
                                                 if name.trim().is_empty() || slug.trim().is_empty() {
-                                                    set_setup_error.set(Some(required_error.clone()));
+                                                    toast_context.add_toast.run((required_error.clone(), ToastType::Warning));
                                                     return;
                                                 }
                                                 if !slug_is_valid(&slug) {
-                                                    set_setup_error.set(Some(invalid_slug_error.clone()));
+                                                    toast_context.add_toast.run((invalid_slug_error.clone(), ToastType::Warning));
                                                     return;
                                                 }
                                                 set_setup_error.set(None);
                                                 set_step.set(SetupStep::Company);
+                                                toast_context.add_toast.run((setup_company_title.clone(), ToastType::Info));
                                             }
+                                            disabled=move || is_submitting.get()
                                         >
                                             {continue_label.clone()}
                                         </button>
@@ -504,7 +508,7 @@ pub fn SetupAssistant() -> impl IntoView {
                             .into_any(),
 
                             SetupStep::Company => view! {
-                                <div class="space-y-5">
+                                <div class="space-y-5 animate-slide-up">
                                     <div>
                                         <h3 class="text-lg font-semibold">{setup_company_title.clone()}</h3>
                                         <p class="text-sm text-base-content/70">{setup_company_desc.clone()}</p>
@@ -576,11 +580,12 @@ pub fn SetupAssistant() -> impl IntoView {
                                         <button
                                             class="btn btn-primary min-w-40"
                                             on:click=move |_| {
+                                                if is_submitting.get() { return; }
                                                 let name = company_name.get();
                                                 let address = company_address.get();
                                                 let country = company_country.get();
                                                 if name.trim().is_empty() || address.trim().is_empty() || country.trim().is_empty() {
-                                                    set_setup_error.set(Some(required_error.clone()));
+                                                    toast_context.add_toast.run((required_error.clone(), ToastType::Warning));
                                                     return;
                                                 }
                                                 if let Some(email) = {
@@ -592,7 +597,7 @@ pub fn SetupAssistant() -> impl IntoView {
                                                     }
                                                 }
                                                     && !is_valid_email(&email) {
-                                                        set_setup_error.set(Some(invalid_email_error.clone()));
+                                                        toast_context.add_toast.run((invalid_email_error.clone(), ToastType::Warning));
                                                         return;
                                                     }
                                                 let phone_local = company_phone_local.get();
@@ -600,7 +605,7 @@ pub fn SetupAssistant() -> impl IntoView {
                                                     let prefix = company_phone_prefix.get();
                                                     let phone = normalize_phone(&prefix, &phone_local);
                                                     if phone.is_none() {
-                                                        set_setup_error.set(Some(invalid_phone_error.clone()));
+                                                        toast_context.add_toast.run((invalid_phone_error.clone(), ToastType::Warning));
                                                         return;
                                                     }
                                                 }
@@ -622,16 +627,22 @@ pub fn SetupAssistant() -> impl IntoView {
                                                     company_phone_local.get(),
                                                     set_setup_status,
                                                     set_setup_error,
+                                                    toast_context,
                                                 );
                                             }
+                                            disabled=move || is_submitting.get()
                                         >
-                                            <Icon icon=LuCircleCheck width="20" height="20" />
-                                            {finish_label.clone()}
+                                            {move || if is_submitting.get() {
+                                                view! { <span class="loading loading-spinner loading-sm"></span> }.into_any()
+                                            } else {
+                                                view! { <Icon icon=LuCircleCheck width="20" height="20" /> }.into_any()
+                                            }}
+                                            {move || finish_label()}
                                         </button>
                                     </div>
 
                                     {move || match setup_status.get() {
-                                        Some(Err(msg)) if msg == starting_setup_label_status => view! {
+                                        Some(Err(msg)) if msg == starting_setup_label_status() => view! {
                                             <div class="alert alert-info shadow-lg border-info/20">
                                                 <div class="loading loading-spinner loading-md"></div>
                                                 <span>{setup_t(&submit_i18n_status, lang.get(), "redirecting")}</span>
@@ -653,8 +664,20 @@ pub fn SetupAssistant() -> impl IntoView {
                             }}}
                         </div>
                     </div>
+
+                    <ul class="steps steps-horizontal w-full">
+                        <li class=move || format!("step {}", if step.get() >= SetupStep::Admin { "step-primary" } else { "" })>{move || setup_t(&i18n_for_admin_step, lang.get(), "setup_step_admin")}</li>
+                        <li class=move || format!("step {}", if step.get() >= SetupStep::Tenant { "step-primary" } else { "" })>{move || setup_t(&i18n_for_tenant_step, lang.get(), "setup_step_tenant")}</li>
+                        <li class=move || format!("step {}", if step.get() >= SetupStep::Company { "step-primary" } else { "" })>{move || setup_t(&i18n_for_company_step, lang.get(), "setup_step_company")}</li>
+                    </ul>
+
+                    {move || setup_error.get().map(|err| view! {
+                        <div class="alert alert-error shadow-lg">
+                            <Icon icon=LuTriangleAlert width="20" height="20" />
+                            <span>{err}</span>
+                        </div>
+                    })}
                 </div>
             </div>
-        </div>
     }
 }

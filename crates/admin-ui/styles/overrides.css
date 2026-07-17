@@ -1,0 +1,163 @@
+/* AgroCore Style Overrides */
+
+:root {
+    /* Colors extracted from logo */
+    --color-agro-blue: #003454;     /* Primary Deep Blue */
+    --color-agro-rust: #9E2F00;     /* Secondary Rust/Orange */
+    --color-agro-teal: #25486F;     /* Accent Teal/Blue */
+    --color-agro-cream: #FAF8EC;    /* Base Light Cream */
+    --color-agro-dark: #001B2D;     /* Darker shade for hover/text */
+}
+
+/* Application-wide overwrites */
+
+/* Primary Button Overrides */
+.btn-primary {
+    background-color: var(--color-agro-blue) !important;
+    border-color: var(--color-agro-blue) !important;
+    color: white !important;
+}
+
+.btn-primary:hover {
+    background-color: var(--color-agro-dark) !important;
+    border-color: var(--color-agro-dark) !important;
+}
+
+/* Utility Class Overwrites */
+.bg-primary {
+    background-color: var(--color-agro-blue) !important;
+}
+
+.text-primary {
+    color: var(--color-agro-blue) !important;
+}
+
+/* Progress bar in setup */
+.bg-primary.transition-all {
+    background-color: var(--color-agro-blue) !important;
+}
+
+/* Stepper Overrides */
+.steps .step-primary:before, 
+.steps .step-primary:after {
+    background-color: var(--color-agro-blue) !important;
+}
+
+.steps .step-primary {
+    color: var(--color-agro-blue) !important;
+}
+
+/* Secondary/Accent button if needed */
+.btn-secondary {
+    background-color: var(--color-agro-rust) !important;
+    border-color: var(--color-agro-rust) !important;
+    color: white !important;
+}
+
+.btn-accent {
+    background-color: var(--color-agro-teal) !important;
+    border-color: var(--color-agro-teal) !important;
+    color: white !important;
+}
+
+/* Card and container accents */
+.border-primary {
+    border-color: var(--color-agro-blue) !important;
+}
+
+.border-base-300 {
+    border-color: rgba(37, 72, 111, 0.2) !important; /* Semi-transparent agro-teal */
+}
+
+.spinner {
+    background-image: linear-gradient(rgb(186, 66, 255) 35%,rgb(0, 225, 255));
+    width: 150px;
+    height: 150px;
+    animation: spinning82341 1.7s linear infinite;
+    text-align: center;
+    border-radius: 50px;
+    filter: blur(1px);
+    box-shadow: 0px -5px 20px 0px var(--color-agro-blue), 0px 5px 20px 0px var(--color-agro-rust);
+}
+
+.spinner1 {
+    background-color: rgb(36, 36, 36);
+    width: 150px;
+    height: 150px;
+    border-radius: 50px;
+    filter: blur(10px);
+}
+
+@keyframes spinning82341 {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Animations */
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Toast System */
+.toast-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    z-index: 9999;
+}
+
+.toast-item {
+    min-width: 300px;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    animation: slideInRight 0.3s ease-out forwards;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Pulse effect for loading */
+.pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; }
+}

@@ -1,6 +1,7 @@
 use crate::api;
 use crate::components::form::{RequiredLabel, is_valid_email};
 use crate::i18n::{I18n, Language};
+use crate::components::toast::{ToastContext, ToastType};
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
 
@@ -8,6 +9,7 @@ use leptos::task::spawn_local;
 pub fn LoginView() -> impl IntoView {
     let i18n = use_context::<I18n>().expect("i18n context");
     let lang = use_context::<ReadSignal<Language>>().expect("lang signal");
+    let toast_context = use_context::<ToastContext>().expect("ToastContext not provided");
     let title = i18n.t(lang.get().as_str(), "login_title");
     let subtitle = i18n.t(lang.get().as_str(), "login_subtitle");
     let email_label = i18n.t(lang.get().as_str(), "email");
@@ -28,12 +30,14 @@ pub fn LoginView() -> impl IntoView {
         set_error.set(None);
 
         if email.trim().is_empty() || password.trim().is_empty() {
+            toast_context.add_toast.run((required_error.clone(), ToastType::Warning));
             set_error.set(Some(required_error.clone()));
             set_busy.set(false);
             return;
         }
 
         if !is_valid_email(&email) {
+            toast_context.add_toast.run((invalid_email_error.clone(), ToastType::Warning));
             set_error.set(Some(invalid_email_error.clone()));
             set_busy.set(false);
             return;
@@ -47,7 +51,7 @@ pub fn LoginView() -> impl IntoView {
                         .roles
                         .iter()
                         .find(|role| {
-                            matches!(role.as_str(), "Admin" | "Manager" | "Worker" | "Viewer")
+                            matches!(role.to_lowercase().as_str(), "admin" | "manager" | "worker" | "viewer")
                         })
                         .cloned()
                         .unwrap_or_else(|| String::from("Viewer"));
@@ -55,6 +59,7 @@ pub fn LoginView() -> impl IntoView {
                     let _ = window().location().reload();
                 }
                 Err(e) => {
+                    toast_context.add_toast.run((e.clone(), ToastType::Error));
                     set_error.set(Some(e));
                     set_busy.set(false);
                 }
@@ -64,7 +69,7 @@ pub fn LoginView() -> impl IntoView {
 
     view! {
         <div class="min-h-screen bg-base-200 flex items-center justify-center p-4">
-            <div class="card w-full max-w-md bg-base-100 shadow-2xl border border-base-300">
+            <div class="card w-full max-w-md bg-base-100 shadow-2xl border border-base-300 animate-slide-up">
                 <div class="card-body">
                     <h1 class="card-title text-2xl font-bold">{title}</h1>
                     <p class="text-base-content/70">{subtitle}</p>

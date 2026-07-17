@@ -15,6 +15,8 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/geometry-service/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/domain/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/crates/infrastructure/tests" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/crates/admin-ui/dist/.stage" />
+      <excludeFolder url="file://$MODULE_DIR$/crates/admin-ui/dist/snippets/admin-ui-e32c81e87b81db6a" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

@@ -8,7 +8,7 @@ use agrocore_domain::entities::order::{
 };
 use agrocore_domain::entities::plant_protection::PlantProtectionAreaMethod;
 use agrocore_domain::entities::site::{
-    CreateSiteDto as DomainCreateSiteDto, GeoPoint, Site, SiteProperty,
+    Boundary, CreateSiteDto as DomainCreateSiteDto, GeoPoint, Site, SiteProperty,
     UpdateSiteDto as DomainUpdateSiteDto,
 };
 use agrocore_domain::entities::task::{CreateTaskDataDto as DomainCreateTaskDataDto, TaskData};
@@ -238,6 +238,8 @@ pub struct SiteDto {
     pub slope: Option<f64>,
     pub altitude: Option<f64>,
     pub organic: Option<bool>,
+    pub center: Option<GeoPoint>,
+    pub boundary: Option<Vec<GeoPoint>>,
     pub properties: Option<Vec<SiteProperty>>,
     pub is_active: bool,
     pub created_at: String,
@@ -260,6 +262,8 @@ impl From<Site> for SiteDto {
             slope: s.slope,
             altitude: s.altitude,
             organic: s.organic,
+            center: s.center,
+            boundary: s.boundary.map(|b| b.0),
             properties: s.properties,
             is_active: s.is_active,
             created_at: s.created_at.to_rfc3339(),
@@ -294,7 +298,7 @@ impl From<CreateSiteDto> for DomainCreateSiteDto {
             area: dto.area,
             gross_area: dto.gross_area,
             center: dto.center,
-            boundary: dto.boundary,
+            boundary: dto.boundary.map(Boundary),
             plots: dto.plots,
             row_config: None,
             bbch_stage: None,
@@ -322,6 +326,8 @@ pub struct UpdateSiteDto {
     #[validate(range(min = 0.0))]
     pub area: Option<f64>,
     pub gross_area: Option<f64>,
+    pub center: Option<GeoPoint>,
+    pub boundary: Option<Vec<GeoPoint>>,
     pub properties: Option<Vec<SiteProperty>>,
     pub is_active: Option<bool>,
 }
@@ -333,6 +339,8 @@ impl From<UpdateSiteDto> for DomainUpdateSiteDto {
             variety: dto.variety,
             area: dto.area,
             gross_area: dto.gross_area,
+            center: dto.center,
+            boundary: dto.boundary.map(Boundary),
             properties: dto.properties,
             is_active: dto.is_active,
             ..Default::default()

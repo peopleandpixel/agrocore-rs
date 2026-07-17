@@ -8,6 +8,8 @@ use crate::entities::{BbchStage, CropType, SiteType};
 use crate::repositories::VisibilityAwareEntity;
 
 // use crate::entities::user::UserRole;
+use geozero::wkb;
+use geo::{LineString, Polygon};
 use utoipa::ToSchema;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
@@ -71,13 +73,77 @@ impl<'q> sqlx::Encode<'q, sqlx::Postgres> for GeoPoint {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq)]
+#[serde(transparent)]
+pub struct Boundary(pub Vec<GeoPoint>);
+
+impl std::ops::Deref for Boundary {
+    type Target = Vec<GeoPoint>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl sqlx::Type<sqlx::Postgres> for Boundary {
+    fn type_info() -> sqlx::postgres::PgTypeInfo {
+        sqlx::postgres::PgTypeInfo::with_name("geometry")
+    }
+}
+
+impl<'r> sqlx::Decode<'r, sqlx::Postgres> for Boundary {
+    fn decode(
+        value: sqlx::postgres::PgValueRef<'r>,
+    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        let wkb_wrapper: wkb::Decode<geo::Geometry<f64>> = sqlx::Decode::decode(value)?;
+        let geometry = wkb_wrapper.geometry.ok_or("Failed to decode geometry")?;
+        if let geo::Geometry::Polygon(p) = geometry {
+            let points = p
+                .exterior()
+                .0
+                .iter()
+                .map(|c| GeoPoint { lng: c.x, lat: c.y })
+                .collect();
+            Ok(Boundary(points))
+        } else {
+            Err("Expected Polygon geometry".into())
+        }
+    }
+}
+
+impl<'q> sqlx::Encode<'q, sqlx::Postgres> for Boundary {
+    fn encode_by_ref(
+        &self,
+        buf: &mut sqlx::postgres::PgArgumentBuffer,
+    ) -> Result<sqlx::encode::IsNull, Box<dyn std::error::Error + Send + Sync>> {
+        let coords: Vec<(f64, f64)> = self.0.iter().map(|p| (p.lng, p.lat)).collect();
+        let mut line_string = LineString::from(coords);
+
+        // Ensure ring is closed for PostGIS Polygon
+        if let (Some(first), Some(last)) = (line_string.0.first(), line_string.0.last()) {
+            if first != last {
+                let first_val = *first;
+                line_string.0.push(first_val);
+            }
+        }
+
+        let polygon = Polygon::new(line_string, vec![]);
+        let geometry = geo::Geometry::Polygon(polygon);
+        let wkb_wrapper = wkb::Encode(geometry);
+        <wkb::Encode<geo::Geometry<f64>> as sqlx::Encode<'q, sqlx::Postgres>>::encode_by_ref(
+            &wkb_wrapper,
+            buf,
+        )
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct Plot {
     pub id: Uuid,
     pub label: String,
     #[validate(range(min = 0.0))]
     pub area: f64,
-    pub boundary: Option<Vec<GeoPoint>>,
+    pub boundary: Option<Boundary>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
@@ -133,13 +199,11 @@ pub struct Site {
     pub altitude: Option<f64>,
     pub organic: Option<bool>,
     pub organic_eligible: Option<bool>,
-    #[sqlx(skip)]
     pub center: Option<GeoPoint>,
     #[sqlx(json)]
     pub sigpac_data: Option<SigpacData>,
     pub regepac_id: Option<String>,
-    #[sqlx(skip)]
-    pub boundary: Option<Vec<GeoPoint>>,
+    pub boundary: Option<Boundary>,
     #[sqlx(json)]
     pub properties: Option<Vec<SiteProperty>>,
     #[sqlx(json)]
@@ -203,7 +267,7 @@ pub struct CreateSiteDto {
     pub center: Option<GeoPoint>,
     pub sigpac_data: Option<SigpacData>,
     pub regepac_id: Option<String>,
-    pub boundary: Option<Vec<GeoPoint>>,
+    pub boundary: Option<Boundary>,
     pub properties: Option<Vec<SiteProperty>>,
     pub custom_fields: Option<serde_json::Value>,
     pub note1: Option<String>,
@@ -229,7 +293,7 @@ pub struct UpdateSiteDto {
     pub center: Option<GeoPoint>,
     pub sigpac_data: Option<SigpacData>,
     pub regepac_id: Option<String>,
-    pub boundary: Option<Vec<GeoPoint>>,
+    pub boundary: Option<Boundary>,
     pub properties: Option<Vec<SiteProperty>>,
     pub custom_fields: Option<serde_json::Value>,
     pub note1: Option<String>,

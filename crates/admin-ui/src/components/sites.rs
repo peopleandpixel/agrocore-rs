@@ -1,5 +1,6 @@
 use crate::api;
 use crate::components::map::FieldPolygonEditor;
+use crate::components::toast::{ToastContext, ToastType};
 use icondata::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -8,8 +9,9 @@ use leptos_icons::Icon;
 #[component]
 pub fn SiteManagement() -> impl IntoView {
     let t = crate::i18n::use_i18n();
+    let toast_context = use_context::<ToastContext>().expect("ToastContext not provided");
 
-    let sites = LocalResource::new(|| async move { 
+    let sites = LocalResource::new(|| async move {
         api::fetch_sites().await.ok() 
     });
 
@@ -23,8 +25,14 @@ pub fn SiteManagement() -> impl IntoView {
 
     let on_delete = move |id: uuid::Uuid| {
         spawn_local(async move {
-            if api::delete_site(id).await.is_ok() {
-                let _ = window().location().reload();
+            match api::delete_site(id).await {
+                Ok(_) => {
+                    toast_context.add_toast.run((t("site_deleted").to_string(), ToastType::Success));
+                    let _ = window().location().reload();
+                }
+                Err(e) => {
+                    toast_context.add_toast.run((e, ToastType::Error));
+                }
             }
         });
     };
@@ -38,12 +46,12 @@ pub fn SiteManagement() -> impl IntoView {
         set_error.set(None);
 
         if label_val.trim().is_empty() {
-            set_error.set(Some(t("validation_site_label").to_string()));
+            toast_context.add_toast.run((t("validation_site_label").to_string(), ToastType::Warning));
             return;
         }
 
         if boundary_val.is_none() {
-            set_error.set(Some(t("validation_draw_polygon").to_string()));
+            toast_context.add_toast.run((t("validation_draw_polygon").to_string(), ToastType::Warning));
             return;
         }
 
@@ -51,7 +59,7 @@ pub fn SiteManagement() -> impl IntoView {
             match api::create_site(api::CreateSiteRequest {
                 label: label_val,
                 site_type: site_type_val,
-                crop_type: String::from("other"),
+                crop_type: String::from("grape"),
                 variety: None,
                 area: area_val * 10000.0, // Convert ha to m2
                 gross_area: None,
@@ -61,9 +69,13 @@ pub fn SiteManagement() -> impl IntoView {
                 .await
             {
                 Ok(_) => {
+                    toast_context.add_toast.run((t("site_created").to_string(), ToastType::Success));
                     let _ = window().location().reload();
                 }
-                Err(e) => set_error.set(Some(e)),
+                Err(e) => {
+                    toast_context.add_toast.run((e.clone(), ToastType::Error));
+                    set_error.set(Some(e));
+                }
             }
         });
     };

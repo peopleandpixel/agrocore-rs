@@ -8,6 +8,7 @@ use leptos_icons::Icon;
 pub fn DashboardView() -> impl IntoView {
     let t = crate::i18n::use_i18n();
     let view_mode = use_context::<ReadSignal<ViewMode>>().expect("view mode signal");
+    let user_role = use_context::<ReadSignal<crate::UserRole>>().expect("user role signal");
     let _set_view_mode = use_context::<WriteSignal<ViewMode>>().expect("set view mode signal");
     let company_profile = api::load_company_profile().unwrap_or_default();
     let company_name = company_profile
@@ -220,6 +221,11 @@ pub fn DashboardView() -> impl IntoView {
                                         <a href="/resources" class="btn btn-outline btn-sm justify-start gap-3 rounded-xl h-10">
                                             <Icon icon=LuActivity width="18" height="18" /> {crate::t!(t, "issue_report")}
                                         </a>
+                                        <Show when=move || user_role.get() == crate::UserRole::Admin || user_role.get() == crate::UserRole::Manager>
+                                            <a href="/users" class="btn btn-outline btn-info btn-sm justify-start gap-3 rounded-xl h-10">
+                                                <Icon icon=LuUsers width="18" height="18" /> {crate::t!(t, "nav_users")}
+                                            </a>
+                                        </Show>
                                     </div>
                                 </div>
                             </div>
