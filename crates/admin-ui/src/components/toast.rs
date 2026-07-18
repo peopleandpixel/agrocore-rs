@@ -1,5 +1,5 @@
-use leptos::prelude::*;
 use icondata::*;
+use leptos::prelude::*;
 use leptos_icons::Icon;
 use uuid::Uuid;
 
@@ -30,8 +30,14 @@ pub fn provide_toast_context() {
 
     let add_toast = Callback::new(move |(message, toast_type): (String, ToastType)| {
         let id = Uuid::new_v4();
-        set_toasts.update(|t| t.push(ToastMessage { id, message, toast_type }));
-        
+        set_toasts.update(|t| {
+            t.push(ToastMessage {
+                id,
+                message,
+                toast_type,
+            })
+        });
+
         // Auto-remove after 5 seconds
         leptos::task::spawn_local(async move {
             leptos::task::tick().await;
@@ -54,7 +60,7 @@ pub fn provide_toast_context() {
 #[component]
 pub fn ToastContainer() -> impl IntoView {
     let context = use_context::<ToastContext>().expect("ToastContext not provided");
-    
+
     view! {
         <div class="toast-container">
             <For
@@ -69,7 +75,7 @@ pub fn ToastContainer() -> impl IntoView {
                         ToastType::Info => ("bg-info text-info-content", LuInfo),
                         ToastType::Warning => ("bg-warning text-warning-content", LuTriangleAlert),
                     };
-                    
+
                     view! {
                         <div class=format!("toast-item {} border border-white/10", bg_class)>
                             <Icon icon=icon width="20" height="20" />

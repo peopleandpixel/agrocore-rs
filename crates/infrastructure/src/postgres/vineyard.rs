@@ -51,15 +51,14 @@ impl VineyardRepo for PgVineyardRepo {
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<Vineyard> = sqlx::query_as(
-                "SELECT * FROM vineyards WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
-            )
-            .bind(tid)
-            .bind(per_page as i32)
-            .bind(offset as i32)
-            .fetch_all(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<Vineyard> =
+                sqlx::query_as("SELECT * FROM vineyards WHERE tenant_id = $1 LIMIT $2 OFFSET $3")
+                    .bind(tid)
+                    .bind(per_page as i32)
+                    .bind(offset as i32)
+                    .fetch_all(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(PaginatedResponse {
                 data,

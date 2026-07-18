@@ -73,7 +73,10 @@ pub async fn start(db: Database, nats_url: String) -> anyhow::Result<()> {
                 let client = reqwest::Client::new();
                 tokio::spawn(async move {
                     if let Err(e) = process_tenant_weather(&db_clone, &tenant, &client).await {
-                        error!("Error processing weather for new tenant {}: {}", tenant.id, e);
+                        error!(
+                            "Error processing weather for new tenant {}: {}",
+                            tenant.id, e
+                        );
                     }
                 });
             }
@@ -178,44 +181,47 @@ async fn process_tenant_weather(
     let location = match geocoding_resp.results.and_then(|r| r.into_iter().next()) {
         Some(l) => l,
         None => {
-            warn!("Could not geocode address '{}' for tenant {}", address, tenant.id);
+            warn!(
+                "Could not geocode address '{}' for tenant {}",
+                address, tenant.id
+            );
             return Ok(());
         }
     };
 
     // Find or create virtual station
     let virtual_station_label = "Company Address Weather";
-    let station = if let Some(s) = stations
-        .data
-        .iter()
-        .find(|s| s.label == virtual_station_label && s.station_type == WeatherStationType::Virtual)
-    {
-        s.clone()
-    } else {
-        info!("Creating virtual weather station for tenant {}", tenant.id);
-        db.weather_station_repo()
-            .create(
-                tenant.id,
-                CreateWeatherStationDto {
-                    label: virtual_station_label.to_string(),
-                    station_type: WeatherStationType::Virtual,
-                    location: None, // We have the coordinates but the DTO/Repo might need update to support it properly if it's PostGIS. For now, we use the coordinates in the fetch.
-                    manufacturer: Some("Open-Meteo".to_string()),
-                    model: Some("Virtual Station".to_string()),
-                    serial_number: None,
-                    api_key_config: None,
-                },
-                Uuid::nil(),
-            )
-            .await?
-    };
+    let station =
+        if let Some(s) = stations.data.iter().find(|s| {
+            s.label == virtual_station_label && s.station_type == WeatherStationType::Virtual
+        }) {
+            s.clone()
+        } else {
+            info!("Creating virtual weather station for tenant {}", tenant.id);
+            db.weather_station_repo()
+                .create(
+                    tenant.id,
+                    CreateWeatherStationDto {
+                        label: virtual_station_label.to_string(),
+                        station_type: WeatherStationType::Virtual,
+                        location: None, // We have the coordinates but the DTO/Repo might need update to support it properly if it's PostGIS. For now, we use the coordinates in the fetch.
+                        manufacturer: Some("Open-Meteo".to_string()),
+                        model: Some("Virtual Station".to_string()),
+                        serial_number: None,
+                        api_key_config: None,
+                    },
+                    Uuid::nil(),
+                )
+                .await?
+        };
 
     // Fetch current weather
     let weather_url = format!(
         "https://api.open-meteo.com/v1/forecast?latitude={}&longitude={}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m",
         location.latitude, location.longitude
     );
-    let weather_resp: OpenMeteoWeatherResponse = client.get(weather_url).send().await?.json().await?;
+    let weather_resp: OpenMeteoWeatherResponse =
+        client.get(weather_url).send().await?.json().await?;
 
     if let Some(current) = weather_resp.current {
         db.weather_data_repo()

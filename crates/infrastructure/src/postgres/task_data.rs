@@ -51,15 +51,14 @@ impl TaskDataRepository for PgTaskDataRepo {
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<TaskData> = sqlx::query_as(
-                "SELECT * FROM task_data WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
-            )
-            .bind(tid)
-            .bind(per_page as i32)
-            .bind(offset as i32)
-            .fetch_all(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<TaskData> =
+                sqlx::query_as("SELECT * FROM task_data WHERE tenant_id = $1 LIMIT $2 OFFSET $3")
+                    .bind(tid)
+                    .bind(per_page as i32)
+                    .bind(offset as i32)
+                    .fetch_all(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(PaginatedResponse {
                 data,
@@ -92,14 +91,16 @@ impl TaskDataRepository for PgTaskDataRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<TaskData> = sqlx::query_as("SELECT * FROM task_data WHERE tenant_id = $1 AND order_id = $2 LIMIT $3 OFFSET $4")
-                .bind(tid)
-                .bind(task_id)
-                .bind(per_page as i32)
-                .bind(offset as i32)
-                .fetch_all(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<TaskData> = sqlx::query_as(
+                "SELECT * FROM task_data WHERE tenant_id = $1 AND order_id = $2 LIMIT $3 OFFSET $4",
+            )
+            .bind(tid)
+            .bind(task_id)
+            .bind(per_page as i32)
+            .bind(offset as i32)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(PaginatedResponse {
                 data,
@@ -123,12 +124,14 @@ impl TaskDataRepository for PgTaskDataRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM task_data WHERE tenant_id = $1 AND worker_id = $2")
-                .bind(tid)
-                .bind(worker_id)
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM task_data WHERE tenant_id = $1 AND worker_id = $2",
+            )
+            .bind(tid)
+            .bind(worker_id)
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<TaskData> = sqlx::query_as("SELECT * FROM task_data WHERE tenant_id = $1 AND worker_id = $2 LIMIT $3 OFFSET $4")
                 .bind(tid)

@@ -109,12 +109,14 @@ impl WeatherDataRepo for PgWeatherDataRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM weather_data WHERE tenant_id = $1 AND station_id = $2")
-                .bind(tid)
-                .bind(station_id)
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM weather_data WHERE tenant_id = $1 AND station_id = $2",
+            )
+            .bind(tid)
+            .bind(station_id)
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<WeatherData> = sqlx::query_as("SELECT * FROM weather_data WHERE tenant_id = $1 AND station_id = $2 ORDER BY timestamp DESC LIMIT $3 OFFSET $4")
                 .bind(tid)

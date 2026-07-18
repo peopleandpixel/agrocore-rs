@@ -21,14 +21,12 @@ impl WaterQuotaRepo for PgWaterQuotaRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WaterQuota>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            let row = sqlx::query_as(
-                "SELECT * FROM water_quotas WHERE id = $1 AND tenant_id = $2",
-            )
-            .bind(id)
-            .bind(tid)
-            .fetch_optional(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            let row = sqlx::query_as("SELECT * FROM water_quotas WHERE id = $1 AND tenant_id = $2")
+                .bind(id)
+                .bind(tid)
+                .fetch_optional(&pool)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
             Ok(row)
         })
     }

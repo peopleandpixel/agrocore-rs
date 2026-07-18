@@ -20,7 +20,8 @@ pub fn ResourcesPage() -> impl IntoView {
     let workers_in_system = move || i18n.t(lang.get().as_str(), "workers_in_system");
     let hours_today = move || i18n.t(lang.get().as_str(), "hours_today");
     let time_tracking_later = move || i18n.t(lang.get().as_str(), "time_tracking_later");
-    let resource_assignments_desc = move || i18n.t(lang.get().as_str(), "resource_assignments_desc");
+    let resource_assignments_desc =
+        move || i18n.t(lang.get().as_str(), "resource_assignments_desc");
     let inventory_stock = move || i18n.t(lang.get().as_str(), "inventory_stock");
     let inventory_available = move || i18n.t(lang.get().as_str(), "inventory_available");
     let users = LocalResource::new(|| async move { api::fetch_users().await.ok() });

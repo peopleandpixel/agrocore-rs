@@ -30,7 +30,9 @@ fn submit_order(
                 .await
                 {
                     Ok(_) => {
-                        toast_context.add_toast.run((i18n.t(&lang, "order_created"), ToastType::Success));
+                        toast_context
+                            .add_toast
+                            .run((i18n.t(&lang, "order_created"), ToastType::Success));
                         let _ = window().location().reload();
                     }
                     Err(e) => {
@@ -42,7 +44,9 @@ fn submit_order(
         }
         Err(_) => {
             let msg = String::from("Please choose a valid site ID.");
-            toast_context.add_toast.run((msg.clone(), ToastType::Warning));
+            toast_context
+                .add_toast
+                .run((msg.clone(), ToastType::Warning));
             set_error.set(Some(msg));
         }
     }
@@ -67,7 +71,9 @@ pub fn OrderList() -> impl IntoView {
         spawn_local(async move {
             match api::delete_order(id).await {
                 Ok(_) => {
-                    toast_context.add_toast.run((t("order_deleted").to_string(), ToastType::Success));
+                    toast_context
+                        .add_toast
+                        .run((t("order_deleted").to_string(), ToastType::Success));
                     let _ = window().location().reload();
                 }
                 Err(e) => {

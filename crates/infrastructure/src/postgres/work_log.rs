@@ -19,14 +19,12 @@ impl WorkLogRepo for PgWorkLogRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WorkLog>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, WorkLog>(
-                "SELECT * FROM work_logs WHERE tenant_id = $1 AND id = $2",
-            )
-            .bind(tid)
-            .bind(id)
-            .fetch_optional(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))
+            sqlx::query_as::<_, WorkLog>("SELECT * FROM work_logs WHERE tenant_id = $1 AND id = $2")
+                .bind(tid)
+                .bind(id)
+                .fetch_optional(&pool)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
     fn find_all(
@@ -144,9 +142,7 @@ impl WorkLogRepo for PgWorkLogRepo {
             query.push_str(&parts.join(", "));
             query.push_str(" WHERE tenant_id = $1 AND id = $2 RETURNING *");
 
-            let mut q = sqlx::query_as::<_, WorkLog>(&query)
-                .bind(tid)
-                .bind(id);
+            let mut q = sqlx::query_as::<_, WorkLog>(&query).bind(tid).bind(id);
 
             if let Some(v) = dto.date {
                 q = q.bind(v);

@@ -11,9 +11,7 @@ pub fn SiteManagement() -> impl IntoView {
     let t = crate::i18n::use_i18n();
     let toast_context = use_context::<ToastContext>().expect("ToastContext not provided");
 
-    let sites = LocalResource::new(|| async move {
-        api::fetch_sites().await.ok() 
-    });
+    let sites = LocalResource::new(|| async move { api::fetch_sites().await.ok() });
 
     let (show_add_modal, set_show_add_modal) = signal(false);
     let (error, set_error) = signal(Option::<String>::None);
@@ -27,7 +25,9 @@ pub fn SiteManagement() -> impl IntoView {
         spawn_local(async move {
             match api::delete_site(id).await {
                 Ok(_) => {
-                    toast_context.add_toast.run((t("site_deleted").to_string(), ToastType::Success));
+                    toast_context
+                        .add_toast
+                        .run((t("site_deleted").to_string(), ToastType::Success));
                     let _ = window().location().reload();
                 }
                 Err(e) => {
@@ -46,12 +46,16 @@ pub fn SiteManagement() -> impl IntoView {
         set_error.set(None);
 
         if label_val.trim().is_empty() {
-            toast_context.add_toast.run((t("validation_site_label").to_string(), ToastType::Warning));
+            toast_context
+                .add_toast
+                .run((t("validation_site_label").to_string(), ToastType::Warning));
             return;
         }
 
         if boundary_val.is_none() {
-            toast_context.add_toast.run((t("validation_draw_polygon").to_string(), ToastType::Warning));
+            toast_context
+                .add_toast
+                .run((t("validation_draw_polygon").to_string(), ToastType::Warning));
             return;
         }
 
@@ -66,10 +70,12 @@ pub fn SiteManagement() -> impl IntoView {
                 center: center_val,
                 boundary: boundary_val,
             })
-                .await
+            .await
             {
                 Ok(_) => {
-                    toast_context.add_toast.run((t("site_created").to_string(), ToastType::Success));
+                    toast_context
+                        .add_toast
+                        .run((t("site_created").to_string(), ToastType::Success));
                     let _ = window().location().reload();
                 }
                 Err(e) => {
@@ -80,11 +86,12 @@ pub fn SiteManagement() -> impl IntoView {
         });
     };
 
-    let on_map_change = move |b: Option<Vec<api::GeoPoint>>, a: Option<f64>, c: Option<api::GeoPoint>| {
-        set_boundary.set(b);
-        set_area.set(a.unwrap_or(0.0));
-        set_center.set(c);
-    };
+    let on_map_change =
+        move |b: Option<Vec<api::GeoPoint>>, a: Option<f64>, c: Option<api::GeoPoint>| {
+            set_boundary.set(b);
+            set_area.set(a.unwrap_or(0.0));
+            set_center.set(c);
+        };
 
     let sites_view = move || {
         sites

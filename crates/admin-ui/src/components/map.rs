@@ -65,7 +65,9 @@ fn js_number_to_option(value: &JsValue) -> Option<f64> {
 #[allow(dead_code, non_snake_case)]
 pub fn FieldPolygonEditor<F>(on_change: F) -> impl IntoView
 where
-    F: Fn(Option<Vec<crate::api::GeoPoint>>, Option<f64>, Option<crate::api::GeoPoint>) + 'static + Clone,
+    F: Fn(Option<Vec<crate::api::GeoPoint>>, Option<f64>, Option<crate::api::GeoPoint>)
+        + 'static
+        + Clone,
 {
     let map_ref = NodeRef::<leptos::html::Div>::new();
     let on_change_rc = std::rc::Rc::new(on_change);

@@ -73,13 +73,12 @@ impl PACApplicationRepo for PgPACApplicationRepo {
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM pac_applications WHERE tenant_id = $1",
-            )
-            .bind(tid)
-            .fetch_one(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM pac_applications WHERE tenant_id = $1")
+                    .bind(tid)
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<PACApplication> = sqlx::query_as("SELECT * FROM pac_applications WHERE tenant_id = $1 ORDER BY year DESC, created_at DESC LIMIT $2 OFFSET $3")
                 .bind(tid)
@@ -251,13 +250,12 @@ impl PACApplicationRepo for PgPACApplicationRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let res =
-                sqlx::query("DELETE FROM pac_applications WHERE tenant_id = $1 AND id = $2")
-                    .bind(tid)
-                    .bind(id)
-                    .execute(&pool)
-                    .await
-                    .map_err(|e| SharedError::Database(e.to_string()))?;
+            let res = sqlx::query("DELETE FROM pac_applications WHERE tenant_id = $1 AND id = $2")
+                .bind(tid)
+                .bind(id)
+                .execute(&pool)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let success = res.rows_affected() > 0;
 

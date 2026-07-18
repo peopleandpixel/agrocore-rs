@@ -111,7 +111,8 @@ impl I18n {
 pub fn use_i18n() -> impl Fn(&str) -> String + Clone + Copy {
     use leptos::prelude::Get;
     let i18n = leptos::prelude::use_context::<I18n>().expect("i18n context");
-    let lang = leptos::prelude::use_context::<leptos::prelude::ReadSignal<Language>>().expect("lang signal");
+    let lang = leptos::prelude::use_context::<leptos::prelude::ReadSignal<Language>>()
+        .expect("lang signal");
 
     move |key: &str| {
         let lang_code = lang.get().as_str();
@@ -121,12 +122,10 @@ pub fn use_i18n() -> impl Fn(&str) -> String + Clone + Copy {
 
 #[macro_export]
 macro_rules! t {
-    ($t:expr, $key:expr) => {
-        {
-            let t = $t.clone();
-            move || t($key)
-        }
-    };
+    ($t:expr, $key:expr) => {{
+        let t = $t.clone();
+        move || t($key)
+    }};
 }
 
 #[cfg(test)]

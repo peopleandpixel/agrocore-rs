@@ -45,13 +45,12 @@ impl HarvestSeasonRepo for PgHarvestSeasonRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM harvest_seasons WHERE tenant_id = $1",
-            )
-            .bind(tid)
-            .fetch_one(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM harvest_seasons WHERE tenant_id = $1")
+                    .bind(tid)
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<HarvestSeason> = sqlx::query_as("SELECT * FROM harvest_seasons WHERE tenant_id = $1 ORDER BY year DESC, start_date DESC LIMIT $2 OFFSET $3")
                 .bind(tid)

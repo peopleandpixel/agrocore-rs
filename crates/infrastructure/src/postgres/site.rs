@@ -100,12 +100,11 @@ impl SiteRepository for PgSiteRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 =
-                sqlx::query_scalar("SELECT COUNT(*) FROM sites WHERE tenant_id = $1")
-                    .bind(tid)
-                    .fetch_one(&pool)
-                    .await
-                    .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM sites WHERE tenant_id = $1")
+                .bind(tid)
+                .fetch_one(&pool)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Site> = sqlx::query_as(
                 r#"SELECT id, tenant_id, business_id, label, site_type, crop_type, variety,
@@ -246,13 +245,12 @@ impl SpatialObjectRepository for PgSiteRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM spatial_objects WHERE tenant_id = $1",
-            )
-            .bind(tid)
-            .fetch_one(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM spatial_objects WHERE tenant_id = $1")
+                    .bind(tid)
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<SpatialObject> = sqlx::query_as(
                 r#"SELECT id, tenant_id, site_id, parent_id, label, object_type, geometry,

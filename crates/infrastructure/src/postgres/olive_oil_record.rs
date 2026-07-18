@@ -46,13 +46,12 @@ impl OliveOilRecordRepo for PgOliveOilRecordRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM olive_oil_records WHERE tenant_id = $1",
-            )
-            .bind(tid)
-            .fetch_one(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM olive_oil_records WHERE tenant_id = $1")
+                    .bind(tid)
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<OliveOilRecord> = sqlx::query_as(
                 "SELECT * FROM olive_oil_records WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
@@ -92,12 +91,14 @@ impl OliveOilRecordRepo for PgOliveOilRecordRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM olive_oil_records WHERE tenant_id = $1 AND grove_id = $2")
-                .bind(tid)
-                .bind(grove_id)
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM olive_oil_records WHERE tenant_id = $1 AND grove_id = $2",
+            )
+            .bind(tid)
+            .bind(grove_id)
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<OliveOilRecord> = sqlx::query_as("SELECT * FROM olive_oil_records WHERE tenant_id = $1 AND grove_id = $2 LIMIT $3 OFFSET $4")
                 .bind(tid)

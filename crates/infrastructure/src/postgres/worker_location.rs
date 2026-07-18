@@ -48,13 +48,12 @@ impl WorkerLocationRepo for PgWorkerLocationRepo {
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM worker_locations WHERE tenant_id = $1",
-            )
-            .bind(tid)
-            .fetch_one(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM worker_locations WHERE tenant_id = $1")
+                    .bind(tid)
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
             let data: Vec<WorkerLocation> = sqlx::query_as(
                 "SELECT id, tenant_id, worker_id, ST_X(location) as lng, ST_Y(location) as lat, timestamp FROM worker_locations WHERE tenant_id = $1 ORDER BY timestamp DESC LIMIT $2 OFFSET $3")
                 .bind(tid).bind(per_page as i32).bind(offset as i32).fetch_all(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;

@@ -2,9 +2,9 @@ use crate::api;
 use crate::components::form::{
     PHONE_PREFIXES, RequiredLabel, country_flag, is_valid_email, language_flag, normalize_phone,
 };
+use crate::components::toast::{ToastContext, ToastType};
 use crate::i18n::LANGUAGE_OPTIONS;
 use crate::i18n::{I18n, Language};
-use crate::components::toast::{ToastContext, ToastType};
 use icondata::*;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
@@ -214,16 +214,23 @@ fn submit_setup(
                         let _ = storage.set_item("agrocore.lang", &selected_language);
                     }
                     set_setup_status.set(Some(Ok(())));
-                    toast_context.add_toast.run((setup_t(&i18n, lang, "setup_complete"), crate::components::toast::ToastType::Success));
+                    toast_context.add_toast.run((
+                        setup_t(&i18n, lang, "setup_complete"),
+                        crate::components::toast::ToastType::Success,
+                    ));
                     let _ = window().location().reload();
                 }
                 Err(e) => {
-                    toast_context.add_toast.run((e.clone(), crate::components::toast::ToastType::Error));
+                    toast_context
+                        .add_toast
+                        .run((e.clone(), crate::components::toast::ToastType::Error));
                     set_setup_status.set(Some(Err(e)));
                 }
             },
             Err(e) => {
-                toast_context.add_toast.run((e.clone(), crate::components::toast::ToastType::Error));
+                toast_context
+                    .add_toast
+                    .run((e.clone(), crate::components::toast::ToastType::Error));
                 set_setup_status.set(Some(Err(e)));
             }
         }
@@ -274,9 +281,9 @@ pub fn SetupAssistant() -> impl IntoView {
     let _setup_welcome = move || setup_t(&i18n_for_welcome, lang.get(), "setup_welcome");
     let starting_setup_label_loading = move || setup_t(&i18n, lang.get(), "starting_setup");
     let starting_setup_label_loading_memo = starting_setup_label_loading.clone();
-    let is_submitting = Memo::new(move |_| {
-        matches!(setup_status.get(), Some(Err(ref msg)) if msg == &starting_setup_label_loading_memo())
-    });
+    let is_submitting = Memo::new(
+        move |_| matches!(setup_status.get(), Some(Err(ref msg)) if msg == &starting_setup_label_loading_memo()),
+    );
     let setup_progress = move || match step.get() {
         SetupStep::Admin => 33,
         SetupStep::Tenant => 66,

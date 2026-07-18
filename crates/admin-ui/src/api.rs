@@ -840,11 +840,21 @@ pub async fn delete_site(id: uuid::Uuid) -> Result<(), String> {
 }
 
 pub async fn impersonate_user(id: uuid::Uuid) -> Result<AuthResponse, String> {
-    post_json(&format!("/api/v1/auth/impersonate/{}", id), &serde_json::Value::Null, true).await
+    post_json(
+        &format!("/api/v1/auth/impersonate/{}", id),
+        &serde_json::Value::Null,
+        true,
+    )
+    .await
 }
 
 pub async fn stop_impersonation() -> Result<AuthResponse, String> {
-    post_json("/api/v1/auth/impersonate/stop", &serde_json::Value::Null, true).await
+    post_json(
+        "/api/v1/auth/impersonate/stop",
+        &serde_json::Value::Null,
+        true,
+    )
+    .await
 }
 
 pub async fn delete_equipment(id: uuid::Uuid) -> Result<(), String> {

@@ -16,12 +16,12 @@ pub fn DashboardView() -> impl IntoView {
         .unwrap_or_else(|| String::from("AgroCore"));
 
     let tasks_resource = LocalResource::new(move || async move {
-            api::fetch_tasks()
-                .await
-                .unwrap_or_else(|_| api::PaginatedTasks {
-                    data: vec![],
-                    total: 0,
-                })
+        api::fetch_tasks()
+            .await
+            .unwrap_or_else(|_| api::PaginatedTasks {
+                data: vec![],
+                total: 0,
+            })
     });
     let sites_resource = LocalResource::new(|| async move {
         api::fetch_sites()

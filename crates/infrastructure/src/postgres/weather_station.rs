@@ -46,13 +46,12 @@ impl WeatherStationRepo for PgWeatherStationRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM weather_stations WHERE tenant_id = $1",
-            )
-            .bind(tid)
-            .fetch_one(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM weather_stations WHERE tenant_id = $1")
+                    .bind(tid)
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<WeatherStation> = sqlx::query_as(
                 "SELECT * FROM weather_stations WHERE tenant_id = $1 LIMIT $2 OFFSET $3",

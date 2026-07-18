@@ -63,7 +63,10 @@ pub async fn initial_setup(
         .map_err(|e| SharedError::Validation(e.to_string()))?;
 
     let pool = state.db.pool();
-    let mut tx = pool.begin().await.map_err(|e| SharedError::Database(e.to_string()))?;
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|e| SharedError::Database(e.to_string()))?;
 
     // 1. Check if already initialized (within transaction for safety)
     let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users")
@@ -115,14 +118,19 @@ pub async fn initial_setup(
     .await
     .map_err(|e| agrocore_infrastructure::PostgresDb::map_db_error(e))?;
 
-    tx.commit().await.map_err(|e| SharedError::Database(e.to_string()))?;
+    tx.commit()
+        .await
+        .map_err(|e| SharedError::Database(e.to_string()))?;
 
     // 4 Publish TenantCreated event after successful commit
     let _ = state
         .messaging
         .publish(
             "system.tenant.created",
-            &agrocore_messaging::Event::new(tenant.id.to_string(), agrocore_messaging::GlobalEvent::TenantCreated(tenant.clone())),
+            &agrocore_messaging::Event::new(
+                tenant.id.to_string(),
+                agrocore_messaging::GlobalEvent::TenantCreated(tenant.clone()),
+            ),
         )
         .await;
 

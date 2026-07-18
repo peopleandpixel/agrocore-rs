@@ -6,7 +6,8 @@ use leptos::prelude::*;
 #[component]
 pub fn WorkerTasksPage() -> impl IntoView {
     let t = crate::i18n::use_i18n();
-    let tasks = LocalResource::new(|| async move { api::fetch_worker_tasks().await.unwrap_or_default() });
+    let tasks =
+        LocalResource::new(|| async move { api::fetch_worker_tasks().await.unwrap_or_default() });
 
     view! {
         <div class="flex flex-col gap-6">

@@ -140,9 +140,7 @@ impl WaterUsageRepo for PgWaterUsageRepo {
             query.push_str(&parts.join(", "));
             query.push_str(" WHERE tenant_id = $1 AND id = $2 RETURNING *");
 
-            let mut q = sqlx::query_as::<_, WaterUsage>(&query)
-                .bind(tid)
-                .bind(id);
+            let mut q = sqlx::query_as::<_, WaterUsage>(&query).bind(tid).bind(id);
 
             if let Some(v) = dto.source_id {
                 q = q.bind(v);
@@ -171,13 +169,12 @@ impl WaterUsageRepo for PgWaterUsageRepo {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            let res =
-                sqlx::query("DELETE FROM water_usages WHERE tenant_id = $1 AND id = $2")
-                    .bind(tid)
-                    .bind(id)
-                    .execute(&pool)
-                    .await
-                    .map_err(|e| SharedError::Database(e.to_string()))?;
+            let res = sqlx::query("DELETE FROM water_usages WHERE tenant_id = $1 AND id = $2")
+                .bind(tid)
+                .bind(id)
+                .execute(&pool)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
             Ok(res.rows_affected() > 0)
         })
     }

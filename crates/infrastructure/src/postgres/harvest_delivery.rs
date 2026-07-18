@@ -42,13 +42,12 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM harvest_deliveries WHERE tenant_id = $1",
-            )
-            .bind(tid)
-            .fetch_one(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM harvest_deliveries WHERE tenant_id = $1")
+                    .bind(tid)
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<HarvestDelivery> = sqlx::query_as("SELECT * FROM harvest_deliveries WHERE tenant_id = $1 ORDER BY delivery_date DESC LIMIT $2 OFFSET $3")
                 .bind(tid)
@@ -86,12 +85,14 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM harvest_deliveries WHERE tenant_id = $1 AND lot_id = $2")
-                .bind(tid)
-                .bind(lot_id)
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM harvest_deliveries WHERE tenant_id = $1 AND lot_id = $2",
+            )
+            .bind(tid)
+            .bind(lot_id)
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<HarvestDelivery> = sqlx::query_as("SELECT * FROM harvest_deliveries WHERE tenant_id = $1 AND lot_id = $2 ORDER BY delivery_date DESC LIMIT $3 OFFSET $4")
                 .bind(tid)

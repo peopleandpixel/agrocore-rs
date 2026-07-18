@@ -1,7 +1,7 @@
 use crate::api;
 use crate::components::form::{RequiredLabel, is_valid_email};
-use crate::i18n::{I18n, Language};
 use crate::components::toast::{ToastContext, ToastType};
+use crate::i18n::{I18n, Language};
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
 
@@ -30,14 +30,18 @@ pub fn LoginView() -> impl IntoView {
         set_error.set(None);
 
         if email.trim().is_empty() || password.trim().is_empty() {
-            toast_context.add_toast.run((required_error.clone(), ToastType::Warning));
+            toast_context
+                .add_toast
+                .run((required_error.clone(), ToastType::Warning));
             set_error.set(Some(required_error.clone()));
             set_busy.set(false);
             return;
         }
 
         if !is_valid_email(&email) {
-            toast_context.add_toast.run((invalid_email_error.clone(), ToastType::Warning));
+            toast_context
+                .add_toast
+                .run((invalid_email_error.clone(), ToastType::Warning));
             set_error.set(Some(invalid_email_error.clone()));
             set_busy.set(false);
             return;
@@ -51,7 +55,10 @@ pub fn LoginView() -> impl IntoView {
                         .roles
                         .iter()
                         .find(|role| {
-                            matches!(role.to_lowercase().as_str(), "admin" | "manager" | "worker" | "viewer")
+                            matches!(
+                                role.to_lowercase().as_str(),
+                                "admin" | "manager" | "worker" | "viewer"
+                            )
                         })
                         .cloned()
                         .unwrap_or_else(|| String::from("Viewer"));

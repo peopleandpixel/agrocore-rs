@@ -45,13 +45,12 @@ impl ColdChainLogRepo for PgColdChainLogRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM cold_chain_logs WHERE tenant_id = $1",
-            )
-            .bind(tid)
-            .fetch_one(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM cold_chain_logs WHERE tenant_id = $1")
+                    .bind(tid)
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<ColdChainLog> = sqlx::query_as("SELECT * FROM cold_chain_logs WHERE tenant_id = $1 ORDER BY recorded_at DESC LIMIT $2 OFFSET $3")
                 .bind(tid)

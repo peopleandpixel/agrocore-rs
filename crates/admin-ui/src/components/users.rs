@@ -1,10 +1,10 @@
 use crate::api;
+use crate::components::form::{RequiredLabel, is_valid_email};
 use icondata::*;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
 use leptos_icons::Icon;
 use uuid::Uuid;
-use crate::components::form::{RequiredLabel, is_valid_email};
 
 #[component]
 pub fn UserManagement() -> impl IntoView {
@@ -131,7 +131,13 @@ pub fn UserManagement() -> impl IntoView {
             match api::impersonate_user(id).await {
                 Ok(resp) => {
                     api::set_auth_token(&resp.token);
-                    api::set_user_role(&resp.roles.first().cloned().unwrap_or_else(|| String::from("Viewer")));
+                    api::set_user_role(
+                        &resp
+                            .roles
+                            .first()
+                            .cloned()
+                            .unwrap_or_else(|| String::from("Viewer")),
+                    );
                     let _ = window().location().set_href("/");
                 }
                 Err(_) => {}
