@@ -276,7 +276,7 @@ impl PostgresDb {
                 }
             }
         };
-        sqlx::migrate!("../../../../migrations").run(&pool).await?;
+        sqlx::migrate!("../../migrations").run(&pool).await?;
         Ok(Self { pool })
     }
 
