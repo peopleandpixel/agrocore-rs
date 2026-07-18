@@ -140,7 +140,7 @@ pub fn FinanceManagement() -> impl IntoView {
                                             let label = center
                                                 .get("label")
                                                 .and_then(|v| v.as_str())
-                                                .unwrap_or_else(|| "General")
+                                                .unwrap_or("General")
                                                 .to_string();
                                             let center_type = center
                                                 .get("cost_center_type")

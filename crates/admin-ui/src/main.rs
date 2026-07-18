@@ -97,7 +97,7 @@ pub fn App() -> impl IntoView {
     provide_context(set_theme);
     provide_context(lang);
     provide_context(set_lang);
-    provide_context(i18n_engine.clone());
+    provide_context(i18n_engine);
     provide_toast_context();
 
     Effect::new(move |_| {

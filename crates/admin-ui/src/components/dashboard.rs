@@ -186,13 +186,13 @@ pub fn DashboardView() -> impl IntoView {
                                             <div class="text-right">
                                                 <div class="font-bold text-lg">{location}</div>
                                                 <div class="text-xs opacity-60 font-medium">
-                                                    {move || humidity_val.map(|value| format!("{}: {:.0}%", humidity_l(), value)).unwrap_or_else(|| no_data_l())}
+                                                    {move || humidity_val.map(|value| format!("{}: {:.0}%", humidity_l(), value)).unwrap_or_else(&no_data_l)}
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="divider opacity-10"></div>
                                         <p class="text-sm font-medium">
-                                            {move || wind_val.map(|value| format!("{} {:.0} km/h", wind_l(), value)).unwrap_or_else(|| no_data_l())}
+                                            {move || wind_val.map(|value| format!("{} {:.0} km/h", wind_l(), value)).unwrap_or_else(&no_data_l)}
                                             {move || precip_val.map(|value| format!(" · {} {:.1} mm", precip_l(), value)).unwrap_or_default()}
                                         </p>
                                     }.into_any()

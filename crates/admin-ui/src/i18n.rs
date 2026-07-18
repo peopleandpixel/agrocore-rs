@@ -108,7 +108,7 @@ impl I18n {
     }
 }
 
-pub fn use_i18n() -> impl Fn(&str) -> String + Clone + Copy {
+pub fn use_i18n() -> impl Fn(&str) -> String + Copy {
     use leptos::prelude::Get;
     let i18n = leptos::prelude::use_context::<I18n>().expect("i18n context");
     let lang = leptos::prelude::use_context::<leptos::prelude::ReadSignal<Language>>()

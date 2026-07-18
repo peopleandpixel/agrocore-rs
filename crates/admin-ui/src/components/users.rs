@@ -128,19 +128,16 @@ pub fn UserManagement() -> impl IntoView {
 
     let on_impersonate = move |id: Uuid| {
         spawn_local(async move {
-            match api::impersonate_user(id).await {
-                Ok(resp) => {
-                    api::set_auth_token(&resp.token);
-                    api::set_user_role(
-                        &resp
-                            .roles
-                            .first()
-                            .cloned()
-                            .unwrap_or_else(|| String::from("Viewer")),
-                    );
-                    let _ = window().location().set_href("/");
-                }
-                Err(_) => {}
+            if let Ok(resp) = api::impersonate_user(id).await {
+                api::set_auth_token(&resp.token);
+                api::set_user_role(
+                    &resp
+                        .roles
+                        .first()
+                        .cloned()
+                        .unwrap_or_else(|| String::from("Viewer")),
+                );
+                let _ = window().location().set_href("/");
             }
         });
     };

@@ -226,7 +226,7 @@ pub fn SiteManagement() -> impl IntoView {
 
                             <div class="w-full h-full min-h-[400px]">
                                 <label class="label"><span class="label-text">{move || t("draw_area").to_string()}</span></label>
-                                {FieldPolygonEditor(on_map_change.clone())}
+                                {FieldPolygonEditor(on_map_change)}
                             </div>
                         </div>
 

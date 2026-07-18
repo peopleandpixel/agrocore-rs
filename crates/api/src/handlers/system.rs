@@ -91,7 +91,7 @@ pub async fn initial_setup(
     .bind(serde_json::to_value(dto.tenant.config.clone().unwrap_or_default()).unwrap())
     .fetch_one(&mut *tx)
     .await
-    .map_err(|e| agrocore_infrastructure::PostgresDb::map_db_error(e))?;
+    .map_err(agrocore_infrastructure::PostgresDb::map_db_error)?;
 
     // 3. Create Admin User
     let admin_id = Uuid::new_v4();
@@ -116,7 +116,7 @@ pub async fn initial_setup(
     .bind(serde_json::to_value(&roles).unwrap())
     .execute(&mut *tx)
     .await
-    .map_err(|e| agrocore_infrastructure::PostgresDb::map_db_error(e))?;
+    .map_err(agrocore_infrastructure::PostgresDb::map_db_error)?;
 
     tx.commit()
         .await

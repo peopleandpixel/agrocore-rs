@@ -270,17 +270,17 @@ pub fn SetupAssistant() -> impl IntoView {
 
     let toast_context = use_context::<ToastContext>().expect("ToastContext not provided");
 
-    let i18n_for_title = i18n.clone();
-    let i18n_for_admin_step = i18n.clone();
-    let i18n_for_tenant_step = i18n.clone();
-    let i18n_for_company_step = i18n.clone();
-    let i18n_for_language_options = i18n.clone();
+    let i18n_for_title = i18n;
+    let i18n_for_admin_step = i18n;
+    let i18n_for_tenant_step = i18n;
+    let i18n_for_company_step = i18n;
+    let i18n_for_language_options = i18n;
     let setup_title = move || setup_t(&i18n_for_title, lang.get(), "setup_title");
     let finish_label = move || setup_t(&i18n, lang.get(), "finish_setup");
-    let i18n_for_welcome = i18n.clone();
+    let i18n_for_welcome = i18n;
     let _setup_welcome = move || setup_t(&i18n_for_welcome, lang.get(), "setup_welcome");
     let starting_setup_label_loading = move || setup_t(&i18n, lang.get(), "starting_setup");
-    let starting_setup_label_loading_memo = starting_setup_label_loading.clone();
+    let starting_setup_label_loading_memo = starting_setup_label_loading;
     let is_submitting = Memo::new(
         move |_| matches!(setup_status.get(), Some(Err(ref msg)) if msg == &starting_setup_label_loading_memo()),
     );
@@ -304,7 +304,7 @@ pub fn SetupAssistant() -> impl IntoView {
                     }
                 >
                     {LANGUAGE_OPTIONS.iter().map(|(language, code, label_key)| {
-                        let i18n = i18n_for_language_options.clone();
+                        let i18n = i18n_for_language_options;
                         let selected = move || lang.get() == *language;
                         view! {
                             <option value=*code selected=selected>
@@ -344,7 +344,7 @@ pub fn SetupAssistant() -> impl IntoView {
                     <div class="card-body p-8 gap-6">
                             {move || {
                         let current_lang = lang.get();
-                        let i18n_for_t = i18n.clone();
+                        let i18n_for_t = i18n;
                         let t = move |key: &str| setup_t(&i18n_for_t, current_lang, key);
                         let setup_admin_title = t("setup_admin_title");
                         let setup_admin_desc = t("setup_admin_desc");
@@ -372,11 +372,11 @@ pub fn SetupAssistant() -> impl IntoView {
                         let invalid_email_error = t("validation_invalid_email");
                         let invalid_phone_error = t("validation_invalid_phone");
                         let invalid_slug_error = t("validation_invalid_slug");
-                        let _starting_setup_label_loading_class = starting_setup_label_loading.clone();
-                        let _starting_setup_label_loading_disabled = starting_setup_label_loading.clone();
-                        let starting_setup_label_status = starting_setup_label_loading.clone();
-                        let submit_i18n = i18n.clone();
-                        let submit_i18n_status = i18n.clone();
+                        let _starting_setup_label_loading_class = starting_setup_label_loading;
+                        let _starting_setup_label_loading_disabled = starting_setup_label_loading;
+                        let starting_setup_label_status = starting_setup_label_loading;
+                        let submit_i18n = i18n;
+                        let submit_i18n_status = i18n;
                         match step.get() {
                             SetupStep::Admin => view! {
                                 <div class="space-y-5 animate-slide-up">
@@ -618,7 +618,7 @@ pub fn SetupAssistant() -> impl IntoView {
                                                 }
                                                 set_setup_error.set(None);
                                                 submit_setup(
-                                                    submit_i18n.clone(),
+                                                    submit_i18n,
                                                     lang.get(),
                                                     admin_firstname.get(),
                                                     admin_lastname.get(),

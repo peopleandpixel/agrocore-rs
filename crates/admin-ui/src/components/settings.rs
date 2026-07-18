@@ -48,7 +48,7 @@ pub fn SettingsPage() -> impl IntoView {
     let system_log_title = i18n.t(lang.get().as_str(), "system_log_title");
     let time_label = i18n.t(lang.get().as_str(), "time");
     let initialized_label = i18n.t(lang.get().as_str(), "initialized");
-    let i18n_for_language_options = i18n.clone();
+    let i18n_for_language_options = i18n;
     let (company_name, set_company_name) = signal(initial_profile.company_name.unwrap_or_default());
     let (tax_id, set_tax_id) = signal(initial_profile.tax_id.unwrap_or_default());
     let (office_email, set_office_email) = signal(initial_profile.office_email.unwrap_or_default());
@@ -277,7 +277,7 @@ pub fn SettingsPage() -> impl IntoView {
                                         }
                                     >
                                         {LANGUAGE_OPTIONS.iter().map(|(language, code, label_key)| {
-                                            let i18n = i18n_for_language_options.clone();
+                                            let i18n = i18n_for_language_options;
                                             let selected = move || lang.get() == *language;
                                             view! {
                                                 <option value=*code selected=selected>
