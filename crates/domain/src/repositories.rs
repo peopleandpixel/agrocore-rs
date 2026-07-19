@@ -313,6 +313,10 @@ pub trait PlantProtectionRecordRepo: Send + Sync {
         tid: TenantId,
         user_id: Uuid,
     ) -> RepositoryFuture<Option<ApplicatorLicense>>;
+    fn find_all_applicator_licenses(
+        &self,
+        tid: TenantId,
+    ) -> RepositoryFuture<Vec<ApplicatorLicense>>;
     fn create_applicator_license(
         &self,
         tid: TenantId,
@@ -324,6 +328,7 @@ pub trait PlantProtectionRecordRepo: Send + Sync {
         id: Uuid,
         dto: UpdateApplicatorLicenseDto,
     ) -> RepositoryFuture<Option<ApplicatorLicense>>;
+    fn delete_applicator_license(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
 // --- Compliance Repository ---

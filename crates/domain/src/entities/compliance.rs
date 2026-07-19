@@ -67,7 +67,7 @@ pub enum ComplianceStatus {
     Expired,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, utoipa::ToSchema)]
 pub struct ChecklistItem {
     pub id: Uuid,
     pub label: String,

@@ -310,6 +310,274 @@ pub struct WorkerTaskStatusAggregateDto {
     pub worker_statuses: Vec<WorkerTaskStatusDto>,
 }
 
+// =============================================================================
+// Applicator License DTOs
+// =============================================================================
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum LicenseTypeDto {
+    Basic,
+    Advanced,
+    Professional,
+    Custom(String),
+}
+
+impl From<agrocore_domain::entities::plant_protection::LicenseType> for LicenseTypeDto {
+    fn from(lt: agrocore_domain::entities::plant_protection::LicenseType) -> Self {
+        match lt {
+            agrocore_domain::entities::plant_protection::LicenseType::Basic => Self::Basic,
+            agrocore_domain::entities::plant_protection::LicenseType::Advanced => Self::Advanced,
+            agrocore_domain::entities::plant_protection::LicenseType::Professional => {
+                Self::Professional
+            }
+            agrocore_domain::entities::plant_protection::LicenseType::Custom(s) => Self::Custom(s),
+        }
+    }
+}
+
+impl From<LicenseTypeDto> for agrocore_domain::entities::plant_protection::LicenseType {
+    fn from(dto: LicenseTypeDto) -> Self {
+        match dto {
+            LicenseTypeDto::Basic => Self::Basic,
+            LicenseTypeDto::Advanced => Self::Advanced,
+            LicenseTypeDto::Professional => Self::Professional,
+            LicenseTypeDto::Custom(s) => Self::Custom(s),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ApplicatorLicenseDto {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub license_type: LicenseTypeDto,
+    pub license_number: String,
+    pub issued_by: String,
+    pub valid_from: String,
+    pub valid_until: String,
+    pub is_active: bool,
+    pub created_at: String,
+}
+
+impl From<agrocore_domain::entities::plant_protection::ApplicatorLicense> for ApplicatorLicenseDto {
+    fn from(al: agrocore_domain::entities::plant_protection::ApplicatorLicense) -> Self {
+        Self {
+            id: al.id,
+            user_id: al.user_id,
+            license_type: al.license_type.into(),
+            license_number: al.license_number,
+            issued_by: al.issued_by,
+            valid_from: al.valid_from.to_rfc3339(),
+            valid_until: al.valid_until.to_rfc3339(),
+            is_active: al.is_active,
+            created_at: al.created_at.to_rfc3339(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
+pub struct CreateApplicatorLicenseDto {
+    pub user_id: Uuid,
+    pub license_type: LicenseTypeDto,
+    #[validate(length(min = 1))]
+    pub license_number: String,
+    #[validate(length(min = 1))]
+    pub issued_by: String,
+    pub valid_from: String,
+    pub valid_until: String,
+}
+
+impl From<CreateApplicatorLicenseDto>
+    for agrocore_domain::entities::plant_protection::CreateApplicatorLicenseDto
+{
+    fn from(dto: CreateApplicatorLicenseDto) -> Self {
+        Self {
+            user_id: dto.user_id,
+            license_type: dto.license_type.into(),
+            license_number: dto.license_number,
+            issued_by: dto.issued_by,
+            valid_from: chrono::DateTime::parse_from_rfc3339(&dto.valid_from)
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+                .unwrap_or_else(|_| chrono::Utc::now()),
+            valid_until: chrono::DateTime::parse_from_rfc3339(&dto.valid_until)
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+                .unwrap_or_else(|_| chrono::Utc::now()),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
+pub struct UpdateApplicatorLicenseDto {
+    pub license_type: Option<LicenseTypeDto>,
+    #[validate(length(min = 1))]
+    pub license_number: Option<String>,
+    #[validate(length(min = 1))]
+    pub issued_by: Option<String>,
+    pub valid_from: Option<String>,
+    pub valid_until: Option<String>,
+    pub is_active: Option<bool>,
+}
+
+impl From<UpdateApplicatorLicenseDto>
+    for agrocore_domain::entities::plant_protection::UpdateApplicatorLicenseDto
+{
+    fn from(dto: UpdateApplicatorLicenseDto) -> Self {
+        Self {
+            license_type: dto.license_type.map(|lt| lt.into()),
+            license_number: dto.license_number,
+            issued_by: dto.issued_by,
+            valid_from: dto.valid_from.and_then(|s| {
+                chrono::DateTime::parse_from_rfc3339(&s)
+                    .map(|dt| dt.with_timezone(&chrono::Utc))
+                    .ok()
+            }),
+            valid_until: dto.valid_until.and_then(|s| {
+                chrono::DateTime::parse_from_rfc3339(&s)
+                    .map(|dt| dt.with_timezone(&chrono::Utc))
+                    .ok()
+            }),
+            is_active: dto.is_active,
+        }
+    }
+}
+
+// =============================================================================
+// Compliance Checklist DTOs
+// =============================================================================
+
+#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
+pub struct CreateComplianceChecklistDto {
+    pub site_id: Uuid,
+    pub checklist_type: agrocore_domain::entities::compliance::ChecklistType,
+    pub items: Vec<agrocore_domain::entities::compliance::ChecklistItem>,
+    pub due_date: Option<String>,
+}
+
+impl From<CreateComplianceChecklistDto>
+    for agrocore_domain::entities::compliance::CreateComplianceChecklistDto
+{
+    fn from(dto: CreateComplianceChecklistDto) -> Self {
+        Self {
+            site_id: dto.site_id,
+            checklist_type: dto.checklist_type,
+            items: dto.items,
+            due_date: dto.due_date.and_then(|s| {
+                chrono::DateTime::parse_from_rfc3339(&s)
+                    .map(|dt| dt.with_timezone(&chrono::Utc))
+                    .ok()
+            }),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
+pub struct UpdateComplianceChecklistDto {
+    pub status: Option<agrocore_domain::entities::compliance::ComplianceStatus>,
+    pub items: Option<Vec<agrocore_domain::entities::compliance::ChecklistItem>>,
+    pub due_date: Option<String>,
+    pub completed_at: Option<String>,
+}
+
+impl From<UpdateComplianceChecklistDto>
+    for agrocore_domain::entities::compliance::UpdateComplianceChecklistDto
+{
+    fn from(dto: UpdateComplianceChecklistDto) -> Self {
+        Self {
+            status: dto.status,
+            items: dto.items,
+            due_date: dto.due_date.and_then(|s| {
+                chrono::DateTime::parse_from_rfc3339(&s)
+                    .map(|dt| dt.with_timezone(&chrono::Utc))
+                    .ok()
+            }),
+            completed_at: dto.completed_at.and_then(|s| {
+                chrono::DateTime::parse_from_rfc3339(&s)
+                    .map(|dt| dt.with_timezone(&chrono::Utc))
+                    .ok()
+            }),
+        }
+    }
+}
+
+// =============================================================================
+// Fertilizer Record DTOs
+// =============================================================================
+
+#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
+pub struct CreateFertilizerRecordDto {
+    pub site_id: Uuid,
+    pub order_id: Option<Uuid>,
+    #[validate(length(min = 1, max = 200))]
+    pub product_name: String,
+    #[validate(range(min = 0.0))]
+    pub nutrient_n: f64,
+    #[validate(range(min = 0.0))]
+    pub nutrient_p: f64,
+    #[validate(range(min = 0.0))]
+    pub nutrient_k: f64,
+    #[validate(range(min = 0.0))]
+    pub quantity_kg: f64,
+    #[validate(range(min = 0.0))]
+    pub area_ha: f64,
+    pub application_date: String,
+}
+
+impl From<CreateFertilizerRecordDto>
+    for agrocore_domain::entities::compliance::CreateFertilizerRecordDto
+{
+    fn from(dto: CreateFertilizerRecordDto) -> Self {
+        Self {
+            site_id: dto.site_id,
+            order_id: dto.order_id,
+            product_name: dto.product_name,
+            nutrient_n: dto.nutrient_n,
+            nutrient_p: dto.nutrient_p,
+            nutrient_k: dto.nutrient_k,
+            quantity_kg: dto.quantity_kg,
+            area_ha: dto.area_ha,
+            application_date: chrono::DateTime::parse_from_rfc3339(&dto.application_date)
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+                .unwrap_or_else(|_| chrono::Utc::now()),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
+pub struct UpdateFertilizerRecordDto {
+    pub site_id: Option<Uuid>,
+    pub order_id: Option<Uuid>,
+    pub product_name: Option<String>,
+    pub nutrient_n: Option<f64>,
+    pub nutrient_p: Option<f64>,
+    pub nutrient_k: Option<f64>,
+    pub quantity_kg: Option<f64>,
+    pub area_ha: Option<f64>,
+    pub application_date: Option<String>,
+}
+
+impl From<UpdateFertilizerRecordDto>
+    for agrocore_domain::entities::fertilizer::UpdateFertilizerRecordDto
+{
+    fn from(dto: UpdateFertilizerRecordDto) -> Self {
+        Self {
+            site_id: dto.site_id,
+            order_id: dto.order_id,
+            product_name: dto.product_name,
+            nutrient_n: dto.nutrient_n,
+            nutrient_p: dto.nutrient_p,
+            nutrient_k: dto.nutrient_k,
+            quantity_kg: dto.quantity_kg,
+            area_ha: dto.area_ha,
+            application_date: dto.application_date.and_then(|s| {
+                chrono::DateTime::parse_from_rfc3339(&s)
+                    .map(|dt| dt.with_timezone(&chrono::Utc))
+                    .ok()
+            }),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ErrorResponse {
     pub error: String,

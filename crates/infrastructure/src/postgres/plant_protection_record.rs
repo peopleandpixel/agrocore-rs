@@ -7,7 +7,7 @@ use agrocore_domain::repositories::{
     PaginatedResponse, Pagination, PlantProtectionRecordRepo, RepositoryFuture,
 };
 use agrocore_shared::SharedError;
-use sqlx::PgPool;
+use sqlx::{PgPool, Postgres};
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -153,26 +153,115 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
 
     fn find_applicator_license_by_user(
         &self,
-        _tid: TenantId,
-        _user_id: Uuid,
+        tid: TenantId,
+        user_id: Uuid,
     ) -> RepositoryFuture<Option<ApplicatorLicense>> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query_as::<_, ApplicatorLicense>(
+                "SELECT * FROM applicator_licenses WHERE id = $1 AND tenant_id = $2",
+            )
+            .bind(user_id)
+            .bind(tid)
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
+        })
+    }
+
+    fn find_all_applicator_licenses(
+        &self,
+        tid: TenantId,
+    ) -> RepositoryFuture<Vec<ApplicatorLicense>> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query_as::<_, ApplicatorLicense>(
+                "SELECT * FROM applicator_licenses WHERE tenant_id = $1 ORDER BY created_at DESC",
+            )
+            .bind(tid)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
 
     fn create_applicator_license(
         &self,
-        _tid: TenantId,
-        _dto: CreateApplicatorLicenseDto,
+        tid: TenantId,
+        dto: CreateApplicatorLicenseDto,
     ) -> RepositoryFuture<ApplicatorLicense> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            let id = Uuid::new_v4();
+            let license_type_json = serde_json::to_value(&dto.license_type)
+                .map_err(|e| SharedError::Internal(e.to_string()))?;
+            sqlx::query_as::<_, ApplicatorLicense>(
+                r#"INSERT INTO applicator_licenses (id, tenant_id, user_id, license_type, license_number, issued_by, valid_from, valid_until, is_active, created_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+                   RETURNING *\"#)
+            .bind(id)
+            .bind(tid)
+            .bind(dto.user_id)
+            .bind(license_type_json)
+            .bind(&dto.license_number)
+            .bind(&dto.issued_by)
+            .bind(dto.valid_from)
+            .bind(dto.valid_until)
+            .bind(true)
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
 
     fn update_applicator_license(
         &self,
-        _tid: TenantId,
-        _id: Uuid,
-        _dto: UpdateApplicatorLicenseDto,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateApplicatorLicenseDto,
     ) -> RepositoryFuture<Option<ApplicatorLicense>> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            let license_type_json = dto
+                .license_type
+                .map(|lt| {
+                    serde_json::to_value(lt).map_err(|e| SharedError::Internal(e.to_string()))
+                })
+                .transpose()?;
+            sqlx::query_as::<_, ApplicatorLicense>(
+                r#"UPDATE applicator_licenses 
+                   SET license_type = COALESCE($1, license_type),
+                       license_number = COALESCE($2, license_number),
+                       issued_by = COALESCE($3, issued_by),
+                       valid_from = COALESCE($4, valid_from),
+                       valid_until = COALESCE($5, valid_until),
+                       is_active = COALESCE($6, is_active)
+                   WHERE id = $7 AND tenant_id = $8 RETURNING *\\"#,
+            )
+            .bind(license_type_json)
+            .bind(&dto.license_number)
+            .bind(&dto.issued_by)
+            .bind(dto.valid_from)
+            .bind(dto.valid_until)
+            .bind(dto.is_active)
+            .bind(id)
+            .bind(tid)
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
+        })
+    }
+
+    fn delete_applicator_license(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query("DELETE FROM applicator_licenses WHERE id = $1 AND tenant_id = $2")
+                .bind(id)
+                .bind(tid)
+                .execute(&pool)
+                .await
+                .map(|r| r.rows_affected() > 0)
+                .map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
 }

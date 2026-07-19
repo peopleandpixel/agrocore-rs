@@ -4,6 +4,29 @@ Alle Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-07-18
+
+### Added
+- **Applicator License API:** Complete REST API for Pflanzenschutz compliance (applicator licenses) in the compliance module.
+  - `GET /api/v1/compliance/applicator-licenses` - List all applicator licenses
+  - `GET /api/v1/compliance/applicator-licenses/{id}` - Get specific applicator license
+  - `POST /api/v1/compliance/applicator-licenses` - Create applicator license
+  - `PUT /api/v1/compliance/applicator-licenses/{id}` - Update applicator license
+  - `DELETE /api/v1/compliance/applicator-licenses/{id}` - Delete applicator license
+- **Admin-UI:** Complete ApplicatorLicense types and API client in `api.rs` (ApplicatorLicenseDto, LicenseTypeDto, Create/Update DTOs)
+- **DTOs:** Complete bidirectional conversion between domain and API types for ApplicatorLicense, LicenseType
+- **Compliance Checklist & Fertilizer Record DTOs:** Added Create/Update DTOs for compliance checklists and fertilizer records with proper From conversions
+
+### Changed
+- **Version bump:** 0.3.2 → 0.3.3
+
+### Technical
+- Full OpenAPI/Swagger documentation for all new endpoints via utoipa
+- Consistent error handling with `ApiError` types
+- Proper tenant isolation on all new endpoints
+- Migration file for applicator_licenses table: `2026071801_applicator_licenses.sql`
+- ChecklistItem now implements utoipa::ToSchema for OpenAPI generation
+
 ## [0.3.2] - 2026-07-18
 
 ### Added

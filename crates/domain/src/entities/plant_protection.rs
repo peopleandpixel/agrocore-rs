@@ -297,10 +297,12 @@ pub struct UpdatePlantProtectionDto {
     pub applicator_license: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
 pub struct ApplicatorLicense {
     pub id: Uuid,
+    pub tenant_id: TenantId,
     pub user_id: Uuid,
+    #[sqlx(json)]
     pub license_type: LicenseType,
     pub license_number: String,
     pub issued_by: String,
