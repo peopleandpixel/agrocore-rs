@@ -870,3 +870,118 @@ pub async fn delete_equipment(id: uuid::Uuid) -> Result<(), String> {
 pub async fn fetch_worker_tasks() -> Result<Vec<OrderDto>, String> {
     get_json("/api/v1/orders/my-tasks", true).await
 }
+
+// =============================================================================
+// Worker Task Status API - Multi-Worker Task Status Management
+// =============================================================================
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct WorkerTaskStatusTypeDto {
+    pub status: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct WorkerTaskStatusDto {
+    pub task_id: uuid::Uuid,
+    pub worker_id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub status: String,
+    pub started_at: Option<String>,
+    pub paused_at: Option<String>,
+    pub resumed_at: Option<String>,
+    pub stopped_at: Option<String>,
+    pub done_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PaginatedWorkerTaskStatusResponse {
+    pub data: Vec<WorkerTaskStatusDto>,
+    pub total: u64,
+    pub page: u64,
+    pub per_page: u64,
+    pub total_pages: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CreateWorkerTaskStatusRequest {
+    pub task_id: uuid::Uuid,
+    pub worker_id: uuid::Uuid,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct UpdateWorkerTaskStatusRequest {
+    pub status: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct WorkerTaskStatusAggregateDto {
+    pub task_id: uuid::Uuid,
+    pub aggregated_status: String,
+    pub worker_statuses: Vec<WorkerTaskStatusDto>,
+}
+
+pub async fn fetch_task_worker_statuses(
+    task_id: uuid::Uuid,
+) -> Result<PaginatedWorkerTaskStatusResponse, String> {
+    get_json(&format!("/api/v1/workforce/tasks/{}/status", task_id), true).await
+}
+
+pub async fn fetch_worker_task_status(
+    task_id: uuid::Uuid,
+    worker_id: uuid::Uuid,
+) -> Result<WorkerTaskStatusDto, String> {
+    get_json(
+        &format!("/api/v1/workforce/tasks/{}/status/{}", task_id, worker_id),
+        true,
+    )
+    .await
+}
+
+pub async fn create_worker_task_status(
+    task_id: uuid::Uuid,
+    req: CreateWorkerTaskStatusRequest,
+) -> Result<WorkerTaskStatusDto, String> {
+    post_json(
+        &format!("/api/v1/workforce/tasks/{}/status", task_id),
+        &req,
+        true,
+    )
+    .await
+}
+
+pub async fn update_worker_task_status(
+    task_id: uuid::Uuid,
+    worker_id: uuid::Uuid,
+    req: UpdateWorkerTaskStatusRequest,
+) -> Result<WorkerTaskStatusDto, String> {
+    let body = req;
+    let req = Request::put(&api_url(&format!(
+        "/api/v1/workforce/tasks/{}/status/{}",
+        task_id, worker_id
+    )));
+    let req = with_auth(req);
+    let resp = req
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<WorkerTaskStatusDto>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+pub async fn fetch_aggregated_task_status(
+    task_id: uuid::Uuid,
+) -> Result<WorkerTaskStatusAggregateDto, String> {
+    get_json(
+        &format!("/api/v1/workforce/tasks/{}/status/aggregate", task_id),
+        true,
+    )
+    .await
+}

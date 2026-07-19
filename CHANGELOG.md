@@ -4,6 +4,26 @@ Alle Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-07-18
+
+### Added
+- **Worker Task Status API:** Complete REST API for multi-worker task status management in the workforce module.
+  - `GET /api/v1/workforce/tasks/{id}/status` - List all worker statuses for a task
+  - `GET /api/v1/workforce/tasks/{id}/status/{worker_id}` - Get specific worker's status for a task
+  - `POST /api/v1/workforce/tasks/{id}/status` - Create worker task status
+  - `PUT /api/v1/workforce/tasks/{id}/status/{worker_id}` - Update worker task status
+  - `GET /api/v1/workforce/tasks/{id}/status/aggregate` - Get aggregated status using domain logic
+- **Admin-UI:** Complete WorkerTaskStatus types and API client in `api.rs` (WorkerTaskStatusDto, WorkerTaskStatusTypeDto, Create/Update DTOs, Aggregate DTO, pagination)
+- **DTOs:** Complete bidirectional conversion between domain and API types for WorkerTaskStatus
+
+### Changed
+- **Version bump:** 0.3.1 → 0.3.2
+
+### Technical
+- Full OpenAPI/Swagger documentation for all new endpoints via utoipa
+- Consistent error handling with `ApiError` types
+- Proper tenant isolation on all new endpoints
+
 ## [0.3.1] - 2026-07-17
 
 ### Fixed
