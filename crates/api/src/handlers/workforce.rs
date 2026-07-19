@@ -1,10 +1,17 @@
 use crate::AppState;
-use crate::dto::PaginatedResponseDto;
+use crate::dto::{
+    CreateWorkerTaskStatusDto, ErrorResponse, PaginatedResponseDto,
+    PaginatedWorkerTaskStatusResponse, UpdateWorkerTaskStatusDto, WorkerTaskStatusAggregateDto,
+    WorkerTaskStatusDto,
+};
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
 use agrocore_domain::entities::order::TaskExecutionMode;
 use agrocore_domain::entities::site::GeoPoint;
+use agrocore_domain::entities::worker_task_status::{
+    CreateWorkerTaskStatusDto as DomainCreateWorkerTaskStatusDto, WorkerTaskStatus,
+};
 use agrocore_domain::entities::workforce::{
     CreateWorkLogDto, CreateWorkerDto, CreateWorkerLocationDto, ReportLocationDto,
     UpdateWorkLogDto, UpdateWorkerDto,
@@ -477,4 +484,201 @@ pub async fn get_latest_locations(
         .get_latest_locations(auth.0.tenant_id)
         .await?;
     Ok(HttpResponse::Ok().json(locations))
+}
+
+// =============================================================================
+// Worker Task Status endpoints - Multi-Worker Task Status Management
+// =============================================================================
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/workforce/tasks/{id}/status",
+    params(
+        ("id" = Uuid, Path, description = "Task ID")
+    ),
+    responses(
+        (status = 200, description = "Worker task statuses for task", body = PaginatedWorkerTaskStatusResponse),
+        (status = 404, description = "Task not found", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "workforce",
+    security(("bearer_auth" = []))
+)]
+pub async fn get_task_worker_statuses(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let task_id = *path;
+    let tenant_id = auth.0.tenant_id;
+
+    let statuses = state
+        .db
+        .worker_task_status_repo()
+        .find_all_for_task(tenant_id, task_id)
+        .await?;
+
+    let dto: Vec<crate::dto::WorkerTaskStatusDto> = statuses.into_iter().map(Into::into).collect();
+
+    let total = dto.len() as u64;
+    Ok(
+        HttpResponse::Ok().json(crate::dto::PaginatedWorkerTaskStatusResponse {
+            data: dto,
+            total,
+            page: 0,
+            per_page: total,
+            total_pages: if total > 0 { 1 } else { 0 },
+        }),
+    )
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/workforce/tasks/{id}/status/{worker_id}",
+    params(
+        ("id" = Uuid, Path, description = "Task ID"),
+        ("worker_id" = Uuid, Path, description = "Worker ID")
+    ),
+    responses(
+        (status = 200, description = "Worker task status", body = WorkerTaskStatusDto),
+        (status = 404, description = "Status not found", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "workforce",
+    security(("bearer_auth" = []))
+)]
+pub async fn get_worker_task_status(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<(Uuid, Uuid)>,
+) -> Result<HttpResponse, ApiError> {
+    let (task_id, worker_id) = path.into_inner();
+    let tenant_id = auth.0.tenant_id;
+
+    let status = state
+        .db
+        .worker_task_status_repo()
+        .find_by_task_and_worker(tenant_id, task_id, worker_id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Worker task status not found".into()))?;
+
+    Ok(HttpResponse::Ok().json(crate::dto::WorkerTaskStatusDto::from(status)))
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/workforce/tasks/{id}/status",
+    request_body = CreateWorkerTaskStatusDto,
+    responses(
+        (status = 201, description = "Worker task status created", body = WorkerTaskStatusDto),
+        (status = 400, description = "Validation failed", body = ErrorResponse),
+        (status = 401, description = "Unauthorized"),
+        (status = 409, description = "Status already exists for this worker and task")
+    ),
+    tag = "workforce",
+    security(("bearer_auth" = []))
+)]
+pub async fn create_worker_task_status(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<Uuid>,
+    dto: web::Json<crate::dto::CreateWorkerTaskStatusDto>,
+) -> Result<HttpResponse, ApiError> {
+    let task_id = *path;
+    let tenant_id = auth.0.tenant_id;
+
+    // Override task_id and tenant_id from path/auth
+    let mut dto = dto.into_inner();
+    dto.task_id = task_id;
+    dto.tenant_id = tenant_id;
+
+    let domain_dto = DomainCreateWorkerTaskStatusDto {
+        task_id: dto.task_id,
+        worker_id: dto.worker_id,
+        tenant_id: dto.tenant_id,
+    };
+
+    let status = state
+        .db
+        .worker_task_status_repo()
+        .create(tenant_id, domain_dto)
+        .await?;
+
+    Ok(HttpResponse::Created().json(crate::dto::WorkerTaskStatusDto::from(status)))
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/v1/workforce/tasks/{id}/status/{worker_id}",
+    request_body = UpdateWorkerTaskStatusDto,
+    responses(
+        (status = 200, description = "Worker task status updated", body = WorkerTaskStatusDto),
+        (status = 404, description = "Status not found", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "workforce",
+    security(("bearer_auth" = []))
+)]
+pub async fn update_worker_task_status(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<(Uuid, Uuid)>,
+    dto: web::Json<crate::dto::UpdateWorkerTaskStatusDto>,
+) -> Result<HttpResponse, ApiError> {
+    let (task_id, worker_id) = path.into_inner();
+    let tenant_id = auth.0.tenant_id;
+
+    let status = state
+        .db
+        .worker_task_status_repo()
+        .update_status(
+            tenant_id,
+            task_id,
+            worker_id,
+            dto.into_inner().status.into(),
+        )
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Worker task status not found".into()))?;
+
+    Ok(HttpResponse::Ok().json(crate::dto::WorkerTaskStatusDto::from(status)))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/workforce/tasks/{id}/status/aggregate",
+    params(
+        ("id" = Uuid, Path, description = "Task ID")
+    ),
+    responses(
+        (status = 200, description = "Aggregated worker task status", body = WorkerTaskStatusAggregateDto),
+        (status = 404, description = "Task not found", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "workforce",
+    security(("bearer_auth" = []))
+)]
+pub async fn get_aggregated_task_status(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let task_id = *path;
+    let tenant_id = auth.0.tenant_id;
+
+    let statuses = state
+        .db
+        .worker_task_status_repo()
+        .find_all_for_task(tenant_id, task_id)
+        .await?;
+
+    let aggregated_status = WorkerTaskStatus::aggregate_status(&statuses);
+    let dto: Vec<crate::dto::WorkerTaskStatusDto> = statuses.into_iter().map(Into::into).collect();
+
+    Ok(
+        HttpResponse::Ok().json(crate::dto::WorkerTaskStatusAggregateDto {
+            task_id,
+            aggregated_status: aggregated_status.into(),
+            worker_statuses: dto,
+        }),
+    )
 }
