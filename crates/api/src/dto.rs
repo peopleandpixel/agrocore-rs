@@ -732,7 +732,7 @@ mod tests {
         assert!(domain.bbch_stage.is_none());
         assert_eq!(domain.center.as_ref().map(|p| p.lng), Some(center.lng));
         assert_eq!(domain.center.as_ref().map(|p| p.lat), Some(center.lat));
-        assert_eq!(domain.boundary.as_ref().map(Vec::len), Some(boundary.len()));
+        assert_eq!(domain.boundary.as_ref().map(|b| b.len()), Some(boundary.len()));
         assert!(domain.custom_fields.is_none());
         assert_eq!(domain.properties.as_ref().map(Vec::len), Some(1));
     }

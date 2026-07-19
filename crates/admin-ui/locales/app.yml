@@ -115,16 +115,48 @@ site_created:
 site_deleted:
   en: Site deleted successfully
   de: Fläche erfolgreich gelöscht
+  es: Sitio eliminado correctamente
+  fr: Site supprimé avec succès
+  pt: Site eliminado com sucesso
+  it: Sito eliminato con successo
+  pl: Usunięto witrynę pomyślnie
+  ro: Site șters cu succes
+  uk: Сайт успішно видалено
+  nl: Locatie succesvol verwijderd
 setup_complete:
   en: Setup completed successfully
   de: Konfiguration erfolgreich abgeschlossen
+  es: Configuración completada exitosamente
+  fr: Configuration terminée avec succès
+  pt: Configuração concluída com sucesso
+  it: Configurazione completata con successo
+  pl: Konfiguracja zakończona pomyślnie
+  ro: Configurare finalizată cu succes
+  uk: Налаштування успішно завершено
+  nl: Installatie succesvol voltooid
 order_created:
   en: Order created successfully
   de: Auftrag erfolgreich erstellt
+  es: Orden creada correctamente
+  fr: Ordre créé avec succès
+  pt: Ordem criada com sucesso
+  it: Ordine creato con successo
+  pl: Zlecenie utworzone pomyślnie
+  ro: Comandă creată cu succes
+  uk: Замовлення успішно створено
+  nl: Order succesvol aangemaakt
 order_deleted:
   en: Order deleted successfully
   de: Auftrag erfolgreich gelöscht
-setup_step_resources:
+  es: Orden eliminada correctamente
+  fr: Ordre supprimé avec succès
+  pt: Ordem eliminada com sucesso
+  it: Ordine eliminato con successo
+  pl: Zlecenie usunięte pomyślnie
+  ro: Comandă ștearsă cu succes
+  uk: Замовлення успішно видалено
+  nl: Order succesvol verwijderd
+site_created:
   en: Resources
   de: Ressourcen
   es: Recursos
