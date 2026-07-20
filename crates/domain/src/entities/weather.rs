@@ -8,7 +8,8 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, strum::Display, strum::EnumString)]
+#[strum(serialize_all = "snake_case")]
 pub enum WeatherStationType {
     #[serde(rename = "iot")]
     Iot,
@@ -63,6 +64,7 @@ pub struct WeatherData {
     pub soil_temperature_c: Option<f64>,
     pub soil_moisture_percent: Option<f64>,
     pub leaf_wetness: Option<bool>,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
@@ -91,6 +93,7 @@ pub struct PhenologyRecord {
     pub notes: Option<String>,
     pub photo_url: Option<String>,
     pub observer_id: Option<Uuid>,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
@@ -116,6 +119,9 @@ pub struct CreateWeatherDataDto {
     pub wind_direction_deg: Option<i32>,
     pub solar_radiation_wm2: Option<f64>,
     pub pressure_hpa: Option<f64>,
+    pub soil_temperature_c: Option<f64>,
+    pub soil_moisture_percent: Option<f64>,
+    pub leaf_wetness: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]

@@ -8,7 +8,7 @@ license.workspace = true
 agrocore-shared = { path = "../shared" }
 serde = { workspace = true }
 serde_json = { workspace = true }
-utoipa = { workspace = true }
+utoipa = { workspace = true, features = ["actix_extras", "uuid", "chrono"] }
 chrono = { workspace = true }
 uuid = { workspace = true }
 validator = { workspace = true }
@@ -16,3 +16,4 @@ geo = { workspace = true }
 mockall = { workspace = true }
 sqlx = { workspace = true }
 geozero = { workspace = true }
+strum = { version = "0.26", features = ["derive"] }

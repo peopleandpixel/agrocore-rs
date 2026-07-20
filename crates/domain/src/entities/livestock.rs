@@ -58,6 +58,8 @@ pub struct Animal {
     pub treatments: Vec<TreatmentRecord>,
     #[sqlx(json)]
     pub grazing_history: Vec<GrazingRecord>,
+    pub mother_id: Option<Uuid>,
+    pub father_id: Option<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -65,21 +67,28 @@ pub struct Animal {
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct TreatmentRecord {
     pub id: Uuid,
+    pub animal_id: Uuid,
     pub date: DateTime<Utc>,
-    pub treatment_type: String, // Impfung, Entwurmung, etc.
+    pub treatment_type: String,
     pub medication: Option<String>,
     pub dosage: Option<String>,
     pub veterinarian: Option<String>,
-    pub withdrawal_days: Option<u32>, // Wartezeit
+    pub withdrawal_days: Option<u32>,
     pub notes: Option<String>,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct GrazingRecord {
+    pub id: Uuid,
+    pub tenant_id: TenantId,
+    pub animal_id: Uuid,
     pub site_id: Uuid,
     pub start_date: DateTime<Utc>,
     pub end_date: Option<DateTime<Utc>>,
     pub notes: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
@@ -91,16 +100,42 @@ pub struct CreateAnimalDto {
     pub birth_date: Option<DateTime<Utc>>,
     pub gender: Option<String>,
     pub current_site_id: Option<Uuid>,
+    pub mother_id: Option<Uuid>,
+    pub father_id: Option<Uuid>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+pub struct CreateTreatmentRecordDto {
+    #[validate(length(min = 1))]
+    pub treatment_type: String,
+    pub medication: Option<String>,
+    pub dosage: Option<String>,
+    pub veterinarian: Option<String>,
+    pub withdrawal_days: Option<u32>,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+pub struct CreateGrazingRecordDto {
+    pub site_id: Uuid,
+    pub start_date: DateTime<Utc>,
+    pub end_date: Option<DateTime<Utc>>,
+    pub notes: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, Default, ToSchema)]
 pub struct UpdateAnimalDto {
+    pub species: Option<AnimalSpecies>,
     pub breed: Option<String>,
     pub identifier: Option<String>,
+    pub birth_date: Option<DateTime<Utc>>,
+    pub gender: Option<String>,
     pub status: Option<AnimalStatus>,
     pub current_site_id: Option<Uuid>,
     pub group_id: Option<Uuid>,
     pub weight_kg: Option<f64>,
+    pub mother_id: Option<Uuid>,
+    pub father_id: Option<Uuid>,
 }
 
 // =============================================================================

@@ -233,7 +233,7 @@ impl OrderRepository for PgOrderRepo {
         })
     }
 
-    fn find_assigned_to_worker(&self, tid: Uuid, worker_id: Uuid) -> RepositoryFuture<Vec<Order>> {
+    fn find_assigned_to_worker(&self, tid: TenantId, worker_id: Uuid) -> RepositoryFuture<Vec<Order>> {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, Order>(

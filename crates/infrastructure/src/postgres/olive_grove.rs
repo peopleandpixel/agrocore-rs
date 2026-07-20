@@ -44,12 +44,11 @@ impl OliveGroveRepo for PgOliveGroveRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 =
-                sqlx::query_scalar("SELECT COUNT(*) FROM olive_groves WHERE tenant_id = $1")
-                    .bind(tid)
-                    .fetch_one(&pool)
-                    .await
-                    .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM olive_groves WHERE tenant_id = $1")
+                .bind(tid)
+                .fetch_one(&pool)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<OliveGrove> = sqlx::query_as(
                 "SELECT * FROM olive_groves WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
@@ -133,16 +132,22 @@ impl OliveGroveRepo for PgOliveGroveRepo {
         Box::pin(async move {
             let id = Uuid::new_v4();
             sqlx::query_as::<_, OliveGrove>(
-                r#"INSERT INTO olive_groves (id, tenant_id, site_id, variety, tree_count, planting_year, organic_certified, created_at, updated_at)
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-                   RETURNING *"#)
+                r#"INSERT INTO olive_groves (id, tenant_id, site_id, label, variety, tree_count, planting_year, area_ha, spacing_m, irrigation_type, is_organic, certification_body, certification_number, created_at, updated_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
+                   RETURNING * "#)
             .bind(id)
             .bind(tid)
             .bind(dto.site_id)
+            .bind(&dto.label)
             .bind(&dto.variety)
             .bind(dto.tree_count)
             .bind(dto.planting_year)
-            .bind(dto.organic_certified)
+            .bind(dto.area_ha)
+            .bind(dto.spacing_m)
+            .bind(&dto.irrigation_type)
+            .bind(dto.is_organic)
+            .bind(&dto.certification_body)
+            .bind(&dto.certification_number)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -159,10 +164,18 @@ impl OliveGroveRepo for PgOliveGroveRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, OliveGrove>(
-                r#"UPDATE olive_groves SET variety = COALESCE($1, variety), tree_count = COALESCE($2, tree_count), updated_at = NOW()
-                   WHERE id = $3 AND tenant_id = $4 RETURNING *"#)
+                r#"UPDATE olive_groves SET label = COALESCE($1, label), variety = COALESCE($2, variety), tree_count = COALESCE($3, tree_count), planting_year = COALESCE($4, planting_year), area_ha = COALESCE($5, area_ha), spacing_m = COALESCE($6, spacing_m), irrigation_type = COALESCE($7, irrigation_type), is_organic = COALESCE($8, is_organic), certification_body = COALESCE($9, certification_body), certification_number = COALESCE($10, certification_number), updated_at = NOW()
+                   WHERE id = $11 AND tenant_id = $12 RETURNING * "#)
+            .bind(&dto.label)
             .bind(&dto.variety)
             .bind(dto.tree_count)
+            .bind(dto.planting_year)
+            .bind(dto.area_ha)
+            .bind(dto.spacing_m)
+            .bind(&dto.irrigation_type)
+            .bind(dto.is_organic)
+            .bind(&dto.certification_body)
+            .bind(&dto.certification_number)
             .bind(id)
             .bind(tid)
             .fetch_optional(&pool)

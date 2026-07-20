@@ -44,7 +44,7 @@
 
 | Task | Modul | Aufwand | Beschreibung |
 |------|-------|---------|--------------|
-| 1.1 | **Mitarbeiter (Workforce)** | 2 Tage | `worker_task_status.rs` API endpoints in `workforce.rs` vervollständigen, `find_latest_by_worker` & `get_latest_locations` in Handler einbauen |
+| 1.1 | **Mitarbeiter (Workforce)** | 2 Tage | `worker_task_status.rs` API endpoints in `workforce.rs` vervollständigen, `find_latest_by_worker` & `get_latest_locations` in Handler einbauen  | ✅ DONE |
 | 1.2 | **Pflanzenschutz** | 1 Tag | `compliance.rs` Handler: `update_applicator_license` endpoint fehlt noch | ✅ DONE |
 | 1.3 | **Compliance (GAP/Bio)** | 2 Tage | `audit_log.rs` Handler fehlen komplett; `compliance.rs` braucht `find_by_site` & `find_by_type` Endpoints |
 | 1.4 | **Weinbau** | 1 Tag | `specialized.rs` Handler: `Vineyard` CRUD + `KelterDelivery` Endpoints prüfen/vervollständigen |

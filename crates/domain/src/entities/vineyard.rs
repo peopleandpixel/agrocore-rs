@@ -22,6 +22,11 @@ pub struct Vineyard {
     pub quality_grade: Option<QualityGrade>,
     #[sqlx(json)]
     pub kelter_delivery: Option<KelterDelivery>,
+    pub slope_percent: Option<f64>,
+    pub altitude_m: Option<f64>,
+    pub is_organic: bool,
+    pub certification_body: Option<String>,
+    pub certification_number: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -78,6 +83,11 @@ pub struct CreateVineyardDto {
     pub acidity: Option<f64>,
     pub yield_tons: Option<f64>,
     pub quality_grade: Option<QualityGrade>,
+    pub slope_percent: Option<f64>,
+    pub altitude_m: Option<f64>,
+    pub is_organic: bool,
+    pub certification_body: Option<String>,
+    pub certification_number: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
@@ -108,6 +118,11 @@ pub struct UpdateVineyardDto {
     pub yield_tons: Option<f64>,
     pub quality_grade: Option<QualityGrade>,
     pub kelter_delivery: Option<KelterDelivery>,
+    pub slope_percent: Option<f64>,
+    pub altitude_m: Option<f64>,
+    pub is_organic: Option<bool>,
+    pub certification_body: Option<String>,
+    pub certification_number: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]

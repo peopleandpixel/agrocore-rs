@@ -23,6 +23,7 @@ pub struct PlantProtectionRecord {
     pub weather_conditions: Option<String>,
     pub applicator_license: Option<String>,
     pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
@@ -312,7 +313,8 @@ pub struct ApplicatorLicense {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, strum::Display, strum::EnumString, utoipa::ToSchema)]
+#[strum(serialize_all = "snake_case")]
 pub enum LicenseType {
     Basic,
     Advanced,

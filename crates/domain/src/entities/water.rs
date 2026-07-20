@@ -23,7 +23,8 @@ pub struct WaterSource {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, strum::Display, strum::EnumString)]
+#[strum(serialize_all = "snake_case")]
 pub enum WaterSourceType {
     Well,
     Reservoir,
@@ -49,7 +50,8 @@ pub struct WaterUsage {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, strum::Display, strum::EnumString)]
+#[strum(serialize_all = "snake_case")]
 pub enum IrrigationMethod {
     Drip,
     Sprinkler,
@@ -65,11 +67,14 @@ pub struct WaterQuota {
     pub id: Uuid,
     pub tenant_id: TenantId,
     pub source_id: Uuid,
+    pub site_id: Uuid,
     pub year: i32,
     pub allocated_m3: f64,
     pub used_m3: f64,
+    pub remaining_m3: f64,
     pub comunidad_id: Option<Uuid>,
     pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
@@ -118,6 +123,7 @@ pub struct UpdateWaterUsageDto {
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct CreateWaterQuotaDto {
     pub source_id: Uuid,
+    pub site_id: Uuid,
     pub year: i32,
     #[validate(range(min = 0.0))]
     pub allocated_m3: f64,

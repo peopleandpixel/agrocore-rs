@@ -67,7 +67,27 @@ pub struct UpdateTenantDto {
     pub is_active: Option<bool>,
 }
 
-pub type TenantId = uuid::Uuid;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema, sqlx::Type)]
+#[sqlx(transparent)]
+pub struct TenantId(pub Uuid);
+
+impl From<Uuid> for TenantId {
+    fn from(uuid: Uuid) -> Self {
+        TenantId(uuid)
+    }
+}
+
+impl From<TenantId> for Uuid {
+    fn from(id: TenantId) -> Uuid {
+        id.0
+    }
+}
+
+impl std::fmt::Display for TenantId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 #[cfg(test)]
 mod tests {
