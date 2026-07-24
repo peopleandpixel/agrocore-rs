@@ -6,7 +6,7 @@ use validator::Validate;
 
 use crate::entities::tenant::TenantId;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow, ToSchema)]
 pub struct OliveGrove {
     pub id: Uuid,
     pub tenant_id: TenantId,
@@ -26,7 +26,7 @@ pub struct OliveGrove {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow, ToSchema)]
 pub struct OliveOilRecord {
     pub id: Uuid,
     pub tenant_id: TenantId,
@@ -51,7 +51,9 @@ pub struct OliveOilRecord {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, strum::Display, strum::EnumString)]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, strum::Display, strum::EnumString,
+)]
 #[strum(serialize_all = "snake_case")]
 pub enum OilGrade {
     ExtraVirgin,
@@ -61,7 +63,7 @@ pub enum OilGrade {
     Pomace,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct CreateOliveGroveDto {
     pub site_id: Uuid,
     #[validate(length(min = 1, max = 200))]
@@ -79,7 +81,7 @@ pub struct CreateOliveGroveDto {
     pub certification_number: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct UpdateOliveGroveDto {
     pub label: Option<String>,
     pub variety: Option<String>,
@@ -93,7 +95,7 @@ pub struct UpdateOliveGroveDto {
     pub certification_number: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct CreateOliveOilRecordDto {
     pub grove_id: Uuid,
     pub harvest_year: i32,
@@ -114,7 +116,7 @@ pub struct CreateOliveOilRecordDto {
     pub notes: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct UpdateOliveOilRecordDto {
     pub grove_id: Option<Uuid>,
     pub harvest_year: Option<i32>,

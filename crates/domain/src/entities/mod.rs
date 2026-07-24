@@ -21,7 +21,23 @@ pub mod workforce;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
+pub use compliance::{
+    AuditAction, AuditLog, ChecklistItem, ChecklistType, ComplianceChecklist, ComplianceStatus,
+    CreateAuditLogDto, CreateComplianceChecklistDto, CreateFertilizerRecordDto, FertilizerRecord,
+    UpdateComplianceChecklistDto, UpdateFertilizerRecordDto,
+};
+pub use olive::{
+    CreateOliveGroveDto, CreateOliveOilRecordDto, OilGrade, OliveGrove, OliveOilRecord,
+    UpdateOliveGroveDto, UpdateOliveOilRecordDto,
+};
+pub use plant_protection::PlantProtectionAreaMethod;
 pub use spatial::{PolygonGeometry, SpatialGeometry, SpatialObject, SpatialObjectType};
+pub use task::{CreateTaskDataDto, GpsPoint, MaterialUsage, TaskData, UpdateTaskDataDto};
+pub use vineyard::{
+    CreateKelterDeliveryDto, CreateVineyardDto, DocArea, KelterDelivery, QualityGrade,
+    UpdateKelterDeliveryDto, UpdateVineyardDto, Vineyard,
+};
+pub use worker_task_status::{CreateWorkerTaskStatusDto, WorkerTaskStatus, WorkerTaskStatusType};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum SiteType {

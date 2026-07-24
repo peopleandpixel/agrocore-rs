@@ -1,3 +1,4 @@
+use agrocore_domain::TenantId;
 use agrocore_domain::entities::order::{Order, OrderStatus, OrderType, WorkflowConfig};
 use agrocore_domain::services::workflow::WorkflowService;
 use chrono::Utc;
@@ -7,7 +8,7 @@ use uuid::Uuid;
 fn test_process_status_transition_no_config() {
     let order = Order {
         id: Uuid::new_v4(),
-        tenant_id: Uuid::new_v4(),
+        tenant_id: TenantId(Uuid::new_v4()),
         label: "Test".into(),
         order_type: OrderType::Harvest,
         status: OrderStatus::InProgress,
@@ -50,7 +51,7 @@ fn test_process_status_transition_with_trigger() {
 
     let order = Order {
         id: Uuid::new_v4(),
-        tenant_id: Uuid::new_v4(),
+        tenant_id: TenantId(Uuid::new_v4()),
         label: "Harvest 2024".into(),
         order_type: OrderType::Harvest,
         status: OrderStatus::InProgress,
@@ -96,7 +97,7 @@ fn test_process_status_transition_with_trigger() {
 fn test_process_status_transition_same_status_returns_none() {
     let order = Order {
         id: Uuid::new_v4(),
-        tenant_id: Uuid::new_v4(),
+        tenant_id: TenantId(Uuid::new_v4()),
         label: "No-op".into(),
         order_type: OrderType::Harvest,
         status: OrderStatus::Completed,
@@ -137,7 +138,7 @@ fn test_process_status_transition_same_status_returns_none() {
 fn test_process_status_transition_without_matching_trigger_returns_none() {
     let order = Order {
         id: Uuid::new_v4(),
-        tenant_id: Uuid::new_v4(),
+        tenant_id: TenantId(Uuid::new_v4()),
         label: "No follow up".into(),
         order_type: OrderType::Harvest,
         status: OrderStatus::InProgress,

@@ -1,4 +1,5 @@
 use agrocore_domain::entities::site::{Site, SiteProperty};
+use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::{CropType, SiteType};
 use chrono::Utc;
 use serde_json::json;
@@ -7,7 +8,7 @@ use uuid::Uuid;
 fn sample_site() -> Site {
     Site {
         id: Uuid::new_v4(),
-        tenant_id: Uuid::new_v4(),
+        tenant_id: TenantId(Uuid::new_v4()),
         business_id: None,
         label: String::from("North Field"),
         site_type: SiteType::Field,

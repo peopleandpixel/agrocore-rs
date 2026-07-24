@@ -37,7 +37,10 @@ pub struct HarvestLot {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, strum::Display, strum::EnumString,
+)]
+#[strum(serialize_all = "snake_case")]
 pub enum LotStatus {
     #[serde(rename = "collecting")]
     Collecting,

@@ -1,5 +1,5 @@
 use crate::AppState;
-use crate::dto::CreateUserDto;
+use crate::dto::user::CreateUserDto;
 use crate::error::ApiError;
 use actix_web::{HttpResponse, web};
 use agrocore_domain::entities::tenant::CreateTenantDto;

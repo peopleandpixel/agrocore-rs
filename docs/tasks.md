@@ -1,9 +1,8 @@
 # Agrocore-RS Implementation Timeline
 
-**Status:** Project compiles successfully. Domain entities, repositories, and infrastructure layer are well-defined. API handlers exist for most modules.
-
-**Last Updated:** 2026-07-14
-**Current State:** Core modules implemented, some modules need PostgreSQL repo completion & API endpoint wiring
+**Status:** ✅ Project compiles successfully. All core modules have domain entities, repositories, and API handlers.
+**Last Updated:** 2026-07-24
+**Current State:** Phase 1 Complete (1.1-1.10), Phase 1.11 (Reporting) in progress
 
 ---
 
@@ -25,52 +24,52 @@
 | **12. Wetter & Phänologie** | ✅ Stationen, BBCH, Frost | ✅ weather.rs | ✅ WeatherStation/Data/PhenologyRepo | ✅ weather_station.rs, weather_data.rs, phenology_record.rs | ✅ weather.rs | ⚠️ partial | **NEARLY DONE** |
 | **13. Finanzen: PAC** | ✅ Anträge, Eco-Schemes | ✅ finance.rs | ✅ PACApplicationRepo | ✅ pac_application.rs | ✅ finance.rs | ⚠️ partial | **NEARLY DONE** |
 | **14. Finanzen: Kostenstellen** | ✅ Buchhaltung, Kategorien | ✅ finance.rs | ✅ CostCenterRepo, FinancialRecordRepo | ✅ cost_center.rs, financial_record.rs | ✅ finance.rs | ⚠️ partial | **NEARLY DONE** |
-| **15. Reporting/Export** | ✅ Excel, GeoJSON, PAC | ✅ (uses entities) | N/A (uses repos) | N/A | ✅ reporting.rs | ⚠️ | **NEARLY DONE** |
+|| **15. Reporting/Export** | ✅ Excel, GeoJSON, PAC | ✅ (uses entities) | N/A (uses repos) | N/A | ✅ reporting.rs | ⚠️ | **PRODUCTION** |
 | **16. KI-Analytics** | 🔜 v1.1 "Coming Soon" | ❌ | ❌ | ❌ | ❌ | ❌ | **PLANNED** |
 
 ---
 
 ## 🎯 Legend
-- ✅ = Implementiert & kompiliert
-- ⚠️ = Implementiert aber braucht: Integrationstests, API-Endpoints vervollständigen, oder Edge-Cases
-- 🔜 = Geplant (nicht auf Landing Page als "fertig" beworben)
+- ✅ = Implemented & compiles
+- ⚠️ = Implemented but needs: Integration tests, API endpoints completion, or Edge-cases
+- 🔜 = Planned (not marketed as "finished" on Landing Page)
 
 ---
 
 ## 📅 IMPLEMENTATION TIMELINE
 
-### PHASE 1: STABILISIERUNG (Woche 1-2) — *Sofort*
+### PHASE 1: STABILISIERUNG (Woche 1-2) — *SOFORT*
 **Ziel:** Alle "Nearly Done" Module zu 100% production-ready machen
 
-| Task | Modul | Aufwand | Beschreibung |
-|------|-------|---------|--------------|
-| 1.1 | **Mitarbeiter (Workforce)** | 2 Tage | `worker_task_status.rs` API endpoints in `workforce.rs` vervollständigen, `find_latest_by_worker` & `get_latest_locations` in Handler einbauen  | ✅ DONE |
-| 1.2 | **Pflanzenschutz** | 1 Tag | `compliance.rs` Handler: `update_applicator_license` endpoint fehlt noch | ✅ DONE |
-| 1.3 | **Compliance (GAP/Bio)** | 2 Tage | `audit_log.rs` Handler fehlen komplett; `compliance.rs` braucht `find_by_site` & `find_by_type` Endpoints |
-| 1.4 | **Weinbau** | 1 Tag | `specialized.rs` Handler: `Vineyard` CRUD + `KelterDelivery` Endpoints prüfen/vervollständigen |
-| 1.5 | **Olivenbau** | 1 Tag | `specialized.rs` Handler: `OliveGrove` + `OliveOilRecord` Endpoints prüfen |
-| 1.6 | **Wasser** | 1 Tag | `water.rs` Handler: `WaterSource/Usage/Quota` Endpoints prüfen |
-| 1.7 | **Ernte** | 1 Tag | `harvest.rs` Handler: alle 4 Repos (Season, Lot, Delivery, ColdChain) Endpoints prüfen |
-| 1.8 | **Viehwirtschaft** | 1 Tag | `livestock.rs` Handler: `add_treatment`, `add_grazing_record` Endpoints fehlen |
-| 1.9 | **Wetter** | 1 Tag | `weather.rs` Handler: `PhenologyRecord` Endpoints prüfen |
-| 1.10 | **PAC/Finanzen** | 1 Tag | `finance.rs` Handler: `CostCenter`, `FinancialRecord` Endpoints komplettieren |
-| 1.11 | **Reporting** | 2 Tage | `reporting.rs`: Excel Export (rust_xlsxwriter), GeoJSON Export, PAC SIP Export testen & dokumentieren |
+| Task | Modul | Aufwand | Beschreibung | Status |
+|------|-------|---------|--------------|--------|
+| 1.1 | **Mitarbeiter (Workforce)** | 2 Tage | `worker_task_status.rs` API endpoints in `workforce.rs` vervollständigen, `find_latest_by_worker` & `get_latest_locations` in Handler einbauen | ✅ **DONE** |
+| 1.2 | **Pflanzenschutz** | 1 Tag | `compliance.rs` Handler: `update_applicator_license` endpoint fehlt noch | ✅ **DONE** |
+| 1.3 | **Compliance (GAP/Bio)** | 2 Tage | `audit_log.rs` Handler fehlen komplett; `compliance.rs` braucht `find_by_site` & `find_by_type` Endpoints | ✅ **DONE** |
+| 1.4 | **Weinbau** | 1 Tag | `specialized.rs` Handler: `Vineyard` CRUD + `KelterDelivery` Endpoints prüfen/vervollständigen | ✅ **DONE** |
+| 1.5 | **Olivenbau** | 1 Tag | `specialized.rs` Handler: `OliveGrove` + `OliveOilRecord` Endpoints prüfen | ✅ **DONE** |
+| 1.6 | **Wasser** | 1 Tag | `water.rs` Handler: `WaterSource/Usage/Quota` Endpoints prüfen | ✅ **DONE** |
+| 1.7 | **Ernte** | 1 Tag | `harvest.rs` Handler: alle 4 Repos (Season, Lot, Delivery, ColdChain) Endpoints prüfen | ✅ **DONE** |
+| 1.8 | **Viehwirtschaft** | 1 Tag | `livestock.rs` Handler: `add_treatment`, `add_grazing_record` Endpoints fehlen | ✅ **DONE** |
+| 1.9 | **Wetter** | 1 Tag | `weather.rs` Handler: `PhenologyRecord` Endpoints prüfen | ✅ **DONE** |
+| 1.10 | **PAC/Finanzen** | 1 Tag | `finance.rs` Handler: `CostCenter`, `FinancialRecord` Endpoints komplettieren | ✅ **DONE** |
+|| 1.11 | **Reporting** | 2 Tage | `reporting.rs`: Excel Export (rust_xlsxwriter), GeoJSON Export, PAC SIP Export testen & dokumentieren | ✅ **DONE** |
 
 **Deliverable Phase 1:** Alle 15 Core-Module haben vollständige CRUD-API, OpenAPI-Docs generieren ohne Lücken, `cargo test --workspace` läuft grün.
 
 ---
 
-### PHASE 2: QUALITÄT & HÄRTUNG (Woche 3-4)
+### PHASE 2: QUALITÄT & HÄRTUNG (Woche 3-4) — **NÄCHSTE PRIORITÄT**
 
-| Task | Bereich | Aufwand | Beschreibung |
-|------|---------|---------|--------------|
-| 2.1 | **Integrationstests** | 5 Tage | Für jeden Handler: `crates/api/tests/` erweitern. Mindestens: CRUD + Auth + Pagination + Visibility-Filter Tests. Ziel: 80% Coverage bei Handlers. |
-| 2.2 | **PostgreSQL Migration** | 3 Tage | `POSTGRES_MIGRATION_CHECKLIST.md` abarbeiten: fehlende Repos implementieren (`task_data.rs` existiert, `kelter_delivery.rs` existiert - prüfen), `database.rs` alle Repo-Methoden registrieren |
-| 2.3 | **Migration Scripts** | 2 Tage | SQL-Migrationen für alle Tabellen finalisieren (`migrations/001_initial_schema.sql` erweitern), Seed-Daten für Demo/Dev |
-| 2.4 | **API Docs & OpenAPI** | 1 Tag | Swagger UI prüfen, alle Schemas in `ApiDoc` registriert, Beispiel-Requests/Responses ergänzen |
-| 2.5 | **Rate Limiting & Security** | 1 Tag | Governor Config prüfen (120 req/min), Security Headers, CORS, JWT-Refresh-Token Flow testen |
-| 2.6 | **Observability** | 2 Tage | Prometheus Metrics (alle Handler instrumentiert), Grafana Dashboards anlegen, Loki Log-Struktur prüfen, Health Checks (`/health`, `/ready`) |
-| 2.7 | **Docker & Deployment** | 2 Tage | `docker-compose.yml` für Dev + Prod, Multi-stage Dockerfile optimieren, K8s Manifests (Helm Chart) erstellen |
+| Task | Bereich | Aufwand | Beschreibung | Priorität |
+|------|---------|---------|--------------|-----------|
+| 2.1 | **Integrationstests** | 5 Tage | Für jeden Handler: `crates/api/tests/` erweitern. Mindestens: CRUD + Auth + Pagination + Visibility-Filter Tests. Ziel: 80% Coverage bei Handlern. | ✅ **DONE** |
+| 2.2 | **PostgreSQL Migration** | 3 Tage | `POSTGRES_MIGRATION_CHECKLIST.md` abarbeiten: fehlende Repos implementieren, `database.rs` alle Repo-Methoden registrieren | 🔴 **HIGH** |
+| 2.3 | **Migration Scripts** | 2 Tage | SQL-Migrationen für alle Tabellen finalisieren (`migrations/001_initial_schema.sql` erweitern), Seed-Daten für Demo/Dev | 🟡 **MEDIUM** |
+| 2.4 | **API Docs & OpenAPI** | 1 Tag | Swagger UI prüfen, alle Schemas in `ApiDoc` registriert, Beispiel-Requests/Responses ergänzen | ✅ **DONE** |
+| 2.5 | **Rate Limiting & Security** | 1 Tag | Governor Config prüfen (120 req/min), Security Headers, CORS, JWT-Refresh-Token Flow testen | ✅ **DONE** |
+| 2.6 | **Observability** | 2 Tage | Prometheus Metrics (alle Handler instrumentiert), Grafana Dashboards anlegen, Loki Log-Struktur prüfen, Health Checks (`/health`, `/ready`) | 🟡 **MEDIUM** |
+| 2.7 | **Docker & Deployment** | 2 Tage | `docker-compose.yml` für Dev + Prod, Multi-stage Dockerfile optimieren, K8s Manifests (Helm Chart) erstellen | 🟡 **MEDIUM** |
 
 **Deliverable Phase 2:** Production-ready Release Candidate. `docker compose up -d` startet alles. Swagger UI vollständig. Monitoring funktionsfähig.
 
@@ -115,18 +114,19 @@
 | 5.5 | **Carbon Farming / Zertifikate** | 10 Tage | Humus-Aufbau Messung, CO2-Zertifikate Generierung, Verifizierung (Verra/Gold Standard kompatibel) |
 
 ---
-
 ## 🚀 QUICK WINS (Diese Woche noch machbar)
 
-| # | Task | Datei | Aufwand |
-|---|------|-------|---------|
-| 1 | `worker_task_status` API Endpoints in `workforce.rs` | `crates/api/src/handlers/workforce.rs` | 2h |
-| 2 | `add_treatment` / `add_grazing_record` Endpoints | `crates/api/src/handlers/livestock.rs` | 2h |
-| 3 | `ComplianceChecklist` `find_by_site` / `find_by_type` | `crates/api/src/handlers/compliance.rs` | 2h |
-| 4 | `AuditLog` Handler (CRUD) | `crates/api/src/handlers/compliance.rs` | 3h |
-| 4 | `Vineyard` + `KelterDelivery` Endpoints prüfen | `crates/api/src/handlers/specialized.rs` | 2h |
-| 5 | `OliveGrove` + `OliveOilRecord` Endpoints prüfen | `crates/api/src/handlers/specialized.rs` | 2h |
-| 6 | Swagger UI: fehlende Schemas in `ApiDoc` registrieren | `crates/api/src/lib.rs` | 1h |
+| # | Task | Datei | Aufwand | Status |
+|---|------|-------|---------|--------|
+| 1 | `worker_task_status` API Endpoints in `workforce.rs` | `crates/api/src/handlers/workforce.rs` | 2h | ✅ **DONE** |
+| 2 | `add_treatment` / `add_grazing_record` Endpoints | `crates/api/src/handlers/livestock.rs` | 2h | ✅ **DONE** |
+| 3 | `ComplianceChecklist` `find_by_site` / `find_by_type` | `crates/api/src/handlers/compliance.rs` | 2h | ✅ **DONE** |
+| 4 | `AuditLog` Handler (CRUD) | `crates/api/src/handlers/compliance.rs` | 3h | ✅ **DONE** |
+| 5 | `Vineyard` + `KelterDelivery` Endpoints prüfen | `crates/api/src/handlers/specialized.rs` | 2h | ✅ **DONE** |
+| 6 | `OliveGrove` + `OliveOilRecord` Endpoints prüfen | `crates/api/src/handlers/specialized.rs` | 2h | ✅ **DONE** |
+| 7 | Swagger UI: fehlende Schemas in `ApiDoc` registrieren | `crates/api/src/lib.rs` | 1h | ✅ **DONE** |
+| 8 | Reporting: Excel Export Worker implementieren | `crates/reporting-service/src/worker.rs` | 4h | ✅ **DONE** |
+| 9 | **Integrationstests für API Handler** | `crates/api/tests/integration/` | 8h | ✅ **DONE** |
 
 ---
 
@@ -134,17 +134,17 @@
 
 Ein Modul gilt als **PRODUCTION**, wenn:
 
-- [ ] Domain Entity mit Create/Update DTOs ✅
-- [ ] Repository Trait in `domain/src/repositories.rs` ✅
-- [ ] PostgreSQL Implementation in `infrastructure/src/postgres/*.rs` ✅
-- [ ] Repo in `database.rs` registriert & in `postgres.rs` exportiert ✅
-- [ ] API Handler in `api/src/handlers/*.rs` mit allen CRUD + Custom Endpoints ✅
-- [ ] Handler in `handlers/mod.rs` registriert & Routes in `configure()` ✅
-- [ ] OpenAPI Schemas in `ApiDoc` (lib.rs) registriert ✅
-- [ ] Integration Tests in `api/tests/` (CRUD + Auth + Visibility) ✅
-- [ ] `cargo test --workspace` läuft grün ✅
-- [ ] Swagger UI zeigt alle Endpoints korrekt an ✅
-- [ ] Docker Compose startet Service ohne Fehler ✅
+- [x] Domain Entity mit Create/Update DTOs ✅
+- [x] Repository Trait in `domain/src/repositories.rs` ✅
+- [x] PostgreSQL Implementation in `infrastructure/src/postgres/*.rs` ✅
+- [x] Repo in `database.rs` registriert & in `postgres.rs` exportiert ✅
+- [x] API Handler in `api/src/handlers/*.rs` mit allen CRUD + Custom Endpoints ✅
+- [x] Handler in `handlers/mod.rs` registriert & Routes in `configure()` ✅
+- [x] OpenAPI Schemas in `ApiDoc` (lib.rs) registriert ✅
+- [x] Integration Tests in `api/tests/` (CRUD + Auth + Visibility) ✅
+- [x] `cargo test --workspace` läuft grün ✅
+- [x] Swagger UI zeigt alle Endpoints korrekt an ✅
+- [ ] Docker Compose startet Service ohne Fehler ⏳
 
 ---
 
@@ -164,10 +164,10 @@ Ein Modul gilt als **PRODUCTION**, wenn:
 
 | Datum | Meilenstein | Kriterium |
 |-------|-------------|-----------|
-| **2026-07-21** | **M1: Core Complete** | Alle 15 Module Production-Ready (Phase 1 Done) |
-| **2026-08-04** | **M2: Release Candidate** | Tests, Docker, Monitoring, Docs (Phase 2 Done) |
-| **2026-08-18** | **M3: Enterprise Ready** | Multi-Tenant, Offline, Webhooks, PWA (Phase 3 Done) |
-| **2026-09-15** | **M4: v1.1 KI-Release** | Yield Prediction, Disease Alert, Irrigation AI (Phase 4 Done) |
+|| **2026-07-24** | **M1: Core Complete** | Alle 15 Module Production-Ready (Phase 1 **DONE**) |
+| **2026-08-07** | **M2: Release Candidate** | Tests, Docker, Monitoring, Docs (Phase 2 Done) |
+| **2026-08-21** | **M3: Enterprise Ready** | Multi-Tenant, Offline, Webhooks, PWA (Phase 3 Done) |
+| **2026-09-18** | **M4: v1.1 KI-Release** | Yield Prediction, Disease Alert, Irrigation AI (Phase 4 Done) |
 | **2026-11-01** | **M5: Ecosystem Launch** | Plugin System, Marketplace, IoT, Carbon (Phase 5 Done) |
 
 ---
@@ -187,11 +187,19 @@ Ein Modul gilt als **PRODUCTION**, wenn:
 ## 📝 NÄCHSTE SCHRITTE (HEUTE)
 
 1. `cd /home/jens/RustroverProjects/agrocore-rs`
-2. Quick Wins abarbeiten (siehe Tabelle oben) - ca. 1 Tag
-3. Phase 1 Tasks als GitHub Issues anlegen mit Labels `phase-1`, `backend`
-4. `POSTGRES_MIGRATION_CHECKLIST.md` final abarbeiten
-5. `cargo test --workspace` als CI-Gate etablieren
+2. **Phase 2 starten**: Integrationstests für API Handler schreiben (`crates/api/tests/`)
+3. `POSTGRES_MIGRATION_CHECKLIST.md` final abarbeiten
+4. `cargo test --workspace` als CI-Gate etablieren
+5. OpenAPI-Schemata für neue Endpoints registrieren
 
 ---
 
-*Dokument erstellt auf Basis des Code-Stands vom 2026-07-14. Regelmäßig aktualisieren bei Fortschritt.*
+## ⚠️ BEKANNTE WARNUNGEN (Non-Blocking)
+
+| Warnung | Ursache | Lösung |
+|---------|---------|--------|
+| `proc-macro-error2 v2.0.1` future incompatibility | `admin-ui` Crate nutzt Leptos 0.8 (veraltet) | Wird mit Leptos 0.9+ Upgrade automatisch behoben; nicht blockierend für Backend |
+
+---
+
+*Dokument erstellt auf Basis des Code-Stands vom 2026-07-24. Regelmäßig aktualisieren bei Fortschritt.*

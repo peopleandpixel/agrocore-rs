@@ -63,7 +63,7 @@ pub async fn list_workers(
     let result = state
         .db
         .worker_repo()
-        .find_all(auth.0.tenant_id, query.0)
+        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
@@ -82,7 +82,11 @@ pub async fn create_worker(
     let worker = state
         .db
         .worker_repo()
-        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?;
     Ok(HttpResponse::Created().json(worker))
 }
@@ -95,7 +99,7 @@ pub async fn get_worker(
     let worker = state
         .db
         .worker_repo()
-        .find_by_id(auth.0.tenant_id, *id)
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Worker not found".into()))?;
     Ok(HttpResponse::Ok().json(worker))
@@ -110,7 +114,12 @@ pub async fn update_worker(
     let worker = state
         .db
         .worker_repo()
-        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Worker not found".into()))?;
     Ok(HttpResponse::Ok().json(worker))
@@ -121,7 +130,11 @@ pub async fn delete_worker(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    let success = state.db.worker_repo().delete(auth.0.tenant_id, *id).await?;
+    let success = state
+        .db
+        .worker_repo()
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
+        .await?;
     if success {
         Ok(HttpResponse::NoContent().finish())
     } else {
@@ -137,7 +150,7 @@ pub async fn list_work_logs(
     let result = state
         .db
         .work_log_repo()
-        .find_all(auth.0.tenant_id, query.0)
+        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
@@ -156,7 +169,11 @@ pub async fn create_work_log(
     let log = state
         .db
         .work_log_repo()
-        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?;
     Ok(HttpResponse::Created().json(log))
 }
@@ -169,7 +186,7 @@ pub async fn get_work_log(
     let log = state
         .db
         .work_log_repo()
-        .find_by_id(auth.0.tenant_id, *id)
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Work log not found".into()))?;
     Ok(HttpResponse::Ok().json(log))
@@ -184,7 +201,12 @@ pub async fn update_work_log(
     let log = state
         .db
         .work_log_repo()
-        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Work log not found".into()))?;
     Ok(HttpResponse::Ok().json(log))
@@ -198,7 +220,7 @@ pub async fn delete_work_log(
     let success = state
         .db
         .work_log_repo()
-        .delete(auth.0.tenant_id, *id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?;
     if success {
         Ok(HttpResponse::NoContent().finish())
@@ -216,7 +238,7 @@ pub async fn report_location(
     let previous_location = state
         .db
         .worker_location_repo()
-        .find_latest_by_worker(auth.0.tenant_id, auth.0.user_id)
+        .find_latest_by_worker(agrocore_domain::TenantId(auth.0.tenant_id), auth.0.user_id)
         .await
         .ok()
         .flatten();
@@ -234,7 +256,7 @@ pub async fn report_location(
     let loc = state
         .db
         .worker_location_repo()
-        .create(auth.0.tenant_id, create_dto)
+        .create(agrocore_domain::TenantId(auth.0.tenant_id), create_dto)
         .await?;
     let current_point = GeoPoint {
         lng: loc.lng,
@@ -248,14 +270,22 @@ pub async fn report_location(
     let current_objects = state
         .db
         .spatial_object_repo()
-        .find_containing_point(auth.0.tenant_id, current_point.clone(), None)
+        .find_containing_point(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            current_point.clone(),
+            None,
+        )
         .await
         .unwrap_or_default();
     let previous_objects = if let Some(previous_point) = previous_point {
         state
             .db
             .spatial_object_repo()
-            .find_containing_point(auth.0.tenant_id, previous_point, None)
+            .find_containing_point(
+                agrocore_domain::TenantId(auth.0.tenant_id),
+                previous_point,
+                None,
+            )
             .await
             .unwrap_or_default()
     } else {
@@ -313,7 +343,7 @@ pub async fn report_location(
     match state
         .db
         .order_repo()
-        .find_assigned_to_worker(auth.0.tenant_id, auth.0.user_id)
+        .find_assigned_to_worker(agrocore_domain::TenantId(auth.0.tenant_id), auth.0.user_id)
         .await
     {
         Ok(mut orders) => {
@@ -337,7 +367,7 @@ pub async fn report_location(
                         .db
                         .order_repo()
                         .update(
-                            auth.0.tenant_id,
+                            agrocore_domain::TenantId(auth.0.tenant_id),
                             order.id,
                             agrocore_domain::entities::order::UpdateOrderDto {
                                 status: Some(order.status.clone()),
@@ -370,7 +400,7 @@ pub async fn report_location(
                     .db
                     .order_repo()
                     .update(
-                        auth.0.tenant_id,
+                        agrocore_domain::TenantId(auth.0.tenant_id),
                         order.id,
                         agrocore_domain::entities::order::UpdateOrderDto {
                             status: Some(order.status.clone()),
@@ -407,7 +437,10 @@ pub async fn report_location(
                     let worker_id = match state
                         .db
                         .worker_repo()
-                        .find_by_user_id(auth.0.tenant_id, auth.0.user_id)
+                        .find_by_user_id(
+                            agrocore_domain::TenantId(auth.0.tenant_id),
+                            auth.0.user_id,
+                        )
                         .await
                     {
                         Ok(Some(worker)) => worker.id,
@@ -434,7 +467,11 @@ pub async fn report_location(
                     if let Err(e) = state
                         .db
                         .work_log_repo()
-                        .create(auth.0.tenant_id, worklog, auth.0.user_id)
+                        .create(
+                            agrocore_domain::TenantId(auth.0.tenant_id),
+                            worklog,
+                            auth.0.user_id,
+                        )
                         .await
                     {
                         tracing::warn!(
@@ -481,7 +518,7 @@ pub async fn get_latest_locations(
     let locations = state
         .db
         .worker_location_repo()
-        .get_latest_locations(auth.0.tenant_id)
+        .get_latest_locations(agrocore_domain::TenantId(auth.0.tenant_id))
         .await?;
     Ok(HttpResponse::Ok().json(locations))
 }
@@ -510,7 +547,7 @@ pub async fn get_task_worker_statuses(
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
     let task_id = *path;
-    let tenant_id = auth.0.tenant_id;
+    let tenant_id = agrocore_domain::TenantId(auth.0.tenant_id);
 
     let statuses = state
         .db
@@ -553,7 +590,7 @@ pub async fn get_worker_task_status(
     path: web::Path<(Uuid, Uuid)>,
 ) -> Result<HttpResponse, ApiError> {
     let (task_id, worker_id) = path.into_inner();
-    let tenant_id = auth.0.tenant_id;
+    let tenant_id = agrocore_domain::TenantId(auth.0.tenant_id);
 
     let status = state
         .db
@@ -585,17 +622,17 @@ pub async fn create_worker_task_status(
     dto: web::Json<crate::dto::CreateWorkerTaskStatusDto>,
 ) -> Result<HttpResponse, ApiError> {
     let task_id = *path;
-    let tenant_id = auth.0.tenant_id;
+    let tenant_id = agrocore_domain::TenantId(auth.0.tenant_id);
 
     // Override task_id and tenant_id from path/auth
     let mut dto = dto.into_inner();
     dto.task_id = task_id;
-    dto.tenant_id = tenant_id;
+    dto.tenant_id = tenant_id.into();
 
     let domain_dto = DomainCreateWorkerTaskStatusDto {
         task_id: dto.task_id,
         worker_id: dto.worker_id,
-        tenant_id: dto.tenant_id,
+        tenant_id: agrocore_domain::TenantId(dto.tenant_id),
     };
 
     let status = state
@@ -626,7 +663,7 @@ pub async fn update_worker_task_status(
     dto: web::Json<crate::dto::UpdateWorkerTaskStatusDto>,
 ) -> Result<HttpResponse, ApiError> {
     let (task_id, worker_id) = path.into_inner();
-    let tenant_id = auth.0.tenant_id;
+    let tenant_id = agrocore_domain::TenantId(auth.0.tenant_id);
 
     let status = state
         .db
@@ -663,7 +700,7 @@ pub async fn get_aggregated_task_status(
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
     let task_id = *path;
-    let tenant_id = auth.0.tenant_id;
+    let tenant_id = agrocore_domain::TenantId(auth.0.tenant_id);
 
     let statuses = state
         .db

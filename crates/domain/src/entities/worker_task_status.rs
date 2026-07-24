@@ -1,14 +1,12 @@
-// Worker-Task-Status für Multi-Worker-Aufgaben
-// Jeder Worker hat einen separaten Status inne
-
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
 use crate::entities::tenant::TenantId;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum WorkerTaskStatusType {
     New,
@@ -30,7 +28,7 @@ impl std::fmt::Display for WorkerTaskStatusType {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
 pub struct WorkerTaskStatus {
     pub task_id: Uuid,
     pub worker_id: Uuid,

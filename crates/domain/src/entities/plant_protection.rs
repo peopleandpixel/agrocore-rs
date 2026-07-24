@@ -6,7 +6,7 @@ use validator::Validate;
 
 use crate::entities::tenant::TenantId;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow, ToSchema)]
 pub struct PlantProtectionRecord {
     pub id: Uuid,
     pub tenant_id: TenantId,
@@ -313,7 +313,17 @@ pub struct ApplicatorLicense {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, strum::Display, strum::EnumString, utoipa::ToSchema)]
+#[derive(
+    Debug,
+    Clone,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Eq,
+    strum::Display,
+    strum::EnumString,
+    utoipa::ToSchema,
+)]
 #[strum(serialize_all = "snake_case")]
 pub enum LicenseType {
     Basic,

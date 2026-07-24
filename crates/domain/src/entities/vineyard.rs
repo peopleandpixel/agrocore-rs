@@ -6,7 +6,7 @@ use validator::Validate;
 
 use crate::entities::tenant::TenantId;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow, ToSchema)]
 pub struct Vineyard {
     pub id: Uuid,
     pub tenant_id: TenantId,
@@ -58,7 +58,7 @@ pub enum QualityGrade {
     Custom(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow, ToSchema)]
 pub struct KelterDelivery {
     pub id: Uuid,
     pub vineyard_id: Uuid,
@@ -72,7 +72,7 @@ pub struct KelterDelivery {
     pub notes: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct CreateVineyardDto {
     pub site_id: Uuid,
     pub doc_area: Option<String>,
@@ -90,7 +90,7 @@ pub struct CreateVineyardDto {
     pub certification_number: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct CreateKelterDeliveryDto {
     pub vineyard_id: Uuid,
     pub delivery_date: DateTime<Utc>,
@@ -107,7 +107,7 @@ pub struct CreateKelterDeliveryDto {
     pub notes: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct UpdateVineyardDto {
     pub doc_area: Option<String>,
     pub vintage: Option<i32>,
@@ -125,7 +125,7 @@ pub struct UpdateVineyardDto {
     pub certification_number: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct UpdateKelterDeliveryDto {
     pub vineyard_id: Option<Uuid>,
     pub delivery_date: Option<DateTime<Utc>>,

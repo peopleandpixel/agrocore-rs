@@ -44,11 +44,12 @@ impl OliveGroveRepo for PgOliveGroveRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM olive_groves WHERE tenant_id = $1")
-                .bind(tid)
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM olive_groves WHERE tenant_id = $1")
+                    .bind(tid)
+                    .fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<OliveGrove> = sqlx::query_as(
                 "SELECT * FROM olive_groves WHERE tenant_id = $1 LIMIT $2 OFFSET $3",

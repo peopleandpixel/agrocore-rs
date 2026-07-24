@@ -1,6 +1,7 @@
 use crate::AppState;
 use crate::dto::{
-    CreateTaskDataDto, ErrorResponse, PaginatedResponseDto, PaginatedTaskResponse, TaskDataDto,
+    ErrorResponse, PaginatedResponseDto, PaginatedTaskResponse, TaskDataDto,
+    order::{CreateTaskDataDto, UpdateTaskDataDto},
 };
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
@@ -28,11 +29,18 @@ pub async fn list_tasks(
     query: web::Query<agrocore_shared::Pagination>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
-    tracing::info!("Listing tasks for tenant: {}", auth.0.tenant_id);
+    tracing::info!(
+        "Listing tasks for tenant: {}",
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     let result = state
         .db
         .task_data_repo()
-        .find_by_worker(auth.0.tenant_id, auth.0.user_id, query.0)
+        .find_by_worker(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            auth.0.user_id,
+            query.0,
+        )
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data.into_iter().map(TaskDataDto::from).collect(),
@@ -60,11 +68,15 @@ pub async fn get_task(
     path: web::Path<uuid::Uuid>,
 ) -> Result<HttpResponse, ApiError> {
     let task_id = *path;
-    tracing::info!("Getting task {} for tenant: {}", task_id, auth.0.tenant_id);
+    tracing::info!(
+        "Getting task {} for tenant: {}",
+        task_id,
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     let task = state
         .db
         .task_data_repo()
-        .find_by_id(auth.0.tenant_id, task_id)
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), task_id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Task not found".into()))?;
     Ok(HttpResponse::Ok().json(TaskDataDto::from(task)))
@@ -89,14 +101,22 @@ pub async fn create_task(
 ) -> Result<HttpResponse, ApiError> {
     // Workers should be able to create tasks (log their own work),
     // but managers are definitely allowed.
-    tracing::info!("Creating task for tenant: {}", auth.0.tenant_id);
+    tracing::info!(
+        "Creating task for tenant: {}",
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     dto.0
         .validate()
         .map_err(|e| SharedError::Validation(e.to_string()))?;
+    let domain_dto: agrocore_domain::entities::task::CreateTaskDataDto = dto.0.into();
     let task = state
         .db
         .task_data_repo()
-        .create(auth.0.tenant_id, dto.0.into(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            domain_dto,
+            auth.0.user_id,
+        )
         .await?;
     Ok(HttpResponse::Created().json(TaskDataDto::from(task)))
 }
@@ -104,7 +124,7 @@ pub async fn create_task(
 #[utoipa::path(
     put,
     path = "/api/v1/tasks/{id}",
-    request_body = CreateTaskDataDto,
+    request_body = UpdateTaskDataDto,
     responses(
         (status = 200, description = "Task updated", body = TaskDataDto),
         (status = 404, description = "Task not found", body = ErrorResponse),
@@ -118,17 +138,27 @@ pub async fn update_task(
     state: web::Data<AppState>,
     auth: AuthUser,
     path: web::Path<uuid::Uuid>,
-    dto: web::Json<CreateTaskDataDto>,
+    dto: web::Json<UpdateTaskDataDto>,
 ) -> Result<HttpResponse, ApiError> {
     let task_id = *path;
-    tracing::info!("Updating task {} for tenant: {}", task_id, auth.0.tenant_id);
+    tracing::info!(
+        "Updating task {} for tenant: {}",
+        task_id,
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     dto.0
         .validate()
         .map_err(|e| SharedError::Validation(e.to_string()))?;
+    let domain_dto: agrocore_domain::entities::task::UpdateTaskDataDto = dto.0.into();
     let task = state
         .db
         .task_data_repo()
-        .update(auth.0.tenant_id, task_id, dto.0.into(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            task_id,
+            domain_dto,
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Task not found".into()))?;
     Ok(HttpResponse::Ok().json(TaskDataDto::from(task)))
@@ -152,11 +182,15 @@ pub async fn delete_task(
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
     let task_id = *path;
-    tracing::info!("Deleting task {} for tenant: {}", task_id, auth.0.tenant_id);
+    tracing::info!(
+        "Deleting task {} for tenant: {}",
+        task_id,
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     if state
         .db
         .task_data_repo()
-        .delete(auth.0.tenant_id, task_id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), task_id)
         .await?
     {
         Ok(HttpResponse::Ok().json(serde_json::json!({"deleted": true})))

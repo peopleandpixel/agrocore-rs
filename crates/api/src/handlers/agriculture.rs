@@ -71,7 +71,7 @@ pub async fn list_olive_groves(
     let result = state
         .db
         .olive_grove_repo()
-        .find_all(auth.0.tenant_id, query.0)
+        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
@@ -90,7 +90,11 @@ pub async fn create_olive_grove(
     let grove = state
         .db
         .olive_grove_repo()
-        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?;
     Ok(HttpResponse::Created().json(grove))
 }
@@ -103,7 +107,7 @@ pub async fn get_olive_grove(
     let grove = state
         .db
         .olive_grove_repo()
-        .find_by_id(auth.0.tenant_id, *id)
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Olive grove not found".into()))?;
     Ok(HttpResponse::Ok().json(grove))
@@ -118,7 +122,12 @@ pub async fn update_olive_grove(
     let grove = state
         .db
         .olive_grove_repo()
-        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Olive grove not found".into()))?;
     Ok(HttpResponse::Ok().json(grove))
@@ -132,7 +141,7 @@ pub async fn delete_olive_grove(
     let success = state
         .db
         .olive_grove_repo()
-        .delete(auth.0.tenant_id, *id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?;
     if success {
         Ok(HttpResponse::NoContent().finish())
@@ -150,7 +159,7 @@ pub async fn list_olive_oil_records(
     let result = state
         .db
         .olive_oil_record_repo()
-        .find_all(auth.0.tenant_id, query.0)
+        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
@@ -169,7 +178,11 @@ pub async fn create_olive_oil_record(
     let record = state
         .db
         .olive_oil_record_repo()
-        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?;
     Ok(HttpResponse::Created().json(record))
 }
@@ -182,7 +195,7 @@ pub async fn get_olive_oil_record(
     let record = state
         .db
         .olive_oil_record_repo()
-        .find_by_id(auth.0.tenant_id, *id)
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Olive oil record not found".into()))?;
     Ok(HttpResponse::Ok().json(record))
@@ -197,7 +210,12 @@ pub async fn update_olive_oil_record(
     let record = state
         .db
         .olive_oil_record_repo()
-        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Olive oil record not found".into()))?;
     Ok(HttpResponse::Ok().json(record))
@@ -211,7 +229,7 @@ pub async fn delete_olive_oil_record(
     let success = state
         .db
         .olive_oil_record_repo()
-        .delete(auth.0.tenant_id, *id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?;
     if success {
         Ok(HttpResponse::NoContent().finish())
@@ -229,7 +247,7 @@ pub async fn list_vineyards(
     let result = state
         .db
         .vineyard_repo()
-        .find_all(auth.0.tenant_id, query.0)
+        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
@@ -248,7 +266,11 @@ pub async fn create_vineyard(
     let v = state
         .db
         .vineyard_repo()
-        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?;
     Ok(HttpResponse::Created().json(v))
 }
@@ -261,7 +283,7 @@ pub async fn get_vineyard(
     let v = state
         .db
         .vineyard_repo()
-        .find_by_id(auth.0.tenant_id, *id)
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Vineyard not found".into()))?;
     Ok(HttpResponse::Ok().json(v))
@@ -276,7 +298,12 @@ pub async fn update_vineyard(
     let v = state
         .db
         .vineyard_repo()
-        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Vineyard not found".into()))?;
     Ok(HttpResponse::Ok().json(v))
@@ -290,7 +317,7 @@ pub async fn delete_vineyard(
     let success = state
         .db
         .vineyard_repo()
-        .delete(auth.0.tenant_id, *id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?;
     if success {
         Ok(HttpResponse::NoContent().finish())
@@ -308,7 +335,7 @@ pub async fn list_kelter_deliveries(
     let result = state
         .db
         .kelter_delivery_repo()
-        .find_all(auth.0.tenant_id, query.0)
+        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
@@ -327,7 +354,11 @@ pub async fn create_kelter_delivery(
     let kd = state
         .db
         .kelter_delivery_repo()
-        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?;
     Ok(HttpResponse::Created().json(kd))
 }
@@ -340,7 +371,7 @@ pub async fn get_kelter_delivery(
     let kd = state
         .db
         .kelter_delivery_repo()
-        .find_by_id(auth.0.tenant_id, *id)
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Kelter delivery not found".into()))?;
     Ok(HttpResponse::Ok().json(kd))
@@ -355,7 +386,12 @@ pub async fn update_kelter_delivery(
     let kd = state
         .db
         .kelter_delivery_repo()
-        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Kelter delivery not found".into()))?;
     Ok(HttpResponse::Ok().json(kd))
@@ -369,7 +405,7 @@ pub async fn delete_kelter_delivery(
     let success = state
         .db
         .kelter_delivery_repo()
-        .delete(auth.0.tenant_id, *id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?;
     if success {
         Ok(HttpResponse::NoContent().finish())

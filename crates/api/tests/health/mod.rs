@@ -1,4 +1,4 @@
-use actix_web::{http::StatusCode, test, test::TestRequest, App};
+use actix_web::{App, http::StatusCode, test, test::TestRequest};
 use agrocore_api::handlers::configure;
 
 #[actix_web::test]

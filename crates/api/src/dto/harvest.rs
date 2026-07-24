@@ -5,7 +5,7 @@ use agrocore_domain::entities::harvest::{
     CreateHarvestDeliveryDto as DomainCreateHarvestDeliveryDto,
     CreateHarvestLotDto as DomainCreateHarvestLotDto,
     CreateHarvestSeasonDto as DomainCreateHarvestSeasonDto, HarvestDelivery, HarvestLot,
-    HarvestSeason, UpdateColdChainLogDto as DomainUpdateColdChainLogDto,
+    HarvestSeason, LotStatus, UpdateColdChainLogDto as DomainUpdateColdChainLogDto,
     UpdateHarvestDeliveryDto as DomainUpdateHarvestDeliveryDto,
     UpdateHarvestLotDto as DomainUpdateHarvestLotDto,
     UpdateHarvestSeasonDto as DomainUpdateHarvestSeasonDto,
@@ -13,6 +13,10 @@ use agrocore_domain::entities::harvest::{
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
+
+// =============================================================================
+// Harvest Season DTOs
+// =============================================================================
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct PaginatedHarvestSeasonResponse {
@@ -27,13 +31,11 @@ pub struct PaginatedHarvestSeasonResponse {
 pub struct HarvestSeasonDto {
     pub id: Uuid,
     pub tenant_id: Uuid,
-    pub site_id: Uuid,
+    pub year: i32,
     pub label: String,
     pub start_date: String,
     pub end_date: Option<String>,
-    pub status: String,
-    pub total_planned_kg: f64,
-    pub total_harvested_kg: f64,
+    pub is_active: bool,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -43,13 +45,11 @@ impl From<HarvestSeason> for HarvestSeasonDto {
         Self {
             id: h.id,
             tenant_id: h.tenant_id.into(),
-            site_id: h.site_id,
+            year: h.year,
             label: h.label,
             start_date: h.start_date.to_rfc3339(),
             end_date: h.end_date.map(|d| d.to_rfc3339()),
-            status: h.status.to_string(),
-            total_planned_kg: h.total_planned_kg,
-            total_harvested_kg: h.total_harvested_kg,
+            is_active: h.is_active,
             created_at: h.created_at.to_rfc3339(),
             updated_at: h.updated_at.to_rfc3339(),
         }
@@ -58,19 +58,18 @@ impl From<HarvestSeason> for HarvestSeasonDto {
 
 #[derive(Debug, Deserialize, ToSchema, validator::Validate)]
 pub struct CreateHarvestSeasonDto {
-    pub site_id: Uuid,
+    #[validate(range(min = 2000, max = 2100))]
+    pub year: i32,
     #[validate(length(min = 1, max = 200))]
     pub label: String,
     pub start_date: String,
     pub end_date: Option<String>,
-    #[validate(range(min = 0.0))]
-    pub total_planned_kg: f64,
 }
 
 impl From<CreateHarvestSeasonDto> for DomainCreateHarvestSeasonDto {
     fn from(dto: CreateHarvestSeasonDto) -> Self {
         Self {
-            site_id: dto.site_id,
+            year: dto.year,
             label: dto.label,
             start_date: chrono::DateTime::parse_from_rfc3339(&dto.start_date)
                 .map(|dt| dt.with_timezone(&chrono::Utc))
@@ -80,7 +79,6 @@ impl From<CreateHarvestSeasonDto> for DomainCreateHarvestSeasonDto {
                     .map(|dt| dt.with_timezone(&chrono::Utc))
                     .ok()
             }),
-            total_planned_kg: dto.total_planned_kg,
         }
     }
 }
@@ -90,8 +88,7 @@ pub struct UpdateHarvestSeasonDto {
     pub label: Option<String>,
     pub start_date: Option<String>,
     pub end_date: Option<String>,
-    pub status: Option<String>,
-    pub total_planned_kg: Option<f64>,
+    pub is_active: Option<bool>,
 }
 
 impl From<UpdateHarvestSeasonDto> for DomainUpdateHarvestSeasonDto {
@@ -108,13 +105,15 @@ impl From<UpdateHarvestSeasonDto> for DomainUpdateHarvestSeasonDto {
                     .map(|dt| dt.with_timezone(&chrono::Utc))
                     .ok()
             }),
-            status: dto.status,
-            total_planned_kg: dto.total_planned_kg,
+            is_active: dto.is_active,
         }
     }
 }
 
+// =============================================================================
 // Harvest Lot DTOs
+// =============================================================================
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct PaginatedHarvestLotResponse {
     pub data: Vec<HarvestLotDto>,
@@ -128,13 +127,13 @@ pub struct PaginatedHarvestLotResponse {
 pub struct HarvestLotDto {
     pub id: Uuid,
     pub tenant_id: Uuid,
-    pub harvest_season_id: Uuid,
-    pub site_id: Uuid,
-    pub label: String,
+    pub season_id: Uuid,
+    pub lot_number: String,
+    pub crop_type: String,
     pub variety: Option<String>,
-    pub quantity_kg: f64,
-    pub quality_grade: Option<String>,
-    pub harvest_date: String,
+    pub quality_target: Option<String>,
+    pub total_weight_kg: f64,
+    pub status: String,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -144,13 +143,13 @@ impl From<HarvestLot> for HarvestLotDto {
         Self {
             id: l.id,
             tenant_id: l.tenant_id.into(),
-            harvest_season_id: l.harvest_season_id,
-            site_id: l.site_id,
-            label: l.label,
+            season_id: l.season_id,
+            lot_number: l.lot_number,
+            crop_type: l.crop_type,
             variety: l.variety,
-            quantity_kg: l.quantity_kg,
-            quality_grade: l.quality_grade,
-            harvest_date: l.harvest_date.to_rfc3339(),
+            quality_target: l.quality_target,
+            total_weight_kg: l.total_weight_kg,
+            status: l.status.to_string(),
             created_at: l.created_at.to_rfc3339(),
             updated_at: l.updated_at.to_rfc3339(),
         }
@@ -159,59 +158,57 @@ impl From<HarvestLot> for HarvestLotDto {
 
 #[derive(Debug, Deserialize, ToSchema, validator::Validate)]
 pub struct CreateHarvestLotDto {
-    pub harvest_season_id: Uuid,
-    pub site_id: Uuid,
-    #[validate(length(min = 1, max = 200))]
-    pub label: String,
+    pub season_id: Uuid,
+    #[validate(length(min = 1))]
+    pub lot_number: String,
+    pub site_ids: Vec<Uuid>,
+    pub crop_type: String,
     pub variety: Option<String>,
-    #[validate(range(min = 0.0))]
-    pub quantity_kg: f64,
-    pub quality_grade: Option<String>,
-    pub harvest_date: String,
+    pub quality_target: Option<String>,
 }
 
 impl From<CreateHarvestLotDto> for DomainCreateHarvestLotDto {
     fn from(dto: CreateHarvestLotDto) -> Self {
         Self {
-            harvest_season_id: dto.harvest_season_id,
-            site_id: dto.site_id,
-            label: dto.label,
+            season_id: dto.season_id,
+            lot_number: dto.lot_number,
+            site_ids: dto.site_ids,
+            crop_type: dto.crop_type,
             variety: dto.variety,
-            quantity_kg: dto.quantity_kg,
-            quality_grade: dto.quality_grade,
-            harvest_date: chrono::DateTime::parse_from_rfc3339(&dto.harvest_date)
-                .map(|dt| dt.with_timezone(&chrono::Utc))
-                .unwrap_or_else(|_| chrono::Utc::now()),
+            quality_target: dto.quality_target,
         }
     }
 }
 
 #[derive(Debug, Deserialize, ToSchema, validator::Validate)]
 pub struct UpdateHarvestLotDto {
-    pub label: Option<String>,
+    pub lot_number: Option<String>,
+    pub site_ids: Option<Vec<Uuid>>,
+    pub crop_type: Option<String>,
     pub variety: Option<String>,
-    pub quantity_kg: Option<f64>,
-    pub quality_grade: Option<String>,
-    pub harvest_date: Option<String>,
+    pub quality_target: Option<String>,
+    pub total_weight_kg: Option<f64>,
+    pub status: Option<LotStatus>,
 }
 
 impl From<UpdateHarvestLotDto> for DomainUpdateHarvestLotDto {
     fn from(dto: UpdateHarvestLotDto) -> Self {
         Self {
-            label: dto.label,
+            lot_number: dto.lot_number,
+            site_ids: dto.site_ids,
+            crop_type: dto.crop_type,
             variety: dto.variety,
-            quantity_kg: dto.quantity_kg,
-            quality_grade: dto.quality_grade,
-            harvest_date: dto.harvest_date.and_then(|s| {
-                chrono::DateTime::parse_from_rfc3339(&s)
-                    .map(|dt| dt.with_timezone(&chrono::Utc))
-                    .ok()
-            }),
+            quality_target: dto.quality_target,
+            total_weight_kg: dto.total_weight_kg,
+            status: dto.status,
         }
     }
 }
 
+// =============================================================================
 // Harvest Delivery DTOs
+// =============================================================================
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct PaginatedHarvestDeliveryResponse {
     pub data: Vec<HarvestDeliveryDto>,
@@ -225,14 +222,15 @@ pub struct PaginatedHarvestDeliveryResponse {
 pub struct HarvestDeliveryDto {
     pub id: Uuid,
     pub tenant_id: Uuid,
-    pub harvest_lot_id: Uuid,
-    pub destination: String,
-    pub quantity_kg: f64,
+    pub lot_id: Uuid,
     pub delivery_date: String,
-    pub vehicle: Option<String>,
-    pub driver: Option<String>,
-    pub temperature_c: Option<f64>,
-    pub notes: Option<String>,
+    pub gross_weight_kg: f64,
+    pub net_weight_kg: f64,
+    pub tare_weight_kg: f64,
+    pub carrier_name: Option<String>,
+    pub vehicle_id: Option<String>,
+    pub quality_notes: Option<String>,
+    pub temperature_at_delivery: Option<f64>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -242,14 +240,15 @@ impl From<HarvestDelivery> for HarvestDeliveryDto {
         Self {
             id: h.id,
             tenant_id: h.tenant_id.into(),
-            harvest_lot_id: h.harvest_lot_id,
-            destination: h.destination,
-            quantity_kg: h.quantity_kg,
+            lot_id: h.lot_id,
             delivery_date: h.delivery_date.to_rfc3339(),
-            vehicle: h.vehicle,
-            driver: h.driver,
-            temperature_c: h.temperature_c,
-            notes: h.notes,
+            gross_weight_kg: h.gross_weight_kg,
+            net_weight_kg: h.net_weight_kg,
+            tare_weight_kg: h.tare_weight_kg,
+            carrier_name: h.carrier_name,
+            vehicle_id: h.vehicle_id,
+            quality_notes: h.quality_notes,
+            temperature_at_delivery: h.temperature_at_delivery,
             created_at: h.created_at.to_rfc3339(),
             updated_at: h.updated_at.to_rfc3339(),
         }
@@ -258,65 +257,70 @@ impl From<HarvestDelivery> for HarvestDeliveryDto {
 
 #[derive(Debug, Deserialize, ToSchema, validator::Validate)]
 pub struct CreateHarvestDeliveryDto {
-    pub harvest_lot_id: Uuid,
-    #[validate(length(min = 1, max = 200))]
-    pub destination: String,
-    #[validate(range(min = 0.0))]
-    pub quantity_kg: f64,
+    pub lot_id: Uuid,
     pub delivery_date: String,
-    pub vehicle: Option<String>,
-    pub driver: Option<String>,
-    pub temperature_c: Option<f64>,
-    pub notes: Option<String>,
+    #[validate(range(min = 0.0))]
+    pub gross_weight_kg: f64,
+    #[validate(range(min = 0.0))]
+    pub tare_weight_kg: f64,
+    pub carrier_name: Option<String>,
+    pub vehicle_id: Option<String>,
+    pub quality_notes: Option<String>,
+    pub temperature_at_delivery: Option<f64>,
 }
 
 impl From<CreateHarvestDeliveryDto> for DomainCreateHarvestDeliveryDto {
     fn from(dto: CreateHarvestDeliveryDto) -> Self {
         Self {
-            harvest_lot_id: dto.harvest_lot_id,
-            destination: dto.destination,
-            quantity_kg: dto.quantity_kg,
+            lot_id: dto.lot_id,
             delivery_date: chrono::DateTime::parse_from_rfc3339(&dto.delivery_date)
                 .map(|dt| dt.with_timezone(&chrono::Utc))
                 .unwrap_or_else(|_| chrono::Utc::now()),
-            vehicle: dto.vehicle,
-            driver: dto.driver,
-            temperature_c: dto.temperature_c,
-            notes: dto.notes,
+            gross_weight_kg: dto.gross_weight_kg,
+            tare_weight_kg: dto.tare_weight_kg,
+            carrier_name: dto.carrier_name,
+            vehicle_id: dto.vehicle_id,
+            quality_notes: dto.quality_notes,
+            temperature_at_delivery: dto.temperature_at_delivery,
         }
     }
 }
 
 #[derive(Debug, Deserialize, ToSchema, validator::Validate)]
 pub struct UpdateHarvestDeliveryDto {
-    pub destination: Option<String>,
-    pub quantity_kg: Option<f64>,
     pub delivery_date: Option<String>,
-    pub vehicle: Option<String>,
-    pub driver: Option<String>,
-    pub temperature_c: Option<f64>,
-    pub notes: Option<String>,
+    pub gross_weight_kg: Option<f64>,
+    pub tare_weight_kg: Option<f64>,
+    pub carrier_name: Option<String>,
+    pub vehicle_id: Option<String>,
+    pub quality_notes: Option<String>,
+    pub temperature_at_delivery: Option<f64>,
 }
 
 impl From<UpdateHarvestDeliveryDto> for DomainUpdateHarvestDeliveryDto {
     fn from(dto: UpdateHarvestDeliveryDto) -> Self {
         Self {
-            destination: dto.destination,
-            quantity_kg: dto.quantity_kg,
+            lot_id: None,
             delivery_date: dto.delivery_date.and_then(|s| {
                 chrono::DateTime::parse_from_rfc3339(&s)
                     .map(|dt| dt.with_timezone(&chrono::Utc))
                     .ok()
             }),
-            vehicle: dto.vehicle,
-            driver: dto.driver,
-            temperature_c: dto.temperature_c,
-            notes: dto.notes,
+            gross_weight_kg: dto.gross_weight_kg,
+            net_weight_kg: None,
+            tare_weight_kg: dto.tare_weight_kg,
+            carrier_name: dto.carrier_name,
+            vehicle_id: dto.vehicle_id,
+            quality_notes: dto.quality_notes,
+            temperature_at_delivery: dto.temperature_at_delivery,
         }
     }
 }
 
+// =============================================================================
 // Cold Chain Log DTOs
+// =============================================================================
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct PaginatedColdChainLogResponse {
     pub data: Vec<ColdChainLogDto>,
@@ -358,10 +362,11 @@ impl From<ColdChainLog> for ColdChainLogDto {
 #[derive(Debug, Deserialize, ToSchema, validator::Validate)]
 pub struct CreateColdChainLogDto {
     pub lot_id: Uuid,
-    pub timestamp: String,
+    pub sensor_id: String,
+    pub recorded_at: String,
     #[validate(range(min = -50.0, max = 100.0))]
     pub temperature_c: f64,
-    pub humidity_percent: Option<f64>,
+    pub humidity_pct: Option<f64>,
     pub location: Option<String>,
 }
 
@@ -369,12 +374,12 @@ impl From<CreateColdChainLogDto> for DomainCreateColdChainLogDto {
     fn from(dto: CreateColdChainLogDto) -> Self {
         Self {
             lot_id: dto.lot_id,
-            sensor_id: dto.location.clone().unwrap_or_default(),
-            recorded_at: chrono::DateTime::parse_from_rfc3339(&dto.timestamp)
+            sensor_id: dto.sensor_id,
+            recorded_at: chrono::DateTime::parse_from_rfc3339(&dto.recorded_at)
                 .map(|dt| dt.with_timezone(&chrono::Utc))
                 .unwrap_or_else(|_| chrono::Utc::now()),
             temperature_c: dto.temperature_c,
-            humidity_pct: dto.humidity_percent,
+            humidity_pct: dto.humidity_pct,
             location: dto.location,
         }
     }

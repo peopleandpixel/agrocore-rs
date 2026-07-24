@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -7,7 +8,7 @@ use crate::entities::tenant::TenantId;
 // use crate::entities::user::UserRole;
 use crate::repositories::VisibilityAwareEntity;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow, ToSchema)]
 pub struct TaskData {
     pub id: Uuid,
     pub tenant_id: TenantId,
@@ -41,7 +42,7 @@ pub struct TaskData {
 // =============================================================================
 impl VisibilityAwareEntity for TaskData {}
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct MaterialUsage {
     pub article_id: Uuid,
     pub label: String,
@@ -49,7 +50,7 @@ pub struct MaterialUsage {
     pub unit: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct GpsPoint {
     pub lng: f64,
     pub lat: f64,
@@ -57,7 +58,7 @@ pub struct GpsPoint {
     pub accuracy: Option<f64>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct CreateTaskDataDto {
     pub order_id: Uuid,
     pub site_id: Uuid,
@@ -78,7 +79,7 @@ pub struct CreateTaskDataDto {
     pub photo_urls: Option<Vec<String>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, Default, ToSchema)]
 pub struct UpdateTaskDataDto {
     pub order_id: Option<Uuid>,
     pub site_id: Option<Uuid>,

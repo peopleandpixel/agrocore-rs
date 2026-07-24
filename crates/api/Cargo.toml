@@ -4,6 +4,26 @@ version.workspace = true
 edition = "2024"
 license.workspace = true
 
+[[test]]
+name = "api_tests"
+path = "tests/api_tests.rs"
+
+[[test]]
+name = "rate_limit_test"
+path = "tests/rate_limit/mod.rs"
+
+[[test]]
+name = "health_test"
+path = "tests/health/mod.rs"
+
+[[test]]
+name = "auth_test"
+path = "tests/auth/mod.rs"
+
+[[test]]
+name = "reporting_test"
+path = "tests/reporting/mod.rs"
+
 [dependencies]
 agrocore-domain = { path = "../domain" }
 agrocore-infrastructure = { path = "../infrastructure" }
@@ -31,4 +51,3 @@ geojson = { workspace = true }
 sqlx = { workspace = true }
 argon2 = { workspace = true }
 rand = { workspace = true }
-

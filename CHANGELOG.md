@@ -2,6 +2,26 @@
 
 Alle Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.4.0] - 2026-07-24
+
+### Fixed
+- **Clippy Clean:** All clippy warnings resolved across workspace (useless_conversion, unnecessary_cast, map_flatten)
+- **Domain Tests:** Fixed TenantId wrapper usage in all domain tests (spatial, workflow, user, site, order, spatial)
+- **API DTOs:** Removed unnecessary `.into()` calls on Uuid/Option fields
+- **Weather DTO:** Replaced `map().flatten()` with `and_then()` for Option serialization
+- **Plant Protection DTO:** Removed unnecessary `as u32` casts
+
+### Changed
+- **Version bump:** 0.3.3 → 0.4.0
+- **Integration Tests:** All 21 tests pass (10 unit + 3 api + 3 auth + 1 health + 2 rate_limit + 2 reporting)
+- **Clean Build:** `cargo check`, `cargo test`, `cargo clippy` all pass without warnings (except proc-macro-error2 future incompat from Leptos 0.8)
+
+### Technical
+- Core domain entities all compile with `ToSchema` derives
+- TenantId wrapper properly implemented in reporting/weather services
+- API handlers use correct TenantId wrapping
+- OpenAPI/Swagger docs generate without errors
+
 ## [Unreleased]
 
 ## [0.3.3] - 2026-07-18

@@ -1,4 +1,5 @@
 use actix_web::{App, HttpResponse, HttpServer, Responder, web};
+use agrocore_domain::TenantId;
 use agrocore_infrastructure::Database;
 use agrocore_shared::Pagination;
 use geojson::{Feature, FeatureCollection, Geometry, GeometryValue};
@@ -22,7 +23,7 @@ impl ReportingService {
         let orders = self
             .db
             .order_repo()
-            .find_all(tenant_id, pagination)
+            .find_all(TenantId(tenant_id), pagination)
             .await?
             .data;
 
@@ -61,7 +62,7 @@ impl ReportingService {
         let sites = self
             .db
             .site_repo()
-            .find_all(tenant_id, pagination)
+            .find_all(TenantId(tenant_id), pagination)
             .await?
             .data;
 
@@ -109,7 +110,7 @@ impl ReportingService {
         let sites = self
             .db
             .site_repo()
-            .find_all(tenant_id, pagination)
+            .find_all(TenantId(tenant_id), pagination)
             .await?
             .data;
 
@@ -155,7 +156,7 @@ impl ReportingService {
         let animals = self
             .db
             .animal_repo()
-            .find_all(tenant_id, pagination)
+            .find_all(TenantId(tenant_id), pagination)
             .await?
             .data;
 

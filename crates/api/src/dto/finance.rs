@@ -3,12 +3,13 @@
 use agrocore_domain::entities::finance::{
     CostCenter, CostCenterType, CreateCostCenterDto as DomainCreateCostCenterDto,
     CreateFinancialRecordDto as DomainCreateFinancialRecordDto,
-    CreatePACApplicationDto as DomainCreatePACApplicationDto, EcoSchemeParticipation,
-    FinancialRecord, FinancialRecordType, PACApplication, UpdateCostCenterDto as DomainUpdateCostCenterDto,
+    CreatePACApplicationDto as DomainCreatePACApplicationDto, FinancialRecord, FinancialRecordType,
+    PACApplication, PACStatus, UpdateCostCenterDto as DomainUpdateCostCenterDto,
     UpdateFinancialRecordDto as DomainUpdateFinancialRecordDto,
     UpdatePACApplicationDto as DomainUpdatePACApplicationDto,
 };
 use serde::{Deserialize, Serialize};
+use serde_json;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -31,7 +32,6 @@ pub struct PACApplicationDto {
     pub eco_schemes: serde_json::Value,
     pub status: String,
     pub submitted_at: Option<String>,
-    pub approved_at: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -44,10 +44,9 @@ impl From<PACApplication> for PACApplicationDto {
             year: p.year,
             application_number: p.application_number,
             total_eligible_area: p.total_eligible_area,
-            eco_schemes: p.eco_schemes,
+            eco_schemes: serde_json::to_value(p.eco_schemes).unwrap_or(serde_json::Value::Null),
             status: p.status.to_string(),
             submitted_at: p.submitted_at.map(|d| d.to_rfc3339()),
-            approved_at: p.approved_at.map(|d| d.to_rfc3339()),
             created_at: p.created_at.to_rfc3339(),
             updated_at: p.updated_at.to_rfc3339(),
         }
@@ -65,11 +64,11 @@ pub struct CreatePACApplicationDto {
 
 impl From<CreatePACApplicationDto> for DomainCreatePACApplicationDto {
     fn from(dto: CreatePACApplicationDto) -> Self {
-        let eco_schemes: Option<Vec<agrocore_domain::entities::finance::EcoSchemeParticipation>> = 
+        let eco_schemes: Vec<agrocore_domain::entities::finance::EcoSchemeParticipation> =
             if dto.eco_schemes.is_null() {
-                None
+                Vec::new()
             } else {
-                serde_json::from_value(dto.eco_schemes).ok()
+                serde_json::from_value(dto.eco_schemes).unwrap_or_default()
             };
 
         Self {
@@ -83,22 +82,38 @@ impl From<CreatePACApplicationDto> for DomainCreatePACApplicationDto {
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct UpdatePACApplicationDto {
+    pub application_number: Option<String>,
     pub status: Option<String>,
+    pub total_eligible_area: Option<f64>,
     pub eco_schemes: Option<serde_json::Value>,
+    pub documents_urls: Option<Vec<String>>,
 }
 
 impl From<UpdatePACApplicationDto> for DomainUpdatePACApplicationDto {
     fn from(dto: UpdatePACApplicationDto) -> Self {
-        let eco_schemes: Option<Vec<agrocore_domain::entities::finance::EcoSchemeParticipation>> = 
-            if dto.eco_schemes.as_ref().map_or(true, |v| v.is_null()) {
+        let eco_schemes: Option<Vec<agrocore_domain::entities::finance::EcoSchemeParticipation>> =
+            if dto.eco_schemes.as_ref().is_none_or(|v| v.is_null()) {
                 None
             } else {
-                serde_json::from_value(dto.eco_schemes.unwrap_or(serde_json::Value::Null)).ok()
+                Some(
+                    serde_json::from_value(dto.eco_schemes.unwrap_or(serde_json::Value::Null))
+                        .unwrap_or_default(),
+                )
             };
+
+        let status = dto.status.and_then(|s| match s.as_str() {
+            "Draft" => Some(PACStatus::Draft),
+            "Submitted" => Some(PACStatus::Submitted),
+            "InReview" => Some(PACStatus::InReview),
+            "Approved" => Some(PACStatus::Approved),
+            "Rejected" => Some(PACStatus::Rejected),
+            "Paid" => Some(PACStatus::Paid),
+            _ => None,
+        });
 
         Self {
             application_number: dto.application_number,
-            status: dto.status,
+            status,
             total_eligible_area: dto.total_eligible_area,
             eco_schemes,
             documents_urls: dto.documents_urls,
@@ -123,10 +138,8 @@ pub struct CostCenterDto {
     pub code: String,
     pub cost_center_type: CostCenterType,
     pub reference_id: Option<Uuid>,
-    pub parent_id: Option<Uuid>,
     pub is_active: bool,
     pub created_at: String,
-    pub updated_at: String,
 }
 
 impl From<CostCenter> for CostCenterDto {
@@ -138,10 +151,8 @@ impl From<CostCenter> for CostCenterDto {
             code: c.code,
             cost_center_type: c.cost_center_type,
             reference_id: c.reference_id,
-            parent_id: c.parent_id,
             is_active: c.is_active,
             created_at: c.created_at.to_rfc3339(),
-            updated_at: c.updated_at.to_rfc3339(),
         }
     }
 }
@@ -154,7 +165,6 @@ pub struct CreateCostCenterDto {
     pub code: String,
     pub cost_center_type: CostCenterType,
     pub reference_id: Option<Uuid>,
-    pub parent_id: Option<Uuid>,
 }
 
 impl From<CreateCostCenterDto> for DomainCreateCostCenterDto {
@@ -164,7 +174,6 @@ impl From<CreateCostCenterDto> for DomainCreateCostCenterDto {
             code: dto.code,
             cost_center_type: dto.cost_center_type,
             reference_id: dto.reference_id,
-            parent_id: dto.parent_id,
         }
     }
 }
@@ -176,7 +185,6 @@ pub struct UpdateCostCenterDto {
     pub code: Option<String>,
     pub cost_center_type: Option<CostCenterType>,
     pub reference_id: Option<Uuid>,
-    pub parent_id: Option<Uuid>,
     pub is_active: Option<bool>,
 }
 
@@ -187,7 +195,6 @@ impl From<UpdateCostCenterDto> for DomainUpdateCostCenterDto {
             code: dto.code,
             cost_center_type: dto.cost_center_type,
             reference_id: dto.reference_id,
-            parent_id: dto.parent_id,
             is_active: dto.is_active,
         }
     }
@@ -215,7 +222,6 @@ pub struct FinancialRecordDto {
     pub description: String,
     pub reference_id: Option<Uuid>,
     pub created_at: String,
-    pub updated_at: String,
 }
 
 impl From<agrocore_domain::entities::finance::FinancialRecord> for FinancialRecordDto {
@@ -232,7 +238,6 @@ impl From<agrocore_domain::entities::finance::FinancialRecord> for FinancialReco
             description: f.description,
             reference_id: f.reference_id,
             created_at: f.created_at.to_rfc3339(),
-            updated_at: f.updated_at.to_rfc3339(),
         }
     }
 }
@@ -244,7 +249,7 @@ pub struct CreateFinancialRecordDto {
     #[validate(range(min = -999999999.0))]
     pub amount: f64,
     pub currency: String,
-    pub record_type: String,
+    pub record_type: FinancialRecordType,
     pub category: String,
     pub description: String,
     pub reference_id: Option<Uuid>,
@@ -273,7 +278,7 @@ pub struct UpdateFinancialRecordDto {
     pub date: Option<String>,
     pub amount: Option<f64>,
     pub currency: Option<String>,
-    pub record_type: Option<String>,
+    pub record_type: Option<FinancialRecordType>,
     pub category: Option<String>,
     pub description: Option<String>,
     pub reference_id: Option<Uuid>,

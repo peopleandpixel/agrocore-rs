@@ -28,7 +28,7 @@ pub async fn list_animals(
     let result = state
         .db
         .animal_repo()
-        .find_all(auth.0.tenant_id, query.0)
+        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
         .await?;
     Ok(HttpResponse::Ok().json(result))
 }
@@ -51,7 +51,11 @@ pub async fn create_animal(
     let animal = state
         .db
         .animal_repo()
-        .create(auth.0.tenant_id, dto.0, auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.0,
+            auth.0.user_id,
+        )
         .await?;
     Ok(HttpResponse::Created().json(animal))
 }
@@ -74,7 +78,12 @@ pub async fn get_animal(
     let animal = state
         .db
         .animal_repo()
-        .find_by_id_visible(auth.0.tenant_id, *path, auth.0.user_id, &roles)
+        .find_by_id_visible(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *path,
+            auth.0.user_id,
+            &roles,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Animal not found".into()))?;
     Ok(HttpResponse::Ok().json(animal))
@@ -99,7 +108,12 @@ pub async fn update_animal(
     let animal = state
         .db
         .animal_repo()
-        .update(auth.0.tenant_id, *path, dto.0, auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *path,
+            dto.0,
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Animal not found".into()))?;
     Ok(HttpResponse::Ok().json(animal))
@@ -122,7 +136,7 @@ pub async fn delete_animal(
     if state
         .db
         .animal_repo()
-        .delete(auth.0.tenant_id, *path)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *path)
         .await?
     {
         Ok(HttpResponse::Ok().json(serde_json::json!({"deleted": true})))
@@ -150,7 +164,7 @@ pub async fn add_treatment(
     if state
         .db
         .animal_repo()
-        .add_treatment(auth.0.tenant_id, *path, dto.0)
+        .add_treatment(agrocore_domain::TenantId(auth.0.tenant_id), *path, dto.0)
         .await?
     {
         Ok(HttpResponse::Ok().json(serde_json::json!({"success": true})))
@@ -178,7 +192,7 @@ pub async fn add_grazing(
     if state
         .db
         .animal_repo()
-        .add_grazing_record(auth.0.tenant_id, *path, dto.0)
+        .add_grazing_record(agrocore_domain::TenantId(auth.0.tenant_id), *path, dto.0)
         .await?
     {
         Ok(HttpResponse::Ok().json(serde_json::json!({"success": true})))

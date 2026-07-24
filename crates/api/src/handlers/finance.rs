@@ -73,7 +73,10 @@ pub async fn list_pac_applications(
     let apps = state
         .db
         .pac_application_repo()
-        .find_all(auth.0.tenant_id, query.into_inner())
+        .find_all(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            query.into_inner(),
+        )
         .await?;
     Ok(HttpResponse::Ok().json(apps))
 }
@@ -97,7 +100,11 @@ pub async fn create_pac_application(
     let app = state
         .db
         .pac_application_repo()
-        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?;
     Ok(HttpResponse::Created().json(app))
 }
@@ -124,7 +131,12 @@ pub async fn get_pac_application(
     let app = state
         .db
         .pac_application_repo()
-        .find_by_id_visible(auth.0.tenant_id, id.into_inner(), auth.0.user_id, &roles)
+        .find_by_id_visible(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            id.into_inner(),
+            auth.0.user_id,
+            &roles,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Not found".into()))?;
     Ok(HttpResponse::Ok().json(app))
@@ -139,7 +151,12 @@ pub async fn update_pac_application(
     let app = state
         .db
         .pac_application_repo()
-        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("PAC Application not found".into()))?;
 
@@ -154,7 +171,7 @@ pub async fn delete_pac_application(
     let success = state
         .db
         .pac_application_repo()
-        .delete(auth.0.tenant_id, *id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?;
 
     if success {
@@ -185,7 +202,10 @@ pub async fn list_cost_centers(
     let ccs = state
         .db
         .cost_center_repo()
-        .find_all(auth.0.tenant_id, query.into_inner())
+        .find_all(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            query.into_inner(),
+        )
         .await?;
     Ok(HttpResponse::Ok().json(ccs))
 }
@@ -209,7 +229,11 @@ pub async fn create_cost_center(
     let cc = state
         .db
         .cost_center_repo()
-        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?;
     Ok(HttpResponse::Created().json(cc))
 }
@@ -236,7 +260,12 @@ pub async fn get_cost_center(
     let cc = state
         .db
         .cost_center_repo()
-        .find_by_id_visible(auth.0.tenant_id, id.into_inner(), auth.0.user_id, &roles)
+        .find_by_id_visible(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            id.into_inner(),
+            auth.0.user_id,
+            &roles,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Not found".into()))?;
     Ok(HttpResponse::Ok().json(cc))
@@ -251,7 +280,12 @@ pub async fn update_cost_center(
     let cc = state
         .db
         .cost_center_repo()
-        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Cost Center not found".into()))?;
 
@@ -266,7 +300,7 @@ pub async fn delete_cost_center(
     let success = state
         .db
         .cost_center_repo()
-        .delete(auth.0.tenant_id, *id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?;
 
     if success {
@@ -297,7 +331,10 @@ pub async fn list_financial_records(
     let recs = state
         .db
         .financial_record_repo()
-        .find_all(auth.0.tenant_id, query.into_inner())
+        .find_all(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            query.into_inner(),
+        )
         .await?;
     Ok(HttpResponse::Ok().json(recs))
 }
@@ -321,7 +358,11 @@ pub async fn create_financial_record(
     let rec = state
         .db
         .financial_record_repo()
-        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?;
     Ok(HttpResponse::Created().json(rec))
 }
@@ -348,7 +389,12 @@ pub async fn get_financial_record(
     let rec = state
         .db
         .financial_record_repo()
-        .find_by_id_visible(auth.0.tenant_id, id.into_inner(), auth.0.user_id, &roles)
+        .find_by_id_visible(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            id.into_inner(),
+            auth.0.user_id,
+            &roles,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Not found".into()))?;
     Ok(HttpResponse::Ok().json(rec))
@@ -363,7 +409,12 @@ pub async fn update_financial_record(
     let record = state
         .db
         .financial_record_repo()
-        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Financial Record not found".into()))?;
 
@@ -378,7 +429,7 @@ pub async fn delete_financial_record(
     let success = state
         .db
         .financial_record_repo()
-        .delete(auth.0.tenant_id, *id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?;
 
     if success {

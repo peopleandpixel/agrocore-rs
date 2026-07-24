@@ -388,7 +388,7 @@ mod tests {
     fn spatial_objects_can_exist_without_site() {
         let farm = SpatialObject {
             id: Uuid::new_v4(),
-            tenant_id: Uuid::new_v4(),
+            tenant_id: TenantId(Uuid::new_v4()),
             site_id: None,
             parent_id: None,
             label: String::from("Main Farm"),
@@ -418,7 +418,7 @@ mod tests {
     fn overlapping_objects_all_match_the_same_position() {
         let field = SpatialObject {
             id: Uuid::new_v4(),
-            tenant_id: Uuid::new_v4(),
+            tenant_id: TenantId(Uuid::new_v4()),
             site_id: None,
             parent_id: None,
             label: String::from("Field A"),
@@ -473,7 +473,7 @@ mod tests {
     fn point_objects_use_a_small_radius() {
         let tree = SpatialObject {
             id: Uuid::new_v4(),
-            tenant_id: Uuid::new_v4(),
+            tenant_id: TenantId(Uuid::new_v4()),
             site_id: None,
             parent_id: None,
             label: String::from("Cork Oak"),

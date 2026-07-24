@@ -135,8 +135,8 @@ impl From<UpdatePlantProtectionDto> for DomainUpdatePlantProtectionDto {
                     .map(|dt| dt.with_timezone(&chrono::Utc))
                     .ok()
             }),
-            pre_harvest_days: dto.pre_harvest_days.map(|v| v as u32),
-            re_entry_days: dto.re_entry_days.map(|v| v as u32),
+            pre_harvest_days: dto.pre_harvest_days,
+            re_entry_days: dto.re_entry_days,
             weather_conditions: dto.weather_conditions,
             applicator_license: dto.applicator_license,
         }

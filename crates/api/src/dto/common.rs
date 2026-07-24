@@ -1,11 +1,15 @@
 //! Common DTOs shared across modules
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-#[derive(Debug, Serialize)]
-pub struct PaginatedResponseDto<T: Serialize> {
+#[derive(Debug, Serialize, ToSchema)]
+#[schema(as = PaginatedResponse<T>)]
+pub struct PaginatedResponseDto<T>
+where
+    T: Serialize + ToSchema,
+{
     pub data: Vec<T>,
     pub total: u64,
     pub page: u64,

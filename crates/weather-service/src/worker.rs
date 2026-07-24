@@ -1,7 +1,7 @@
-use agrocore_domain::entities::tenant::Tenant;
 use agrocore_domain::entities::weather::{
     CreateWeatherDataDto, CreateWeatherStationDto, WeatherStationType,
 };
+use agrocore_domain::{TenantId, entities::tenant::Tenant};
 use agrocore_infrastructure::Database;
 use agrocore_messaging::{Event, GlobalEvent, MessagingClient};
 use agrocore_shared::Pagination;
@@ -144,7 +144,7 @@ async fn process_tenant_weather(
 ) -> anyhow::Result<()> {
     let stations = db
         .weather_station_repo()
-        .find_all(tenant.id, Pagination::default())
+        .find_all(TenantId(tenant.id), Pagination::default())
         .await?;
 
     // Check for active stations
@@ -200,7 +200,7 @@ async fn process_tenant_weather(
             info!("Creating virtual weather station for tenant {}", tenant.id);
             db.weather_station_repo()
                 .create(
-                    tenant.id,
+                    TenantId(tenant.id),
                     CreateWeatherStationDto {
                         label: virtual_station_label.to_string(),
                         station_type: WeatherStationType::Virtual,
@@ -226,7 +226,7 @@ async fn process_tenant_weather(
     if let Some(current) = weather_resp.current {
         db.weather_data_repo()
             .create(
-                tenant.id,
+                TenantId(tenant.id),
                 CreateWeatherDataDto {
                     station_id: station.id,
                     timestamp: current.time,
@@ -237,6 +237,9 @@ async fn process_tenant_weather(
                     wind_direction_deg: None,
                     solar_radiation_wm2: None,
                     pressure_hpa: None,
+                    soil_temperature_c: None,
+                    soil_moisture_percent: None,
+                    leaf_wetness: None,
                 },
             )
             .await?;

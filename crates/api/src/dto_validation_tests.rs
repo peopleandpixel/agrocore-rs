@@ -68,6 +68,9 @@ fn test_api_user_dto_validation() {
         email: "bad-email".to_string(),
         password: "short".to_string(),
         roles: None,
+        internal_cost_per_hour: None,
+        external_cost_per_hour: None,
+        language: None,
     };
     assert!(dto.validate().is_err());
 
@@ -84,6 +87,19 @@ fn test_api_task_dto_validation() {
         order_id: Uuid::new_v4(),
         site_id: Uuid::new_v4(),
         description: "".to_string(),
+        started_at: None,
+        ended_at: None,
+        paused_at: None,
+        resume_at: None,
+        duration_minutes: None,
+        machine_id: None,
+        machine_hours: None,
+        cost_center_id: None,
+        area_covered: None,
+        materials_used: None,
+        observations: None,
+        gps_track: None,
+        photo_urls: None,
     };
     assert!(dto.validate().is_err());
 

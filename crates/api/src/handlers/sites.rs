@@ -29,11 +29,19 @@ pub async fn list_sites(
     auth: AuthUser,
     query: web::Query<agrocore_shared::Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    tracing::info!("Listing sites for tenant: {}", auth.0.tenant_id);
+    tracing::info!(
+        "Listing sites for tenant: {}",
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     let result = state
         .db
         .site_repo()
-        .find_all_visible(auth.0.tenant_id, query.0, auth.0.user_id, &auth.roles())
+        .find_all_visible(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            query.0,
+            auth.0.user_id,
+            &auth.roles(),
+        )
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data.into_iter().map(SiteDto::from).collect(),
@@ -61,11 +69,20 @@ pub async fn get_site(
     path: web::Path<uuid::Uuid>,
 ) -> Result<HttpResponse, ApiError> {
     let site_id = *path;
-    tracing::info!("Getting site {} for tenant: {}", site_id, auth.0.tenant_id);
+    tracing::info!(
+        "Getting site {} for tenant: {}",
+        site_id,
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     let site = state
         .db
         .site_repo()
-        .find_by_id_visible(auth.0.tenant_id, site_id, auth.0.user_id, &auth.roles())
+        .find_by_id_visible(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            site_id,
+            auth.0.user_id,
+            &auth.roles(),
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Site not found".into()))?;
     Ok(HttpResponse::Ok().json(SiteDto::from(site)))
@@ -89,14 +106,21 @@ pub async fn create_site(
     dto: web::Json<CreateSiteDto>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
-    tracing::info!("Creating site for tenant: {}", auth.0.tenant_id);
+    tracing::info!(
+        "Creating site for tenant: {}",
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     dto.0
         .validate()
         .map_err(|e| SharedError::Validation(e.to_string()))?;
     let site = state
         .db
         .site_repo()
-        .create(auth.0.tenant_id, dto.0.into(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.0.into(),
+            auth.0.user_id,
+        )
         .await?;
     let event = Event::new("api".into(), GlobalEvent::SiteCreated(site.clone()));
     let _ = state.messaging.publish("events.sites", &event).await;
@@ -124,14 +148,23 @@ pub async fn update_site(
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
     let site_id = *path;
-    tracing::info!("Updating site {} for tenant: {}", site_id, auth.0.tenant_id);
+    tracing::info!(
+        "Updating site {} for tenant: {}",
+        site_id,
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     dto.0
         .validate()
         .map_err(|e| SharedError::Validation(e.to_string()))?;
     let site = state
         .db
         .site_repo()
-        .update(auth.0.tenant_id, site_id, dto.0.into(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            site_id,
+            dto.0.into(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Site not found".into()))?;
     let event = Event::new("api".into(), GlobalEvent::SiteUpdated(site.clone()));
@@ -157,11 +190,15 @@ pub async fn delete_site(
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
     let site_id = *path;
-    tracing::info!("Deleting site {} for tenant: {}", site_id, auth.0.tenant_id);
+    tracing::info!(
+        "Deleting site {} for tenant: {}",
+        site_id,
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     if state
         .db
         .site_repo()
-        .delete(auth.0.tenant_id, site_id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), site_id)
         .await?
     {
         let event = Event::new("api".into(), GlobalEvent::SiteDeleted(site_id));

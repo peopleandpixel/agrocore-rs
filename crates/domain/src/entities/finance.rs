@@ -29,7 +29,10 @@ pub struct PACApplication {
 
 impl VisibilityAwareEntity for PACApplication {}
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, strum::Display, strum::EnumString,
+)]
+#[strum(serialize_all = "PascalCase")]
 pub enum PACStatus {
     Draft,
     Submitted,
@@ -58,6 +61,8 @@ pub struct CostCenter {
     pub cost_center_type: CostCenterType,
     pub reference_id: Option<Uuid>,
     pub is_active: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 impl VisibilityAwareEntity for CostCenter {}
@@ -89,7 +94,10 @@ pub struct FinancialRecord {
 
 impl VisibilityAwareEntity for FinancialRecord {}
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, strum::Display, strum::EnumString,
+)]
+#[strum(serialize_all = "snake_case")]
 pub enum FinancialRecordType {
     Expense,
     Income,

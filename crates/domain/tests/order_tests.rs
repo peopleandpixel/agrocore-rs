@@ -2,13 +2,14 @@ use agrocore_domain::entities::order::{
     Order, OrderStatus, OrderType, RecurrenceCadence, RecurrenceRule, TaskAutomationAction,
     TaskExecutionMode, TaskExecutionPolicy,
 };
+use agrocore_domain::entities::tenant::TenantId;
 use chrono::{Datelike, TimeZone, Utc};
 use uuid::Uuid;
 
 fn sample_order(status: OrderStatus) -> Order {
     Order {
         id: Uuid::new_v4(),
-        tenant_id: Uuid::new_v4(),
+        tenant_id: TenantId(Uuid::new_v4()),
         label: String::from("Test Order"),
         order_type: OrderType::Harvest,
         status,

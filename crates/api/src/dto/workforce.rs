@@ -1,9 +1,6 @@
 //! Worker Task Status DTOs
 
-use agrocore_domain::entities::worker_task_status::{
-    CreateWorkerTaskStatusDto as DomainCreateWorkerTaskStatusDto, WorkerTaskStatus,
-    WorkerTaskStatusType,
-};
+use agrocore_domain::entities::worker_task_status::{WorkerTaskStatus, WorkerTaskStatusType};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;

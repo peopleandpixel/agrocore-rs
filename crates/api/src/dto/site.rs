@@ -1,9 +1,6 @@
 //! Site DTOs
 
-use agrocore_domain::entities::site::{
-    Boundary, CreateSiteDto as DomainCreateSiteDto, GeoPoint, Site, SiteProperty,
-    UpdateSiteDto as DomainUpdateSiteDto,
-};
+use agrocore_domain::entities::site::{Boundary, GeoPoint, SiteProperty};
 use agrocore_domain::entities::{BbchStage, CropType, SiteType};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;

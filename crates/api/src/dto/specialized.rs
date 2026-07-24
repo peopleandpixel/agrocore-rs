@@ -9,14 +9,13 @@ use agrocore_domain::entities::olive::{
 use agrocore_domain::entities::vineyard::{
     CreateKelterDeliveryDto as DomainCreateKelterDeliveryDto,
     CreateVineyardDto as DomainCreateVineyardDto, KelterDelivery,
-    UpdateKelterDeliveryDto as DomainUpdateKelterDeliveryDto,
+    QualityGrade as VineyardQualityGrade, UpdateKelterDeliveryDto as DomainUpdateKelterDeliveryDto,
     UpdateVineyardDto as DomainUpdateVineyardDto, Vineyard,
 };
-use chrono::{DateTime, Datelike, Utc};
+use chrono::Datelike;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
-
 // =============================================================================
 // Vineyard DTOs
 // =============================================================================
@@ -41,7 +40,7 @@ pub struct VineyardDto {
     pub ph_at_harvest: Option<f64>,
     pub acidity: Option<f64>,
     pub yield_tons: Option<f64>,
-    pub quality_grade: Option<QualityGrade>,
+    pub quality_grade: Option<VineyardQualityGrade>,
     pub slope_percent: Option<f64>,
     pub altitude_m: Option<f64>,
     pub is_organic: bool,
@@ -86,7 +85,7 @@ pub struct CreateVineyardDto {
     pub ph_at_harvest: Option<f64>,
     pub acidity: Option<f64>,
     pub yield_tons: Option<f64>,
-    pub quality_grade: Option<QualityGrade>,
+    pub quality_grade: Option<VineyardQualityGrade>,
     pub slope_percent: Option<f64>,
     pub altitude_m: Option<f64>,
     pub is_organic: bool,
@@ -124,7 +123,7 @@ pub struct UpdateVineyardDto {
     pub ph_at_harvest: Option<f64>,
     pub acidity: Option<f64>,
     pub yield_tons: Option<f64>,
-    pub quality_grade: Option<QualityGrade>,
+    pub quality_grade: Option<VineyardQualityGrade>,
     pub slope_percent: Option<f64>,
     pub altitude_m: Option<f64>,
     pub is_organic: Option<bool>,
@@ -465,7 +464,11 @@ impl From<CreateOliveOilRecordDto> for DomainCreateOliveOilRecordDto {
             harvest_year: chrono::DateTime::parse_from_rfc3339(&dto.harvest_date)
                 .map(|dt| dt.with_timezone(&chrono::Utc).year())
                 .unwrap_or_else(|_| chrono::Utc::now().year()),
-            oil_grade: dto.quality_grade.as_ref().and_then(|q| q.parse().ok()).unwrap_or(OilGrade::ExtraVirgin),
+            oil_grade: dto
+                .quality_grade
+                .as_ref()
+                .and_then(|q| q.parse().ok())
+                .unwrap_or(OilGrade::ExtraVirgin),
             acidity_pct: dto.acidity_percent,
             peroxide_value: dto.peroxide_value,
             sensory_score: None,

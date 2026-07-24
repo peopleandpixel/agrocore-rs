@@ -3,11 +3,11 @@
 use agrocore_domain::entities::water::{
     CreateWaterQuotaDto as DomainCreateWaterQuotaDto,
     CreateWaterSourceDto as DomainCreateWaterSourceDto,
-    CreateWaterUsageDto as DomainCreateWaterUsageDto,
+    CreateWaterUsageDto as DomainCreateWaterUsageDto, IrrigationMethod,
     UpdateWaterQuotaDto as DomainUpdateWaterQuotaDto,
     UpdateWaterSourceDto as DomainUpdateWaterSourceDto,
     UpdateWaterUsageDto as DomainUpdateWaterUsageDto, WaterQuota, WaterSource, WaterSourceType,
-    WaterUsage, IrrigationMethod,
+    WaterUsage,
 };
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -160,7 +160,10 @@ impl From<CreateWaterUsageDto> for DomainCreateWaterUsageDto {
                 .map(|dt| dt.with_timezone(&chrono::Utc))
                 .unwrap_or_else(|_| chrono::Utc::now()),
             volume_m3: dto.volume_m3,
-            irrigation_method: dto.irrigation_method.parse().unwrap_or(IrrigationMethod::Drip),
+            irrigation_method: dto
+                .irrigation_method
+                .parse()
+                .unwrap_or(IrrigationMethod::Drip),
             efficiency_pct: dto.efficiency_pct,
         }
     }
@@ -187,7 +190,9 @@ impl From<UpdateWaterUsageDto> for DomainUpdateWaterUsageDto {
                     .ok()
             }),
             volume_m3: dto.volume_m3,
-            irrigation_method: dto.irrigation_method.map(|p| p.parse().unwrap_or(IrrigationMethod::Drip)),
+            irrigation_method: dto
+                .irrigation_method
+                .map(|p| p.parse().unwrap_or(IrrigationMethod::Drip)),
             efficiency_pct: dto.efficiency_pct,
         }
     }

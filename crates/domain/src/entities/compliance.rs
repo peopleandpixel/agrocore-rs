@@ -6,7 +6,7 @@ use validator::Validate;
 
 use crate::entities::tenant::TenantId;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow, ToSchema)]
 pub struct AuditLog {
     pub id: Uuid,
     pub tenant_id: TenantId,
@@ -32,7 +32,7 @@ pub enum AuditAction {
     Rejected,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow, ToSchema)]
 pub struct ComplianceChecklist {
     pub id: Uuid,
     pub tenant_id: TenantId,
@@ -106,7 +106,7 @@ pub struct CreateAuditLogDto {
     pub ip_address: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow, ToSchema)]
 pub struct FertilizerRecord {
     pub id: Uuid,
     pub tenant_id: TenantId,
@@ -148,7 +148,7 @@ pub struct CreateFertilizerRecordDto {
     pub application_date: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, Default, ToSchema)]
 pub struct UpdateFertilizerRecordDto {
     pub site_id: Option<Uuid>,
     pub order_id: Option<Uuid>,

@@ -57,7 +57,7 @@ pub async fn list_water_sources(
     let result = state
         .db
         .water_source_repo()
-        .find_all(auth.0.tenant_id, query.0)
+        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
@@ -76,7 +76,11 @@ pub async fn create_water_source(
     let source = state
         .db
         .water_source_repo()
-        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?;
     Ok(HttpResponse::Created().json(source))
 }
@@ -89,7 +93,7 @@ pub async fn get_water_source(
     let source = state
         .db
         .water_source_repo()
-        .find_by_id(auth.0.tenant_id, *id)
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Water source not found".into()))?;
     Ok(HttpResponse::Ok().json(source))
@@ -104,7 +108,12 @@ pub async fn update_water_source(
     let source = state
         .db
         .water_source_repo()
-        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Water source not found".into()))?;
     Ok(HttpResponse::Ok().json(source))
@@ -118,7 +127,7 @@ pub async fn delete_water_source(
     let success = state
         .db
         .water_source_repo()
-        .delete(auth.0.tenant_id, *id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?;
     if success {
         Ok(HttpResponse::NoContent().finish())
@@ -135,7 +144,7 @@ pub async fn list_water_usage(
     let result = state
         .db
         .water_usage_repo()
-        .find_all(auth.0.tenant_id, query.0)
+        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
@@ -154,7 +163,11 @@ pub async fn create_water_usage(
     let usage = state
         .db
         .water_usage_repo()
-        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?;
     Ok(HttpResponse::Created().json(usage))
 }
@@ -167,7 +180,7 @@ pub async fn get_water_usage(
     let usage = state
         .db
         .water_usage_repo()
-        .find_by_id(auth.0.tenant_id, *id)
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Water usage not found".into()))?;
     Ok(HttpResponse::Ok().json(usage))
@@ -182,7 +195,12 @@ pub async fn update_water_usage(
     let usage = state
         .db
         .water_usage_repo()
-        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Water usage not found".into()))?;
     Ok(HttpResponse::Ok().json(usage))
@@ -196,7 +214,7 @@ pub async fn delete_water_usage(
     let success = state
         .db
         .water_usage_repo()
-        .delete(auth.0.tenant_id, *id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?;
     if success {
         Ok(HttpResponse::NoContent().finish())
@@ -213,7 +231,7 @@ pub async fn list_water_quotas(
     let result = state
         .db
         .water_quota_repo()
-        .find_all(auth.0.tenant_id, query.0)
+        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
@@ -232,7 +250,11 @@ pub async fn create_water_quota(
     let quota = state
         .db
         .water_quota_repo()
-        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?;
     Ok(HttpResponse::Created().json(quota))
 }
@@ -245,7 +267,7 @@ pub async fn get_water_quota(
     let quota = state
         .db
         .water_quota_repo()
-        .find_by_id(auth.0.tenant_id, *id)
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Water quota not found".into()))?;
     Ok(HttpResponse::Ok().json(quota))
@@ -260,7 +282,12 @@ pub async fn update_water_quota(
     let quota = state
         .db
         .water_quota_repo()
-        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Water quota not found".into()))?;
     Ok(HttpResponse::Ok().json(quota))
@@ -274,7 +301,7 @@ pub async fn delete_water_quota(
     let success = state
         .db
         .water_quota_repo()
-        .delete(auth.0.tenant_id, *id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?;
     if success {
         Ok(HttpResponse::NoContent().finish())

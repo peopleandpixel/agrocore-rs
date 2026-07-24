@@ -1,5 +1,6 @@
 //! Weather DTOs
 
+use agrocore_domain::entities::BbchStage;
 use agrocore_domain::entities::weather::{
     CreatePhenologyRecordDto as DomainCreatePhenologyRecordDto,
     CreateWeatherDataDto as DomainCreateWeatherDataDto,
@@ -45,7 +46,7 @@ impl From<WeatherStation> for WeatherStationDto {
             tenant_id: w.tenant_id.into(),
             label: w.label,
             station_type: w.station_type.to_string(),
-            location: w.location.map(|g| serde_json::to_value(g).ok()).flatten(),
+            location: w.location.and_then(|g| serde_json::to_value(g).ok()),
             manufacturer: w.manufacturer,
             model: w.model,
             serial_number: w.serial_number,
@@ -256,7 +257,7 @@ pub struct PhenologyRecordDto {
     pub tenant_id: Uuid,
     pub site_id: Uuid,
     pub observation_date: String,
-    pub stage: agrocore_domain::entities::weather::BbchStage,
+    pub stage: BbchStage,
     pub forecast_next_stage_date: Option<String>,
     pub notes: Option<String>,
     pub photo_url: Option<String>,
@@ -285,7 +286,7 @@ impl From<PhenologyRecord> for PhenologyRecordDto {
 pub struct CreatePhenologyRecordDto {
     pub site_id: Uuid,
     pub observation_date: String,
-    pub stage: agrocore_domain::entities::weather::BbchStage,
+    pub stage: BbchStage,
     pub notes: Option<String>,
     pub photo_url: Option<String>,
 }
@@ -308,7 +309,7 @@ impl From<CreatePhenologyRecordDto> for DomainCreatePhenologyRecordDto {
 pub struct UpdatePhenologyRecordDto {
     pub site_id: Option<Uuid>,
     pub observation_date: Option<String>,
-    pub stage: Option<agrocore_domain::entities::weather::BbchStage>,
+    pub stage: Option<agrocore_domain::entities::BbchStage>,
     pub forecast_next_stage_date: Option<String>,
     pub notes: Option<String>,
     pub photo_url: Option<String>,

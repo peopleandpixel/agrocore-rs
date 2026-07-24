@@ -1,3 +1,4 @@
+use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::{Action, Resource, User, UserRole};
 use chrono::Utc;
 use uuid::Uuid;
@@ -19,7 +20,7 @@ fn user_role_permissions_cover_core_branches() {
 fn user_validation_rejects_invalid_names_and_email() {
     let user = User {
         id: Uuid::new_v4(),
-        tenant_id: Uuid::new_v4(),
+        tenant_id: TenantId(Uuid::new_v4()),
         firstname: String::new(),
         lastname: String::new(),
         email: String::from("invalid"),

@@ -70,7 +70,7 @@ pub async fn list_stations(
     let result = state
         .db
         .weather_station_repo()
-        .find_all(auth.0.tenant_id, query.0)
+        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
@@ -103,7 +103,7 @@ pub async fn get_station(
     let station = state
         .db
         .weather_station_repo()
-        .find_by_id(auth.0.tenant_id, *id)
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Station not found".into()))?;
     Ok(HttpResponse::Ok().json(station))
@@ -118,7 +118,12 @@ pub async fn update_station(
     let station = state
         .db
         .weather_station_repo()
-        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Station not found".into()))?;
     Ok(HttpResponse::Ok().json(station))
@@ -132,7 +137,7 @@ pub async fn delete_station(
     let success = state
         .db
         .weather_station_repo()
-        .delete(auth.0.tenant_id, *id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?;
     if success {
         Ok(HttpResponse::NoContent().finish())
@@ -160,7 +165,11 @@ pub async fn create_station(
     let station = state
         .db
         .weather_station_repo()
-        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?;
     Ok(HttpResponse::Created().json(station))
 }
@@ -183,7 +192,7 @@ pub async fn list_weather_data(
     let result = state
         .db
         .weather_data_repo()
-        .find_all(auth.0.tenant_id, query.0)
+        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
@@ -213,7 +222,10 @@ pub async fn create_weather_data(
     let wd = state
         .db
         .weather_data_repo()
-        .create(auth.0.tenant_id, dto.into_inner())
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner(),
+        )
         .await?;
     Ok(HttpResponse::Created().json(wd))
 }
@@ -226,7 +238,7 @@ pub async fn get_weather_data(
     let data = state
         .db
         .weather_data_repo()
-        .find_by_id(auth.0.tenant_id, *id)
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Weather data not found".into()))?;
     Ok(HttpResponse::Ok().json(data))
@@ -241,7 +253,11 @@ pub async fn update_weather_data(
     let data = state
         .db
         .weather_data_repo()
-        .update(auth.0.tenant_id, *id, dto.into_inner())
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner(),
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Weather data not found".into()))?;
     Ok(HttpResponse::Ok().json(data))
@@ -255,7 +271,7 @@ pub async fn delete_weather_data(
     let success = state
         .db
         .weather_data_repo()
-        .delete(auth.0.tenant_id, *id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?;
     if success {
         Ok(HttpResponse::NoContent().finish())
@@ -282,7 +298,7 @@ pub async fn list_phenology(
     let result = state
         .db
         .phenology_record_repo()
-        .find_all(auth.0.tenant_id, query.0)
+        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
@@ -312,7 +328,11 @@ pub async fn create_phenology(
     let pr = state
         .db
         .phenology_record_repo()
-        .create(auth.0.tenant_id, dto.into_inner(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?;
     Ok(HttpResponse::Created().json(pr))
 }
@@ -325,7 +345,7 @@ pub async fn get_phenology(
     let record = state
         .db
         .phenology_record_repo()
-        .find_by_id(auth.0.tenant_id, *id)
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Phenology record not found".into()))?;
     Ok(HttpResponse::Ok().json(record))
@@ -340,7 +360,12 @@ pub async fn update_phenology(
     let record = state
         .db
         .phenology_record_repo()
-        .update(auth.0.tenant_id, *id, dto.into_inner(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Phenology record not found".into()))?;
     Ok(HttpResponse::Ok().json(record))
@@ -354,7 +379,7 @@ pub async fn delete_phenology(
     let success = state
         .db
         .phenology_record_repo()
-        .delete(auth.0.tenant_id, *id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
         .await?;
     if success {
         Ok(HttpResponse::NoContent().finish())

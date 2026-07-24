@@ -3,9 +3,7 @@
 use agrocore_domain::entities::compliance::{
     ChecklistItem, ChecklistType, ComplianceChecklist, ComplianceStatus,
     CreateComplianceChecklistDto as DomainCreateComplianceChecklistDto,
-    CreateFertilizerRecordDto as DomainCreateFertilizerRecordDto,
     UpdateComplianceChecklistDto as DomainUpdateComplianceChecklistDto,
-    UpdateFertilizerRecordDto as DomainUpdateFertilizerRecordDto,
 };
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -248,7 +246,7 @@ pub struct UpdateFertilizerRecordDto {
 }
 
 impl From<UpdateFertilizerRecordDto>
-    for agrocore_domain::entities::compliance::UpdateFertilizerRecordDto
+    for agrocore_domain::entities::fertilizer::UpdateFertilizerRecordDto
 {
     fn from(dto: UpdateFertilizerRecordDto) -> Self {
         Self {

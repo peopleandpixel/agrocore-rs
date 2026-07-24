@@ -1,11 +1,12 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
 use crate::entities::tenant::TenantId;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow, ToSchema)]
 pub struct FertilizerRecord {
     pub id: Uuid,
     pub tenant_id: TenantId,
@@ -28,7 +29,7 @@ pub struct FertilizerRecord {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct CreateFertilizerRecordDto {
     pub site_id: Uuid,
     pub order_id: Option<Uuid>,
@@ -47,7 +48,7 @@ pub struct CreateFertilizerRecordDto {
     pub application_date: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, Default, ToSchema)]
 pub struct UpdateFertilizerRecordDto {
     pub site_id: Option<Uuid>,
     pub order_id: Option<Uuid>,

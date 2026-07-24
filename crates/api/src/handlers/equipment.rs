@@ -30,11 +30,14 @@ pub async fn list_equipments(
     auth: AuthUser,
     query: web::Query<agrocore_shared::Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    tracing::info!("Listing equipment for tenant: {}", auth.0.tenant_id);
+    tracing::info!(
+        "Listing equipment for tenant: {}",
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     let result = state
         .db
         .equipment_repo()
-        .find_all(auth.0.tenant_id, query.0)
+        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data.into_iter().map(EquipmentDto::from).collect(),
@@ -65,12 +68,12 @@ pub async fn get_equipment(
     tracing::info!(
         "Getting equipment {} for tenant: {}",
         equipment_id,
-        auth.0.tenant_id
+        agrocore_domain::TenantId(auth.0.tenant_id)
     );
     let equipment = state
         .db
         .equipment_repo()
-        .find_by_id(auth.0.tenant_id, equipment_id)
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), equipment_id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Equipment not found".into()))?;
     Ok(HttpResponse::Ok().json(EquipmentDto::from(equipment)))
@@ -93,14 +96,21 @@ pub async fn create_equipment(
     auth: AuthUser,
     dto: web::Json<CreateEquipmentDto>,
 ) -> Result<HttpResponse, ApiError> {
-    tracing::info!("Creating equipment for tenant: {}", auth.0.tenant_id);
+    tracing::info!(
+        "Creating equipment for tenant: {}",
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     dto.0
         .validate()
         .map_err(|e| SharedError::Validation(e.to_string()))?;
     let equipment = state
         .db
         .equipment_repo()
-        .create(auth.0.tenant_id, dto.0.into(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.0.into(),
+            auth.0.user_id,
+        )
         .await?;
     Ok(HttpResponse::Created().json(EquipmentDto::from(equipment)))
 }
@@ -128,7 +138,7 @@ pub async fn update_equipment(
     tracing::info!(
         "Updating equipment {} for tenant: {}",
         equipment_id,
-        auth.0.tenant_id
+        agrocore_domain::TenantId(auth.0.tenant_id)
     );
     dto.0
         .validate()
@@ -136,7 +146,12 @@ pub async fn update_equipment(
     let equipment = state
         .db
         .equipment_repo()
-        .update(auth.0.tenant_id, equipment_id, dto.0.into(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            equipment_id,
+            dto.0.into(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Equipment not found".into()))?;
     Ok(HttpResponse::Ok().json(EquipmentDto::from(equipment)))
@@ -162,12 +177,12 @@ pub async fn delete_equipment(
     tracing::info!(
         "Deleting equipment {} for tenant: {}",
         equipment_id,
-        auth.0.tenant_id
+        agrocore_domain::TenantId(auth.0.tenant_id)
     );
     if state
         .db
         .equipment_repo()
-        .delete(auth.0.tenant_id, equipment_id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), equipment_id)
         .await?
     {
         Ok(HttpResponse::Ok().json(serde_json::json!({"deleted": true})))

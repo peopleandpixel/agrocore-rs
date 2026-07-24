@@ -1,7 +1,7 @@
 use crate::AppState;
 use crate::dto::{
-    CreateUserDto, ErrorResponse, PaginatedResponseDto, PaginatedUserResponse, UpdateUserDto,
-    UserDto,
+    ErrorResponse, PaginatedResponseDto, PaginatedUserResponse, UserDto,
+    user::{CreateUserDto, UpdateUserDto},
 };
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
@@ -30,11 +30,14 @@ pub async fn list_users(
     query: web::Query<agrocore_shared::Pagination>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
-    tracing::info!("Listing users for tenant: {}", auth.0.tenant_id);
+    tracing::info!(
+        "Listing users for tenant: {}",
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     let result = state
         .db
         .user_repo()
-        .find_all(auth.0.tenant_id, query.0)
+        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data.into_iter().map(UserDto::from).collect(),
@@ -70,11 +73,15 @@ pub async fn get_user(
         );
     }
 
-    tracing::info!("Getting user {} for tenant: {}", user_id, auth.0.tenant_id);
+    tracing::info!(
+        "Getting user {} for tenant: {}",
+        user_id,
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     let u = state
         .db
         .user_repo()
-        .find_by_id(auth.0.tenant_id, user_id)
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), user_id)
         .await?
         .ok_or_else(|| SharedError::NotFound("User not found".into()))?;
     Ok(HttpResponse::Ok().json(UserDto::from(u)))
@@ -98,14 +105,21 @@ pub async fn create_user(
     dto: web::Json<CreateUserDto>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_admin()?;
-    tracing::info!("Creating user for tenant: {}", auth.0.tenant_id);
+    tracing::info!(
+        "Creating user for tenant: {}",
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     dto.0
         .validate()
         .map_err(|e| SharedError::Validation(e.to_string()))?;
     let u = state
         .db
         .user_repo()
-        .create(auth.0.tenant_id, dto.0.into(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.0.into(),
+            auth.0.user_id,
+        )
         .await?;
     let event = Event::new("api".into(), GlobalEvent::UserCreated(u.clone()));
     let _ = state.messaging.publish("events.users", &event).await;
@@ -137,14 +151,23 @@ pub async fn update_user(
     {
         return Err(e.into());
     }
-    tracing::info!("Updating user {} for tenant: {}", user_id, auth.0.tenant_id);
+    tracing::info!(
+        "Updating user {} for tenant: {}",
+        user_id,
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     dto.0
         .validate()
         .map_err(|e| SharedError::Validation(e.to_string()))?;
     let u = state
         .db
         .user_repo()
-        .update(auth.0.tenant_id, user_id, dto.0.into(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            user_id,
+            dto.0.into(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("User not found".into()))?;
     let event = Event::new("api".into(), GlobalEvent::UserUpdated(u.clone()));
@@ -170,11 +193,15 @@ pub async fn delete_user(
 ) -> Result<HttpResponse, ApiError> {
     auth.require_admin()?;
     let user_id = *path;
-    tracing::info!("Deleting user {} for tenant: {}", user_id, auth.0.tenant_id);
+    tracing::info!(
+        "Deleting user {} for tenant: {}",
+        user_id,
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     if state
         .db
         .user_repo()
-        .delete(auth.0.tenant_id, user_id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), user_id)
         .await?
     {
         let event = Event::new("api".into(), GlobalEvent::UserDeleted(user_id));

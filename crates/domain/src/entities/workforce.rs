@@ -6,7 +6,7 @@ use validator::Validate;
 
 use crate::entities::tenant::TenantId;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow, ToSchema)]
 pub struct Worker {
     pub id: Uuid,
     pub tenant_id: TenantId,
@@ -35,7 +35,7 @@ pub enum ContractType {
     Custom(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct Certification {
     pub id: Uuid,
     pub name: String,
@@ -45,7 +45,7 @@ pub struct Certification {
     pub certificate_number: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow, ToSchema)]
 pub struct WorkLog {
     pub id: Uuid,
     pub tenant_id: TenantId,
@@ -82,7 +82,7 @@ pub struct UpdateWorkerDto {
     pub is_active: Option<bool>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow, ToSchema)]
 pub struct WorkerLocation {
     pub id: Uuid,
     pub tenant_id: TenantId,

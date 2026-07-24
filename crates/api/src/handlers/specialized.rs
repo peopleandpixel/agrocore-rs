@@ -46,13 +46,13 @@ pub async fn predict_harvest(
     auth: AuthUser,
     query: web::Query<HarvestPredictionQuery>,
 ) -> Result<HttpResponse, ApiError> {
-    let tid = auth.0.tenant_id;
+    let tenant_id = agrocore_domain::TenantId(auth.0.tenant_id);
 
     // 1. Aktuelle Phänologie abrufen
     let phenology = state
         .db
         .phenology_record_repo()
-        .find_all(tid, agrocore_shared::Pagination::default())
+        .find_all(tenant_id, agrocore_shared::Pagination::default())
         .await;
     let latest_bbch = match phenology {
         Ok(res) => res
@@ -108,11 +108,11 @@ pub async fn calculate_profitability(
     auth: AuthUser,
     dto: web::Json<ProfitabilityRequest>,
 ) -> Result<HttpResponse, ApiError> {
-    let tid = auth.0.tenant_id;
+    let tenant_id = agrocore_domain::TenantId(auth.0.tenant_id);
     let site = state
         .db
         .site_repo()
-        .find_by_id(tid, dto.site_id)
+        .find_by_id(tenant_id, dto.site_id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Site not found".into()))?;
 
@@ -146,7 +146,7 @@ pub async fn list_specialized_sites(
     auth: AuthUser,
     query: web::Query<SpecializedSiteQuery>,
 ) -> Result<HttpResponse, ApiError> {
-    let tenant_id = auth.0.tenant_id;
+    let tenant_id = agrocore_domain::TenantId(auth.0.tenant_id);
 
     // In einer echten Implementierung würde hier ein spezialisierter Repository-Aufruf stehen,
     // der nach site_type und crop_type filtert.
@@ -190,7 +190,7 @@ pub async fn calculate_material(
     auth: AuthUser,
     dto: web::Json<MaterialCalculationRequestDto>,
 ) -> Result<HttpResponse, ApiError> {
-    let tenant_id = auth.0.tenant_id;
+    let tenant_id = agrocore_domain::TenantId(auth.0.tenant_id);
 
     // 1. Site-Daten abrufen
     let site = state
@@ -224,7 +224,7 @@ pub async fn calculate_material(
         lane_width: site.row_config.as_ref().map(|rc| rc.lane_width),
         total_strike_length: site.row_config.as_ref().map(|rc| rc.total_strike_length),
         is_steep: site.slope.map(|s| s > 15.0).unwrap_or(false),
-        dosage_per_ha: dto.dosage_per_ha,
+        dosage_per_ha: dto.dose_per_ha,
         application_date,
     });
 

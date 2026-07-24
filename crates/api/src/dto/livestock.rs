@@ -3,7 +3,7 @@
 use agrocore_domain::entities::livestock::{
     Animal, AnimalSpecies, AnimalStatus, CreateAnimalDto as DomainCreateAnimalDto,
     CreateGrazingRecordDto as DomainCreateGrazingRecordDto,
-    CreateTreatmentRecordDto as DomainCreateTreatmentRecordDto, GrazingRecord, TreatmentRecord,
+    CreateTreatmentRecordDto as DomainCreateTreatmentRecordDto,
     UpdateAnimalDto as DomainUpdateAnimalDto,
 };
 use serde::{Deserialize, Serialize};

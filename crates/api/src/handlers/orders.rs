@@ -35,11 +35,19 @@ pub async fn list_orders(
     auth: AuthUser,
     query: web::Query<agrocore_shared::Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    tracing::info!("Listing orders for tenant: {}", auth.0.tenant_id);
+    tracing::info!(
+        "Listing orders for tenant: {}",
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     let result = state
         .db
         .order_repo()
-        .find_all_visible(auth.0.tenant_id, query.0, auth.0.user_id, &auth.roles())
+        .find_all_visible(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            query.0,
+            auth.0.user_id,
+            &auth.roles(),
+        )
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data.into_iter().map(OrderDto::from).collect(),
@@ -70,12 +78,17 @@ pub async fn get_order(
     tracing::info!(
         "Getting order {} for tenant: {}",
         order_id,
-        auth.0.tenant_id
+        agrocore_domain::TenantId(auth.0.tenant_id)
     );
     let order = state
         .db
         .order_repo()
-        .find_by_id_visible(auth.0.tenant_id, order_id, auth.0.user_id, &auth.roles())
+        .find_by_id_visible(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            order_id,
+            auth.0.user_id,
+            &auth.roles(),
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Order not found".into()))?;
     Ok(HttpResponse::Ok().json(OrderDto::from(order)))
@@ -99,14 +112,21 @@ pub async fn create_order(
     dto: web::Json<CreateOrderDto>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
-    tracing::info!("Creating order for tenant: {}", auth.0.tenant_id);
+    tracing::info!(
+        "Creating order for tenant: {}",
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
     dto.0
         .validate()
         .map_err(|e| SharedError::Validation(e.to_string()))?;
     let o = state
         .db
         .order_repo()
-        .create(auth.0.tenant_id, dto.0.into(), auth.0.user_id)
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.0.into(),
+            auth.0.user_id,
+        )
         .await?;
     let event = Event::new("api".into(), GlobalEvent::OrderCreated(o.clone()));
     let _ = state.messaging.publish("events.orders", &event).await;
@@ -137,7 +157,7 @@ pub async fn update_order(
     tracing::info!(
         "Updating order {} for tenant: {}",
         order_id,
-        auth.0.tenant_id
+        agrocore_domain::TenantId(auth.0.tenant_id)
     );
     dto.0
         .validate()
@@ -145,7 +165,12 @@ pub async fn update_order(
     let o = state
         .db
         .order_repo()
-        .update(auth.0.tenant_id, order_id, dto.0.into(), auth.0.user_id)
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            order_id,
+            dto.0.into(),
+            auth.0.user_id,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Order not found".into()))?;
     let event = Event::new("api".into(), GlobalEvent::OrderUpdated(o.clone()));
@@ -174,12 +199,12 @@ pub async fn delete_order(
     tracing::info!(
         "Deleting order {} for tenant: {}",
         order_id,
-        auth.0.tenant_id
+        agrocore_domain::TenantId(auth.0.tenant_id)
     );
     if state
         .db
         .order_repo()
-        .delete(auth.0.tenant_id, order_id)
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), order_id)
         .await?
     {
         let event = Event::new("api".into(), GlobalEvent::OrderDeleted(order_id));
@@ -208,7 +233,7 @@ pub async fn complete_order(
     path: web::Path<uuid::Uuid>,
 ) -> Result<HttpResponse, ApiError> {
     let order_id = *path;
-    let tenant_id = auth.0.tenant_id;
+    let tenant_id = agrocore_domain::TenantId(auth.0.tenant_id);
 
     // 1. Fetch current order with visibility check (prevents unauthorized access)
     let mut order = state
@@ -325,7 +350,7 @@ pub async fn start_order(
     path: web::Path<uuid::Uuid>,
 ) -> Result<HttpResponse, ApiError> {
     let order_id = *path;
-    let tenant_id = auth.0.tenant_id;
+    let tenant_id = agrocore_domain::TenantId(auth.0.tenant_id);
 
     // 1. Fetch current order with visibility check (prevents unauthorized access)
     let mut order = state
@@ -382,7 +407,7 @@ pub async fn my_tasks(
     let tasks = state
         .db
         .order_repo()
-        .find_my_tasks(auth.0.tenant_id, auth.0.user_id)
+        .find_my_tasks(agrocore_domain::TenantId(auth.0.tenant_id), auth.0.user_id)
         .await?;
     Ok(HttpResponse::Ok().json(tasks))
 }
@@ -408,7 +433,7 @@ pub async fn start_task_for_worker(
     path: web::Path<uuid::Uuid>,
 ) -> Result<HttpResponse, ApiError> {
     let task_id = *path;
-    let tenant_id = auth.0.tenant_id;
+    let tenant_id = agrocore_domain::TenantId(auth.0.tenant_id);
     let worker_id = auth.0.user_id;
 
     // Find existing status, create if not exists
@@ -467,7 +492,7 @@ pub async fn stop_task_for_worker(
     path: web::Path<uuid::Uuid>,
 ) -> Result<HttpResponse, ApiError> {
     let task_id = *path;
-    let tenant_id = auth.0.tenant_id;
+    let tenant_id = agrocore_domain::TenantId(auth.0.tenant_id);
     let worker_id = auth.0.user_id;
 
     state

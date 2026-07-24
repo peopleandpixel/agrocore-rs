@@ -75,8 +75,8 @@ pub struct AppState {
         handlers::livestock::update_animal,
         handlers::livestock::delete_animal,
         handlers::livestock::add_treatment,
-        handlers::livestock::add_grazing,
-    ),
+                handlers::livestock::add_grazing,
+            ),
     components(
         schemas(
             handlers::auth::LoginRequest,
@@ -121,7 +121,19 @@ pub struct AppState {
             agrocore_domain::entities::compliance::ComplianceStatus,
             agrocore_domain::entities::vineyard::DocArea,
             agrocore_domain::entities::vineyard::QualityGrade,
+            agrocore_domain::entities::vineyard::Vineyard,
+            agrocore_domain::entities::vineyard::KelterDelivery,
+            agrocore_domain::entities::vineyard::CreateVineyardDto,
+            agrocore_domain::entities::vineyard::UpdateVineyardDto,
+            agrocore_domain::entities::vineyard::CreateKelterDeliveryDto,
+            agrocore_domain::entities::vineyard::UpdateKelterDeliveryDto,
+            agrocore_domain::entities::olive::OliveGrove,
+            agrocore_domain::entities::olive::OliveOilRecord,
             agrocore_domain::entities::olive::OilGrade,
+            agrocore_domain::entities::olive::CreateOliveGroveDto,
+            agrocore_domain::entities::olive::UpdateOliveGroveDto,
+            agrocore_domain::entities::olive::CreateOliveOilRecordDto,
+            agrocore_domain::entities::olive::UpdateOliveOilRecordDto,
             agrocore_domain::entities::water::WaterSourceType,
             agrocore_domain::entities::water::IrrigationMethod,
             agrocore_domain::entities::workforce::ContractType,
@@ -132,22 +144,8 @@ pub struct AppState {
             agrocore_domain::entities::finance::CostCenterType,
             agrocore_domain::entities::finance::FinancialRecord,
             agrocore_domain::entities::finance::FinancialRecordType,
-            agrocore_domain::entities::site::SigpacData,
-            agrocore_domain::entities::weather::WeatherStation,
-            agrocore_domain::entities::weather::WeatherStationType,
-            agrocore_domain::entities::weather::WeatherData,
-            agrocore_domain::entities::weather::PhenologyRecord,
-            agrocore_domain::entities::weather::CreateWeatherStationDto,
-            agrocore_domain::entities::weather::CreateWeatherDataDto,
-            agrocore_domain::entities::weather::CreatePhenologyRecordDto,
-            agrocore_domain::entities::finance::PACApplication,
-            agrocore_domain::entities::finance::PACStatus,
             agrocore_domain::entities::finance::CreatePACApplicationDto,
-            agrocore_domain::entities::finance::CostCenter,
-            agrocore_domain::entities::finance::CostCenterType,
             agrocore_domain::entities::finance::CreateCostCenterDto,
-            agrocore_domain::entities::finance::FinancialRecord,
-            agrocore_domain::entities::finance::FinancialRecordType,
             agrocore_domain::entities::finance::CreateFinancialRecordDto,
             agrocore_domain::entities::finance::EcoSchemeParticipation,
             agrocore_domain::entities::livestock::Animal,
@@ -179,7 +177,7 @@ impl utoipa::Modify for SecurityAddon {
                     .bearer_format("JWT")
                     .build(),
             ),
-        )
+        );
     }
 }
 
@@ -235,8 +233,7 @@ pub async fn run_server(
                     .index_file("index.html")
                     .default_handler(web::to(|| async {
                         fs::NamedFile::open("/var/lib/agrocore/admin-ui/index.html")
-                    }))
-                    .show_files_listing(),
+                    })),
             )
     })
     .bind(bind_addr)?

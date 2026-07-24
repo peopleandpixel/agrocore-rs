@@ -1,9 +1,6 @@
 //! Equipment DTOs
 
-use agrocore_domain::entities::equipment::{
-    CreateEquipmentDto as DomainCreateEquipmentDto, Equipment, EquipmentType,
-    UpdateEquipmentDto as DomainUpdateEquipmentDto,
-};
+use agrocore_domain::entities::equipment::EquipmentType;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;

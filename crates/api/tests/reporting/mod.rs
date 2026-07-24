@@ -7,7 +7,7 @@ fn test_pagination_defaults() {
         page: Some(1),
         per_page: Some(20),
     };
-    
+
     assert_eq!(p.page, Some(1));
     assert_eq!(p.per_page, Some(20));
 }
@@ -18,7 +18,7 @@ fn test_pagination_bounds() {
         page: Some(0), // Invalid: should be 1+
         per_page: Some(100),
     };
-    
+
     // Pagination bounds are validated at service level, not DTO level
     assert_eq!(p.per_page, Some(100));
 }

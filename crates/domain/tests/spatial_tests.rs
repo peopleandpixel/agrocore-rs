@@ -1,5 +1,6 @@
 use agrocore_domain::entities::site::GeoPoint;
 use agrocore_domain::entities::spatial::{SpatialObject, SpatialObjectType};
+use agrocore_domain::entities::tenant::TenantId;
 use chrono::Utc;
 use uuid::Uuid;
 
@@ -20,7 +21,7 @@ fn square(min_lng: f64, min_lat: f64, max_lng: f64, max_lat: f64) -> Vec<GeoPoin
 fn spatial_objects_can_exist_without_site() {
     let farm = SpatialObject {
         id: Uuid::new_v4(),
-        tenant_id: Uuid::new_v4(),
+        tenant_id: TenantId(Uuid::new_v4()),
         site_id: None,
         parent_id: None,
         label: String::from("Main Farm"),
@@ -50,7 +51,7 @@ fn spatial_objects_can_exist_without_site() {
 fn overlapping_objects_all_match_the_same_position() {
     let field = SpatialObject {
         id: Uuid::new_v4(),
-        tenant_id: Uuid::new_v4(),
+        tenant_id: TenantId(Uuid::new_v4()),
         site_id: None,
         parent_id: None,
         label: String::from("Field A"),
@@ -108,7 +109,7 @@ fn overlapping_objects_all_match_the_same_position() {
 fn point_objects_use_a_small_radius() {
     let tree = SpatialObject {
         id: Uuid::new_v4(),
-        tenant_id: Uuid::new_v4(),
+        tenant_id: TenantId(Uuid::new_v4()),
         site_id: None,
         parent_id: None,
         label: String::from("Cork Oak"),
