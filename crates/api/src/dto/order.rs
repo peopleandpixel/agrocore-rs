@@ -248,13 +248,9 @@ impl From<CreateTaskDataDto> for DomainCreateTaskDataDto {
             machine_hours: dto.machine_hours,
             cost_center_id: dto.cost_center_id,
             area_covered: dto.area_covered,
-            materials_used: dto
-                .materials_used
-                .map(|m| m.into_iter().collect()),
+            materials_used: dto.materials_used.map(|m| m.into_iter().collect()),
             observations: dto.observations,
-            gps_track: dto
-                .gps_track
-                .map(|g| g.into_iter().collect()),
+            gps_track: dto.gps_track.map(|g| g.into_iter().collect()),
             photo_urls: dto.photo_urls,
         }
     }
@@ -311,13 +307,9 @@ impl From<UpdateTaskDataDto> for DomainUpdateTaskDataDto {
             machine_hours: dto.machine_hours,
             cost_center_id: dto.cost_center_id,
             area_covered: dto.area_covered,
-            materials_used: dto
-                .materials_used
-                .map(|m| m.into_iter().collect()),
+            materials_used: dto.materials_used.map(|m| m.into_iter().collect()),
             observations: dto.observations,
-            gps_track: dto
-                .gps_track
-                .map(|g| g.into_iter().collect()),
+            gps_track: dto.gps_track.map(|g| g.into_iter().collect()),
             photo_urls: dto.photo_urls,
         }
     }
