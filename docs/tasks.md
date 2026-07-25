@@ -77,15 +77,15 @@
 
 ### PHASE 3: MULTI-TENANT & ENTERPRISE FEATURES (Woche 5-8)
 
-| Task | Feature | Aufwand | Beschreibung |
-|------|---------|---------|--------------|
-| 3.1 | **Multi-Tenant Isolation Hardening** | 3 Tage | Row-Level Security (RLS) Policies in Postgres für alle Tabellen, Visibility-Filter in Repos gegen DB-Constraints prüfen |
-| 3.2 | **Offline-First Sync Engine** | 10 Tage | Client-seitig: SQLite + Sync-Queue (CRDT oder Last-Write-Wins), Server: Sync-Endpoint `/api/sync` mit Conflict-Resolution, Background-Sync-Worker |
-| 3.3 | **Advanced RBAC** | 5 Tage | Custom Roles (über `UserRole::Custom(Uuid)`), Permission-Scoping pro Resource, Delegation, API-Key Management |
-| 3.4 | **Audit Trail Vollständig** | 3 Tage | `AuditLogRepo` für ALLE Entities automatisch (Trigger oder Middleware), Immutable Logs, Export für Auditoren |
-| 3.5 | **Webhooks & Event-System** | 5 Tage | NATS-basiert: `OrderCreated`, `TaskCompleted`, `ComplianceDue`, `WeatherAlert` Events. Webhook-Delivery mit Retry/Dead-Letter |
-| 3.6 | **Mobile/PWA Admin UI** | 10 Tage | Leptos Admin-UI: Offline-Cache (Service Worker), Touch-optimiert, Worker-Task-Interface (Start/Pause/Stop Buttons), GPS-Tracking |
-| 3.7 | **SIGPAC & Kataster-Import** | 5 Tage | Batch-Import GeoJSON/Shapefile, automatische Flächenberechnung, Duplikat-Erkennung, Validierung gegen LPIS |
+| Task | Feature | Aufwand | Beschreibung | Status |
+|------|---------|---------|--------------|--------|
+| 3.1 | **Multi-Tenant Isolation Hardening** | 3 Tage | Row-Level Security (RLS) Policies in Postgres für alle Tabellen, Visibility-Filter in Repos gegen DB-Constraints prüfen | ✅ **DONE** |
+| 3.2 | **Offline-First Sync Engine** | 10 Tage | Client-seitig: SQLite + Sync-Queue (CRDT oder Last-Write-Wins), Server: Sync-Endpoint `/api/sync` mit Conflict-Resolution, Background-Sync-Worker | 🔴 **TODO** |
+| 3.3 | **Advanced RBAC** | 5 Tage | Custom Roles (über `UserRole::Custom(Uuid)`), Permission-Scoping pro Resource, Delegation, API-Key Management | 🔴 **TODO** |
+| 3.4 | **Audit Trail Vollständig** | 3 Tage | `AuditLogRepo` für ALLE Entities automatisch (Trigger oder Middleware), Immutable Logs, Export für Auditoren | 🔴 **TODO** |
+| 3.5 | **Webhooks & Event-System** | 5 Tage | NATS-basiert: `OrderCreated`, `TaskCompleted`, `ComplianceDue`, `WeatherAlert` Events. Webhook-Delivery mit Retry/Dead-Letter | 🔴 **TODO** |
+| 3.6 | **Mobile/PWA Admin UI** | 10 Tage | Leptos Admin-UI: Offline-Cache (Service Worker), Touch-optimiert, Worker-Task-Interface (Start/Pause/Stop Buttons), GPS-Tracking | 🔴 **TODO** |
+| 3.7 | **SIGPAC & Kataster-Import** | 5 Tage | Batch-Import GeoJSON/Shapefile, automatische Flächenberechnung, Duplikat-Erkennung, Validierung gegen LPIS | 🔴 **TODO** |
 
 ---
 
@@ -187,10 +187,9 @@ Ein Modul gilt als **PRODUCTION**, wenn:
 ## 📝 NÄCHSTE SCHRITTE (HEUTE)
 
 1. `cd /home/jens/RustroverProjects/agrocore-rs`
-2. **Phase 2 starten**: Integrationstests für API Handler schreiben (`crates/api/tests/`)
-3. `POSTGRES_MIGRATION_CHECKLIST.md` final abarbeiten
-4. `cargo test --workspace` als CI-Gate etablieren
-5. OpenAPI-Schemata für neue Endpoints registrieren
+2. **Phase 3 starten**: Offline-First Sync Engine (`3.2`) oder Advanced RBAC (`3.3`)
+3. `docker compose up -d` für lokalen Test der RLS-Policies
+4. RLS-Policies testen mit verschiedenen Tenant-IDs
 
 ---
 

@@ -3,11 +3,11 @@
 //! These tests spin up a real PostgreSQL instance with PostGIS
 //! and test the actual repository implementations.
 
+use agrocore_infrastructure::postgres::Database;
+use std::time::Duration;
+use testcontainers::ImageExt;
 use testcontainers::runners::AsyncRunner;
 use testcontainers_modules::postgres::{self, Postgres};
-use testcontainers::ImageExt;
-use std::time::Duration;
-use agrocore_infrastructure::postgres::Database;
 
 /// Test fixture for PostgreSQL integration tests
 pub struct PostgresTestFixture {
@@ -30,33 +30,30 @@ impl PostgresTestFixture {
 
         let port = container.get_host_port_ipv4(5432).await?;
         let host = container.get_host().await?;
-        
-        let database_url = format!(
-            "postgres://test_user:***@{}:{}/postgres",
-            host, port
-        );
+
+        let database_url = format!("postgres://test_user:***@{}:{}/postgres", host, port);
 
         // Wait for database to be ready
         tokio::time::sleep(Duration::from_secs(2)).await;
 
         let pool = sqlx::PgPool::connect(&database_url).await?;
-        
+
         // Create test database
-        sqlx::query("CREATE DATABASE agrocore_test").execute(&pool).await.ok();
+        sqlx::query("CREATE DATABASE agrocore_test")
+            .execute(&pool)
+            .await
+            .ok();
 
         // Connect to test database
-        let test_database_url = format!(
-            "postgres://test_user:***@{}:{}/agrocore_test",
-            host, port
-        );
+        let test_database_url = format!("postgres://test_user:***@{}:{}/agrocore_test", host, port);
         let pool = sqlx::PgPool::connect(&test_database_url).await?;
-        
+
         // Run migrations
         sqlx::migrate!("../../migrations").run(&pool).await?;
 
-        let database = Database::Postgres(
-            agrocore_infrastructure::postgres::PostgresDb { pool: pool.clone() }
-        );
+        let database = Database::Postgres(agrocore_infrastructure::postgres::PostgresDb {
+            pool: pool.clone(),
+        });
 
         Ok(Self {
             pool,
@@ -78,9 +75,19 @@ impl PostgresTestFixture {
     /// Clean up test data (truncate all tables)
     pub async fn cleanup(&self) {
         let tables = [
-            "order_sites", "user_sites", "order_sites", "sites", "equipment", 
-            "orders", "animals", "tasks", "task_data", "users", "weather_data", 
-            "weather_stations", "tenants"
+            "order_sites",
+            "user_sites",
+            "order_sites",
+            "sites",
+            "equipment",
+            "orders",
+            "animals",
+            "tasks",
+            "task_data",
+            "users",
+            "weather_data",
+            "weather_stations",
+            "tenants",
         ];
         for table in tables {
             let _ = sqlx::query(&format!("TRUNCATE TABLE {} CASCADE", table))
