@@ -2,6 +2,33 @@
 
 Alle Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.5.1] - 2026-07-25
+
+### Added
+- **RLS Policies:** Row-Level Security policies for all 34+ tenant-scoped tables (2 migration files)
+- **Offline-First Sync Engine:** Core domain entities for offline-first synchronization:
+  - Vector clocks for causal ordering
+  - Sync mutations (create/update/delete) with conflict detection
+  - Conflict resolution strategies (LastWriterWins, ServerWins, ClientWins, Merge, Manual)
+  - Sync batches, pull/push requests, full sync operations
+  - Client sync state tracking
+- **Sync API Endpoints:** POST /api/v1/sync/push, /api/v1/sync/pull, /api/v1/sync (full sync)
+- **Sync Configuration:** Configurable batch size, conflict resolution, CRDT support, sync intervals
+
+### Fixed
+- **Clippy Clean:** Fixed collapsible_if warnings in site.rs boundary encoding
+
+### Changed
+- **Version bump:** 0.5.0 → 0.5.1
+- **All Quality Gates:** `cargo check`, `cargo test` (103+ tests), `cargo clippy` all pass clean
+
+### Technical
+- Domain entities all compile with `ToSchema` derives
+- TenantId wrapper properly implemented across all services
+- API handlers use correct TenantId wrapping
+- OpenAPI/Swagger docs generate without errors
+- Integration test infrastructure with testcontainers
+
 ## [0.5.0] - 2026-07-25
 
 ### Added

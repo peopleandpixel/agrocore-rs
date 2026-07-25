@@ -9,6 +9,7 @@ pub mod order;
 pub mod plant_protection;
 pub mod site;
 pub mod spatial;
+pub mod sync;
 pub mod task;
 pub mod tenant;
 pub mod user;
@@ -32,6 +33,11 @@ pub use olive::{
 };
 pub use plant_protection::PlantProtectionAreaMethod;
 pub use spatial::{PolygonGeometry, SpatialGeometry, SpatialObject, SpatialObjectType};
+pub use sync::{
+    ClientId, ClientSyncState, ConflictResolution, ConflictType, SyncBatch, SyncBatchResult,
+    SyncConfig, SyncConflict, SyncEntityType, SyncMutation, SyncMutationResult, SyncOperation,
+    SyncPullRequest, SyncPullResponse, SyncRequest, SyncResponse, VectorClock,
+};
 pub use task::{CreateTaskDataDto, GpsPoint, MaterialUsage, TaskData, UpdateTaskDataDto};
 pub use vineyard::{
     CreateKelterDeliveryDto, CreateVineyardDto, DocArea, KelterDelivery, QualityGrade,

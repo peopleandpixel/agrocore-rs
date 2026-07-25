@@ -120,9 +120,14 @@ impl<'q> sqlx::Encode<'q, sqlx::Postgres> for Boundary {
         let mut line_string = LineString::from(coords);
 
         // Ensure ring is closed for PostGIS Polygon
-        if let (Some(first), Some(last)) = (line_string.0.first(), line_string.0.last())
-            && first != last
-        {
+        let needs_close = line_string
+            .0
+            .first()
+            .zip(line_string.0.last())
+            .map(|(f, l)| f != l)
+            .unwrap_or(false);
+
+        if needs_close && let Some(first) = line_string.0.first() {
             let first_val = *first;
             line_string.0.push(first_val);
         }
