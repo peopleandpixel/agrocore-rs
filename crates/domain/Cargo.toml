@@ -17,3 +17,7 @@ mockall = { workspace = true }
 sqlx = { workspace = true }
 geozero = { workspace = true }
 strum = { version = "0.26", features = ["derive"] }
+
+[dev-dependencies]
+testcontainers = "0.27.3"
+testcontainers-modules = { version = "0.15.0", features = ["postgres"] }

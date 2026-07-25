@@ -24,4 +24,6 @@ argon2 = { workspace = true }
 default = []
 
 [dev-dependencies]
+testcontainers = "0.27.3"
+testcontainers-modules = { version = "0.15.0", features = ["postgres"] }
 tokio = { workspace = true, features = ["rt", "macros"] }

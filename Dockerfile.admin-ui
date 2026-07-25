@@ -1,27 +1,59 @@
-# Build stage for Admin UI
-FROM rust:1.81-slim as builder
+# Multi-stage Dockerfile for Admin UI (Leptos)
+FROM rust:1.97-bookworm AS builder
 
+WORKDIR /app
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    nodejs npm \
+    pkg-config \
+    libssl-dev \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
 # Install trunk
-RUN cargo install trunk
+RUN cargo install trunk --locked
 
-WORKDIR /app
-COPY crates/admin-ui/ ./admin-ui/
-COPY crates/domain/ ./domain/
-COPY crates/shared/ ./shared/
-COPY Cargo.toml ./
+# Copy workspace files
+COPY Cargo.toml Cargo.lock ./
+COPY crates ./crates
 
-# Build static assets with trunk
-RUN cd admin-ui && trunk build --release
+# Build dependencies first (caching layer)
+RUN cd crates/admin-ui && trunk build --release 2>/dev/null || true
 
-# Runtime - serve static files with nginx
-FROM nginx:alpine
+# Copy source and build
+COPY . .
+RUN cd crates/admin-ui && trunk build --release
 
-COPY --from=builder /app/admin-ui/dist /usr/share/nginx/html
-COPY --from=builder /app/admin-ui/styles /usr/share/nginx/html/styles
+# Runtime stage - Nginx for static files
+FROM nginx:alpine AS runtime
+
+# Copy built assets
+COPY --from=builder /app/crates/admin-ui/dist /usr/share/nginx/html
+
+# Nginx config for SPA
+COPY <<EOF /etc/nginx/conf.d/default.conf
+server {
+    listen 80;
+    server_name localhost;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    # API proxy (optional, if using nginx as reverse proxy)
+    location /api/ {
+        proxy_pass http://api:8080;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+}
+EOF
 
 EXPOSE 80
+
 CMD ["nginx", "-g", "daemon off;"]

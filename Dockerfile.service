@@ -1,23 +1,49 @@
-FROM agrocore-build-base AS chef
+# Multi-stage Dockerfile for services
+FROM rust:1.97-bookworm AS builder
+
 WORKDIR /app
 
-FROM chef AS planner
-COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-FROM chef AS builder
-COPY --from=planner /app/recipe.json recipe.json
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/app/target \
-    cargo chef cook --release --recipe-path recipe.json
+# Copy workspace files
+COPY Cargo.toml Cargo.lock ./
+COPY crates ./crates
+
+# Build dependencies first (caching layer)
+RUN cargo build --release --workspace --exclude admin-ui 2>/dev/null || true
+
+# Copy source and build
 COPY . .
+RUN cargo build --release --workspace --exclude admin-ui
+
+# Runtime stage
+FROM debian:bookworm-slim AS runtime
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libssl3 \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -m -u 1000 -s /bin/bash appuser
+
+WORKDIR /app
+
+# Copy binary (the service name will be passed as build arg)
 ARG SERVICE_NAME
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/app/target \
-    cargo build --release -p ${SERVICE_NAME} && \
-    cp target/release/${SERVICE_NAME} /usr/local/bin/service
+COPY --from=builder /app/target/release/${SERVICE_NAME} /app/${SERVICE_NAME}
 
-FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /usr/local/bin/service /usr/local/bin/service
-ENTRYPOINT ["/usr/local/bin/service"]
+# Set ownership
+RUN chown -R appuser:appuser /app
+
+USER appuser
+
+# Run
+CMD ["/app/${SERVICE_NAME}"]

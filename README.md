@@ -3,6 +3,7 @@
 [![Rust](https://img.shields.io/badge/rust-2024-orange.svg)](https://www.rust-lang.org/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Rust CI](https://github.com/peopleandpixel/agrocore-rs/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/peopleandpixel/agrocore-rs/actions/workflows/rust.yml)
+[![Version](https://img.shields.io/badge/version-0.5.0-green.svg)](CHANGELOG.md)
 
 AgroCore RS is a farm operations platform built from scratch in this repository. The code, structure, naming, and product decisions were created here independently, while the implementation benefits from practical experience gained in earlier professional work.
 
@@ -47,6 +48,8 @@ AgroCore is designed for teams that need to record, check, and later evaluate op
 - `crates/domain`: Business logic and entities
 - `crates/infrastructure`: Persistence and integrations
 - `crates/messaging`: Event and messaging support
+- `crates/reporting-service`: Excel/GeoJSON/PAC-SIP export worker
+- `crates/weather-service`: Weather data ingestion worker
 
 ## Local Development
 
@@ -68,6 +71,24 @@ cargo run -p agrocore-api
 cd crates/admin-ui
 trunk serve
 ```
+
+## Docker Compose (Production-Ready)
+
+Docker Compose is available for a fully containerized run, suitable for production deployment.
+
+```bash
+docker compose up -d
+```
+
+Services:
+- **postgres**: PostgreSQL 16 + PostGIS with auto-migrations (15 migration files)
+- **nats**: NATS 2.10 with JetStream
+- **api**: Actix Web API on port 8080
+- **reporting-service**: Export worker (Excel, GeoJSON, PAC-SIP)
+- **weather-service**: Weather data ingestion worker
+- **admin-ui**: Leptos Admin UI on port 3000
+
+All services include health checks and proper dependency ordering.
 
 ## Testing
 
@@ -102,11 +123,6 @@ Run security audit:
 ```bash
 cargo audit
 ```
-
-## Docker Compose
-
-Docker Compose is still available for a fully containerized run, but the local development script is the better choice for day-to-day work.
-For deployment, you can keep API, UI, database, and messaging on one machine or split them across hosts. The platform does not require a cloud setup, but it supports one if you prefer it.
 
 ## License
 

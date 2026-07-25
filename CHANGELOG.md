@@ -2,6 +2,33 @@
 
 Alle Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.5.0] - 2026-07-25
+
+### Added
+- **Complete PostgreSQL Schema:** All 34 tables with 15 migration files covering core entities (sites, orders, equipment, users, tenants), compliance (plant protection, checklists, audit logs, applicator licenses, fertilizer), specialized cultures (vineyard, olive), harvest logistics, livestock, water management, weather/phenology, finance (PAC, cost centers, financial records)
+- **Full Repository Layer:** 35+ PostgreSQL repository implementations with all CRUD operations, pagination, and visibility filtering
+- **Docker Stack:** Multi-stage Dockerfiles for API, services, and admin-ui; docker-compose.yml with health checks for postgres, nats, api, reporting, weather, admin-ui
+- **Observability:** Health check endpoint (`/health`), Prometheus metrics, structured logging with tracing
+- **Migration Files:** 8 new migrations (olive, vineyard, water, fertilizer/compliance, livestock, task_data, core additional tables, plant protection/worker status, tasks)
+- **Admin UI:** Leptos 0.8 + Nginx static serving with SPA routing
+
+### Fixed
+- **Task Data Schema:** Fixed task_data table to match domain entity (added order_id, site_id, description, paused_at, resume_at, duration_minutes, machine_id, machine_hours, cost_center_id, area_covered, materials_used, observations, gps_track, photo_urls)
+- **All Missing Tables:** Created migrations for audit_logs, cost_centers, financial_records, pac_applications, plant_protection_records, worker_task_statuses, tasks
+- **PostgreSQL Repositories:** All 35+ repositories now compile and registered in database.rs
+
+### Changed
+- **Version bump:** 0.4.0 → 0.5.0
+- **All Quality Gates:** `cargo check`, `cargo test` (103+ tests), `cargo clippy` all pass clean
+- **Docker Compose:** Updated to v3.8 with proper health checks, dependency ordering, non-root users
+
+### Technical
+- Domain entities all compile with `ToSchema` derives
+- TenantId wrapper properly implemented across all services
+- API handlers use correct TenantId wrapping
+- OpenAPI/Swagger docs generate without errors
+- Integration test infrastructure with testcontainers
+
 ## [0.4.0] - 2026-07-24
 
 ### Fixed

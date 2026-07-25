@@ -1,116 +1,102 @@
-services:
-  build-base:
-    build:
-      context: .
-      dockerfile: Dockerfile.base-build
-    image: agrocore-build-base:latest
+version: '3.8'
 
+services:
   postgres:
-    image: postgis/postgis:latest
-    ports:
-      - "5432:5432"
+    image: postgis/postgis:16-3.4
+    container_name: agrocore-postgres
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=agrocore
+      POSTGRES_DB: agrocore
+      POSTGRES_USER: agrocore
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agrocore_dev_password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agrocore -d agrocore"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   nats:
-    image: nats:latest
+    image: nats:2.10-alpine
+    container_name: agrocore-nats
     ports:
       - "4222:4222"
       - "8222:8222"
+    command: ["-js", "-m", "8222"]
+    healthcheck:
+      test: ["CMD", "nats", "server", "check", "streaming"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   api:
     build:
       context: .
       dockerfile: Dockerfile.api
-    depends_on:
-      - build-base
-      - postgres
-      - nats
-    ports:
-      - "3000:3000"
+    container_name: agrocore-api
     environment:
-      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/agrocore
-      - NATS_URL=nats://nats:4222
-      - LISTEN_ADDR=0.0.0.0:3000
-      - JWT_SECRET=dev-secret
+      DATABASE_URL: postgres://agrocore:***@postgres:5432/agrocore
+      NATS_URL: nats://nats:4222
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      BIND_ADDR: 0.0.0.0:8080
+      RUST_LOG: info
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   reporting-service:
     build:
       context: .
       dockerfile: Dockerfile.service
-      args:
-        SERVICE_NAME: agrocore-reporting-service
-    depends_on:
-      - build-base
-      - postgres
-      - nats
+    container_name: agrocore-reporting
     environment:
-      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/agrocore
-      - NATS_URL=nats://nats:4222
+      DATABASE_URL: postgres://agrocore:***@postgres:5432/agrocore
+      NATS_URL: nats://nats:4222
+      RUST_LOG: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
 
   weather-service:
     build:
       context: .
       dockerfile: Dockerfile.service
-      args:
-        SERVICE_NAME: agrocore-weather-service
-    depends_on:
-      - build-base
-      - postgres
-      - nats
+    container_name: agrocore-weather
     environment:
-      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/agrocore
-      - NATS_URL=nats://nats:4222
-
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      DATABASE_URL: postgres://agrocore:***@postgres:5432/agrocore
+      NATS_URL: nats://nats:4222
+      RUST_LOG: info
     depends_on:
-      - api
-
-  loki:
-    image: grafana/loki:latest
-    ports:
-      - "3100:3100"
-    volumes:
-      - ./infra/loki/loki-config.yml:/etc/loki/local-config.yaml
-    command: -config.file=/etc/loki/local-config.yaml
-
-  promtail:
-    image: grafana/promtail:latest
-    volumes:
-      - /var/log:/var/log
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./infra/promtail/promtail-config.yml:/etc/promtail/config.yml
-    command: -config.file=/etc/promtail/config.yml
-
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3001:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    depends_on:
-      - prometheus
-      - loki
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
 
   admin-ui:
     build:
       context: .
       dockerfile: Dockerfile.admin-ui
+    container_name: agrocore-admin-ui
     ports:
-      - "5173:5173"
-    environment:
-      - API_URL=http://api:3000
+      - "3000:80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
 volumes:
   postgres_data:

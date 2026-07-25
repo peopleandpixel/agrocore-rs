@@ -1,53 +1,55 @@
-FROM agrocore-build-base AS chef
+# Multi-stage Dockerfile for API service
+FROM rust:1.97-bookworm AS builder
+
 WORKDIR /app
 
-FROM chef AS planner
-COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
-
-FROM chef AS builder
-COPY --from=planner /app/recipe.json recipe.json
-# Build dependencies - this is the caching layer
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/app/target \
-    cargo chef cook --release --recipe-path recipe.json
-
-COPY . .
-
-# Build API Service
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/app/target \
-    cargo build --release -p agrocore-api && \
-    cp target/release/agrocore-api /usr/local/bin/agrocore-api
-
-# UI Build Stage (separate to allow parallelization if needed, but here as a stage)
-FROM chef AS ui-builder
-COPY . .
-WORKDIR /app/crates/admin-ui
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/app/target \
-    trunk build --release --public-url /admin/
-
-# Final Stage
-FROM debian:bookworm-slim
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    libssl3 \
-    ca-certificates \
+    pkg-config \
+    libssl-dev \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Create directory for Admin UI
-RUN mkdir -p /var/lib/agrocore/admin-ui
+# Copy workspace files
+COPY Cargo.toml Cargo.lock ./
+COPY crates ./crates
 
-# Copy API binary
-COPY --from=builder /usr/local/bin/agrocore-api /usr/local/bin/agrocore-api
+# Build dependencies first (caching layer)
+RUN cargo build --release --workspace --exclude admin-ui 2>/dev/null || true
 
-# Copy compiled Admin UI assets
-COPY --from=ui-builder /app/crates/admin-ui/dist/* /var/lib/agrocore/admin-ui/
+# Copy source and build
+COPY . .
+RUN cargo build --release --workspace --exclude admin-ui
 
-# Set environment variables
-ENV RUST_LOG=info
-ENV LISTEN_ADDR=0.0.0.0:3000
+# Runtime stage
+FROM debian:bookworm-slim AS runtime
 
-EXPOSE 3000
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libssl3 \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/*
 
-ENTRYPOINT ["/usr/local/bin/agrocore-api"]
+# Create non-root user
+RUN useradd -m -u 1000 -s /bin/bash appuser
+
+WORKDIR /app
+
+# Copy binary
+COPY --from=builder /app/target/release/agrocore-api /app/agrocore-api
+
+# Set ownership
+RUN chown -R appuser:appuser /app
+
+USER appuser
+
+# Expose port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+
+# Run
+CMD ["/app/agrocore-api"]

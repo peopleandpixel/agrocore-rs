@@ -64,12 +64,12 @@
 | Task | Bereich | Aufwand | Beschreibung | Priorität |
 |------|---------|---------|--------------|-----------|
 | 2.1 | **Integrationstests** | 5 Tage | Für jeden Handler: `crates/api/tests/` erweitern. Mindestens: CRUD + Auth + Pagination + Visibility-Filter Tests. Ziel: 80% Coverage bei Handlern. | ✅ **DONE** |
-| 2.2 | **PostgreSQL Migration** | 3 Tage | `POSTGRES_MIGRATION_CHECKLIST.md` abarbeiten: fehlende Repos implementieren, `database.rs` alle Repo-Methoden registrieren | 🔴 **HIGH** |
-| 2.3 | **Migration Scripts** | 2 Tage | SQL-Migrationen für alle Tabellen finalisieren (`migrations/001_initial_schema.sql` erweitern), Seed-Daten für Demo/Dev | 🟡 **MEDIUM** |
+| 2.2 | **PostgreSQL Migration** | 3 Tage | `POSTGRES_MIGRATION_CHECKLIST.md` abarbeiten: fehlende Repos implementieren, `database.rs` alle Repo-Methoden registrieren | ✅ **DONE** |
+| 2.3 | **Migration Scripts** | 2 Tage | SQL-Migrationen für alle Tabellen finalisieren (`migrations/001_initial_schema.sql` erweitern), Seed-Daten für Demo/Dev | ✅ **DONE** |
 | 2.4 | **API Docs & OpenAPI** | 1 Tag | Swagger UI prüfen, alle Schemas in `ApiDoc` registriert, Beispiel-Requests/Responses ergänzen | ✅ **DONE** |
 | 2.5 | **Rate Limiting & Security** | 1 Tag | Governor Config prüfen (120 req/min), Security Headers, CORS, JWT-Refresh-Token Flow testen | ✅ **DONE** |
-| 2.6 | **Observability** | 2 Tage | Prometheus Metrics (alle Handler instrumentiert), Grafana Dashboards anlegen, Loki Log-Struktur prüfen, Health Checks (`/health`, `/ready`) | 🟡 **MEDIUM** |
-| 2.7 | **Docker & Deployment** | 2 Tage | `docker-compose.yml` für Dev + Prod, Multi-stage Dockerfile optimieren, K8s Manifests (Helm Chart) erstellen | 🟡 **MEDIUM** |
+| 2.6 | **Observability** | 2 Tage | Prometheus Metrics (alle Handler instrumentiert), Grafana Dashboards anlegen, Loki Log-Struktur prüfen, Health Checks (`/health`, `/ready`) | ✅ **DONE** |
+| 2.7 | **Docker & Deployment** | 2 Tage | `docker-compose.yml` für Dev + Prod, Multi-stage Dockerfile optimieren, K8s Manifests (Helm Chart) erstellen | ✅ **DONE** |
 
 **Deliverable Phase 2:** Production-ready Release Candidate. `docker compose up -d` startet alles. Swagger UI vollständig. Monitoring funktionsfähig.
 
