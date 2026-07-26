@@ -90,7 +90,7 @@ fn test_api_task_dto_validation() {
         started_at: None,
         ended_at: None,
         paused_at: None,
-        resume_at: None,
+        pause_reason: None,
         duration_minutes: None,
         machine_id: None,
         machine_hours: None,

@@ -2,6 +2,37 @@
 
 Alle Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.5.3] - 2026-07-25
+
+### Added
+- **Task Session Management:** Complete offline-first task tracking with pause/resume, handoff, and daily finish:
+  - **Multiple pause/resume cycles per day:** `PauseResumeCycle` with reason, timestamps, duration
+  - **Daily finish without completion:** `finished_for_day_at` allows stopping work without completing order
+  - **Task handoff:** `handoff_to_worker_id` enables seamless worker transitions
+  - **Session completion tracking:** `is_session_complete` distinguishes "done for day" vs "order completed"
+  - **Task sessions & pause history:** `TaskSession` and `TaskPauseRecord` for full audit trail
+
+- **Permission Matrix:** Granular role + user permissions per module:
+  - 15 modules (Sites, Orders, Equipment, Workers, Livestock, Weather, Harvest, Vineyard, Olive, Water, Compliance, Finance, Analytics, Settings, Admin)
+  - 8 permission actions (Create, Read, Update, Delete, Manage, Execute, Approve, Export)
+  - 3 scopes (All, Own, Tenant)
+  - Role-based `RolePermissionMatrix` + per-user `UserPermissionOverrides`
+  - `PermissionCheckRequest/Response` for programmatic checks
+
+- **Task Session API:** Enhanced DTOs with pause/resume, finish-for-day, handoff, session completion
+
+### Changed
+- **Version bump:** 0.5.2 → 0.5.3
+- **TaskData entity:** Replaced `resume_at` with `pause_resume_cycles` (Vec<PauseResumeCycle>), added `finished_for_day_at`, `handoff_to_worker_id`, `is_session_complete`
+- **TaskData DTOs:** Updated to support new pause/resume, finish-for-day, handoff, session completion
+- **All Quality Gates:** `cargo check`, `cargo test` (103+ tests), `cargo clippy` all pass clean
+
+### Technical
+- Task entity enhanced with multi-pause support, daily finish, handoff, session completion
+- Permission matrix with 15 modules, 8 actions, 3 scopes, role + user-level overrides
+- OpenAPI/Swagger docs generate without errors
+- All quality gates pass: `cargo check`, `cargo test` (103+ tests), `cargo clippy`
+
 ## [0.5.2] - 2026-07-25
 
 ### Added

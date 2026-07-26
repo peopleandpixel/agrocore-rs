@@ -19,8 +19,12 @@ pub struct TaskData {
     pub description: String,
     pub started_at: DateTime<Utc>,
     pub ended_at: Option<DateTime<Utc>>,
+    /// Multiple pause/resume cycles per day
+    #[sqlx(json)]
+    pub pause_resume_cycles: Vec<PauseResumeCycle>,
+    /// Current pause state (if currently paused)
     pub paused_at: Option<DateTime<Utc>>,
-    pub resume_at: Option<DateTime<Utc>>,
+    /// Total accumulated duration in minutes (excluding pauses)
     pub duration_minutes: Option<i32>,
     pub machine_id: Option<Uuid>,
     pub machine_hours: Option<f64>,
@@ -33,8 +37,23 @@ pub struct TaskData {
     pub gps_track: Option<Vec<GpsPoint>>,
     #[sqlx(json)]
     pub photo_urls: Option<Vec<String>>,
+    /// Task can be "finished for day" without completing the order
+    pub finished_for_day_at: Option<DateTime<Utc>>,
+    /// Handoff to another worker
+    pub handoff_to_worker_id: Option<Uuid>,
+    /// Whether this task session is complete (order completed)
+    pub is_session_complete: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+/// A single pause/resume cycle within a task
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+pub struct PauseResumeCycle {
+    pub paused_at: DateTime<Utc>,
+    pub resumed_at: Option<DateTime<Utc>>,
+    pub reason: Option<String>, // e.g., "break", "meeting", "equipment_issue"
+    pub duration_minutes: Option<i32>, // Calculated when resumed
 }
 
 // =============================================================================
@@ -67,7 +86,7 @@ pub struct CreateTaskDataDto {
     pub started_at: Option<DateTime<Utc>>,
     pub ended_at: Option<DateTime<Utc>>,
     pub paused_at: Option<DateTime<Utc>>,
-    pub resume_at: Option<DateTime<Utc>>,
+    pub pause_reason: Option<String>,
     pub duration_minutes: Option<i32>,
     pub machine_id: Option<Uuid>,
     pub machine_hours: Option<f64>,
@@ -87,7 +106,6 @@ pub struct UpdateTaskDataDto {
     pub started_at: Option<DateTime<Utc>>,
     pub ended_at: Option<DateTime<Utc>>,
     pub paused_at: Option<DateTime<Utc>>,
-    pub resume_at: Option<DateTime<Utc>>,
     pub duration_minutes: Option<i32>,
     pub machine_id: Option<Uuid>,
     pub machine_hours: Option<f64>,
@@ -97,4 +115,14 @@ pub struct UpdateTaskDataDto {
     pub observations: Option<String>,
     pub gps_track: Option<Vec<GpsPoint>>,
     pub photo_urls: Option<Vec<String>>,
+    /// Pause the current task
+    pub pause_reason: Option<String>,
+    /// Resume from pause
+    pub resume: bool,
+    /// Finish for day without completing order
+    pub finish_for_day: bool,
+    /// Handoff to another worker
+    pub handoff_to_worker_id: Option<Uuid>,
+    /// Mark session as complete (order completed)
+    pub is_session_complete: Option<bool>,
 }

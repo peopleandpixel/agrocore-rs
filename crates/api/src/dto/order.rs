@@ -154,7 +154,7 @@ pub struct TaskDataDto {
     pub started_at: String,
     pub ended_at: Option<String>,
     pub paused_at: Option<String>,
-    pub resume_at: Option<String>,
+    pub pause_resume_cycles: Vec<PauseResumeCycleDto>,
     pub duration_minutes: Option<i32>,
     pub machine_id: Option<Uuid>,
     pub machine_hours: Option<f64>,
@@ -164,8 +164,19 @@ pub struct TaskDataDto {
     pub observations: Option<String>,
     pub gps_track: Option<Vec<GpsPoint>>,
     pub photo_urls: Option<Vec<String>>,
+    pub finished_for_day_at: Option<String>,
+    pub handoff_to_worker_id: Option<Uuid>,
+    pub is_session_complete: bool,
     pub created_at: String,
     pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct PauseResumeCycleDto {
+    pub paused_at: String,
+    pub resumed_at: Option<String>,
+    pub reason: Option<String>,
+    pub duration_minutes: Option<i32>,
 }
 
 impl From<TaskData> for TaskDataDto {
@@ -180,7 +191,16 @@ impl From<TaskData> for TaskDataDto {
             started_at: t.started_at.to_rfc3339(),
             ended_at: t.ended_at.map(|d| d.to_rfc3339()),
             paused_at: t.paused_at.map(|d| d.to_rfc3339()),
-            resume_at: t.resume_at.map(|d| d.to_rfc3339()),
+            pause_resume_cycles: t
+                .pause_resume_cycles
+                .into_iter()
+                .map(|c| PauseResumeCycleDto {
+                    paused_at: c.paused_at.to_rfc3339(),
+                    resumed_at: c.resumed_at.map(|d| d.to_rfc3339()),
+                    reason: c.reason,
+                    duration_minutes: c.duration_minutes,
+                })
+                .collect(),
             duration_minutes: t.duration_minutes,
             machine_id: t.machine_id,
             machine_hours: t.machine_hours,
@@ -190,6 +210,9 @@ impl From<TaskData> for TaskDataDto {
             observations: t.observations,
             gps_track: t.gps_track,
             photo_urls: t.photo_urls,
+            finished_for_day_at: t.finished_for_day_at.map(|d| d.to_rfc3339()),
+            handoff_to_worker_id: t.handoff_to_worker_id,
+            is_session_complete: t.is_session_complete,
             created_at: t.created_at.to_rfc3339(),
             updated_at: t.updated_at.to_rfc3339(),
         }
@@ -205,7 +228,7 @@ pub struct CreateTaskDataDto {
     pub started_at: Option<String>,
     pub ended_at: Option<String>,
     pub paused_at: Option<String>,
-    pub resume_at: Option<String>,
+    pub pause_reason: Option<String>,
     pub duration_minutes: Option<i32>,
     pub machine_id: Option<Uuid>,
     pub machine_hours: Option<f64>,
@@ -238,11 +261,7 @@ impl From<CreateTaskDataDto> for DomainCreateTaskDataDto {
                     .map(|dt| dt.with_timezone(&chrono::Utc))
                     .ok()
             }),
-            resume_at: dto.resume_at.and_then(|s| {
-                chrono::DateTime::parse_from_rfc3339(&s)
-                    .map(|dt| dt.with_timezone(&chrono::Utc))
-                    .ok()
-            }),
+            pause_reason: dto.pause_reason,
             duration_minutes: dto.duration_minutes,
             machine_id: dto.machine_id,
             machine_hours: dto.machine_hours,
@@ -264,7 +283,11 @@ pub struct UpdateTaskDataDto {
     pub started_at: Option<String>,
     pub ended_at: Option<String>,
     pub paused_at: Option<String>,
-    pub resume_at: Option<String>,
+    pub pause_reason: Option<String>,
+    pub resume: Option<bool>,
+    pub finish_for_day: Option<bool>,
+    pub handoff_to_worker_id: Option<Uuid>,
+    pub is_session_complete: Option<bool>,
     pub duration_minutes: Option<i32>,
     pub machine_id: Option<Uuid>,
     pub machine_hours: Option<f64>,
@@ -297,11 +320,11 @@ impl From<UpdateTaskDataDto> for DomainUpdateTaskDataDto {
                     .map(|dt| dt.with_timezone(&chrono::Utc))
                     .ok()
             }),
-            resume_at: dto.resume_at.and_then(|s| {
-                chrono::DateTime::parse_from_rfc3339(&s)
-                    .map(|dt| dt.with_timezone(&chrono::Utc))
-                    .ok()
-            }),
+            pause_reason: dto.pause_reason,
+            resume: dto.resume.unwrap_or(false),
+            finish_for_day: dto.finish_for_day.unwrap_or(false),
+            handoff_to_worker_id: dto.handoff_to_worker_id,
+            is_session_complete: dto.is_session_complete,
             duration_minutes: dto.duration_minutes,
             machine_id: dto.machine_id,
             machine_hours: dto.machine_hours,

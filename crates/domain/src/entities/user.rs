@@ -280,3 +280,122 @@ pub struct AuthResponse {
     pub lastname: String,
     pub roles: Vec<UserRole>,
 }
+
+// =============================================================================
+// PERMISSION MATRIX: Role + User level permissions per module
+// =============================================================================
+
+/// Module identifier for permission matrix
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Module {
+    Sites,
+    Orders,
+    Equipment,
+    Workers,
+    Livestock,
+    Weather,
+    Harvest,
+    Vineyard,
+    Olive,
+    Water,
+    Compliance,
+    Finance,
+    Analytics,
+    Settings,
+    Admin,
+}
+
+/// Permission action
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum PermissionAction {
+    Create,
+    Read,
+    Update,
+    Delete,
+    Manage,
+    Execute, // For tasks/workflows
+    Approve,
+    Export,
+}
+
+/// Permission entry for matrix
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct PermissionEntry {
+    pub module: Module,
+    pub actions: Vec<PermissionAction>,
+    pub scope: PermissionScope,
+}
+
+/// Role-based permission matrix
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct RolePermissionMatrix {
+    pub role_id: Uuid,
+    pub role_name: String,
+    pub permissions: Vec<PermissionEntry>,
+}
+
+/// User-specific permission overrides (in addition to role)
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct UserPermissionOverrides {
+    pub user_id: Uuid,
+    pub additional_permissions: Vec<PermissionEntry>,
+    pub restricted_permissions: Vec<PermissionEntry>, // Deny specific permissions
+    pub updated_at: DateTime<Utc>,
+    pub updated_by: Uuid,
+}
+
+/// Combined permission check result
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct PermissionCheckResult {
+    pub allowed: bool,
+    pub source: PermissionSource,
+    pub reason: Option<String>,
+    pub matched_entry: Option<PermissionEntry>,
+}
+
+/// Source of the permission decision
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum PermissionSource {
+    Role,
+    UserOverride,
+    SystemRole,
+    Denied,
+}
+
+// =============================================================================
+// TASK SESSION MANAGEMENT: Pause/Resume, Handoff, Daily Finish
+// =============================================================================
+
+/// Task session representing a work period
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct TaskSession {
+    pub id: Uuid,
+    pub task_data_id: Uuid,
+    pub worker_id: Uuid,
+    pub started_at: DateTime<Utc>,
+    pub ended_at: Option<DateTime<Utc>>,
+    pub paused_at: Option<DateTime<Utc>>,
+    pub pause_reason: Option<String>,
+    pub pause_count: u32,
+    pub is_active: bool,
+    pub handoff_to_worker_id: Option<Uuid>,
+    pub is_session_complete: bool,
+    pub total_duration_minutes: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+/// Task pause record for history
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct TaskPauseRecord {
+    pub id: Uuid,
+    pub task_data_id: Uuid,
+    pub worker_id: Uuid,
+    pub paused_at: DateTime<Utc>,
+    pub resumed_at: Option<DateTime<Utc>>,
+    pub reason: Option<String>,
+    pub duration_minutes: Option<i32>,
+}

@@ -1,9 +1,12 @@
-use agrocore_domain::entities::task::{CreateTaskDataDto, TaskData, UpdateTaskDataDto};
+use agrocore_domain::entities::task::{
+    CreateTaskDataDto, PauseResumeCycle, TaskData, UpdateTaskDataDto,
+};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::repositories::{
     PaginatedResponse, Pagination, RepositoryFuture, TaskDataRepository,
 };
 use agrocore_shared::SharedError;
+use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -164,13 +167,14 @@ impl TaskDataRepository for PgTaskDataRepo {
             sqlx::query_as::<_, TaskData>(
                 r#"INSERT INTO task_data (
                     id, tenant_id, order_id, worker_id, site_id, description, 
-                    started_at, ended_at, paused_at, resume_at, duration_minutes,
+                    started_at, ended_at, pause_resume_cycles, paused_at, duration_minutes,
                     machine_id, machine_hours, cost_center_id, area_covered,
                     materials_used, observations, gps_track, photo_urls,
+                    pause_resume_cycles, finished_for_day_at, handoff_to_worker_id, is_session_complete,
                     created_at, updated_at
                    )
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW(), NOW())
-                   RETURNING *"#)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, NOW(), NOW())
+                   RETURNING *\"#)
             .bind(id)
             .bind(tid)
             .bind(dto.order_id)
@@ -179,8 +183,8 @@ impl TaskDataRepository for PgTaskDataRepo {
             .bind(dto.description)
             .bind(dto.started_at)
             .bind(dto.ended_at)
+            .bind(serde_json::to_value(Vec::<PauseResumeCycle>::new()).unwrap_or(serde_json::Value::Null))
             .bind(dto.paused_at)
-            .bind(dto.resume_at)
             .bind(dto.duration_minutes)
             .bind(dto.machine_id)
             .bind(dto.machine_hours)
@@ -190,6 +194,10 @@ impl TaskDataRepository for PgTaskDataRepo {
             .bind(dto.observations)
             .bind(serde_json::to_value(dto.gps_track).unwrap_or(serde_json::Value::Null))
             .bind(serde_json::to_value(dto.photo_urls).unwrap_or(serde_json::Value::Null))
+            .bind(serde_json::to_value(Vec::<PauseResumeCycle>::new()).unwrap_or(serde_json::Value::Null))
+            .bind(Option::<DateTime<Utc>>::None)
+            .bind(Option::<Uuid>::None)
+            .bind(false)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
