@@ -2,7 +2,33 @@
 
 Alle Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
-## [0.5.1] - 2026-07-25
+## [0.5.2] - 2026-07-25
+
+### Added
+- **Advanced RBAC:** Complete custom role system with API key management:
+  - Custom Roles (`UserRole::Custom(Uuid)`) with full CRUD operations
+  - Role management: `CreateRoleDto`, `UpdateRoleDto`, `RoleResponse`
+  - Role structure: name, description, permissions, is_system flag, timestamps
+  - System roles protection (cannot be deleted/modified)
+  - API Key management: `CreateApiKeyDto`, `UpdateApiKeyDto`, `ApiKeyResponse`
+  - API Keys with roles, expiration, IP/domain restrictions, key prefix display
+  - Secure key generation with Argon2 hashing, plain key returned only once
+  - API Key response includes key_prefix, last_used_at, allowed IPs/domains
+  - Permission checking utilities: `PermissionCheckRequest`, `PermissionCheckResponse`
+  - Enhanced Role struct: description, is_system, created_at, updated_at
+  - Enhanced Role DTOs: `CreateRoleDto`, `UpdateRoleDto`, `RoleResponse`
+  - Enhanced UserRole with `Custom(Uuid)` variant for custom roles
+
+### Changed
+- **Version bump:** 0.5.1 → 0.5.2
+- **All Quality Gates:** `cargo check`, `cargo test` (103+ tests), `cargo clippy` all pass clean
+
+### Technical
+- Role entity enhanced with description, is_system, timestamps
+- API Key entity with secure hashing, expiration, IP/domain restrictions
+- Permission checking utilities for resource/action/scope validation
+- OpenAPI/Swagger docs generate without errors
+- All quality gates pass: `cargo check`, `cargo test` (103+ tests), `cargo clippy`
 
 ### Added
 - **RLS Policies:** Row-Level Security policies for all 34+ tenant-scoped tables (2 migration files)

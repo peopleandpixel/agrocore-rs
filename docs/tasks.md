@@ -81,7 +81,7 @@
 |------|---------|---------|--------------|--------|
 | 3.1 | **Multi-Tenant Isolation Hardening** | 3 Tage | Row-Level Security (RLS) Policies in Postgres für alle Tabellen, Visibility-Filter in Repos gegen DB-Constraints prüfen | ✅ **DONE** |
 | 3.2 | **Offline-First Sync Engine** | 10 Tage | Client-seitig: SQLite + Sync-Queue (CRDT oder Last-Write-Wins), Server: Sync-Endpoint `/api/sync` mit Conflict-Resolution, Background-Sync-Worker | ✅ **DONE** |
-| 3.3 | **Advanced RBAC** | 5 Tage | Custom Roles (über `UserRole::Custom(Uuid)`), Permission-Scoping pro Resource, Delegation, API-Key Management | 🔴 **TODO** |
+| 3.3 | **Advanced RBAC** | 5 Tage | Custom Roles (über `UserRole::Custom(Uuid)`), Permission-Scoping pro Resource, Delegation, API-Key Management | ✅ **DONE** |
 | 3.4 | **Audit Trail Vollständig** | 3 Tage | `AuditLogRepo` für ALLE Entities automatisch (Trigger oder Middleware), Immutable Logs, Export für Auditoren | 🔴 **TODO** |
 | 3.5 | **Webhooks & Event-System** | 5 Tage | NATS-basiert: `OrderCreated`, `TaskCompleted`, `ComplianceDue`, `WeatherAlert` Events. Webhook-Delivery mit Retry/Dead-Letter | 🔴 **TODO** |
 | 3.6 | **Mobile/PWA Admin UI** | 10 Tage | Leptos Admin-UI: Offline-Cache (Service Worker), Touch-optimiert, Worker-Task-Interface (Start/Pause/Stop Buttons), GPS-Tracking | 🔴 **TODO** |

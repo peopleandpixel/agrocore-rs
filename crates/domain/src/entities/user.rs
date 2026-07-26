@@ -71,7 +71,11 @@ pub enum PermissionScope {
 pub struct Role {
     pub id: Uuid,
     pub name: String,
+    pub description: Option<String>,
     pub permissions: Vec<Permission>,
+    pub is_system: bool, // System roles cannot be deleted/modified
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
@@ -135,6 +139,117 @@ pub struct UpdateUserDto {
     pub color: Option<String>,
     pub language: Option<String>,
     pub assigned_site_ids: Option<Vec<Uuid>>,
+}
+
+// =============================================================================
+// ADVANCED RBAC: Custom Roles & API Keys
+// =============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+pub struct CreateRoleDto {
+    #[validate(length(min = 1, max = 100))]
+    pub name: String,
+    pub description: Option<String>,
+    pub permissions: Vec<Permission>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, Default, ToSchema)]
+pub struct UpdateRoleDto {
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub permissions: Option<Vec<Permission>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct RoleResponse {
+    pub id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub permissions: Vec<Permission>,
+    pub is_system: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+pub struct CreateApiKeyDto {
+    #[validate(length(min = 1, max = 100))]
+    pub name: String,
+    pub description: Option<String>,
+    pub roles: Vec<UserRole>, // Roles assigned to this API key
+    pub expires_at: Option<DateTime<Utc>>,
+    pub allowed_ips: Option<Vec<String>>, // CIDR notation
+    pub allowed_domains: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, Default, ToSchema)]
+pub struct UpdateApiKeyDto {
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub roles: Option<Vec<UserRole>>,
+    pub is_active: Option<bool>,
+    pub expires_at: Option<DateTime<Utc>>,
+    pub allowed_ips: Option<Vec<String>>,
+    pub allowed_domains: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ApiKeyResponse {
+    pub id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub roles: Vec<UserRole>,
+    pub key_prefix: String, // First 8 chars of key for display
+    pub is_active: bool,
+    pub expires_at: Option<DateTime<Utc>>,
+    pub last_used_at: Option<DateTime<Utc>>,
+    pub allowed_ips: Option<Vec<String>>,
+    pub allowed_domains: Option<Vec<String>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct CreateApiKeyResult {
+    pub api_key: ApiKeyResponse,
+    pub plain_key: String, // Only returned once on creation
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ApiKey {
+    pub id: Uuid,
+    pub tenant_id: TenantId,
+    pub name: String,
+    pub description: Option<String>,
+    pub key_hash: String,   // Argon2 hash
+    pub key_prefix: String, // First 8 chars
+    pub roles: Vec<UserRole>,
+    pub is_active: bool,
+    pub expires_at: Option<DateTime<Utc>>,
+    pub last_used_at: Option<DateTime<Utc>>,
+    pub allowed_ips: Option<Vec<String>>,
+    pub allowed_domains: Option<Vec<String>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+// =============================================================================
+// PERMISSION CHECKING UTILITIES
+// =============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct PermissionCheckRequest {
+    pub resource: Resource,
+    pub action: Action,
+    pub resource_id: Option<Uuid>, // For ownership checks
+    pub scope: PermissionScope,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct PermissionCheckResponse {
+    pub allowed: bool,
+    pub reason: Option<String>,
+    pub required_permissions: Vec<Permission>,
 }
 
 // =============================================================================
