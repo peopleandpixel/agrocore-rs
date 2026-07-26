@@ -2,6 +2,29 @@
 
 Alle Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.5.4] - 2026-07-25
+
+### Added
+- **Webhooks & Event System (Task 3.5):** Complete NATS-based webhook delivery system:
+  - `WebhookSubscription` with HMAC secret, event filtering, custom headers
+  - Configurable retry policy with exponential backoff and dead-letter queue
+  - `WebhookDeliveryAttempt`, `WebhookDeliverySuccess`, `WebhookDeliveryFailure` tracking
+  - Events: `OrderCreated`, `TaskCompleted`, `ComplianceDue`, `WeatherAlert`, `WebhookDelivery*`
+  - API: `CreateWebhookSubscriptionDto`, `UpdateWebhookSubscriptionDto`, `WebhookSubscriptionResponse`
+  - Delivery logs with response status, latency, error tracking
+  - NATS `GlobalEvent` variants for webhook lifecycle events
+
+### Changed
+- **Version bump:** 0.5.3 → 0.5.4
+- **All Quality Gates:** `cargo check`, `cargo test` (103+ tests), `cargo clippy` all pass clean
+
+### Technical
+- Webhook subscription CRUD with validation
+- Retry policy with configurable attempts, delays, backoff multiplier
+- Dead letter queue support for failed deliveries
+- OpenAPI/Swagger docs generate without errors
+- All quality gates pass: `cargo check`, `cargo test` (103+ tests), `cargo clippy`
+
 ## [0.5.3] - 2026-07-25
 
 ### Added

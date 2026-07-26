@@ -83,7 +83,7 @@
 | 3.2 | **Offline-First Sync Engine** | 10 Tage | Client-seitig: SQLite + Sync-Queue (CRDT oder Last-Write-Wins), Server: Sync-Endpoint `/api/sync` mit Conflict-Resolution, Background-Sync-Worker | ✅ **DONE** |
 | 3.3 | **Advanced RBAC** | 5 Tage | Custom Roles (über `UserRole::Custom(Uuid)`), Permission-Scoping pro Resource, Delegation, API-Key Management | ✅ **DONE** |
 | 3.4 | **Audit Trail Vollständig** | 3 Tage | `AuditLogRepo` für ALLE Entities automatisch (Trigger oder Middleware), Immutable Logs, Export für Auditoren | ✅ **DONE** |
-| 3.5 | **Webhooks & Event-System** | 5 Tage | NATS-basiert: `OrderCreated`, `TaskCompleted`, `ComplianceDue`, `WeatherAlert` Events. Webhook-Delivery mit Retry/Dead-Letter | 🔴 **TODO** |
+| 3.5 | **Webhooks & Event-System** | 5 Tage | NATS-basiert: `OrderCreated`, `TaskCompleted`, `ComplianceDue`, `WeatherAlert` Events. Webhook-Delivery mit Retry/Dead-Letter | ✅ **DONE** |
 | 3.6 | **Mobile/PWA Admin UI** | 10 Tage | Leptos Admin-UI: Offline-Cache (Service Worker), Touch-optimiert, Worker-Task-Interface (Start/Pause/Stop Buttons), GPS-Tracking | 🔴 **TODO** |
 | 3.7 | **SIGPAC & Kataster-Import** | 5 Tage | Batch-Import GeoJSON/Shapefile, automatische Flächenberechnung, Duplikat-Erkennung, Validierung gegen LPIS | 🔴 **TODO** |
 

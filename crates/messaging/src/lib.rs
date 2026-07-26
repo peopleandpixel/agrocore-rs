@@ -11,7 +11,9 @@ use chrono::{DateTime, Utc};
 use failsafe::Config;
 use serde::{Deserialize, Serialize};
 use tracing::info;
+use utoipa::ToSchema;
 use uuid::Uuid;
+use validator::Validate;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Event<T> {
@@ -42,6 +44,10 @@ pub enum GlobalEvent {
     SpatialPolygonEntered(SpatialPresenceEvent),
     SpatialPolygonIn(SpatialPresenceEvent),
     SpatialPolygonLeft(SpatialPresenceEvent),
+    // Webhook events
+    WebhookDeliveryAttempted(WebhookDeliveryAttempt),
+    WebhookDeliverySucceeded(WebhookDeliverySuccess),
+    WebhookDeliveryFailed(WebhookDeliveryFailure),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -65,6 +71,121 @@ pub struct SpatialPresenceEvent {
     pub kind: SpatialPolygonEventKind,
 }
 
+// Webhook types
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WebhookSubscription {
+    pub id: Uuid,
+    pub tenant_id: Uuid,
+    pub name: String,
+    pub url: String,
+    pub secret: Option<String>, // HMAC secret for signature verification
+    pub events: Vec<String>,    // Event types to subscribe to
+    pub is_active: bool,
+    pub retry_policy: WebhookRetryPolicy,
+    pub headers: Option<serde_json::Value>, // Custom headers
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+pub struct WebhookRetryPolicy {
+    pub max_attempts: u32,
+    pub initial_delay_ms: u64,
+    pub max_delay_ms: u64,
+    pub backoff_multiplier: f64,
+    pub dead_letter_url: Option<String>, // Optional dead letter queue URL
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WebhookDeliveryAttempt {
+    pub id: Uuid,
+    pub subscription_id: Uuid,
+    pub event_type: String,
+    pub payload: serde_json::Value,
+    pub attempt: u32,
+    pub response_status: Option<u16>,
+    pub response_body: Option<String>,
+    pub error: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub completed_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WebhookDeliverySuccess {
+    pub id: Uuid,
+    pub subscription_id: Uuid,
+    pub event_type: String,
+    pub attempt: u32,
+    pub response_status: u16,
+    pub response_body: Option<String>,
+    pub latency_ms: u64,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WebhookDeliveryFailure {
+    pub id: Uuid,
+    pub subscription_id: Uuid,
+    pub event_type: String,
+    pub payload: serde_json::Value,
+    pub attempts: u32,
+    pub last_error: String,
+    pub last_status: Option<u16>,
+    pub moved_to_dead_letter: bool,
+    pub created_at: DateTime<Utc>,
+}
+
+// Webhook subscription request/response DTOs
+#[derive(Debug, Serialize, Deserialize, ToSchema, Validate)]
+pub struct CreateWebhookSubscriptionDto {
+    #[validate(length(min = 1, max = 100))]
+    pub name: String,
+    #[validate(url)]
+    pub url: String,
+    pub secret: Option<String>,
+    pub events: Vec<String>,
+    pub retry_policy: Option<WebhookRetryPolicy>,
+    pub headers: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema, Validate, Default)]
+pub struct UpdateWebhookSubscriptionDto {
+    pub name: Option<String>,
+    #[validate(url)]
+    pub url: Option<String>,
+    pub secret: Option<String>,
+    pub events: Option<Vec<String>>,
+    pub is_active: Option<bool>,
+    pub retry_policy: Option<WebhookRetryPolicy>,
+    pub headers: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct WebhookSubscriptionResponse {
+    pub id: Uuid,
+    pub name: String,
+    pub url: String,
+    pub events: Vec<String>,
+    pub is_active: bool,
+    pub retry_policy: WebhookRetryPolicy,
+    pub headers: Option<serde_json::Value>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct WebhookDeliveryLogResponse {
+    pub id: Uuid,
+    pub subscription_id: Uuid,
+    pub event_type: String,
+    pub attempt: u32,
+    pub response_status: Option<u16>,
+    pub response_body: Option<String>,
+    pub error: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub completed_at: Option<DateTime<Utc>>,
+}
+
 impl<T> Event<T> {
     pub fn new(aggregate_id: String, payload: T) -> Self {
         Self {
@@ -83,6 +204,18 @@ impl<T> Event<T> {
             aggregate_id,
             payload,
             trace_id,
+        }
+    }
+}
+
+impl Default for WebhookRetryPolicy {
+    fn default() -> Self {
+        Self {
+            max_attempts: 5,
+            initial_delay_ms: 1000,
+            max_delay_ms: 300000, // 5 minutes
+            backoff_multiplier: 2.0,
+            dead_letter_url: None,
         }
     }
 }
