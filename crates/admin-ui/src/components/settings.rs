@@ -1,9 +1,9 @@
 use crate::api;
 use crate::components::form::{
-    PHONE_PREFIXES, RequiredLabel, country_flag, is_valid_email, language_flag, normalize_phone,
-    split_phone,
+    country_flag, is_valid_email, language_flag, normalize_phone, split_phone, RequiredLabel,
+    PHONE_PREFIXES,
 };
-use crate::i18n::{I18n, LANGUAGE_OPTIONS, Language};
+use crate::i18n::{I18n, Language, LANGUAGE_OPTIONS};
 use icondata::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;

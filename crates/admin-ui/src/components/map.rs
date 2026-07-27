@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use wasm_bindgen::{JsCast, closure::Closure, prelude::*};
+use wasm_bindgen::{closure::Closure, prelude::*, JsCast};
 
 #[wasm_bindgen(module = "/src/leaflet.js")]
 extern "C" {

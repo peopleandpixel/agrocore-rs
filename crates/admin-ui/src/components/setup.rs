@@ -1,6 +1,6 @@
 use crate::api;
 use crate::components::form::{
-    PHONE_PREFIXES, RequiredLabel, country_flag, is_valid_email, language_flag, normalize_phone,
+    country_flag, is_valid_email, language_flag, normalize_phone, RequiredLabel, PHONE_PREFIXES,
 };
 use crate::components::toast::{ToastContext, ToastType};
 use crate::i18n::LANGUAGE_OPTIONS;
@@ -595,18 +595,20 @@ pub fn SetupAssistant() -> impl IntoView {
                                                     toast_context.add_toast.run((required_error.clone(), ToastType::Warning));
                                                     return;
                                                 }
-                                                if let Some(email) = {
+                                                let email_opt = {
                                                     let value = company_email.get();
                                                     if value.trim().is_empty() {
                                                         None
                                                     } else {
                                                         Some(value)
                                                     }
-                                                }
-                                                    && !is_valid_email(&email) {
+                                                };
+                                                if let Some(email) = email_opt {
+                                                    if !is_valid_email(&email) {
                                                         toast_context.add_toast.run((invalid_email_error.clone(), ToastType::Warning));
                                                         return;
                                                     }
+                                                }
                                                 let phone_local = company_phone_local.get();
                                                 if !phone_local.trim().is_empty() {
                                                     let prefix = company_phone_prefix.get();

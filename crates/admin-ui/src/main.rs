@@ -15,15 +15,20 @@ use crate::components::orders::OrderList;
 use crate::components::resources::ResourcesPage;
 use crate::components::settings::SettingsPage;
 use crate::components::sites::SiteManagement;
-use crate::components::toast::{ToastContainer, provide_toast_context};
+use crate::components::toast::{provide_toast_context, ToastContainer};
 use crate::components::users::UserManagement;
 use crate::components::weather::WeatherManagement;
 use crate::components::wizard::WizardView;
 use crate::components::worker_tasks::WorkerTasksPage;
-use icondata::*;
+use icondata as I;
 use leptos::prelude::*;
 use leptos_icons::Icon;
 use leptos_router::{components::*, path};
+use I::{
+    ImMagicWand, LuBeef, LuBriefcase, LuChartBar, LuChartNoAxesColumn, LuCircleUser,
+    LuClipboardList, LuCloudSun, LuHistory, LuLayoutDashboard, LuLogOut, LuMap, LuMapPin, LuMenu,
+    LuSettings, LuSquareCheck, LuSun, LuTractor, LuUsers, LuWallet,
+};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum UserRole {
@@ -102,11 +107,13 @@ pub fn App() -> impl IntoView {
 
     Effect::new(move |_| {
         use web_sys::window;
-        if let Some(win) = window()
-            && let Some(doc) = win.document()
-            && let Some(root) = doc.document_element()
-        {
-            let _ = root.set_attribute("data-theme", theme.get().as_str());
+        let win = window();
+        if let Some(win) = win {
+            if let Some(doc) = win.document() {
+                if let Some(root) = doc.document_element() {
+                    let _ = root.set_attribute("data-theme", theme.get().as_str());
+                }
+            }
         }
     });
 

@@ -264,6 +264,8 @@ dependencies = [
  "gloo-net",
  "gloo-timers",
  "icondata",
+ "icondata_im",
+ "icondata_lu",
  "js-sys",
  "leptos",
  "leptos_icons",
@@ -2746,9 +2748,9 @@ dependencies = [
 
 [[package]]
 name = "icondata"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "278d66461d56cdaa2ff2a395e2e0b033330ed0c16171cc3f8f3f3857ea164832"
+checksum = "412c95f764f89aad1a8505aa4273d931b66d5a26d1e6609a37243784a9128ad9"
 dependencies = [
  "icondata_ai",
  "icondata_bi",
@@ -2843,9 +2845,9 @@ dependencies = [
 
 [[package]]
 name = "icondata_hi"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c70ef8303eb5e17445abd67260e057d3c94b793b120fca3809373c6b7195e38"
+checksum = "1f8ba6ed6e155898d296fc5d4127eb651b667643368698dd02b1e9383eab3eef"
 dependencies = [
  "icondata_core",
 ]
@@ -3369,9 +3371,9 @@ dependencies = [
 
 [[package]]
 name = "leptos_router"
-version = "0.8.14"
+version = "0.8.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "253962f9371a2fcf432eff991efc6da58de383c1cbcc332aaff7b8b22f6d778e"
+checksum = "318c035b5995324c2f60900978ac67da3b21e6062a6e904f8b93b38eddc4e3a2"
 dependencies = [
  "any_spawner",
  "either_of",

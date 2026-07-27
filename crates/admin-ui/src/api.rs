@@ -2,7 +2,7 @@
 
 use gloo_net::http::{Request, RequestBuilder};
 use leptos::prelude::window;
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use wasm_bindgen::JsCast;
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
