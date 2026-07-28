@@ -1,4 +1,4 @@
-use crate::entities::{Boundary, CropType, GeoPoint, Plot, RowConfig, SigpacData, Site, SiteProperty, SiteType};
+use agrocore_domain::entities::{Boundary, CropType, GeoPoint, Plot, RowConfig, SigpacData, SiteProperty, SiteType, BbchStage};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -10,7 +10,7 @@ pub struct ImportSiteDto {
     #[validate(length(min = 1, max = 200))]
     pub label: String,
     pub site_type: SiteType,
-    pub crop_type: crate::entities::CropType,
+    pub crop_type: CropType,
     pub variety: Option<String>,
     #[validate(range(min = 0.0))]
     pub area: f64,
@@ -18,7 +18,7 @@ pub struct ImportSiteDto {
     pub gross_area: Option<f64>,
     pub plots: Option<Vec<Plot>>,
     pub row_config: Option<RowConfig>,
-    pub bbch_stage: Option<crate::entities::BbchStage>,
+    pub bbch_stage: Option<BbchStage>,
     pub planted_date: Option<DateTime<Utc>>,
     pub cleared_date: Option<DateTime<Utc>>,
     pub soil_type: Option<String>,
@@ -27,7 +27,7 @@ pub struct ImportSiteDto {
     pub altitude: Option<f64>,
     pub organic: Option<bool>,
     pub organic_eligible: Option<bool>,
-    pub center: Option<crate::entities::GeoPoint>,
+    pub center: Option<GeoPoint>,
     pub sigpac_data: Option<SigpacData>,
     pub regepac_id: Option<String>,
     pub boundary: Option<Boundary>,

@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id FROM sites \n                       WHERE tenant_id = $1 \n                       AND boundary IS NOT NULL\n                       AND ST_Equals(boundary, ST_GeomFromText($2, 4326))\n                       AND is_active = true\n                       LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "ad17e91b0348b81c68e06148c706fdedeb613796cbe8fc36ab416b3cbace68fd"
+}

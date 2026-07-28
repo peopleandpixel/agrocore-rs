@@ -1,8 +1,8 @@
 # Agrocore-RS Implementation Timeline
 
 **Status:** ✅ Project compiles successfully. All core modules have domain entities, repositories, and API handlers.
-**Last Updated:** 2026-07-24
-**Current State:** Phase 1 Complete (1.1-1.10), Phase 1.11 (Reporting) in progress
+**Last Updated:** 2026-07-27
+**Current State:** Phase 1 Complete (1.1-1.11), Phase 2 Complete, Phase 3.1-3.6 Complete
 
 ---
 
@@ -84,7 +84,7 @@
 | 3.3 | **Advanced RBAC** | 5 Tage | Custom Roles (über `UserRole::Custom(Uuid)`), Permission-Scoping pro Resource, Delegation, API-Key Management | ✅ **DONE** |
 | 3.4 | **Audit Trail Vollständig** | 3 Tage | `AuditLogRepo` für ALLE Entities automatisch (Trigger oder Middleware), Immutable Logs, Export für Auditoren | ✅ **DONE** |
 | 3.5 | **Webhooks & Event-System** | 5 Tage | NATS-basiert: `OrderCreated`, `TaskCompleted`, `ComplianceDue`, `WeatherAlert` Events. Webhook-Delivery mit Retry/Dead-Letter | ✅ **DONE** |
-| 3.6 | **Mobile/PWA Admin UI** | 10 Tage | Leptos Admin-UI: Offline-Cache (Service Worker), Touch-optimiert, Worker-Task-Interface (Start/Pause/Stop Buttons), GPS-Tracking | 🔴 **TODO** |
+| 3.6 | **Mobile/PWA Admin UI** | 10 Tage | Leptos Admin-UI: Offline-Cache (Service Worker), Touch-optimiert, Worker-Task-Interface (Start/Pause/Stop Buttons), GPS-Tracking | ✅ **DONE** |
 | 3.7 | **SIGPAC & Kataster-Import** | 5 Tage | Batch-Import GeoJSON/Shapefile, automatische Flächenberechnung, Duplikat-Erkennung, Validierung gegen LPIS | 🔴 **TODO** |
 
 ---

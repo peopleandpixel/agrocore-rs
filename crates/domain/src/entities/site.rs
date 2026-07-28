@@ -127,9 +127,11 @@ impl<'q> sqlx::Encode<'q, sqlx::Postgres> for Boundary {
             .map(|(f, l)| f != l)
             .unwrap_or(false);
 
-        if needs_close && let Some(first) = line_string.0.first() {
-            let first_val = *first;
-            line_string.0.push(first_val);
+        #[allow(clippy::collapsible_if)]
+        if needs_close {
+            if let Some(first) = line_string.0.first().copied() {
+                line_string.0.push(first);
+            }
         }
 
         let polygon = Polygon::new(line_string, vec![]);
@@ -151,7 +153,7 @@ pub struct Plot {
     pub boundary: Option<Boundary>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct RowConfig {
     #[validate(range(min = 0.0))]
     pub stick_distance: f64,

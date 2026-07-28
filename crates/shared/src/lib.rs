@@ -148,4 +148,6 @@ pub enum SharedError {
     ReferenceError(String),
     #[error("Internal error: {0}")]
     Internal(String),
+    #[error("Not implemented: {0}")]
+    NotImplemented(String),
 }

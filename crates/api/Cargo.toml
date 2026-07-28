@@ -48,9 +48,11 @@ dashmap = "6"
 validator = { workspace = true }
 rust_xlsxwriter = { workspace = true }
 geojson = { workspace = true }
+geozero = { workspace = true, features = ["with-shp"] }
 sqlx = { workspace = true }
 argon2 = { workspace = true }
 rand = { workspace = true }
+base64 = "0.22"
 
 [dev-dependencies]
 testcontainers = "0.27.3"

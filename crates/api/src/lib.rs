@@ -12,6 +12,7 @@ pub mod dto;
 pub mod error;
 pub mod handlers;
 pub mod middleware;
+pub mod services;
 
 #[cfg(test)]
 mod dto_validation_tests;

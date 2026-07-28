@@ -2,6 +2,7 @@
 
 use agrocore_domain::entities::site::{Boundary, GeoPoint, SiteProperty};
 use agrocore_domain::entities::{BbchStage, CropType, SiteType};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -92,6 +93,7 @@ impl From<CreateSiteDto> for agrocore_domain::entities::site::CreateSiteDto {
             center: dto.center,
             boundary: dto.boundary.map(Boundary),
             plots: dto.plots,
+            properties: dto.properties,
             row_config: None,
             bbch_stage: None,
             planted_date: None,
@@ -102,7 +104,6 @@ impl From<CreateSiteDto> for agrocore_domain::entities::site::CreateSiteDto {
             organic: None,
             sigpac_data: None,
             regepac_id: None,
-            properties: dto.properties,
             custom_fields: None,
             note1: None,
             note2: None,
@@ -118,9 +119,24 @@ pub struct UpdateSiteDto {
     #[validate(range(min = 0.0))]
     pub area: Option<f64>,
     pub gross_area: Option<f64>,
+    pub plots: Option<Vec<agrocore_domain::entities::site::Plot>>,
+    pub row_config: Option<agrocore_domain::entities::site::RowConfig>,
+    pub bbch_stage: Option<BbchStage>,
+    pub planted_date: Option<DateTime<Utc>>,
+    pub cleared_date: Option<DateTime<Utc>>,
+    pub soil_type: Option<String>,
+    pub slope: Option<f64>,
+    pub slope_facing: Option<String>,
+    pub altitude: Option<f64>,
+    pub organic: Option<bool>,
     pub center: Option<GeoPoint>,
+    pub sigpac_data: Option<agrocore_domain::entities::site::SigpacData>,
+    pub regepac_id: Option<String>,
     pub boundary: Option<Vec<GeoPoint>>,
     pub properties: Option<Vec<SiteProperty>>,
+    pub custom_fields: Option<serde_json::Value>,
+    pub note1: Option<String>,
+    pub note2: Option<String>,
     pub is_active: Option<bool>,
 }
 
@@ -131,11 +147,25 @@ impl From<UpdateSiteDto> for agrocore_domain::entities::site::UpdateSiteDto {
             variety: dto.variety,
             area: dto.area,
             gross_area: dto.gross_area,
+            plots: dto.plots,
+            row_config: dto.row_config,
+            bbch_stage: dto.bbch_stage,
+            planted_date: dto.planted_date,
+            cleared_date: dto.cleared_date,
+            soil_type: dto.soil_type,
+            slope: dto.slope,
+            slope_facing: dto.slope_facing,
+            altitude: dto.altitude,
+            organic: dto.organic,
             center: dto.center,
+            sigpac_data: dto.sigpac_data,
+            regepac_id: dto.regepac_id,
             boundary: dto.boundary.map(Boundary),
             properties: dto.properties,
+            custom_fields: dto.custom_fields,
+            note1: dto.note1,
+            note2: dto.note2,
             is_active: dto.is_active,
-            ..Default::default()
         }
     }
 }

@@ -1,10 +1,12 @@
 use crate::AppState;
 use crate::dto::{
-    CreateSiteDto, ErrorResponse, PaginatedResponseDto, PaginatedSiteResponse, SiteDto,
+    CreateSiteDto, ErrorResponse, ImportResult, ImportSitesRequest,
+    ShapefileImportRequest, GeoJsonImportRequest, PaginatedResponseDto, PaginatedSiteResponse, SiteDto,
     UpdateSiteDto,
 };
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
+use crate::services::import_service::ImportService;
 use actix_web::{HttpResponse, web};
 use agrocore_messaging::{Event, GlobalEvent};
 use agrocore_shared::SharedError;
@@ -207,4 +209,102 @@ pub async fn delete_site(
     } else {
         Err(SharedError::NotFound("Site not found".into()).into())
     }
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/sites/import",
+    request_body = ImportSitesRequest,
+    responses(
+        (status = 200, description = "Sites imported", body = ImportResult),
+        (status = 400, description = "Validation failed", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "sites",
+    security(("bearer_auth" = []))
+)]
+pub async fn import_sites(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    dto: web::Json<ImportSitesRequest>,
+) -> Result<HttpResponse, ApiError> {
+    auth.require_manager()?;
+    tracing::info!(
+        "Importing {} sites for tenant: {}",
+        dto.0.sites.len(),
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
+    
+    let pool = state.db.pool().clone();
+    let import_service = ImportService::new(pool);
+    let result = import_service
+        .import_sites(auth.0.tenant_id, dto.0, auth.0.user_id)
+        .await?;
+    Ok(HttpResponse::Ok().json(result))
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/sites/import/geojson",
+    request_body = GeoJsonImportRequest,
+    responses(
+        (status = 200, description = "GeoJSON imported", body = ImportResult),
+        (status = 400, description = "Validation failed", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "sites",
+    security(("bearer_auth" = []))
+)]
+pub async fn import_geojson(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    dto: web::Json<GeoJsonImportRequest>,
+) -> Result<HttpResponse, ApiError> {
+    auth.require_manager()?;
+    tracing::info!(
+        "Importing {} GeoJSON features for tenant: {}",
+        dto.0.features.len(),
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
+    
+    let pool = state.db.pool().clone();
+    let import_service = ImportService::new(pool);
+    let result = import_service
+        .import_geojson(auth.0.tenant_id, dto.0, auth.0.user_id)
+        .await?;
+    Ok(HttpResponse::Ok().json(result))
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/sites/import/shapefile",
+    request_body = ShapefileImportRequest,
+    responses(
+        (status = 200, description = "Shapefile imported", body = ImportResult),
+        (status = 400, description = "Validation failed", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "sites",
+    security(("bearer_auth" = []))
+)]
+pub async fn import_shapefile(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    dto: web::Json<ShapefileImportRequest>,
+) -> Result<HttpResponse, ApiError> {
+    auth.require_manager()?;
+    tracing::info!(
+        "Importing shapefile for tenant: {}",
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
+
+    let pool = state.db.pool().clone();
+    let import_service = ImportService::new(pool);
+    let result = import_service
+        .import_shapefile(auth.0.tenant_id, dto.0, auth.0.user_id)
+        .await?;
+    Ok(HttpResponse::Ok().json(result))
 }

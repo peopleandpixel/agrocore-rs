@@ -36,7 +36,7 @@ impl ApiError {
             SharedError::Conflict(_) => "conflict",
             SharedError::AlreadyExists(_) => "already_exists",
             SharedError::ReferenceError(_) => "reference_error",
-            SharedError::Database(_) | SharedError::Internal(_) => "internal",
+            SharedError::Database(_) | SharedError::Internal(_) | SharedError::NotImplemented(_) => "internal",
         }
     }
 }
@@ -51,7 +51,7 @@ impl ResponseError for ApiError {
             SharedError::Conflict(_) => StatusCode::CONFLICT,
             SharedError::AlreadyExists(_) => StatusCode::CONFLICT,
             SharedError::ReferenceError(_) => StatusCode::BAD_REQUEST,
-            SharedError::Database(_) | SharedError::Internal(_) => {
+            SharedError::Database(_) | SharedError::Internal(_) | SharedError::NotImplemented(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
             }
         }

@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id FROM sites \n                   WHERE tenant_id = $1 \n                   AND sigpac_data->>'province' = $2\n                   AND sigpac_data->>'municipality' = $3\n                   AND sigpac_data->>'aggregate' = $4\n                   AND sigpac_data->>'zone' = $5\n                   AND sigpac_data->>'polygon' = $6\n                   AND sigpac_data->>'parcel' = $7\n                   AND sigpac_data->>'enclosure' = $8\n                   AND is_active = true\n                   LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "6fc786aee971d1297beb3ffb1ece55a33f05882ca490dccce3035800b9603512"
+}
