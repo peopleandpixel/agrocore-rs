@@ -1,0 +1,66 @@
+{
+  "es-an": [
+    "/fiboa/es-an/es_an.parquet",
+    "https://data.source.coop/fiboa/es-an/es_an.parquet"
+  ],
+  "es-ar": [
+    "https://data.source.coop/fiboa/es-ar/es_ar.parquet",
+    "/fiboa/es-ar/es_ar.parquet"
+  ],
+  "es-cl": [
+    "https://data.source.coop/fiboa/es-cl/es_cl.parquet",
+    "/fiboa/es-cl/es_cl.parquet"
+  ],
+  "es-nc": [
+    "https://data.source.coop/fiboa/es-nc/es_nc.parquet",
+    "/fiboa/es-nc/es_nc.parquet"
+  ],
+  "es-pv": [
+    "/fiboa/es-pv/es_pv.parquet",
+    "https://data.source.coop/fiboa/es-pv/es_pv.parquet"
+  ],
+  "es-cm": [
+    "/fiboa/es-cm/es_cm.parquet",
+    "https://data.source.coop/fiboa/es-cm/es_cm.parquet"
+  ],
+  "es-vc": [
+    "/fiboa/es-vc/es_vc_2022.parquet",
+    "/fiboa/es-vc/es_vc.parquet",
+    "/fiboa/es-vc/es_vc_2023.parquet",
+    "https://data.source.coop/fiboa/es-vc/es_vc_2022.parquet",
+    "https://data.source.coop/fiboa/es-vc/es_vc_2023.parquet",
+    "https://data.source.coop/fiboa/es-vc/es_vc.parquet"
+  ],
+  "es-ga": [
+    "/fiboa/es-ga/es_ga.parquet",
+    "https://data.source.coop/fiboa/es-ga/es_ga.parquet"
+  ],
+  "es-ex": [
+    "https://data.source.coop/fiboa/es-ex/es_ex_2023.parquet",
+    "https://data.source.coop/fiboa/es-ex/es_ex.parquet",
+    "/fiboa/es-ex/es_ex_2023.parquet",
+    "/fiboa/es-ex/es_ex.parquet"
+  ],
+  "es-md": [
+    "/fiboa/es-md/es_md.parquet",
+    "https://data.source.coop/fiboa/es-md/es_md.parquet"
+  ],
+  "es-pm": [
+    "https://data.source.coop/fiboa/es-pm/es_pm.parquet",
+    "/fiboa/es-pm/es_pm.parquet",
+    "/fiboa/es-pm/es_pm_2022.parquet",
+    "https://data.source.coop/fiboa/es-pm/es_pm_2023.parquet",
+    "https://data.source.coop/fiboa/es-pm/es_pm_2022.parquet",
+    "/fiboa/es-pm/es_pm_2023.parquet"
+  ],
+  "es-cn": [
+    "https://data.source.coop/fiboa/es-cn/es_cn.parquet",
+    "/fiboa/es-cn/es_cn.parquet"
+  ],
+  "es-cb": [
+    "/fiboa/es-cb/es_cb_2023.parquet",
+    "/fiboa/es-cb/es_cb.parquet",
+    "https://data.source.coop/fiboa/es-cb/es_cb.parquet",
+    "https://data.source.coop/fiboa/es-cb/es_cb_2023.parquet"
+  ]
+}

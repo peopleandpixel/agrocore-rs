@@ -4,8 +4,7 @@ resolver = "2"
 edition = "2024"
 
 [workspace.package]
-version = "0.5.5"
-edition = "2024"
+version = "0.5.6"
 authors = ["Jens Reinemuth <jens@reinemuth.pt>"]
 license = "GPL-3.0-or-later"
 
@@ -43,5 +42,5 @@ futures = "0.3"
 async-nats = "0.38"
 mockall = "0.13"
 sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono", "ipnetwork", "bigdecimal", "json"] }
-geozero = { version = "0.14", features = ["with-postgis-sqlx", "with-geo"] }
+geozero = { version = "0.15", features = ["with-postgis-sqlx", "with-geo", "with-shp", "with-geojson"] }
 strum = { version = "0.26", features = ["derive"] }
