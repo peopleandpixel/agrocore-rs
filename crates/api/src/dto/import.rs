@@ -1,8 +1,10 @@
-use agrocore_domain::entities::{Boundary, CropType, GeoPoint, Plot, RowConfig, SigpacData, SiteProperty, SiteType, BbchStage};
+use agrocore_domain::entities::{
+    BbchStage, Boundary, CropType, GeoPoint, Plot, RowConfig, SigpacData, SiteProperty, SiteType,
+};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use utoipa::ToSchema;
+use uuid::Uuid;
 use validator::Validate;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]

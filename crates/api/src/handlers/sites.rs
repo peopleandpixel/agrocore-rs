@@ -1,8 +1,7 @@
 use crate::AppState;
 use crate::dto::{
-    CreateSiteDto, ErrorResponse, ImportResult, ImportSitesRequest,
-    ShapefileImportRequest, GeoJsonImportRequest, PaginatedResponseDto, PaginatedSiteResponse, SiteDto,
-    UpdateSiteDto,
+    CreateSiteDto, ErrorResponse, GeoJsonImportRequest, ImportResult, ImportSitesRequest,
+    PaginatedResponseDto, PaginatedSiteResponse, ShapefileImportRequest, SiteDto, UpdateSiteDto,
 };
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
@@ -237,7 +236,7 @@ pub async fn import_sites(
     dto.0
         .validate()
         .map_err(|e| SharedError::Validation(e.to_string()))?;
-    
+
     let pool = state.db.pool().clone();
     let import_service = ImportService::new(pool);
     let result = import_service
@@ -269,7 +268,7 @@ pub async fn import_geojson(
         dto.0.features.len(),
         agrocore_domain::TenantId(auth.0.tenant_id)
     );
-    
+
     let pool = state.db.pool().clone();
     let import_service = ImportService::new(pool);
     let result = import_service
