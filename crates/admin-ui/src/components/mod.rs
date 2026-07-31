@@ -12,6 +12,7 @@ pub mod orders;
 pub mod resources;
 pub mod settings;
 pub mod setup;
+pub mod sigpac;
 pub mod sites;
 pub mod toast;
 pub mod users;

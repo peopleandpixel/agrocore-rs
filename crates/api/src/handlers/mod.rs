@@ -10,6 +10,7 @@ pub mod livestock;
 pub mod nutrition;
 pub mod orders;
 pub mod reporting;
+pub mod sigpac;
 pub mod sites;
 pub mod specialized;
 pub mod system;

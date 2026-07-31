@@ -151,3 +151,9 @@ pub enum SharedError {
     #[error("Not implemented: {0}")]
     NotImplemented(String),
 }
+
+impl From<sqlx::Error> for SharedError {
+    fn from(err: sqlx::Error) -> Self {
+        SharedError::Database(err.to_string())
+    }
+}

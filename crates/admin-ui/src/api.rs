@@ -985,3 +985,128 @@ pub async fn fetch_aggregated_task_status(
     )
     .await
 }
+
+// ===========================================================================
+// SIGPAC Parcel API Types & Functions
+// ===========================================================================
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SigpacParcelQuery {
+    pub province: Option<u8>,
+    pub municipality: Option<u16>,
+    pub aggregate: Option<u16>,
+    pub zone: Option<u16>,
+    pub polygon: Option<u16>,
+    pub parcel: Option<u16>,
+    pub enclosure: Option<u16>,
+    pub sigpac_reference: Option<String>,
+    pub page: Option<u64>,
+    pub per_page: Option<u64>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SigpacParcelDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub sigpac_reference: String,
+    pub province: i16,
+    pub municipality: i16,
+    pub aggregate: i16,
+    pub zone: i16,
+    pub polygon: i16,
+    pub parcel: i16,
+    pub enclosure: i16,
+    pub usage_code: Option<String>,
+    pub usage_description: Option<String>,
+    pub geometry: serde_json::Value,
+    pub area_hectares: Option<f64>,
+    pub official_area_ha: Option<f64>,
+    pub source_dataset: Option<String>,
+    pub source_year: Option<i16>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PaginatedSigpacParcelResponse {
+    pub data: Vec<SigpacParcelDto>,
+    pub total: u64,
+    pub page: u64,
+    pub per_page: u64,
+    pub total_pages: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct NearPointQuery {
+    pub lng: f64,
+    pub lat: f64,
+    pub radius_m: Option<f64>,
+}
+
+pub async fn list_sigpac_parcels(
+    query: SigpacParcelQuery,
+) -> Result<PaginatedSigpacParcelResponse, String> {
+    let mut params = Vec::new();
+    if let Some(v) = query.province {
+        params.push(format!("province={}", v));
+    }
+    if let Some(v) = query.municipality {
+        params.push(format!("municipality={}", v));
+    }
+    if let Some(v) = query.aggregate {
+        params.push(format!("aggregate={}", v));
+    }
+    if let Some(v) = query.zone {
+        params.push(format!("zone={}", v));
+    }
+    if let Some(v) = query.polygon {
+        params.push(format!("polygon={}", v));
+    }
+    if let Some(v) = query.parcel {
+        params.push(format!("parcel={}", v));
+    }
+    if let Some(v) = query.enclosure {
+        params.push(format!("enclosure={}", v));
+    }
+    if let Some(v) = query.sigpac_reference {
+        params.push(format!(
+            "sigpac_reference={}",
+            js_sys::encode_uri_component(&v)
+        ));
+    }
+    if let Some(v) = query.page {
+        params.push(format!("page={}", v));
+    }
+    if let Some(v) = query.per_page {
+        params.push(format!("per_page={}", v));
+    }
+
+    let query_string = if params.is_empty() {
+        String::new()
+    } else {
+        format!("?{}", params.join("&"))
+    };
+    let url = format!("/api/v1/sigpac/parcels{}", query_string);
+    get_json(&url, true).await
+}
+
+pub async fn get_sigpac_parcel(id: uuid::Uuid) -> Result<SigpacParcelDto, String> {
+    get_json(&format!("/api/v1/sigpac/parcels/{}", id), true).await
+}
+
+pub async fn search_parcels_near_point(
+    query: NearPointQuery,
+) -> Result<PaginatedSigpacParcelResponse, String> {
+    let mut params = Vec::new();
+    params.push(format!("lng={}", query.lng));
+    params.push(format!("lat={}", query.lat));
+    if let Some(r) = query.radius_m {
+        params.push(format!("radius_m={}", r));
+    }
+
+    let url = format!(
+        "/api/v1/sigpac/parcels/search/near-point?{}",
+        params.join("&")
+    );
+    get_json(&url, true).await
+}

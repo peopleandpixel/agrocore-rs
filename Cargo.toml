@@ -1,15 +1,12 @@
 [workspace]
 members = ["crates/*"]
 resolver = "2"
-edition = "2024"
 
 [workspace.package]
-version = "0.5.6"
+version = "0.5.7"
 authors = ["Jens Reinemuth <jens@reinemuth.pt>"]
 license = "GPL-3.0-or-later"
 
-[profile.test]
-edition = "2024"
 
 [workspace.dependencies]
 tokio = { version = "1", features = ["full"] }

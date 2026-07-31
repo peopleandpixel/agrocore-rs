@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.7] - 2026-07-31
+
+### Added
+- SIGPAC parcel detail modal with full field display (province, municipality, aggregate, zone, polygon, parcel, enclosure, usage code, area hectares, official area, source dataset/year, geometry)
+- Spatial search by coordinates with configurable radius
+- Near point search endpoint (`search_parcels_near_point`) in API handlers
+- Complete SIGPAC CRUD operations: `list_sigpac_parcels`, `get_sigpac_parcel`, list all handler endpoints
+- Admin UI SIGPAC module (`SigpacParcels` component) with filters, pagination, detail view, and spatial search
+
+### Changed
+- Updated workspace version to 0.5.7
+- Fixed admin-ui compilation errors (restored api.rs, fixed sigpac.rs structural issues, added Missing SIGPAC type references)
+
 ## [0.5.6] - 2026-07-28
 
 ### Added

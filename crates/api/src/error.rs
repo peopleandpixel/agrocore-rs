@@ -25,6 +25,12 @@ impl From<SharedError> for ApiError {
     }
 }
 
+impl From<sqlx::Error> for ApiError {
+    fn from(err: sqlx::Error) -> Self {
+        ApiError(SharedError::from(err))
+    }
+}
+
 impl ApiError {
     /// Kurzer, stabiler Fehler-Slug für das `error`-Feld der JSON-Antwort.
     fn slug(&self) -> &'static str {
