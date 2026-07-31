@@ -8,6 +8,7 @@ use crate::components::compliance::CompliancePage;
 use crate::components::dashboard::DashboardView;
 use crate::components::equipment::EquipmentManagement;
 use crate::components::finance::FinanceManagement;
+use crate::components::import::DataImport;
 use crate::components::livestock::LivestockManagement;
 use crate::components::login::LoginView;
 use crate::components::map::MapView;
@@ -15,20 +16,20 @@ use crate::components::orders::OrderList;
 use crate::components::resources::ResourcesPage;
 use crate::components::settings::SettingsPage;
 use crate::components::sites::SiteManagement;
-use crate::components::toast::{provide_toast_context, ToastContainer};
+use crate::components::toast::{ToastContainer, provide_toast_context};
 use crate::components::users::UserManagement;
 use crate::components::weather::WeatherManagement;
 use crate::components::wizard::WizardView;
 use crate::components::worker_tasks::WorkerTasksPage;
+use I::{
+    ImMagicWand, LuBeef, LuBriefcase, LuChartBar, LuChartNoAxesColumn, LuCircleUser,
+    LuClipboardList, LuCloudSun, LuFileDown, LuHistory, LuLayoutDashboard, LuLogOut, LuMap,
+    LuMapPin, LuMenu, LuSettings, LuSquareCheck, LuSun, LuTractor, LuUsers, LuWallet,
+};
 use icondata as I;
 use leptos::prelude::*;
 use leptos_icons::Icon;
 use leptos_router::{components::*, path};
-use I::{
-    ImMagicWand, LuBeef, LuBriefcase, LuChartBar, LuChartNoAxesColumn, LuCircleUser,
-    LuClipboardList, LuCloudSun, LuHistory, LuLayoutDashboard, LuLogOut, LuMap, LuMapPin, LuMenu,
-    LuSettings, LuSquareCheck, LuSun, LuTractor, LuUsers, LuWallet,
-};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum UserRole {
@@ -108,12 +109,11 @@ pub fn App() -> impl IntoView {
     Effect::new(move |_| {
         use web_sys::window;
         let win = window();
-        if let Some(win) = win {
-            if let Some(doc) = win.document() {
-                if let Some(root) = doc.document_element() {
-                    let _ = root.set_attribute("data-theme", theme.get().as_str());
-                }
-            }
+        if let Some(win) = win
+            && let Some(doc) = win.document()
+            && let Some(root) = doc.document_element()
+        {
+            let _ = root.set_attribute("data-theme", theme.get().as_str());
         }
     });
 
@@ -195,6 +195,8 @@ fn AuthenticatedShell(
                         }>
                             <Route path=path!("/") view=|| view! { <DashboardView /> } />
                             <Route path=path!("/sites") view=|| view! { <SiteManagement /> } />
+                            <Route path=path!("/import") view=|| view! { <DataImport /> } />
+                            <Route path=path!("/sigpac") view=|| view! { <components::sigpac::SigpacParcels /> } />
                             <Route path=path!("/map") view=|| view! { <MapView /> } />
                             <Route path=path!("/tasks") view=|| view! { <OrderList /> } />
                             <Route path=path!("/livestock") view=|| view! { <LivestockManagement /> } />
@@ -224,6 +226,12 @@ fn AuthenticatedShell(
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Simple { "" } else { "hidden" }>
                         <a href="/wizard" class="bg-primary text-primary-content font-bold"><Icon icon=ImMagicWand width="20" height="20" />{crate::t!(t, "nav_wizard")}</a>
+                    </li>
+                    <li class=move || if view_mode.get() == ViewMode::Full { "" } else { "hidden" }>
+                        <a href="/import"><Icon icon=LuFileDown width="20" height="20" />{crate::t!(t, "nav_import")}</a>
+                    </li>
+                    <li class=move || if view_mode.get() == ViewMode::Full { "" } else { "hidden" }>
+                        <a href="/sigpac"><Icon icon=LuMap width="20" height="20" />{crate::t!(t, "nav_sigpac")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full { "" } else { "hidden" }>
                         <a href="/sites"><Icon icon=LuMap width="20" height="20" />{crate::t!(t, "nav_sites")}</a>

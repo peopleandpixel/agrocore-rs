@@ -2,7 +2,7 @@
 
 use gloo_net::http::{Request, RequestBuilder};
 use leptos::prelude::window;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use wasm_bindgen::JsCast;
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -869,6 +869,57 @@ pub async fn delete_equipment(id: uuid::Uuid) -> Result<(), String> {
 
 pub async fn fetch_worker_tasks() -> Result<Vec<OrderDto>, String> {
     get_json("/api/v1/orders/my-tasks", true).await
+}
+
+// ===========================================================================
+// Data Import API Types & Functions
+// ===========================================================================
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GeoJsonImportRequest {
+    pub features: Vec<serde_json::Value>,
+    pub skip_duplicates: Option<bool>,
+    pub update_existing: Option<bool>,
+    pub validate_lpis: Option<bool>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ShapefileImportRequest {
+    pub file_base64: String,
+    pub skip_duplicates: Option<bool>,
+    pub update_existing: Option<bool>,
+    pub validate_lpis: Option<bool>,
+    pub encoding: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ImportError {
+    pub label: String,
+    pub error: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ImportWarning {
+    pub label: String,
+    pub warning: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ImportResult {
+    pub total: u64,
+    pub created: u64,
+    pub updated: u64,
+    pub skipped: u64,
+    pub errors: Vec<ImportError>,
+    pub warnings: Vec<ImportWarning>,
+}
+
+pub async fn import_geojson(req: GeoJsonImportRequest) -> Result<ImportResult, String> {
+    post_json("/api/v1/sites/import/geojson", &req, true).await
+}
+
+pub async fn import_shapefile(req: ShapefileImportRequest) -> Result<ImportResult, String> {
+    post_json("/api/v1/sites/import/shapefile", &req, true).await
 }
 
 // =============================================================================

@@ -80,6 +80,9 @@ pub struct AppState {
                 handlers::sigpac::list_sigpac_parcels,
                 handlers::sigpac::get_sigpac_parcel,
                 handlers::sigpac::search_parcels_near_point,
+                handlers::sites::import_sites,
+                handlers::sites::import_geojson,
+                handlers::sites::import_shapefile,
             ),
             components(
                 schemas(
@@ -163,6 +166,17 @@ pub struct AppState {
                     handlers::sigpac::PaginatedSigpacParcelResponse,
                     handlers::sigpac::SigpacParcelQuery,
                     handlers::sigpac::NearPointQuery,
+                    dto::ImportSitesRequest,
+                    dto::GeoJsonImportRequest,
+                    dto::ShapefileImportRequest,
+                    dto::ImportResult,
+                    dto::ImportError,
+                    dto::ImportWarning,
+                    dto::DuplicateDetectionResult,
+                    dto::DuplicateMatchType,
+                    dto::LpisValidationResult,
+                    dto::GeoJsonFeature,
+                    dto::GeoJsonGeometry,
                 )
             ),
     modifiers(&SecurityAddon),

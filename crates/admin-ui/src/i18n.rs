@@ -135,7 +135,7 @@ pub fn supported_language_codes() -> [&'static str; 10] {
 
 #[cfg(test)]
 mod tests {
-    use super::{supported_language_codes, I18n, Language};
+    use super::{I18n, Language, supported_language_codes};
     use std::collections::HashSet;
 
     #[test]

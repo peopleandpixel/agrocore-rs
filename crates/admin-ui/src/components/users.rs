@@ -1,5 +1,5 @@
 use crate::api;
-use crate::components::form::{is_valid_email, RequiredLabel};
+use crate::components::form::{RequiredLabel, is_valid_email};
 use icondata::*;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;

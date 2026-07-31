@@ -5,6 +5,7 @@ pub mod dashboard;
 pub mod equipment;
 pub mod finance;
 pub mod form;
+pub mod import;
 pub mod livestock;
 pub mod login;
 pub mod map;

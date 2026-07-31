@@ -4,8 +4,8 @@
 //! imported from official fiboa GeoParquet data.
 
 use crate::api::{
-    list_sigpac_parcels, search_parcels_near_point, NearPointQuery, SigpacParcelDto,
-    SigpacParcelQuery,
+    NearPointQuery, SigpacParcelDto, SigpacParcelQuery, list_sigpac_parcels,
+    search_parcels_near_point,
 };
 use crate::i18n::use_i18n;
 use icondata as I;

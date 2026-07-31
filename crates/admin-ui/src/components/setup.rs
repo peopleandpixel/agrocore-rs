@@ -1,6 +1,6 @@
 use crate::api;
 use crate::components::form::{
-    country_flag, is_valid_email, language_flag, normalize_phone, RequiredLabel, PHONE_PREFIXES,
+    PHONE_PREFIXES, RequiredLabel, country_flag, is_valid_email, language_flag, normalize_phone,
 };
 use crate::components::toast::{ToastContext, ToastType};
 use crate::i18n::LANGUAGE_OPTIONS;
@@ -603,11 +603,10 @@ pub fn SetupAssistant() -> impl IntoView {
                                                         Some(value)
                                                     }
                                                 };
-                                                if let Some(email) = email_opt {
-                                                    if !is_valid_email(&email) {
+                                                if let Some(email) = email_opt
+                                                    && !is_valid_email(&email) {
                                                         toast_context.add_toast.run((invalid_email_error.clone(), ToastType::Warning));
                                                         return;
-                                                    }
                                                 }
                                                 let phone_local = company_phone_local.get();
                                                 if !phone_local.trim().is_empty() {

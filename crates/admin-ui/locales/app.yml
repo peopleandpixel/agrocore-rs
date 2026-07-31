@@ -4096,3 +4096,558 @@ complete:
   ro: Finalizare
   uk: Завершити
   nl: Voltooien
+
+
+# Import Module Translations
+import_title:
+  en: Data Import
+  de: Datenimport
+  es: Importación de Datos
+  fr: Import de Données
+  pt: Importação de Dados
+  it: Importazione Dati
+  pl: Import Danych
+  ro: Import de Date
+  uk: Імпорт даних
+  nl: Data Import
+
+import_desc:
+  en: Import sites from GeoJSON or Shapefile files.
+  de: Flächen aus GeoJSON oder Shapefile-Dateien importieren.
+  es: Importar parcelas desde archivos GeoJSON o Shapefile.
+  fr: Importer des sites depuis des fichiers GeoJSON ou Shapefile.
+  pt: Importar parcels de arquivos GeoJSON ou Shapefile.
+  it: Importa siti da file GeoJSON o Shapefile.
+  pl: Importuj parcelę z plików GeoJSON lub Shapefile.
+  ro: Importă terenuri din fișiere GeoJSON sau Shapefile.
+  uk: Імпортуйте майданчики з файлів GeoJSON або Shapefile.
+  nl: Importeer sites van GeoJSON of Shapefile bestanden.
+
+import_geojson:
+  en: Import GeoJSON
+  de: GeoJSON importieren
+  es: Importar GeoJSON
+  fr: Importer GeoJSON
+  pt: Importar GeoJSON
+  it: Importa GeoJSON
+  pl: Importuj GeoJSON
+  ro: Import GeoJSON
+  uk: Імпорт GeoJSON
+  nl: GeoJSON importeren
+
+import_shapefile:
+  en: Import Shapefile
+  de: Shapefile importieren
+  es: Importar Shapefile
+  fr: Importer Shapefile
+  pt: Importar Shapefile
+  it: Importa Shapefile
+  pl: Importuj Shapefile
+  ro: Import Shapefile
+  uk: Імпорт Shapefile
+  nl: Shapefile importeren
+
+upload_geojson:
+  en: Upload GeoJSON File
+  de: GeoJSON-Datei hochladen
+  es: Subir archivo GeoJSON
+  fr: Télécharger le fichier GeoJSON
+  pt: Carregar arquivo GeoJSON
+  it: Carica file GeoJSON
+  pl: Prześlij plik GeoJSON
+  ro: Încarcă fișier GeoJSON
+  uk: Завантажити файл GeoJSON
+  nl: GeoJSON bestand uploaden
+
+upload_shapefile:
+  en: Upload Shapefile (ZIP)
+  de: Shapefile (ZIP) hochladen
+  es: Subir Shapefile (ZIP)
+  fr: Télécharger Shapefile (ZIP)
+  pt: Carregar Shapefile (ZIP)
+  it: Carica Shapefile (ZIP)
+  pl: Prześlij Shapefile (ZIP)
+  ro: Import Shapefile (ZIP)
+  uk: Завантажити Shapefile (ZIP)
+  nl: Shapefile (ZIP) uploaden
+
+drag_drop_geojson:
+  en: Drag & drop GeoJSON file here, or click to browse
+  de: GeoJSON-Datei hier per Drag & Drop ablegen oder klicken zum Durchsuchen
+  es: Arrastra y suelta el archivo GeoJSON aquí, o haz clic para buscar
+  fr: Glissez-déposez le fichier GeoJSON ici, ou cliquez pour parcourir
+  pt: Arraste e solte o arquivo GeoJSON aqui, ou clique para navegar
+  it: Trascina e rilascia il file GeoJSON qui, o clicca per sfogliare
+  pl: Przeciągnij i upuść plik GeoJSON tutaj, lub kliknij, aby przeglądać
+  ro: Trageți și lăsați fișierul GeoJSON aici, sau faceți clic pentru a naviga
+  uk: Перетягніть і відпустіть файл GeoJSON сюди, або натисніть, щоб переглянути
+  nl: Sleep en zet GeoJSON bestand hier, of klik om te bladeren
+
+drag_drop_shapefile:
+  en: Drag & drop Shapefile (ZIP) here, or click to browse
+  de: Shapefile (ZIP) hier per Drag & Drop ablegen oder klicken zum Durchsuchen
+  es: Arrastra y suelta Shapefile (ZIP) aquí, o haz clic para buscar
+  fr: Glissez-déposez Shapefile (ZIP) ici, ou cliquez pour parcourir
+  pt: Arraste e solte Shapefile (ZIP) aqui, ou clique para navegar
+  it: Trascina e rilascia Shapefile (ZIP) qui, o clicca per sfogliare
+  pl: Przeciągnij i upuść Shapefile (ZIP) tutaj, lub kliknij, aby przeglądać
+  ro: Trageți și lăsați Shapefile (ZIP) aici, sau faceți clic pentru a naviga
+  uk: Перетягніть і відпустіть Shapefile (ZIP) сюди, або натисніть, щоб переглянути
+  nl: Sleep en zet Shapefile (ZIP) hier, of klik om te bladeren
+
+skip_duplicates:
+  en: Skip duplicates
+  de: Duplikate überspringen
+  es: Omitir duplicados
+  fr: Ignorer les doublons
+  pt: Ignorar duplicatas
+  it: Ignora duplicati
+  pl: Pomijaj duplikaty
+  ro: Ignoră duplicatele
+  uk: Пропускати дублікати
+  nl: Duplicaten negeren
+
+update_existing:
+  en: Update existing sites
+  de: Vorhandene Flächen aktualisieren
+  es: Actualizar parcelas existentes
+  fr: Mettre à jour les sites existants
+  pt: Atualizar parcelas existentes
+  it: Aggiorna siti esistenti
+  pl: Aktualizuj istniejące tereny
+  ro: Actualizează terenurile existente
+  uk: Оновлювати існуючі майданчики
+  nl: Bestaande sites bijwerken
+
+validate_lpis:
+  en: Validate against LPIS (SIGPAC reference)
+  de: Gegen LPIS (SIGPAC-Referenz) validieren
+  es: Validar contra LPIS (referencia SIGPAC)
+  fr: Valider contre LPIS (référence SIGPAC)
+  pt: Validar contra LPIS (referência SIGPAC)
+  it: Valida contro LPIS (riferimento SIGPAC)
+  pl: Waliduj przeciw LPIS (referencja SIGPAC)
+  ro: Validează contra LPIS (referință SIGPAC)
+  uk: Перевірити за допомогою LPIS (референс SIGPAC)
+  nl: Valideren tegen LPIS (SIGPAC referentie)
+
+import_result:
+  en: Import Result
+  de: Import-Ergebnis
+  es: Resultado del Importe
+  fr: Résultat de l'Import
+  pt: Resultado do Importe
+  it: Risultato dell'Importazione
+  pl: Wynik Importu
+  ro: Rezultatul Importului
+  uk: Результат імпорту
+  nl: Importresultaat
+
+import_total:
+  en: Total
+  de: Gesamt
+  es: Total
+  fr: Total
+  pt: Total
+  it: Totale
+  pl: Całkowita
+  ro: Total
+  uk: Всього
+  nl: Totaal
+
+import_created:
+  en: Created
+  de: Erstellt
+  es: Creados
+  fr: Créés
+  pt: Criados
+  it: Creati
+  pl: Utworzone
+  ro: Create
+  uk: Створено
+  nl: Aangemaakt
+
+import_updated:
+  en: Updated
+  de: Aktualisiert
+  es: Actualizados
+  fr: Mis à jour
+  pt: Atualizados
+  it: Aggiornati
+  pl: Zaktualizowano
+  ro: Actualizate
+  uk: Оновлено
+  nl: Bijgewerkt
+
+import_skipped:
+  en: Skipped
+  de: Übersprungen
+  es: Omitidos
+  fr: Ignorés
+  pt: Ignorados
+  it: Saltati
+  pl: Pominięte
+  ro: Sări
+  uk: Пропущено
+  nl: Overgeslagen
+
+import_errors:
+  en: Errors
+  de: Fehler
+  es: Errores
+  fr: Erreurs
+  pt: Erros
+  it: Errori
+  pl: Błędy
+  ro: Eroare
+  uk: Помилки
+  nl: Fouten
+
+import_warnings:
+  en: Warnings
+  de: Warnungen
+  es: Advertencias
+  fr: Avertissements
+  pt: Avisos
+  it: Avvisi
+  pl: Ostrzeżenia
+  ro: Avertismente
+  uk: Попередження
+  nl: Waarschuwingen
+
+import_duplicate_ids:
+  en: Duplicate IDs
+  de: Duplikate IDs
+  es: IDs duplicados
+  fr: IDs dupliqués
+  pt: IDs duplicados
+  it: ID duplicati
+  pl: Powielone ID
+  ro: ID-uri duplicate
+  uk: Дублікати ID
+  nl: Dubbele IDs
+
+import_error:
+  en: Error
+  de: Fehler
+  es: Error
+  fr: Erreur
+  pt: Erro
+  it: Errore
+  pl: Błąd
+  ro: Eroare
+  uk: Помилка
+  nl: Fout
+
+import_warning:
+  en: Warning
+  de: Warnung
+  es: Advertencia
+  fr: Avertissement
+  pt: Aviso
+  it: Avviso
+  pl: Ostrzeżenie
+  ro: Avertisment
+  uk: Попередження
+  nl: Waarschuwing
+
+validation_failed:
+  en: Validation failed
+  de: Validierung fehlgeschlagen
+  es: Validación fallida
+  fr: Échec de la validation
+  pt: Validação falhou
+  it: Validazione fallita
+  pl: Walidacja nie powiodła się
+  ro: Validarea a eșuat
+  uk: Перевірка не пройшла
+  nl: Validatie mislukt
+
+select_file:
+  en: Select file
+  de: Datei auswählen
+  es: Seleccionar archivo
+  fr: Sélectionner le fichier
+  pt: Selecionar arquivo
+  it: Seleziona file
+  pl: Wybierz plik
+  ro: Selectează fișier
+  uk: Виберіть файл
+  nl: Selecteer bestand
+
+browse_files:
+  en: Browse files
+  de: Dateien durchsuchen
+  es: Navegar archivos
+  fr: Parcourir les fichiers
+  pt: Navegar arquivos
+  it: SFoglia file
+  pl: Przeglądaj pliki
+  ro: Navighează prin fișiere
+  uk: Навігація за файлами
+  nl: Blader door bestanden
+
+import_options:
+  en: Import Options
+  de: Import-Optionen
+  es: Opciones de importación
+  fr: Options d'import
+  pt: Opções de importação
+  it: Opzioni di importazione
+  pl: Opcje importu
+  ro: Opțiuni de import
+  uk: Параметри імпорту
+  nl: Importopties
+
+import_button:
+  en: Import
+  de: Importieren
+  es: Importar
+  fr: Importer
+  pt: Importar
+  it: Importa
+  pl: Importuj
+  ro: Importă
+  uk: Імпорт
+  nl: Importeren
+
+cancel:
+  en: Cancel
+  de: Abbrechen
+  es: Cancelar
+  fr: Annuler
+  pt: Cancelar
+  it: Annulla
+  pl: Anuluj
+  ro: Anulează
+  uk: Скасувати
+  nl: Annuleer
+
+close:
+  en: Close
+  de: Schließen
+  es: Cerrar
+  fr: Fermer
+  pt: Fechar
+  it: Chiudi
+  pl: Zamknij
+  ro: Închide
+  uk: Закрийте
+  nl: Sluiten
+
+import_in_progress:
+  en: Import in progress...
+  de: Import wird durchgeführt...
+  es: Importando...
+  fr: Import en cours...
+  pt: Importando...
+  it: Importazione in corso...
+  pl: Import w toku...
+  ro: Import în curs...
+  uk: Імпорт в процесі...
+  nl: Importeren in uitvoering...
+
+import_success:
+  en: Import completed successfully
+  de: Import erfolgreich abgeschlossen
+  es: Importación completada con éxito
+  fr: Import terminé avec succès
+  pt: Importação concluída com sucesso
+  it: Importazione completata con successo
+  pl: Import zakończony pomyślnie
+  ro: Import finalizat cu succes
+  uk: Імпорт успішно завершено
+  nl: Import succesvol afgerond
+
+duplicate_detected:
+  en: Duplicate detected
+  de: Duplikat erkannt
+  es: Duplicado detectado
+  fr: Doublon détecté
+  pt: Duplicata detectada
+  it: Duplicato rilevato
+  pl: Wykryto duplikat
+  ro: Dublu detectat
+  uk: Виявлено дублікат
+  nl: Dubbel gedetecteerd
+
+lpis_validation:
+  en: LPIS Validation
+  de: LPIS-Validierung
+  es: Validación LPIS
+  fr: Validation LPIS
+  pt: Validação LPIS
+  it: Validazione LPIS
+  pl: Walidacja LPIS
+  ro: Validare LPIS
+  uk: Перевірка LPIS
+  nl: LPIS validatie
+
+area_difference:
+  en: Area difference
+  de: Flächenunterschied
+  es: Diferencia de área
+  fr: Différence de surface
+  pt: Diferença de área
+  it: Differenza di area
+  pl: Różnica pola
+  ro: Diferență de suprafață
+  uk: Різниця площі
+  nl: Oppervlaktedifferentie
+
+boundary_difference:
+  en: Boundary difference
+  de: Grenzunterschied
+  es: Diferencia de límite
+  fr: Différence de frontière
+  pt: Diferença de limite
+  it: Differenza di confine
+  pl: Różnica granicy
+  ro: Diferență de limită
+  uk: Різниця межі
+  nl: Randverschil
+
+validation_passed:
+  en: Validation passed
+  de: Validierung bestanden
+  es: Validación correcta
+  fr: Validation réussie
+  pt: Validação aprovada
+  it: Validazione superata
+  pl: Walidacja przebiegła pomyślnie
+  ro: Validare în bune
+  uk: Перевірка успішна
+  nl: Validatie geslaagd
+
+validation_failed_lpis:
+  en: LPIS validation failed
+  de: LPIS-Validierung fehlgeschlagen
+  es: Validación LPIS fallida
+  fr: Validation LPIS échouée
+  pt: Validação LPIS falhou
+  it: Validazione LPIS fallita
+  pl: Walidacja LPIS nie powiodła się
+  ro: Validare LPIS eșuată
+  uk: Перевірка LPIS не успішна
+  nl: LPIS validatie mislukt
+
+parcel_detail:
+  en: Parcel Detail
+  de: Parzellen-Detail
+  es: Detalle de parcela
+  fr: Détails de la parcelle
+  pt: Detalhes da parcela
+  it: Dettaglio della parcela
+  pl: Szczegóły parceli
+  ro: Detalii despre parcelă
+  uk: Деталі паркету
+  nl: Parceldetails
+
+source_dataset:
+  en: Source Dataset
+  de: Datensatz
+  es: Conjunto de datos
+  fr: Jeu de données
+  pt: Conjunto de dados
+  it: Dataset di origine
+  pl: Zbiór danych
+  ro: Set de date
+  uk: Набір даних
+  nl: Dataset
+
+source_year:
+  en: Source Year
+  de: Quelljahr
+  es: Año de origen
+  fr: Année de source
+  pt: Ano de origem
+  it: Anno di origine
+  pl: Rok źródłowy
+  ro: Anul sursă
+  uk: Рік джерела
+  nl: Bronjaar
+
+official_area:
+  en: Official Area
+  de: Offizielles Feld
+  es: Área oficial
+  fr: Surface officielle
+  pt: Área oficial
+  it: Area ufficiale
+  pl: Oficjalne pole
+  ro: Suprafață oficială
+  uk: Офіційна площа
+  nl: Officiële oppervlakte
+
+usage_code:
+  en: Usage Code
+  de: Nutzungscode
+  es: Código de uso
+  fr: Code d'utilisation
+  pt: Código de uso
+  it: Codice utilizzo
+  pl: Kod użycia
+  ro: Cod de utilizare
+  uk: Код використання
+  nl: Gebruikscode
+
+usage_description:
+  en: Usage Description
+  de: Nutzungsbeschreibung
+  es: Descripción de uso
+  fr: Description d'utilisation
+  pt: Descrição de uso
+  it: Descrizione utilizzo
+  pl: Opis użycia
+  ro: Descriere de utilizare
+  uk: Опис використання
+  nl: Gebruiksbeschrijving
+
+
+nav_import:
+  en: Import
+  de: Import
+  es: Importar
+  fr: Importer
+  pt: Importar
+  it: Importa
+  pl: Import
+  ro: Import
+  uk: Імпорт
+  nl: Import
+
+nav_sigpac:
+  en: SIGPAC
+  de: SIGPAC
+  es: SIGPAC
+  fr: SIGPAC
+  pt: SIGPAC
+  it: SIGPAC
+  pl: SIGPAC
+  ro: SIGPAC
+  uk: SIGPAC
+  nl: SIGPAC
+
+select_geojson:
+  en: Select GeoJSON file
+  de: GeoJSON-Datei auswählen
+  es: Seleccionar archivo GeoJSON
+  fr: Sélectionner le fichier GeoJSON
+  pt: Selecionar arquivo GeoJSON
+  it: Seleziona file GeoJSON
+  pl: Wybierz plik GeoJSON
+  ro: Selectează fișier GeoJSON
+  uk: Виберіть файл GeoJSON
+  nl: Selecteer GeoJSON bestand
+
+select_shapefile:
+  en: Select Shapefile (ZIP)
+  de: Shapefile (ZIP) auswählen
+  es: Seleccionar Shapefile (ZIP)
+  fr: Sélectionner Shapefile (ZIP)
+  pt: Selecionar Shapefile (ZIP)
+  it: Seleziona Shapefile (ZIP)
+  pl: Wybierz Shapefile (ZIP)
+  ro: Selectează Shapefile (ZIP)
+  uk: Виберіть Shapefile (ZIP)
+  nl: Selecteer Shapefile (ZIP)

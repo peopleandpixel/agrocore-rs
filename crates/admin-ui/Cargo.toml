@@ -1,7 +1,7 @@
 [package]
 name = "admin-ui"
 version.workspace = true
-edition = "2021"
+edition = "2024"
 license.workspace = true
 
 [dependencies]
@@ -19,10 +19,12 @@ icondata_lu = "0.1"
 icondata_im = "0.1"
 wasm-bindgen = "0.2"
 js-sys = "0.3"
-web-sys = { version = "0.3", features = ["Blob", "Document", "HtmlAnchorElement", "HtmlDivElement", "HtmlElement", "Storage", "Url", "Window"] }
+web-sys = { version = "0.3", features = ["Blob", "Document", "HtmlAnchorElement", "HtmlDivElement", "HtmlElement", "HtmlInputElement", "File", "FileList", "Storage", "Url", "Window", "EventTarget"] }
 uuid = { workspace = true, features = ["v4", "serde", "js"] }
 chrono = { workspace = true, features = ["serde"] }
 tracing = "0.1"
+wasm-bindgen-futures = "0.4"
+base64 = "0.23"
 rust-i18n = "4"
 
 [package.metadata.i18n]

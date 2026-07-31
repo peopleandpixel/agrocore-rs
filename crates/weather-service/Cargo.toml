@@ -11,7 +11,7 @@ agrocore-shared = { path = "../shared" }
 agrocore-messaging = { path = "../messaging" }
 tokio = { workspace = true }
 actix-web = { workspace = true }
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.13", features = ["json", "rustls"], default-features = false }
 urlencoding = "2.1"
 serde = { workspace = true }
 serde_json = { workspace = true }

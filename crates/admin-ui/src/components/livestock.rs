@@ -59,11 +59,7 @@ pub fn LivestockManagement() -> impl IntoView {
         let identifier = identifier.get();
         let breed = {
             let value = breed.get();
-            if value.is_empty() {
-                None
-            } else {
-                Some(value)
-            }
+            if value.is_empty() { None } else { Some(value) }
         };
         let species = species.get();
         set_error.set(None);
