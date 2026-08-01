@@ -455,8 +455,11 @@ dependencies = [
 name = "agrocore-shared"
 version = "0.5.8"
 dependencies = [
+ "async-trait",
  "chrono",
+ "geo",
  "serde",
+ "serde_json",
  "sqlx",
  "thiserror 2.0.18",
  "tracing",

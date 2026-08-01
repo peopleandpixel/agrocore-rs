@@ -1,16 +1,50 @@
+#![allow(deprecated)]
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
 
+
 use crate::entities::tenant::TenantId;
 use crate::entities::{BbchStage, CropType, SiteType};
 use crate::repositories::VisibilityAwareEntity;
 
-// use crate::entities::user::UserRole;
+use agrocore_shared::lpis::LpisCountry;
 use geo::{LineString, Polygon};
 use geozero::wkb;
 use utoipa::ToSchema;
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+pub struct LpisData {
+    /// LPIS country code (ES=SIGPAC, PT=iLPIS, FR=RPG, IT=SIAN, etc.)
+    pub country: LpisCountry,
+    /// Full LPIS reference (e.g., ES411234567890123 for SIGPAC)
+    pub reference: String,
+    /// Province/State/Department code
+    pub province: Option<String>,
+    /// Municipality/Commune code
+    pub municipality: Option<String>,
+    /// Aggregate code (if applicable)
+    pub aggregate: Option<String>,
+    /// Zone code (if applicable)
+    pub zone: Option<String>,
+    /// Polygon code (if applicable)
+    pub polygon: Option<String>,
+    /// Parcel code
+    pub parcel: Option<String>,
+    /// Enclosure code (if applicable)
+    pub enclosure: Option<String>,
+    /// Usage code (e.g., crop type code)
+    pub usage_code: Option<String>,
+    /// Usage description
+    pub usage_description: Option<String>,
+    /// Official area in hectares from LPIS
+    pub official_area_ha: Option<f64>,
+    /// Source dataset identifier
+    pub source_dataset: Option<String>,
+    /// Source year
+    pub source_year: Option<i16>,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct SigpacData {
@@ -209,6 +243,15 @@ pub struct Site {
     pub center: Option<GeoPoint>,
     #[sqlx(json)]
     pub sigpac_data: Option<SigpacData>,
+    /// LPIS country for this site (ES=SIGPAC, PT=iLPIS, FR=RPG, IT=SIAN, etc.)
+    #[sqlx(json)]
+    pub lpis_country: Option<agrocore_shared::lpis::LpisCountry>,
+    /// Generic LPIS data - can hold SIGPAC, iLPIS, RPG, etc. references
+    #[sqlx(json)]
+    pub lpis_data: Option<LpisData>,
+    /// Deprecated: use lpis_data.reference instead
+    #[deprecated(since = "0.5.8", note = "Use lpis_data.reference instead")]
+    #[allow(deprecated)]
     pub regepac_id: Option<String>,
     pub boundary: Option<Boundary>,
     #[sqlx(json)]

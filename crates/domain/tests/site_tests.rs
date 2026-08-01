@@ -1,6 +1,7 @@
 use agrocore_domain::entities::site::{Site, SiteProperty};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::{CropType, SiteType};
+use agrocore_shared::lpis::LpisCountry;
 use chrono::Utc;
 use serde_json::json;
 use uuid::Uuid;
@@ -29,6 +30,9 @@ fn sample_site() -> Site {
         organic_eligible: None,
         center: None,
         sigpac_data: None,
+        lpis_country: Some(LpisCountry::Es),
+        lpis_data: None,
+        #[allow(deprecated)]
         regepac_id: None,
         boundary: None,
         properties: Some(vec![
