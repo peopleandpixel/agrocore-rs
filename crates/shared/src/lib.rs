@@ -5,8 +5,8 @@ use uuid::Uuid;
 use validator::Validate;
 
 pub mod config;
-pub mod telemetry;
 pub mod lpis;
+pub mod telemetry;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema)]
 pub struct Id(pub Uuid);

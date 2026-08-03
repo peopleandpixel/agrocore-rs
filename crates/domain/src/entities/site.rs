@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
 
-
 use crate::entities::tenant::TenantId;
 use crate::entities::{BbchStage, CropType, SiteType};
 use crate::repositories::VisibilityAwareEntity;

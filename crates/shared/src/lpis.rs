@@ -20,6 +20,8 @@ pub enum LpisCountry {
     Fr,
     /// Italy - SIAN (Sistema Informativo Agricolo Nazionale)
     It,
+    /// Netherlands - BRP (Basisregistratie Percelen)
+    Nl,
     /// Generic/Other EU country
     Other,
 }
@@ -31,6 +33,7 @@ impl std::fmt::Display for LpisCountry {
             LpisCountry::Pt => write!(f, "PT"),
             LpisCountry::Fr => write!(f, "FR"),
             LpisCountry::It => write!(f, "IT"),
+            LpisCountry::Nl => write!(f, "NL"),
             LpisCountry::Other => write!(f, "OTHER"),
         }
     }
@@ -45,6 +48,7 @@ impl std::str::FromStr for LpisCountry {
             "PT" => Ok(LpisCountry::Pt),
             "FR" => Ok(LpisCountry::Fr),
             "IT" => Ok(LpisCountry::It),
+            "NL" => Ok(LpisCountry::Nl),
             _ => Ok(LpisCountry::Other),
         }
     }
@@ -85,6 +89,12 @@ impl LpisReferenceFormat {
                 pattern: r"^IT\d{2}\d{3}\d{4}$".to_string(),
                 description: "SIAN reference: IT + province(2) + municipality(3) + parcel(4)".to_string(),
                 example: "IT123456789".to_string(),
+            },
+            LpisCountry::Nl => Self {
+                country: LpisCountry::Nl,
+                pattern: r"^NL\d{14}$".to_string(),
+                description: "BRP reference: NL + 14-digit perceel_id".to_string(),
+                example: "NL12345678901234".to_string(),
             },
             LpisCountry::Other => Self {
                 country: LpisCountry::Other,
@@ -175,11 +185,7 @@ pub trait LpisProvider: Send + Sync {
     ) -> Result<PaginatedLpisResponse, String>;
 
     /// Get a single parcel by ID
-    async fn get_parcel(
-        &self,
-        tenant_id: Uuid,
-        parcel_id: Uuid,
-    ) -> Result<LpisParcel, String>;
+    async fn get_parcel(&self, tenant_id: Uuid, parcel_id: Uuid) -> Result<LpisParcel, String>;
 
     /// Search parcels near a point
     async fn search_near_point(
@@ -224,7 +230,8 @@ pub struct LpisImportResult {
 
 /// Registry for LPIS providers
 pub struct LpisRegistry {
-    providers: std::collections::HashMap<LpisCountry, Box<dyn LpisProvider>>,
+    providers:
+        std::collections::HashMap<LpisCountry, std::sync::Arc<dyn LpisProvider + Send + Sync>>,
 }
 
 impl Default for LpisRegistry {
@@ -240,16 +247,26 @@ impl LpisRegistry {
         }
     }
 
-    pub fn register(&mut self, provider: Box<dyn LpisProvider>) {
+    pub fn register(&mut self, provider: std::sync::Arc<dyn LpisProvider + Send + Sync>) {
         self.providers.insert(provider.country(), provider);
     }
 
-    pub fn get(&self, country: LpisCountry) -> Option<&dyn LpisProvider> {
+    pub fn get(&self, country: LpisCountry) -> Option<&(dyn LpisProvider + Send + Sync)> {
         self.providers.get(&country).map(|p| p.as_ref())
     }
 
-    pub fn get_for_tenant(&self, tenant_country: LpisCountry) -> Option<&dyn LpisProvider> {
+    pub fn get_for_tenant(
+        &self,
+        tenant_country: LpisCountry,
+    ) -> Option<&(dyn LpisProvider + Send + Sync)> {
         self.get(tenant_country)
+    }
+
+    pub fn get_arc(
+        &self,
+        country: LpisCountry,
+    ) -> Option<std::sync::Arc<dyn LpisProvider + Send + Sync>> {
+        self.providers.get(&country).cloned()
     }
 
     pub fn available_countries(&self) -> Vec<LpisCountry> {
