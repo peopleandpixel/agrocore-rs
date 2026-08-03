@@ -5,6 +5,7 @@
 
 use crate::api::{GeoJsonImportRequest, ImportResult, ShapefileImportRequest};
 use crate::i18n::use_i18n;
+use agrocore_shared::lpis::LpisCountry;
 use base64::Engine;
 use leptos::prelude::*;
 
@@ -24,6 +25,9 @@ pub fn DataImport() -> impl IntoView {
     let (skip_duplicates, set_skip_duplicates) = signal(true);
     let (update_existing, set_update_existing) = signal(false);
     let (validate_lpis, set_validate_lpis) = signal(true);
+
+    // LPIS Country selection
+    let (_lpis_country, _set_lpis_country) = signal::<LpisCountry>(LpisCountry::Es);
 
     // Result state
     let (result, set_result) = signal::<Option<ImportResult>>(None);

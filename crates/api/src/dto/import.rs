@@ -1,6 +1,7 @@
 use agrocore_domain::entities::{
     BbchStage, Boundary, CropType, GeoPoint, Plot, RowConfig, SigpacData, SiteProperty, SiteType,
 };
+use agrocore_shared::lpis::LpisCountry;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -49,6 +50,7 @@ pub struct ImportSitesRequest {
     pub update_existing: Option<bool>,
     pub validate_lpis: Option<bool>,
     pub source: ImportSource,
+    pub lpis_country: Option<LpisCountry>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -118,6 +120,7 @@ pub struct GeoJsonImportRequest {
     pub skip_duplicates: Option<bool>,
     pub update_existing: Option<bool>,
     pub validate_lpis: Option<bool>,
+    pub lpis_country: Option<LpisCountry>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -142,4 +145,5 @@ pub struct ShapefileImportRequest {
     pub update_existing: Option<bool>,
     pub validate_lpis: Option<bool>,
     pub encoding: Option<String>,
+    pub lpis_country: Option<LpisCountry>,
 }
