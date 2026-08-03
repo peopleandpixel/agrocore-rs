@@ -34,7 +34,8 @@ impl SiteRepository for PgSiteRepo {
                 r#"SELECT id, tenant_id, business_id, label, site_type, crop_type, variety,
                    area, gross_area, plots, row_config, bbch_stage, planted_date,
                    cleared_date, soil_type, slope, slope_facing, altitude, organic,
-                   organic_eligible, sigpac_data, regepac_id, properties, custom_fields,
+                   organic_eligible, sigpac_data, regepac_id, lpis_country, lpis_data,
+                   properties, custom_fields,
                    note1, note2, is_active, is_temporary, created_at, updated_at,
                    created_by, updated_by, center, boundary
                    FROM sites WHERE id = $1 AND tenant_id = $2"#,
@@ -64,7 +65,8 @@ impl SiteRepository for PgSiteRepo {
                     r#"SELECT id, tenant_id, business_id, label, site_type, crop_type, variety,
                        area, gross_area, plots, row_config, bbch_stage, planted_date,
                        cleared_date, soil_type, slope, slope_facing, altitude, organic,
-                       organic_eligible, sigpac_data, regepac_id, properties, custom_fields,
+                       organic_eligible, sigpac_data, regepac_id, lpis_country, lpis_data,
+                       properties, custom_fields,
                        note1, note2, is_active, is_temporary, created_at, updated_at,
                        created_by, updated_by, center, boundary
                        FROM sites WHERE id = $1 AND tenant_id = $2"#,
@@ -79,7 +81,8 @@ impl SiteRepository for PgSiteRepo {
                     r#"SELECT id, tenant_id, business_id, label, site_type, crop_type, variety,
                        area, gross_area, plots, row_config, bbch_stage, planted_date,
                        cleared_date, soil_type, slope, slope_facing, altitude, organic,
-                       organic_eligible, sigpac_data, regepac_id, properties, custom_fields,
+                       organic_eligible, sigpac_data, regepac_id, lpis_country, lpis_data,
+                       properties, custom_fields,
                        note1, note2, is_active, is_temporary, created_at, updated_at,
                        created_by, updated_by, center, boundary
                        FROM sites WHERE id = $1 AND tenant_id = $2"#,
@@ -110,7 +113,8 @@ impl SiteRepository for PgSiteRepo {
                 r#"SELECT id, tenant_id, business_id, label, site_type, crop_type, variety,
                    area, gross_area, plots, row_config, bbch_stage, planted_date,
                    cleared_date, soil_type, slope, slope_facing, altitude, organic,
-                   organic_eligible, sigpac_data, regepac_id, properties, custom_fields,
+                   organic_eligible, sigpac_data, regepac_id, lpis_country, lpis_data,
+                   properties, custom_fields,
                    note1, note2, is_active, is_temporary, created_at, updated_at,
                    created_by, updated_by, center, boundary
                    FROM sites WHERE tenant_id = $1 LIMIT $2 OFFSET $3"#,
@@ -152,7 +156,8 @@ impl SiteRepository for PgSiteRepo {
                    RETURNING id, tenant_id, business_id, label, site_type, crop_type, variety,
                    area, gross_area, plots, row_config, bbch_stage, planted_date,
                    cleared_date, soil_type, slope, slope_facing, altitude, organic,
-                   organic_eligible, sigpac_data, regepac_id, properties, custom_fields,
+                   organic_eligible, sigpac_data, regepac_id, lpis_country, lpis_data,
+                   properties, custom_fields,
                    note1, note2, is_active, is_temporary, created_at, updated_at,
                    created_by, updated_by, center, boundary"#)
             .bind(id)
@@ -188,7 +193,8 @@ impl SiteRepository for PgSiteRepo {
                    RETURNING id, tenant_id, business_id, label, site_type, crop_type, variety,
                    area, gross_area, plots, row_config, bbch_stage, planted_date,
                    cleared_date, soil_type, slope, slope_facing, altitude, organic,
-                   organic_eligible, sigpac_data, regepac_id, properties, custom_fields,
+                   organic_eligible, sigpac_data, regepac_id, lpis_country, lpis_data,
+                   properties, custom_fields,
                    note1, note2, is_active, is_temporary, created_at, updated_at,
                    created_by, updated_by, center, boundary"#,
             )
