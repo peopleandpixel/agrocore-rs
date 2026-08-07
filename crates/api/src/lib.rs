@@ -3,7 +3,6 @@ use actix_files as fs;
 use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_web::{App, HttpServer, web};
 use actix_web_prometheus::PrometheusMetricsBuilder;
-use std::sync::Arc;
 use tracing_actix_web::TracingLogger;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -18,12 +17,19 @@ pub mod services;
 mod dto_validation_tests;
 
 use agrocore_infrastructure::Database;
+use agrocore_lpis_providers::create_default_registry;
 use agrocore_messaging::MessagingClient;
+use agrocore_shared::lpis::LpisRegistry;
+use std::sync::Arc;
+
+// Re-export for admin-ui
+pub use agrocore_shared::lpis::LpisProviderConfig;
 
 #[derive(Clone)]
 pub struct AppState {
     pub db: Arc<Database>,
     pub messaging: Arc<MessagingClient>,
+    pub lpis_registry: Arc<LpisRegistry>,
 }
 
 #[derive(OpenApi)]
@@ -83,6 +89,9 @@ pub struct AppState {
                 handlers::sites::import_sites,
                 handlers::sites::import_geojson,
                 handlers::sites::import_shapefile,
+                handlers::settings::get_lpis_settings,
+                handlers::settings::update_lpis_settings,
+                handlers::settings::list_lpis_providers,
             ),
             components(
                 schemas(
@@ -177,6 +186,10 @@ pub struct AppState {
                     dto::LpisValidationResult,
                     dto::GeoJsonFeature,
                     dto::GeoJsonGeometry,
+                    dto::LpisProviderConfig,
+                    dto::LpisSettingsResponse,
+                    dto::UpdateLpisSettingsRequest,
+                    dto::LpisProviderConfigList,
                 )
             ),
     modifiers(&SecurityAddon),
@@ -208,9 +221,13 @@ pub async fn run_server(
     messaging: MessagingClient,
     bind_addr: &str,
 ) -> std::io::Result<()> {
+    // Initialize LPIS Registry with all providers
+    let lpis_registry = Arc::new(create_default_registry());
+
     let state = web::Data::new(AppState {
         db: Arc::new(db),
         messaging: Arc::new(messaging),
+        lpis_registry,
     });
 
     let prometheus = PrometheusMetricsBuilder::new("agrocore")

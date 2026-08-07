@@ -2,22 +2,29 @@ use crate::dto::import::*;
 use crate::dto::site::UpdateSiteDto;
 use agrocore_domain::entities::{Boundary, CropType, GeoPoint, SigpacData, SiteType};
 use agrocore_shared::SharedError;
+use agrocore_shared::lpis::{LpisCountry, LpisRegistry};
 use base64::{Engine as _, engine::general_purpose};
+use geo::{Coord, Geometry, LineString, Polygon, coord};
 use geozero::shp::ShpReader;
 use serde_json;
 use sqlx::Row;
 use std::io::Cursor;
+use std::sync::Arc;
 use uuid::Uuid;
 use validator::Validate;
 
 #[derive(Clone)]
 pub struct ImportService {
     pool: sqlx::PgPool,
+    lpis_registry: Arc<LpisRegistry>,
 }
 
 impl ImportService {
-    pub fn new(pool: sqlx::PgPool) -> Self {
-        Self { pool }
+    pub fn new(pool: sqlx::PgPool, lpis_registry: Arc<LpisRegistry>) -> Self {
+        Self {
+            pool,
+            lpis_registry,
+        }
     }
 
     /// Import sites from a batch request
@@ -44,6 +51,7 @@ impl ImportService {
         let skip_duplicates = request.skip_duplicates.unwrap_or(true);
         let update_existing = request.update_existing.unwrap_or(false);
         let validate_lpis = request.validate_lpis.unwrap_or(false);
+        let lpis_country = request.lpis_country;
 
         for (_index, import_site) in request.sites.into_iter().enumerate() {
             if let Err(e) = import_site.validate() {
@@ -63,6 +71,7 @@ impl ImportService {
                     skip_duplicates,
                     update_existing,
                     validate_lpis,
+                    lpis_country,
                 )
                 .await
             {
@@ -95,6 +104,7 @@ impl ImportService {
         skip_duplicates: bool,
         update_existing: bool,
         validate_lpis: bool,
+        lpis_country: Option<LpisCountry>,
     ) -> Result<SiteProcessResult, SharedError> {
         let _ = &self.pool;
         // Check for duplicates
@@ -122,10 +132,61 @@ impl ImportService {
             )));
         }
 
-        // Validate LPIS if requested
+        // Validate LPIS if requested using the multi-country provider
         #[allow(clippy::collapsible_if)]
         if validate_lpis {
-            if let Some(sigpac) = &import_site.sigpac_data {
+            let country = lpis_country.unwrap_or(LpisCountry::Es); // Default to Spain for backwards compatibility
+
+            // Try to get provider for the country
+            if let Some(provider) = self.lpis_registry.get_arc(country) {
+                // Build geometry for validation
+                let geometry = if let Some(boundary) = &import_site.boundary {
+                    let points: Vec<Coord<f64>> = boundary
+                        .0
+                        .iter()
+                        .map(|p| coord! { x: p.lng, y: p.lat })
+                        .collect();
+                    if points.len() >= 4 {
+                        let mut coords = points.clone();
+                        if coords.first() != coords.last() {
+                            coords.push(points[0]);
+                        }
+                        let ring = LineString::new(coords);
+                        Some(Geometry::Polygon(Polygon::new(ring, vec![])))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+
+                if let Some(geom) = geometry {
+                    let validation = provider
+                        .validate_geometry(_tenant_id, &geom)
+                        .await
+                        .map_err(SharedError::Validation)?;
+
+                    if !validation.is_valid {
+                        return Err(SharedError::Validation(format!(
+                            "LPIS validation failed for {}: {}",
+                            country,
+                            validation.warnings.join(", ")
+                        )));
+                    }
+                } else if let Some(sigpac) = &import_site.sigpac_data {
+                    // Fallback to SIGPAC data-based validation for Spain
+                    let validation = self
+                        .validate_against_lpis(sigpac, &import_site.boundary)
+                        .await?;
+                    if !validation.is_valid {
+                        return Err(SharedError::Validation(format!(
+                            "LPIS validation failed: {}",
+                            validation.warnings.join(", ")
+                        )));
+                    }
+                }
+            } else if let Some(sigpac) = &import_site.sigpac_data {
+                // No provider for this country, fallback to SIGPAC SQL function
                 let validation = self
                     .validate_against_lpis(sigpac, &import_site.boundary)
                     .await?;
@@ -394,6 +455,7 @@ impl ImportService {
         let skip_duplicates = request.skip_duplicates.unwrap_or(true);
         let update_existing = request.update_existing.unwrap_or(false);
         let validate_lpis = request.validate_lpis.unwrap_or(false);
+        let lpis_country = request.lpis_country;
 
         for (_index, feature) in request.features.into_iter().enumerate() {
             if feature.geometry.geometry_type != "Polygon"
@@ -474,6 +536,7 @@ impl ImportService {
                     skip_duplicates,
                     update_existing,
                     validate_lpis,
+                    lpis_country,
                 )
                 .await
             {
@@ -553,6 +616,7 @@ impl ImportService {
         let skip_duplicates = request.skip_duplicates.unwrap_or(true);
         let update_existing = request.update_existing.unwrap_or(false);
         let validate_lpis = request.validate_lpis.unwrap_or(false);
+        let lpis_country = request.lpis_country;
 
         // Decode base64 shapefile data
         let shp_data = general_purpose::STANDARD
@@ -674,6 +738,7 @@ impl ImportService {
                         skip_duplicates,
                         update_existing,
                         validate_lpis,
+                        lpis_country,
                     )
                     .await
                 {

@@ -1,10 +1,4 @@
-//! Portugal iLPIS (integrated Land Parcel Identification System) Provider
-//!
-//! Portugal's LPIS system managed by IFAP (Instituto de Financiamento da Agricultura e Pescas).
-//! Part of SNAP (Sistema Nacional de Apoio à Política Agrícola Comum).
-//!
-//! Data available via IFAP and INSPIRE geoportal.
-
+use crate::config::ProviderConfig;
 use agrocore_shared::lpis::{LpisCountry, LpisProvider};
 use async_trait::async_trait;
 use chrono::Datelike;
@@ -12,9 +6,17 @@ use geo::{Centroid, Geometry, Polygon};
 use geojson::{GeoJson, Geometry as GeoJsonGeometry};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+/// Portugal iLPIS (integrated Land Parcel Identification System) Provider
+///
+/// Portugal's LPIS system managed by IFAP (Instituto de Financiamento da Agricultura e Pescas).
+/// Part of SNAP (Sistema Nacional de Apoio à Política Agrícola Comum).
+///
+/// Data available via IFAP and INSPIRE geoportal.
+use std::time::Duration;
 use thiserror::Error;
 use uuid::Uuid;
 
+#[allow(dead_code)]
 const ILPIS_WFS_URL: &str = "https://ide.ifap.pt/wfs";
 
 #[derive(Debug, Error)]
@@ -98,15 +100,15 @@ pub struct IlpisProvider {
 }
 
 impl IlpisProvider {
-    pub fn new() -> Self {
+    pub fn new(config: ProviderConfig) -> Self {
         let client = Client::builder()
-            .timeout(std::time::Duration::from_secs(30))
+            .timeout(Duration::from_secs(config.timeout_seconds))
             .build()
             .expect("Failed to create HTTP client");
 
         Self {
             client,
-            base_url: ILPIS_WFS_URL.to_string(),
+            base_url: config.base_url.clone(),
         }
     }
 
@@ -404,6 +406,9 @@ impl LpisProvider for IlpisProvider {
 
 impl Default for IlpisProvider {
     fn default() -> Self {
-        Self::new()
+        Self::new(ProviderConfig {
+            base_url: ILPIS_WFS_URL.to_string(),
+            ..Default::default()
+        })
     }
 }

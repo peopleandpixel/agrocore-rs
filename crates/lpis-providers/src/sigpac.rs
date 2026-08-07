@@ -1,13 +1,4 @@
-//! Spain SIGPAC (Sistema de Información Geográfica de Parcelas Agrícolas) Provider
-//!
-//! Spain's LPIS system managed by FEGA and regional governments.
-//! Data available via regional WFS services and INSPIRE geoportal.
-//!
-//! Regional endpoints vary by autonomous community:
-//! - Andalucía: https://www.juntadeandalucia.es/medioambiente/ideandalucia/wfs
-//! - Aragón: https://idearagon.aragon.es/wfs
-//! - etc.
-
+use crate::config::ProviderConfig;
 use agrocore_shared::lpis::{LpisCountry, LpisProvider};
 use async_trait::async_trait;
 use chrono::Datelike;
@@ -15,9 +6,19 @@ use geo::{Centroid, Geometry, Polygon};
 use geojson::{GeoJson, Geometry as GeoJsonGeometry};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+/// Spain SIGPAC (Sistema de Información Geográfica de Parcelas Agrícolas) Provider
+///
+/// Spain's LPIS system managed by FEGA and regional governments.
+/// Data available via regional WFS services and INSPIRE geoportal.
+///
+/// Regional endpoints vary by autonomous community:
+/// - Andalucía: https://www.juntadeandalucia.es/medioambiente/ideandalucia/wfs
+/// - Aragón: https://idearagon.aragon.es/wfs
+use std::time::Duration;
 use thiserror::Error;
 use uuid::Uuid;
 
+#[allow(dead_code)]
 const SIGPAC_WFS_URL: &str = "https://sigpac.mapa.gob.es/wfs";
 
 #[derive(Debug, Error)]
@@ -52,16 +53,14 @@ struct WfsFeature {
 
 #[derive(Debug, Deserialize, Serialize)]
 struct SigpacParcel {
-    #[serde(rename = "refcat")]
-    refcat: String,
+    #[serde(rename = "id")]
+    id: String,
+    #[serde(rename = "nuts2")]
+    nuts2: Option<String>,
     #[serde(rename = "provincia")]
     provincia: Option<String>,
     #[serde(rename = "municipio")]
     municipio: Option<String>,
-    #[serde(rename = "agregado")]
-    agregado: Option<String>,
-    #[serde(rename = "zona")]
-    zona: Option<String>,
     #[serde(rename = "poligono")]
     poligono: Option<String>,
     #[serde(rename = "parcela")]
@@ -70,6 +69,10 @@ struct SigpacParcel {
     recinto: Option<String>,
     #[serde(rename = "uso_sigpac")]
     uso_sigpac: Option<String>,
+    #[serde(rename = "coeficiente")]
+    coeficiente: Option<f64>,
+    #[serde(rename = "superficie")]
+    superficie: Option<f64>,
     #[serde(rename = "geometria")]
     geometria: GmlGeometry,
 }
@@ -105,15 +108,15 @@ pub struct SigpacProvider {
 }
 
 impl SigpacProvider {
-    pub fn new() -> Self {
+    pub fn new(config: ProviderConfig) -> Self {
         let client = Client::builder()
-            .timeout(std::time::Duration::from_secs(30))
+            .timeout(Duration::from_secs(config.timeout_seconds))
             .build()
             .expect("Failed to create HTTP client");
 
         Self {
             client,
-            base_url: SIGPAC_WFS_URL.to_string(),
+            base_url: config.base_url.clone(),
         }
     }
 
@@ -125,16 +128,20 @@ impl SigpacProvider {
 
         let mut filters = Vec::new();
 
-        if let Some(prov) = &query.province {
-            filters.push(format!("provincia='{}'", prov));
+        if let Some(nuts2) = &query.province {
+            filters.push(format!("nuts2='{}'", nuts2));
         }
 
-        if let Some(muni) = &query.municipality {
-            filters.push(format!("municipio='{}'", muni));
+        if let Some(provincia) = &query.municipality {
+            filters.push(format!("provincia='{}'", provincia));
         }
 
-        if let Some(refcat) = &query.reference {
-            filters.push(format!("refcat='{}'", refcat));
+        if let Some(municipio) = &query.aggregate {
+            filters.push(format!("municipio='{}'", municipio));
+        }
+
+        if let Some(uso) = &query.reference {
+            filters.push(format!("uso_sigpac='{}'", uso));
         }
 
         if !filters.is_empty() {
@@ -193,25 +200,27 @@ impl SigpacProvider {
         let geometry_value =
             serde_json::to_value(geo_json).map_err(|e| SigpacError::Geometry(e.to_string()))?;
 
-        let id = Uuid::new_v5(&Uuid::NAMESPACE_URL, parcel.refcat.as_bytes());
+        let area_ha = parcel.superficie.map(|a| a / 10000.0);
+
+        let id = Uuid::new_v5(&Uuid::NAMESPACE_URL, parcel.id.as_bytes());
 
         Ok(agrocore_shared::lpis::LpisParcel {
             id,
             tenant_id,
             country: LpisCountry::Es,
-            reference: parcel.refcat.clone(),
-            province: parcel.provincia.clone(),
+            reference: parcel.id.clone(),
+            province: parcel.nuts2.clone(),
             municipality: parcel.municipio.clone(),
-            aggregate: parcel.agregado.clone(),
-            zone: parcel.zona.clone(),
-            polygon: parcel.poligono.clone(),
+            aggregate: parcel.poligono.clone(),
+            zone: parcel.uso_sigpac.clone(),
+            polygon: parcel.parcela.clone(),
             parcel: parcel.parcela.clone(),
             enclosure: parcel.recinto.clone(),
             usage_code: parcel.uso_sigpac.clone(),
             usage_description: None,
             geometry: geometry_value,
-            area_hectares: None,
-            official_area_ha: None,
+            area_hectares: area_ha,
+            official_area_ha: area_ha,
             source_dataset: Some("SIGPAC".to_string()),
             source_year: Some(chrono::Utc::now().year() as i16),
             created_at: chrono::Utc::now().to_rfc3339(),
@@ -407,6 +416,9 @@ impl LpisProvider for SigpacProvider {
 
 impl Default for SigpacProvider {
     fn default() -> Self {
-        Self::new()
+        Self::new(ProviderConfig {
+            base_url: SIGPAC_WFS_URL.to_string(),
+            ..Default::default()
+        })
     }
 }

@@ -22,6 +22,12 @@ pub enum LpisCountry {
     It,
     /// Netherlands - BRP (Basisregistratie Percelen)
     Nl,
+    /// Germany - LPIS
+    De,
+    /// Poland - LPIS
+    Pl,
+    /// Austria - INVEKOS
+    At,
     /// Generic/Other EU country
     Other,
 }
@@ -34,6 +40,9 @@ impl std::fmt::Display for LpisCountry {
             LpisCountry::Fr => write!(f, "FR"),
             LpisCountry::It => write!(f, "IT"),
             LpisCountry::Nl => write!(f, "NL"),
+            LpisCountry::De => write!(f, "DE"),
+            LpisCountry::Pl => write!(f, "PL"),
+            LpisCountry::At => write!(f, "AT"),
             LpisCountry::Other => write!(f, "OTHER"),
         }
     }
@@ -49,10 +58,15 @@ impl std::str::FromStr for LpisCountry {
             "FR" => Ok(LpisCountry::Fr),
             "IT" => Ok(LpisCountry::It),
             "NL" => Ok(LpisCountry::Nl),
+            "DE" => Ok(LpisCountry::De),
+            "PL" => Ok(LpisCountry::Pl),
+            "AT" => Ok(LpisCountry::At),
             _ => Ok(LpisCountry::Other),
         }
     }
 }
+
+// ... rest of file unchanged ...
 
 /// LPIS parcel reference format specification
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -95,6 +109,24 @@ impl LpisReferenceFormat {
                 pattern: r"^NL\d{14}$".to_string(),
                 description: "BRP reference: NL + 14-digit perceel_id".to_string(),
                 example: "NL12345678901234".to_string(),
+            },
+            LpisCountry::De => Self {
+                country: LpisCountry::De,
+                pattern: r"^DE\d{16}$".to_string(),
+                description: "German LPIS reference: DE + 16-digit parcel ID".to_string(),
+                example: "DE1234567890123456".to_string(),
+            },
+            LpisCountry::Pl => Self {
+                country: LpisCountry::Pl,
+                pattern: r"^PL\d{24}$".to_string(),
+                description: "Polish LPIS reference: PL + 24-digit parcel ID".to_string(),
+                example: "PL123456789012345678901234".to_string(),
+            },
+            LpisCountry::At => Self {
+                country: LpisCountry::At,
+                pattern: r"^AT\d{14}$".to_string(),
+                description: "INVEKOS reference: AT + 14-digit parcel ID".to_string(),
+                example: "AT12345678901234".to_string(),
             },
             LpisCountry::Other => Self {
                 country: LpisCountry::Other,
@@ -271,5 +303,29 @@ impl LpisRegistry {
 
     pub fn available_countries(&self) -> Vec<LpisCountry> {
         self.providers.keys().copied().collect()
+    }
+}
+
+/// Configuration for an LPIS provider (serializable for API/Settings)
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct LpisProviderConfig {
+    pub base_url: String,
+    pub timeout_seconds: u64,
+    pub cache_ttl_seconds: u64,
+    pub rate_limit_requests_per_second: u32,
+    pub rate_limit_burst_size: u32,
+    pub enabled: bool,
+}
+
+impl Default for LpisProviderConfig {
+    fn default() -> Self {
+        Self {
+            base_url: String::new(),
+            timeout_seconds: 30,
+            cache_ttl_seconds: 3600,
+            rate_limit_requests_per_second: 10,
+            rate_limit_burst_size: 20,
+            enabled: true,
+        }
     }
 }

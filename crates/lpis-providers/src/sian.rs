@@ -1,8 +1,4 @@
-//! Italy SIAN (Sistema Informativo Agricolo Nazionale) Provider
-//!
-//! Italy's LPIS system managed by AGEA and regional bodies.
-//! Data available via regional geoportals and dati.gov.it.
-
+use crate::config::ProviderConfig;
 use agrocore_shared::lpis::{LpisCountry, LpisProvider};
 use async_trait::async_trait;
 use chrono::Datelike;
@@ -10,9 +6,15 @@ use geo::{Centroid, Geometry, Polygon};
 use geojson::{GeoJson, Geometry as GeoJsonGeometry};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+/// Italy SIAN (Sistema Informativo Agricolo Nazionale) Provider
+///
+/// Italy's LPIS system managed by AGEA and regional bodies.
+/// Data available via regional geoportals and dati.gov.it.
+use std::time::Duration;
 use thiserror::Error;
 use uuid::Uuid;
 
+#[allow(dead_code)]
 const SIAN_WFS_URL: &str = "https://www.sian.it/wfs";
 
 #[derive(Debug, Error)]
@@ -96,15 +98,15 @@ pub struct SianProvider {
 }
 
 impl SianProvider {
-    pub fn new() -> Self {
+    pub fn new(config: ProviderConfig) -> Self {
         let client = Client::builder()
-            .timeout(std::time::Duration::from_secs(30))
+            .timeout(Duration::from_secs(config.timeout_seconds))
             .build()
             .expect("Failed to create HTTP client");
 
         Self {
             client,
-            base_url: SIAN_WFS_URL.to_string(),
+            base_url: config.base_url.clone(),
         }
     }
 
@@ -398,6 +400,9 @@ impl LpisProvider for SianProvider {
 
 impl Default for SianProvider {
     fn default() -> Self {
-        Self::new()
+        Self::new(ProviderConfig {
+            base_url: "https://example.com/wfs".to_string(),
+            ..Default::default()
+        })
     }
 }

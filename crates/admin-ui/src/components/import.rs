@@ -8,6 +8,7 @@ use crate::i18n::use_i18n;
 use agrocore_shared::lpis::LpisCountry;
 use base64::Engine;
 use leptos::prelude::*;
+use std::str::FromStr;
 
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
@@ -27,7 +28,7 @@ pub fn DataImport() -> impl IntoView {
     let (validate_lpis, set_validate_lpis) = signal(true);
 
     // LPIS Country selection
-    let (_lpis_country, _set_lpis_country) = signal::<LpisCountry>(LpisCountry::Es);
+    let (lpis_country, set_lpis_country) = signal::<LpisCountry>(LpisCountry::Es);
 
     // Result state
     let (result, set_result) = signal::<Option<ImportResult>>(None);
@@ -122,6 +123,7 @@ pub fn DataImport() -> impl IntoView {
                     skip_duplicates: Some(skip_dups),
                     update_existing: Some(update),
                     validate_lpis: Some(validate),
+                    lpis_country: Some(lpis_country.get()),
                 };
 
                 match crate::api::import_geojson(geojson_request).await {
@@ -173,6 +175,7 @@ pub fn DataImport() -> impl IntoView {
                     update_existing: Some(update),
                     validate_lpis: Some(validate),
                     encoding: None,
+                    lpis_country: Some(lpis_country.get()),
                 };
 
                 match crate::api::import_shapefile(shapefile_request).await {
@@ -362,8 +365,31 @@ pub fn DataImport() -> impl IntoView {
                             />
                         </label>
                         <p class="text-xs text-base-content/60 mt-1">
-                            {"Validates parcel boundaries and areas against official Spanish SIGPAC data"}
+                            {"Validates parcel boundaries and areas against official LPIS data"}
                         </p>
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">"LPIS Country"</span>
+                            <select
+                                class="select select-bordered w-full max-w-xs"
+                                on:change=move |ev| {
+                                    let value = event_target_value(&ev);
+                                    set_lpis_country.set(LpisCountry::from_str(&value).unwrap_or(LpisCountry::Es));
+                                }
+                                prop:value=lpis_country.get().to_string()
+                            >
+                                <option value="ES">"Spain (SIGPAC)"</option>
+                                <option value="NL">"Netherlands (BRP)"</option>
+                                <option value="FR">"France (RPG)"</option>
+                                <option value="PT">"Portugal (iLPIS)"</option>
+                                <option value="IT">"Italy (SIAN)"</option>
+                                <option value="DE">"Germany (LPIS)"</option>
+                                <option value="PL">"Poland (LPIS)"</option>
+                                <option value="AT">"Austria (INVEKOS)"</option>
+                            </select>
+                        </label>
                     </div>
                 </div>
             </div>

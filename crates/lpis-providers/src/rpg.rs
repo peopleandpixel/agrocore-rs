@@ -1,11 +1,4 @@
-//! France RPG (Registre Parcellaire Graphique) Provider
-//!
-//! France's LPIS system managed by IGN/Ministère de l'Agriculture.
-//! Data available via IGN Geoservices and data.gouv.fr
-//!
-//! WFS Endpoint: https://geoservices.ign.fr/rpg
-//! GetCapabilities: https://geoservices.ign.fr/rpg/wfs?service=WFS&version=2.0.0&request=GetCapabilities
-
+use crate::config::ProviderConfig;
 use agrocore_shared::lpis::{LpisCountry, LpisProvider};
 use async_trait::async_trait;
 use chrono::Datelike;
@@ -13,9 +6,18 @@ use geo::{Centroid, Geometry, Polygon};
 use geojson::{GeoJson, Geometry as GeoJsonGeometry};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+/// France RPG (Registre Parcellaire Graphique) Provider
+///
+/// France's LPIS system managed by IGN/Ministère de l'Agriculture.
+/// Data available via IGN Geoservices and data.gouv.fr
+///
+/// WFS Endpoint: https://geoservices.ign.fr/rpg
+/// GetCapabilities: https://geoservices.ign.fr/rpg/wfs?service=WFS&version=2.0.0&request=GetCapabilities
+use std::time::Duration;
 use thiserror::Error;
 use uuid::Uuid;
 
+#[allow(dead_code)]
 const RPG_WFS_URL: &str = "https://geoservices.ign.fr/rpg/wfs";
 
 #[derive(Debug, Error)]
@@ -95,15 +97,15 @@ pub struct RpgProvider {
 }
 
 impl RpgProvider {
-    pub fn new() -> Self {
+    pub fn new(config: ProviderConfig) -> Self {
         let client = Client::builder()
-            .timeout(std::time::Duration::from_secs(30))
+            .timeout(Duration::from_secs(config.timeout_seconds))
             .build()
             .expect("Failed to create HTTP client");
 
         Self {
             client,
-            base_url: RPG_WFS_URL.to_string(),
+            base_url: config.base_url.clone(),
         }
     }
 
@@ -397,6 +399,9 @@ impl LpisProvider for RpgProvider {
 
 impl Default for RpgProvider {
     fn default() -> Self {
-        Self::new()
+        Self::new(ProviderConfig {
+            base_url: "https://example.com/wfs".to_string(),
+            ..Default::default()
+        })
     }
 }

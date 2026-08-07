@@ -9,6 +9,9 @@ use crate::dto::ErrorResponse;
 use actix_web::{HttpResponse, ResponseError, http::StatusCode};
 use agrocore_shared::SharedError;
 
+#[cfg(feature = "sqlx")]
+use sqlx;
+
 /// Dünner Wrapper um [`SharedError`], der sich als HTTP-Antwort rendern lässt.
 #[derive(Debug)]
 pub struct ApiError(pub SharedError);
@@ -25,6 +28,7 @@ impl From<SharedError> for ApiError {
     }
 }
 
+#[cfg(feature = "sqlx")]
 impl From<sqlx::Error> for ApiError {
     fn from(err: sqlx::Error) -> Self {
         ApiError(SharedError::from(err))

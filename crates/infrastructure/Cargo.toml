@@ -6,8 +6,8 @@ license.workspace = true
 
 [dependencies]
 agrocore-domain = { path = "../domain" }
-agrocore-shared = { path = "../shared" }
-sqlx = { workspace = true }
+agrocore-shared = { path = "../shared", features = ["sqlx"] }
+sqlx = { workspace = true, features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono", "ipnetwork", "bigdecimal", "json"], optional = true }
 geozero = { workspace = true }
 serde = { workspace = true }
 serde_json = "1.0"
@@ -21,7 +21,8 @@ jsonwebtoken = { workspace = true }
 argon2 = { workspace = true }
 
 [features]
-default = []
+default = ["sqlx"]
+sqlx = ["dep:sqlx", "agrocore-shared/sqlx"]
 
 [dev-dependencies]
 testcontainers = "0.27.3"

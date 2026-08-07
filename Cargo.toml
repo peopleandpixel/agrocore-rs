@@ -1,9 +1,10 @@
 [workspace]
 members = ["crates/*"]
 resolver = "2"
+edition = "2024"
 
 [workspace.package]
-version = "0.5.8"
+version = "0.5.9"
 authors = ["Jens Reinemuth <jens@reinemuth.pt>"]
 license = "GPL-3.0-or-later"
 
@@ -44,3 +45,9 @@ geozero = { version = "0.15", features = ["with-postgis-sqlx", "with-geo", "with
 strum = { version = "0.26", features = ["derive"] }
 quick-xml = { version = "0.31", features = ["serialize"] }
 urlencoding = "2.1"
+
+moka = { version = "0.12", features = ["sync", "future"] }
+redis = { version = "0.24", features = ["tokio-comp", "connection-manager", "json"] }
+governor = { version = "0.6", features = ["jitter"] }
+retry = { version = "0.1" }
+jitter = { version = "0.1" }

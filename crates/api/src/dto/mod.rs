@@ -10,6 +10,7 @@ pub mod import;
 pub mod livestock;
 pub mod order;
 pub mod plant_protection;
+pub mod settings;
 pub mod site;
 pub mod specialized;
 pub mod user;
@@ -28,8 +29,10 @@ pub use import::*;
 pub use livestock::*;
 pub use order::*;
 pub use plant_protection::*;
+pub use settings::*;
 pub use site::*;
 pub use specialized::*;
+// pub use user::*;  // explicit imports below
 pub use water::*;
 pub use weather::*;
 pub use workforce::*;

@@ -1,4 +1,5 @@
 use crate::api;
+use agrocore_shared::lpis::LpisCountry;
 use crate::components::form::{
     PHONE_PREFIXES, RequiredLabel, country_flag, is_valid_email, language_flag, normalize_phone,
     split_phone,
@@ -294,6 +295,60 @@ pub fn SettingsPage() -> impl IntoView {
                                         <option>{timezone_utc}</option>
                                     </select>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-base-100 shadow">
+                        <div class="card-body">
+                            <h2 class="card-title mb-4"><Icon icon=LuDatabase width="20" height="20" /> "LPIS Provider Settings"</h2>
+                            <p class="text-base-content/60 mb-4">"Configure LPIS providers for each country. Changes require restart."</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                {move || {
+                                    let countries = [
+                                        (LpisCountry::Es, "Spain (SIGPAC)"),
+                                        (LpisCountry::Nl, "Netherlands (BRP)"),
+                                        (LpisCountry::Fr, "France (RPG)"),
+                                        (LpisCountry::Pt, "Portugal (iLPIS)"),
+                                        (LpisCountry::It, "Italy (SIAN)"),
+                                        (LpisCountry::De, "Germany (LPIS)"),
+                                        (LpisCountry::Pl, "Poland (LPIS)"),
+                                        (LpisCountry::At, "Austria (INVEKOS)"),
+                                    ];
+                                    countries.iter().map(|(_country, label)| {
+                                        let label = *label;
+                                        view! {
+                                            <div class="card bg-base-200 p-4">
+                                                <h4 class="font-bold mb-2">{label}</h4>
+                                                <div class="form-control w-full">
+                                                    <label class="label"><span class="label-text">"Base URL"</span></label>
+                                                    <input type="url" class="input input-bordered w-full" placeholder="https://..." />
+                                                </div>
+                                                <div class="form-control w-full">
+                                                    <label class="label"><span class="label-text">"Timeout (s)"</span></label>
+                                                    <input type="number" class="input input-bordered w-full" value="30" min="5" max="120" />
+                                                </div>
+                                                <div class="form-control w-full">
+                                                    <label class="label"><span class="label-text">"Cache TTL (s)"</span></label>
+                                                    <input type="number" class="input input-bordered w-full" value="3600" min="60" max="86400" />
+                                                </div>
+                                                <div class="form-control w-full">
+                                                    <label class="label"><span class="label-text">"Rate Limit (req/s)"</span></label>
+                                                    <input type="number" class="input input-bordered w-full" value="10" min="1" max="100" />
+                                                </div>
+                                                <div class="form-control w-full">
+                                                    <label class="label cursor-pointer">
+                                                        <span class="label-text">"Enabled"</span>
+                                                        <input type="checkbox" class="checkbox checkbox-primary" checked=true />
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        }
+                                    }).collect::<Vec<_>>()
+                                }}
+                            </div>
+                            <div class="card-actions justify-end mt-4">
+                                <button class="btn btn-primary">"Save LPIS Settings"</button>
                             </div>
                         </div>
                     </div>

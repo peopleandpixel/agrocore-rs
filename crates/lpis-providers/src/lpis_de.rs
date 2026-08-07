@@ -1,9 +1,4 @@
-//! Germany LPIS Provider
-//!
-//! Germany has 16 federal states each with their own LPIS implementation.
-//! This provider uses a unified interface for all states.
-//! Data available via state geoportals and ALKIS (AAA-Modell).
-
+use crate::config::ProviderConfig;
 use agrocore_shared::lpis::{LpisCountry, LpisProvider};
 use async_trait::async_trait;
 use chrono::Datelike;
@@ -11,9 +6,16 @@ use geo::{Centroid, Geometry, Polygon};
 use geojson::{GeoJson, Geometry as GeoJsonGeometry};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+/// Germany LPIS Provider
+///
+/// Germany has 16 federal states each with their own LPIS implementation.
+/// This provider uses a unified interface for all states.
+/// Data available via state geoportals and ALKIS (AAA-Modell).
+use std::time::Duration;
 use thiserror::Error;
 use uuid::Uuid;
 
+#[allow(dead_code)]
 const LPIS_DE_WFS_URL: &str = "https://geodienste.bfn.de/lpis/wfs";
 
 #[derive(Debug, Error)]
@@ -97,15 +99,15 @@ pub struct GermanLpisProvider {
 }
 
 impl GermanLpisProvider {
-    pub fn new() -> Self {
+    pub fn new(config: ProviderConfig) -> Self {
         let client = Client::builder()
-            .timeout(std::time::Duration::from_secs(30))
+            .timeout(Duration::from_secs(config.timeout_seconds))
             .build()
             .expect("Failed to create HTTP client");
 
         Self {
             client,
-            base_url: LPIS_DE_WFS_URL.to_string(),
+            base_url: config.base_url.clone(),
         }
     }
 
@@ -401,6 +403,9 @@ impl LpisProvider for GermanLpisProvider {
 
 impl Default for GermanLpisProvider {
     fn default() -> Self {
-        Self::new()
+        Self::new(ProviderConfig {
+            base_url: "https://example.com/wfs".to_string(),
+            ..Default::default()
+        })
     }
 }

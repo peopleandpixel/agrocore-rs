@@ -13,17 +13,27 @@
 //! - oppervlakte (area in m²)
 //! - gemeente (municipality code)
 
+use crate::{cache::LpisCache, config::ProviderConfig};
 use agrocore_shared::lpis::{LpisCountry, LpisProvider};
 use async_trait::async_trait;
 use chrono::Datelike;
 use geo::{Centroid, Geometry, Polygon};
 use geojson::{GeoJson, Geometry as GeoJsonGeometry};
+use governor::clock::DefaultClock;
+use governor::middleware::NoOpMiddleware;
+use governor::state::{InMemoryState, NotKeyed};
+use governor::{Quota, RateLimiter};
+use quick_xml::de::from_str;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use std::num::NonZeroU32;
+use std::sync::Arc;
+use std::time::Duration;
 use thiserror::Error;
 use uuid::Uuid;
 
-const BRP_WFS_URL: &str = "https://geodata.nationaalgeoregister.nl/brppercelen/wfs";
+#[allow(dead_code)]
+const DEFAULT_BRP_WFS_URL: &str = "https://geodata.nationaalgeoregister.nl/brppercelen/wfs";
 
 #[derive(Debug, Error)]
 pub enum BrpError {
@@ -37,6 +47,14 @@ pub enum BrpError {
     Geometry(String),
     #[error("Invalid response: {0}")]
     InvalidResponse(String),
+    #[error("Configuration error: {0}")]
+    Configuration(String),
+    #[error("Rate limit exceeded")]
+    RateLimitExceeded,
+    #[error("Redis error: {0}")]
+    Redis(#[from] redis::RedisError),
+    #[error("Base provider error: {0}")]
+    BaseProvider(#[from] crate::base::BaseProviderError),
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -97,19 +115,45 @@ struct GmlCoordinates {
 pub struct BrpProvider {
     client: Client,
     base_url: String,
+    config: ProviderConfig,
+    cache: Option<Arc<LpisCache>>,
+    rate_limiter: Option<Arc<RateLimiter<NotKeyed, InMemoryState, DefaultClock, NoOpMiddleware>>>,
 }
 
 impl BrpProvider {
-    pub fn new() -> Self {
+    pub fn new(config: ProviderConfig) -> Self {
         let client = Client::builder()
-            .timeout(std::time::Duration::from_secs(30))
+            .timeout(Duration::from_secs(config.timeout_seconds))
             .build()
             .expect("Failed to create HTTP client");
 
+        // Initialize rate limiter
+        let rate_limiter = if config.rate_limit.requests_per_second > 0 {
+            let quota = Quota::per_second(
+                NonZeroU32::new(config.rate_limit.requests_per_second)
+                    .unwrap_or(NonZeroU32::new(10).unwrap()),
+            )
+            .allow_burst(
+                NonZeroU32::new(config.rate_limit.burst_size)
+                    .unwrap_or(NonZeroU32::new(20).unwrap()),
+            );
+            Some(Arc::new(RateLimiter::direct(quota)))
+        } else {
+            None
+        };
+
         Self {
             client,
-            base_url: BRP_WFS_URL.to_string(),
+            base_url: config.base_url.clone(),
+            config,
+            cache: None,
+            rate_limiter,
         }
+    }
+
+    pub fn with_cache(mut self, cache: Arc<LpisCache>) -> Self {
+        self.cache = Some(cache);
+        self
     }
 
     /// Build WFS GetFeature request URL
@@ -143,6 +187,46 @@ impl BrpProvider {
         url.push_str(&format!("&startIndex={}&count={}", start_index, per_page));
 
         url
+    }
+
+    /// Execute HTTP request with rate limiting
+    async fn execute_request(&self, url: &str) -> Result<reqwest::Response, BrpError> {
+        // Apply rate limiting
+        if let Some(limiter) = &self.rate_limiter {
+            limiter.until_ready().await;
+        }
+
+        let response = self.client.get(url).send().await.map_err(BrpError::Http)?;
+
+        Ok(response)
+    }
+
+    /// Get cached response or fetch and cache
+    async fn get_cached_or_fetch(
+        &self,
+        cache_key: &str,
+        url: &str,
+        ttl: Duration,
+    ) -> Result<String, BrpError> {
+        // Try cache first
+        if let Some(cache) = &self.cache
+            && let Some(cached) = cache.get(cache_key).await
+        {
+            return Ok(String::from_utf8_lossy(&cached).to_string());
+        }
+
+        // Fetch from network
+        let response = self.execute_request(url).await?;
+        let text = response.text().await.map_err(BrpError::Http)?;
+
+        // Store in cache
+        if let Some(cache) = &self.cache {
+            cache
+                .set_with_ttl(cache_key.to_string(), text.as_bytes().to_vec(), ttl)
+                .await?;
+        }
+
+        Ok(text)
     }
 
     /// Convert GML coordinates to GeoJSON polygon
@@ -232,23 +316,20 @@ impl LpisProvider for BrpProvider {
         query: agrocore_shared::lpis::LpisQuery,
     ) -> Result<agrocore_shared::lpis::PaginatedLpisResponse, String> {
         let url = self.build_query_url(&query);
+        let cache_key = format!("brp:list:{}", urlencoding::encode(&url));
 
-        let response = self
-            .client
-            .get(&url)
-            .send()
+        let text = self
+            .get_cached_or_fetch(
+                &cache_key,
+                &url,
+                Duration::from_secs(self.config.cache_ttl_seconds),
+            )
             .await
             .map_err(|e| format!("BRP request failed: {}", e))?;
 
-        if !response.status().is_success() {
-            return Err(format!("BRP API error: {}", response.status()));
-        }
-
-        let text = response.text().await.map_err(|e| e.to_string())?;
-
         // Parse WFS response
         let wfs_fc: WfsFeatureCollection =
-            quick_xml::de::from_str(&text).map_err(|e| format!("XML parsing failed: {}", e))?;
+            from_str(&text).map_err(|e| format!("XML parsing failed: {}", e))?;
 
         let mut parcels = Vec::new();
         for feature in wfs_fc.features {
@@ -279,7 +360,6 @@ impl LpisProvider for BrpProvider {
         tenant_id: Uuid,
         parcel_id: Uuid,
     ) -> Result<agrocore_shared::lpis::LpisParcel, String> {
-        // BRP doesn't support direct ID lookup by UUID, need to query by perceel_id
         let query = agrocore_shared::lpis::LpisQuery {
             country: Some(LpisCountry::Nl),
             reference: Some(parcel_id.to_string()),
@@ -299,7 +379,6 @@ impl LpisProvider for BrpProvider {
         tenant_id: Uuid,
         query: agrocore_shared::lpis::LpisNearPointQuery,
     ) -> Result<agrocore_shared::lpis::PaginatedLpisResponse, String> {
-        // BBOX filter for spatial search
         let radius_km = query.radius_m.unwrap_or(1000.0) / 1000.0;
         let bbox = format!(
             "BBOX(geometrie,{},{},{},{})",
@@ -315,21 +394,19 @@ impl LpisProvider for BrpProvider {
             urlencoding::encode(&bbox)
         );
 
-        let response = self
-            .client
-            .get(&url)
-            .send()
+        let cache_key = format!("brp:near:{}", urlencoding::encode(&bbox));
+
+        let text = self
+            .get_cached_or_fetch(
+                &cache_key,
+                &url,
+                Duration::from_secs(self.config.cache_ttl_seconds),
+            )
             .await
             .map_err(|e| format!("BRP spatial search failed: {}", e))?;
 
-        if !response.status().is_success() {
-            return Err(format!("BRP API error: {}", response.status()));
-        }
-
-        let text = response.text().await.map_err(|e| e.to_string())?;
-
         let wfs_fc: WfsFeatureCollection =
-            quick_xml::de::from_str(&text).map_err(|e| format!("XML parsing failed: {}", e))?;
+            from_str(&text).map_err(|e| format!("XML parsing failed: {}", e))?;
 
         let mut parcels = Vec::new();
         for feature in wfs_fc.features {
@@ -356,10 +433,7 @@ impl LpisProvider for BrpProvider {
         _tenant_id: Uuid,
         geometry: &geo::Geometry<f64>,
     ) -> Result<agrocore_shared::lpis::LpisValidationResult, String> {
-        // For BRP, we could query parcels that intersect with the given geometry
-        // This is a simplified implementation
         let matched = if let geo::Geometry::Polygon(poly) = geometry {
-            // Query BRP for intersecting parcels
             let centroid = poly.centroid();
             let centroid_coord = centroid.expect("Polygon should have centroid");
             let query = agrocore_shared::lpis::LpisNearPointQuery {
@@ -393,8 +467,6 @@ impl LpisProvider for BrpProvider {
         tenant_id: Uuid,
         _source_path: &str,
     ) -> Result<agrocore_shared::lpis::LpisImportResult, String> {
-        // BRP is a live service, not a static file import
-        // This would typically sync from the WFS service
         let query = agrocore_shared::lpis::LpisQuery {
             country: Some(LpisCountry::Nl),
             per_page: Some(1000),
@@ -415,6 +487,9 @@ impl LpisProvider for BrpProvider {
 
 impl Default for BrpProvider {
     fn default() -> Self {
-        Self::new()
+        Self::new(ProviderConfig {
+            base_url: DEFAULT_BRP_WFS_URL.to_string(),
+            ..Default::default()
+        })
     }
 }

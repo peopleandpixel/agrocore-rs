@@ -5,7 +5,7 @@ edition = "2024"
 license.workspace = true
 
 [dependencies]
-agrocore-shared = { path = "../shared" }
+agrocore-shared = { path = "../shared", features = ["sqlx"] }
 agrocore-domain = { path = "../domain" }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
@@ -24,6 +24,20 @@ tracing = { workspace = true }
 async-compression = "0.4"
 futures = { workspace = true }
 bytes = "1.5"
+
+# Configuration
+config = { workspace = true }
+
+# Caching
+moka = { workspace = true, features = ["future"] }
+redis = { workspace = true }
+
+# Rate limiting
+governor = { workspace = true }
+
+# Retry logic
+retry = { version = "0.1" }
+jitter = { version = "0.1" }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util"] }

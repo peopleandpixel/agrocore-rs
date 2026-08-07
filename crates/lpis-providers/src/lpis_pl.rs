@@ -1,8 +1,4 @@
-//! Poland LPIS Provider
-//!
-//! Poland's LPIS system managed by ARiMR (Agencja Restrukturyzacji i Modernizacji Rolnictwa).
-//! Data available via ARiMR portal and INSPIRE geoportal.
-
+use crate::config::ProviderConfig;
 use agrocore_shared::lpis::{LpisCountry, LpisProvider};
 use async_trait::async_trait;
 use chrono::Datelike;
@@ -10,9 +6,15 @@ use geo::{Centroid, Geometry, Polygon};
 use geojson::{GeoJson, Geometry as GeoJsonGeometry};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+/// Poland LPIS Provider
+///
+/// Poland's LPIS system managed by ARiMR (Agencja Restrukturyzacji i Modernizacji Rolnictwa).
+/// Data available via ARiMR portal and INSPIRE geoportal.
+use std::time::Duration;
 use thiserror::Error;
 use uuid::Uuid;
 
+#[allow(dead_code)]
 const LPIS_PL_WFS_URL: &str = "https://geoportal.arrim.gov.pl/wfs";
 
 #[derive(Debug, Error)]
@@ -98,15 +100,15 @@ pub struct PolishLpisProvider {
 }
 
 impl PolishLpisProvider {
-    pub fn new() -> Self {
+    pub fn new(config: ProviderConfig) -> Self {
         let client = Client::builder()
-            .timeout(std::time::Duration::from_secs(30))
+            .timeout(Duration::from_secs(config.timeout_seconds))
             .build()
             .expect("Failed to create HTTP client");
 
         Self {
             client,
-            base_url: LPIS_PL_WFS_URL.to_string(),
+            base_url: config.base_url.clone(),
         }
     }
 
@@ -406,6 +408,9 @@ impl LpisProvider for PolishLpisProvider {
 
 impl Default for PolishLpisProvider {
     fn default() -> Self {
-        Self::new()
+        Self::new(ProviderConfig {
+            base_url: "https://example.com/wfs".to_string(),
+            ..Default::default()
+        })
     }
 }

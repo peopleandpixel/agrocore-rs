@@ -13,7 +13,11 @@ validator = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 utoipa = { workspace = true, features = ["actix_extras", "uuid", "chrono"] }
-sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono"] }
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono"], optional = true }
 async-trait = "0.1"
 serde_json = { workspace = true }
 geo = { workspace = true }
+
+[features]
+# sqlx is not default - must be explicitly enabled by crates that need it
+sqlx = ["dep:sqlx"]

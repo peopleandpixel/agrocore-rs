@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.9] - 2026-08-05
+
+### Added
+- **Multi-country LPIS Provider Base Client** with unified caching, rate limiting, and retry logic
+  - New `BaseClient` in `lpis-providers` with HTTP client, `LpisCache` (Memory/Redis), `governor` rate limiting, exponential backoff retries
+  - All 8 providers (ES, NL, FR, PT, IT, DE, PL, AT) can now use common infrastructure
+  - BRP provider fully migrated to base client pattern
+- **Admin UI: LPIS Country Selection in Data Import**
+  - Country dropdown (ES, NL, FR, PT, IT, DE, PL, AT) in Import component
+  - `lpis_country` field added to `GeoJsonImportRequest` and `ShapefileImportRequest` DTOs
+  - Updated import validation text to "Validate against LPIS (LPIS data)"
+- **LPIS Settings API & UI**
+  - `GET /api/v1/settings/lpis` - Load LPIS provider settings
+  - `PUT /api/v1/settings/lpis` - Save LPIS provider settings (with restart_required flag)
+  - `GET /api/v1/settings/lpis/providers` - List available providers with defaults
+  - `LpisProviderConfig` DTO: base_url, timeout, cache_ttl, rate limits, enabled flag
+  - Admin UI Settings page: Grid with 8 provider cards (Base URL, Timeout, Cache TTL, Rate Limit, Enabled)
+- **Admin UI WASM Build Fixed**
+  - `sqlx` made optional in `shared` crate with `sqlx` feature flag
+  - `agrocore-shared` used with `features = []` in `admin-ui` → eliminates `mio`/`tokio` WASM incompatibility
+  - Workspace-wide `sqlx` feature flags for consistent dependency management
+- **Feature-flag architecture for sqlx** (workspace-consistent)
+  - `shared`, `domain`, `infrastructure`, `api`: `sqlx` optional + `sqlx` feature
+  - `admin-ui`: uses `shared` **without** `sqlx` feature → WASM-compatible
+  - `sqlx = ["dep:sqlx", "agrocore-shared/sqlx"]` pattern across crates
+
+### Fixed
+- `lpis-providers` clippy warnings: collapsible_if, redundant closures
+- `shared` clippy: single-component path imports with allow attribute
+- `admin-ui` clippy: useless_vec, unused variables/imports
+- `api` error handling: `From<sqlx::Error>` gated behind `sqlx` feature
+- `settings` handler: correct `ServiceConfig` signature, removed unused imports
+
+### Changed
+- Updated workspace version to 0.5.9
+- `agrocore-shared`: `sqlx` now optional, gated behind `sqlx` feature
+- `agrocore-admin-ui`: uses `shared` without default features (no sqlx)
+
 ## [0.5.8] - 2026-07-31
 
 ### Added

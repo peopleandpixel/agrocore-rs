@@ -10,6 +10,7 @@ pub mod livestock;
 pub mod nutrition;
 pub mod orders;
 pub mod reporting;
+pub mod settings;
 pub mod sigpac;
 pub mod sites;
 pub mod specialized;
@@ -101,6 +102,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route(web::put().to(equipment::update_equipment))
                     .route(web::delete().to(equipment::delete_equipment)),
             )
+            .configure(settings::configure)
             .configure(compliance::configure)
             .configure(specialized::configure)
             .configure(water::configure)

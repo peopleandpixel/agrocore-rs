@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use agrocore_shared::lpis::LpisCountry;
 use gloo_net::http::{Request, RequestBuilder};
 use leptos::prelude::window;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -881,6 +882,7 @@ pub struct GeoJsonImportRequest {
     pub skip_duplicates: Option<bool>,
     pub update_existing: Option<bool>,
     pub validate_lpis: Option<bool>,
+    pub lpis_country: Option<LpisCountry>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -890,6 +892,7 @@ pub struct ShapefileImportRequest {
     pub update_existing: Option<bool>,
     pub validate_lpis: Option<bool>,
     pub encoding: Option<String>,
+    pub lpis_country: Option<LpisCountry>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

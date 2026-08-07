@@ -238,7 +238,7 @@ pub async fn import_sites(
         .map_err(|e| SharedError::Validation(e.to_string()))?;
 
     let pool = state.db.pool().clone();
-    let import_service = ImportService::new(pool);
+    let import_service = ImportService::new(pool, state.lpis_registry.clone());
     let result = import_service
         .import_sites(auth.0.tenant_id, dto.0, auth.0.user_id)
         .await?;
@@ -270,7 +270,7 @@ pub async fn import_geojson(
     );
 
     let pool = state.db.pool().clone();
-    let import_service = ImportService::new(pool);
+    let import_service = ImportService::new(pool, state.lpis_registry.clone());
     let result = import_service
         .import_geojson(auth.0.tenant_id, dto.0, auth.0.user_id)
         .await?;
@@ -301,7 +301,7 @@ pub async fn import_shapefile(
     );
 
     let pool = state.db.pool().clone();
-    let import_service = ImportService::new(pool);
+    let import_service = ImportService::new(pool, state.lpis_registry.clone());
     let result = import_service
         .import_shapefile(auth.0.tenant_id, dto.0, auth.0.user_id)
         .await?;

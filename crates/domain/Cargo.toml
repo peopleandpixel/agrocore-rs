@@ -5,7 +5,7 @@ edition = "2024"
 license.workspace = true
 
 [dependencies]
-agrocore-shared = { path = "../shared" }
+agrocore-shared = { path = "../shared", features = ["sqlx"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 utoipa = { workspace = true, features = ["actix_extras", "uuid", "chrono"] }
@@ -14,10 +14,10 @@ uuid = { workspace = true }
 validator = { workspace = true }
 geo = { workspace = true }
 mockall = { workspace = true }
-sqlx = { workspace = true }
+sqlx = { workspace = true, features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono", "ipnetwork", "bigdecimal", "json"], optional = true }
 geozero = { workspace = true }
 strum = { version = "0.26", features = ["derive"] }
 
-[dev-dependencies]
-testcontainers = "0.27.3"
-testcontainers-modules = { version = "0.15.0", features = ["postgres"] }
+[features]
+default = ["sqlx"]
+sqlx = ["dep:sqlx", "agrocore-shared/sqlx"]

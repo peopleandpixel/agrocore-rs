@@ -4,6 +4,10 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
+#[cfg(feature = "sqlx")]
+#[allow(clippy::single_component_path_imports)]
+use sqlx;
+
 pub mod config;
 pub mod lpis;
 pub mod telemetry;
@@ -90,8 +94,13 @@ pub struct PaginatedResponse<T: Serialize> {
     pub total_pages: u64,
 }
 
+#[cfg(feature = "sqlx")]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, ToSchema, sqlx::Type)]
 #[sqlx(transparent)]
+pub struct TenantId(pub Uuid);
+
+#[cfg(not(feature = "sqlx"))]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, ToSchema)]
 pub struct TenantId(pub Uuid);
 
 impl TenantId {
@@ -153,6 +162,7 @@ pub enum SharedError {
     NotImplemented(String),
 }
 
+#[cfg(feature = "sqlx")]
 impl From<sqlx::Error> for SharedError {
     fn from(err: sqlx::Error) -> Self {
         SharedError::Database(err.to_string())
