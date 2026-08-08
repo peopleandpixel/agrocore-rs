@@ -86,16 +86,16 @@ jobs:
 
       - name: Setup database
         run: |
-          sqlx database create --database-url postgresql://test:test@localhost:5432/agrocore_test
-          sqlx migrate run --source migrations --database-url postgresql://test:test@localhost:5432/agrocore_test
+          sqlx database create --database-url postgresql://test:***@localhost:5432/agrocore_test
+          sqlx migrate run --source migrations --database-url postgresql://test:***@localhost:5432/agrocore_test
         env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/agrocore_test
+          DATABASE_URL: postgresql://test:***@localhost:5432/agrocore_test
 
       - name: Run cargo test
         run: cargo test --workspace
         env:
           RUST_LOG: debug
-          DATABASE_URL: postgresql://test:test@localhost:5432/agrocore_test
+          DATABASE_URL: postgresql://test:***@localhost:5432/agrocore_test
 
   # Build Admin UI WASM
   build-wasm:
