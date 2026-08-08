@@ -169,12 +169,16 @@ CREATE TABLE IF NOT EXISTS animals (
     breed TEXT,
     birth_date DATE,
     gender TEXT,
+    current_site_id UUID REFERENCES sites(id) ON DELETE SET NULL,
+    mother_id UUID REFERENCES animals(id) ON DELETE SET NULL,
+    father_id UUID REFERENCES animals(id) ON DELETE SET NULL,
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_animals_tenant_id ON animals(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_animals_site ON animals(current_site_id);
 
 -- Tabelle: task_data (Worker-Task-Daten)
 CREATE TABLE IF NOT EXISTS task_data (

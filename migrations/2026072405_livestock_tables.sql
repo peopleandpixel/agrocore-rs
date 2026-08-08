@@ -1,26 +1,4 @@
--- Livestock Tables
-CREATE TABLE IF NOT EXISTS animals (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    species TEXT NOT NULL,
-    breed TEXT,
-    identifier TEXT NOT NULL,
-    birth_date DATE,
-    gender TEXT,
-    status TEXT NOT NULL DEFAULT 'active',
-    current_site_id UUID REFERENCES sites(id) ON DELETE SET NULL,
-    mother_id UUID REFERENCES animals(id) ON DELETE SET NULL,
-    father_id UUID REFERENCES animals(id) ON DELETE SET NULL,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_animals_tenant ON animals(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_animals_site ON animals(current_site_id);
-CREATE INDEX IF NOT EXISTS idx_animals_species ON animals(species);
-
+-- Livestock Tables - Additional tables only (animals table is in 20240101_init.sql)
 CREATE TABLE IF NOT EXISTS grazing_records (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
