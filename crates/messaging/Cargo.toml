@@ -19,3 +19,4 @@ agrocore-domain = { path = "../domain" }
 bytes = "1.0"
 utoipa.workspace = true
 validator.workspace = true
+rumqttc.workspace = true

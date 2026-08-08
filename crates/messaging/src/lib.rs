@@ -9,6 +9,7 @@ use async_nats::Client;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use failsafe::Config;
+use rumqttc::{AsyncClient, Event as MqttEvent, EventLoop, MqttOptions, QoS};
 use serde::{Deserialize, Serialize};
 use tracing::info;
 use utoipa::ToSchema;
@@ -220,6 +221,361 @@ impl Default for WebhookRetryPolicy {
     }
 }
 
+// ============================================================
+// MQTT Configuration and IoT Event Types
+// ============================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct MqttConfig {
+    pub broker_host: String,
+    pub broker_port: u16,
+    pub client_id: String,
+    pub username: Option<String>,
+    pub password: Option<String>,
+    pub use_tls: bool,
+    pub keep_alive: u16,
+    pub clean_session: bool,
+    pub topic_prefix: String,
+}
+
+impl Default for MqttConfig {
+    fn default() -> Self {
+        Self {
+            broker_host: "localhost".to_string(),
+            broker_port: 1883,
+            client_id: format!("agrocore-{}", Uuid::new_v4()),
+            username: None,
+            password: None,
+            use_tls: false,
+            keep_alive: 60,
+            clean_session: true,
+            topic_prefix: "agrocore".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct IoTDeviceConfig {
+    pub device_id: String,
+    pub device_type: String,
+    pub tenant_id: Uuid,
+    pub site_id: Option<Uuid>,
+    pub capabilities: Vec<IoTCapability>,
+    pub metadata: serde_json::Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq, Eq, Hash)]
+pub enum IoTCapability {
+    Temperature,
+    Humidity,
+    SoilMoisture,
+    Light,
+    GPS,
+    BatteryLevel,
+    SignalStrength,
+    ActuatorControl,
+    FirmwareUpdate,
+    Custom(String),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct IoTTelemetryEvent {
+    pub device_id: String,
+    pub tenant_id: Uuid,
+    pub site_id: Option<Uuid>,
+    pub timestamp: DateTime<Utc>,
+    pub measurements: Vec<IoTMeasurement>,
+    pub metadata: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct IoTMeasurement {
+    pub capability: IoTCapability,
+    pub value: f64,
+    pub unit: String,
+    pub quality: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct IoTCommandEvent {
+    pub device_id: String,
+    pub command_id: Uuid,
+    pub command_type: String,
+    pub payload: serde_json::Value,
+    pub requested_at: DateTime<Utc>,
+    pub timeout_seconds: Option<u64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct IoTDeviceStatusEvent {
+    pub device_id: String,
+    pub tenant_id: Uuid,
+    pub status: DeviceStatus,
+    pub last_seen: DateTime<Utc>,
+    pub firmware_version: Option<String>,
+    pub battery_level: Option<f64>,
+    pub signal_strength: Option<i32>,
+    pub error_message: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
+pub enum DeviceStatus {
+    Online,
+    Offline,
+    Error,
+    Maintenance,
+    Updating,
+}
+
+// MQTT Client wrapper
+pub struct MqttClient {
+    client: AsyncClient,
+    event_loop: EventLoop,
+    #[allow(dead_code)]
+    config: MqttConfig,
+    topic_prefix: String,
+}
+
+impl MqttClient {
+    pub async fn connect(config: MqttConfig) -> anyhow::Result<Self> {
+        info!(
+            "Connecting to MQTT broker at {}:{}",
+            config.broker_host, config.broker_port
+        );
+
+        let mut mqtt_options =
+            MqttOptions::new(&config.client_id, &config.broker_host, config.broker_port);
+
+        mqtt_options.set_keep_alive(std::time::Duration::from_secs(config.keep_alive as u64));
+        mqtt_options.set_clean_session(config.clean_session);
+
+        if let (Some(username), Some(password)) = (config.username.clone(), config.password.clone())
+        {
+            mqtt_options.set_credentials(username, password);
+        }
+
+        if config.use_tls {
+            // TLS configuration would go here
+            // mqtt_options.set_transport(rumqttc::Transport::Tls(tls_config));
+        }
+
+        let (client, event_loop) = AsyncClient::new(mqtt_options, 100);
+
+        Ok(Self {
+            client,
+            event_loop,
+            topic_prefix: config.topic_prefix.clone(),
+            config,
+        })
+    }
+
+    /// Get the topic prefix for this client
+    pub fn topic_prefix(&self) -> &str {
+        &self.topic_prefix
+    }
+
+    /// Build a full topic with prefix
+    pub fn build_topic(&self, topic: &str) -> String {
+        format!("{}/{}", self.topic_prefix, topic)
+    }
+
+    /// Publish telemetry data from IoT device
+    pub async fn publish_telemetry(&self, event: &IoTTelemetryEvent) -> anyhow::Result<()> {
+        let topic = self.build_topic(&format!(
+            "telemetry/{}/{}",
+            event.tenant_id, event.device_id
+        ));
+        let payload = serde_json::to_vec(event)?;
+
+        self.client
+            .publish(topic, QoS::AtLeastOnce, false, payload)
+            .await?;
+
+        Ok(())
+    }
+
+    /// Publish device status
+    pub async fn publish_status(&self, event: &IoTDeviceStatusEvent) -> anyhow::Result<()> {
+        let topic = self.build_topic(&format!("status/{}/{}", event.tenant_id, event.device_id));
+        let payload = serde_json::to_vec(event)?;
+
+        self.client
+            .publish(topic, QoS::AtLeastOnce, true, payload) // Retain status
+            .await?;
+
+        Ok(())
+    }
+
+    /// Subscribe to device commands
+    pub async fn subscribe_commands(
+        &mut self,
+        tenant_id: Uuid,
+        device_id: &str,
+    ) -> anyhow::Result<()> {
+        let topic = self.build_topic(&format!("commands/{}/{}", tenant_id, device_id));
+
+        self.client.subscribe(topic, QoS::AtLeastOnce).await?;
+
+        Ok(())
+    }
+
+    /// Subscribe to broadcast commands (all devices in tenant)
+    pub async fn subscribe_broadcast_commands(&mut self, tenant_id: Uuid) -> anyhow::Result<()> {
+        let topic = self.build_topic(&format!("commands/{}/broadcast", tenant_id));
+
+        self.client.subscribe(topic, QoS::AtLeastOnce).await?;
+
+        Ok(())
+    }
+
+    /// Get next MQTT event from event loop
+    pub async fn next_event(&mut self) -> Option<MqttEvent> {
+        self.event_loop.poll().await.ok()
+    }
+
+    /// Process incoming MQTT events and handle them
+    pub async fn process_events<F>(&mut self, mut handler: F) -> anyhow::Result<()>
+    where
+        F: FnMut(MqttEvent) -> anyhow::Result<()>,
+    {
+        loop {
+            match self.event_loop.poll().await {
+                Ok(event) => {
+                    if let Err(e) = handler(event) {
+                        tracing::error!("Error handling MQTT event: {}", e);
+                    }
+                }
+                Err(e) => {
+                    tracing::error!("MQTT event loop error: {}", e);
+                    return Err(e.into());
+                }
+            }
+        }
+    }
+
+    /// Publish a generic event to MQTT
+    pub async fn publish_event<T: Serialize>(
+        &self,
+        topic: &str,
+        event: &Event<T>,
+        retain: bool,
+    ) -> anyhow::Result<()> {
+        let full_topic = self.build_topic(topic);
+        let payload = serde_json::to_vec(event)?;
+
+        self.client
+            .publish(full_topic, QoS::AtLeastOnce, retain, payload)
+            .await?;
+
+        Ok(())
+    }
+}
+
+// Unified messaging client supporting both NATS and MQTT
+pub struct UnifiedMessagingClient {
+    nats: Option<MessagingClient>,
+    mqtt: Option<MqttClient>,
+}
+
+impl UnifiedMessagingClient {
+    pub async fn new(
+        nats_url: Option<&str>,
+        mqtt_config: Option<MqttConfig>,
+    ) -> anyhow::Result<Self> {
+        let nats = if let Some(url) = nats_url {
+            Some(MessagingClient::connect(url).await?)
+        } else {
+            None
+        };
+
+        let mqtt = if let Some(config) = mqtt_config {
+            Some(MqttClient::connect(config).await?)
+        } else {
+            None
+        };
+
+        if nats.is_none() && mqtt.is_none() {
+            return Err(anyhow::anyhow!(
+                "At least one messaging backend must be configured"
+            ));
+        }
+
+        Ok(Self { nats, mqtt })
+    }
+
+    /// Publish event to all available backends
+    pub async fn publish_event<T: Serialize + Sync>(
+        &self,
+        nats_subject: Option<&str>,
+        mqtt_topic: Option<&str>,
+        event: &Event<T>,
+    ) -> anyhow::Result<()> {
+        let mut errors = Vec::new();
+
+        if let (Some(nats), Some(subject)) = (&self.nats, nats_subject)
+            && let Err(e) = nats.publish(subject, event).await
+        {
+            errors.push(format!("NATS: {}", e));
+        }
+
+        if let (Some(mqtt), Some(topic)) = (&self.mqtt, mqtt_topic)
+            && let Err(e) = mqtt.publish_event(topic, event, false).await
+        {
+            errors.push(format!("MQTT: {}", e));
+        }
+
+        if !errors.is_empty() {
+            return Err(anyhow::anyhow!(
+                "Failed to publish to some backends: {}",
+                errors.join("; ")
+            ));
+        }
+
+        Ok(())
+    }
+
+    /// Publish IoT telemetry (MQTT only, optimized for device data)
+    pub async fn publish_telemetry(&self, event: &IoTTelemetryEvent) -> anyhow::Result<()> {
+        if let Some(mqtt) = &self.mqtt {
+            mqtt.publish_telemetry(event).await
+        } else {
+            Err(anyhow::anyhow!("MQTT not configured"))
+        }
+    }
+
+    /// Publish device status (MQTT only, with retain)
+    pub async fn publish_device_status(&self, event: &IoTDeviceStatusEvent) -> anyhow::Result<()> {
+        if let Some(mqtt) = &self.mqtt {
+            mqtt.publish_status(event).await
+        } else {
+            Err(anyhow::anyhow!("MQTT not configured"))
+        }
+    }
+
+    /// Subscribe to commands for a device
+    pub async fn subscribe_device_commands(
+        &mut self,
+        tenant_id: Uuid,
+        device_id: &str,
+    ) -> anyhow::Result<()> {
+        if let Some(mqtt) = &mut self.mqtt {
+            mqtt.subscribe_commands(tenant_id, device_id).await
+        } else {
+            Err(anyhow::anyhow!("MQTT not configured"))
+        }
+    }
+
+    /// Get NATS client if available
+    pub fn nats(&self) -> Option<&MessagingClient> {
+        self.nats.as_ref()
+    }
+
+    /// Get MQTT client if available
+    pub fn mqtt(&self) -> Option<&MqttClient> {
+        self.mqtt.as_ref()
+    }
+}
+
 pub struct MessagingClient {
     client: Client,
     circuit_breaker: failsafe::StateMachine<
@@ -355,5 +711,28 @@ impl MessagingClient {
             .publish(subject.to_string(), payload.into())
             .await?;
         Ok(())
+    }
+
+    /// Publish IoT telemetry via NATS (for internal services)
+    pub async fn publish_telemetry_nats(&self, event: &IoTTelemetryEvent) -> anyhow::Result<()> {
+        let subject = format!("telemetry.{}.{}", event.tenant_id, event.device_id);
+        self.publish(
+            &subject,
+            &Event::new(event.device_id.clone(), event.clone()),
+        )
+        .await
+    }
+
+    /// Publish device status via NATS
+    pub async fn publish_device_status_nats(
+        &self,
+        event: &IoTDeviceStatusEvent,
+    ) -> anyhow::Result<()> {
+        let subject = format!("device.status.{}.{}", event.tenant_id, event.device_id);
+        self.publish(
+            &subject,
+            &Event::new(event.device_id.clone(), event.clone()),
+        )
+        .await
     }
 }

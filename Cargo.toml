@@ -51,3 +51,4 @@ redis = { version = "0.24", features = ["tokio-comp", "connection-manager", "jso
 governor = { version = "0.6", features = ["jitter"] }
 retry = { version = "0.1" }
 jitter = { version = "0.1" }
+rumqttc = "0.25"
