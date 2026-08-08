@@ -2,7 +2,6 @@
 
 use serde::Serialize;
 use utoipa::ToSchema;
-use uuid::Uuid;
 
 #[derive(Debug, Serialize, ToSchema)]
 #[schema(as = PaginatedResponse<T>)]
@@ -21,16 +20,4 @@ where
 pub struct ErrorResponse {
     pub error: String,
     pub message: String,
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct AuthResponseDto {
-    pub token: String,
-    pub refresh_token: Option<String>,
-    pub token_expires_in: i64,
-    pub user_id: Uuid,
-    pub tenant_id: Uuid,
-    pub firstname: String,
-    pub lastname: String,
-    pub roles: Vec<agrocore_domain::entities::user::UserRole>,
 }

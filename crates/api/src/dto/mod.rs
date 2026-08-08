@@ -7,6 +7,7 @@ pub mod equipment;
 pub mod finance;
 pub mod harvest;
 pub mod import;
+pub mod iot;
 pub mod livestock;
 pub mod order;
 pub mod plant_protection;
@@ -26,19 +27,14 @@ pub use equipment::*;
 pub use finance::*;
 pub use harvest::*;
 pub use import::*;
+pub use iot::*;
 pub use livestock::*;
 pub use order::*;
 pub use plant_protection::*;
 pub use settings::*;
 pub use site::*;
 pub use specialized::*;
-// pub use user::*;  // explicit imports below
+pub use user::*;
 pub use water::*;
 pub use weather::*;
 pub use workforce::*;
-
-// Re-export user module items with explicit names to avoid conflicts
-pub use user::{
-    AuthResponseDto, CreateUserDto, LoginDto, PaginatedUserResponse, RefreshRequest, UpdateUserDto,
-    UserDto,
-};
