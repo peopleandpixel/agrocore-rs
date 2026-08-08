@@ -1,20 +1,10 @@
-use crate::config::ProviderConfig;
+use crate::{base::BaseClient, config::ProviderConfig};
 use agrocore_shared::lpis::{LpisCountry, LpisProvider};
 use async_trait::async_trait;
 use chrono::Datelike;
 use geo::{Centroid, Geometry, Polygon};
 use geojson::{GeoJson, Geometry as GeoJsonGeometry};
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
-/// Spain SIGPAC (Sistema de Información Geográfica de Parcelas Agrícolas) Provider
-///
-/// Spain's LPIS system managed by FEGA and regional governments.
-/// Data available via regional WFS services and INSPIRE geoportal.
-///
-/// Regional endpoints vary by autonomous community:
-/// - Andalucía: https://www.juntadeandalucia.es/medioambiente/ideandalucia/wfs
-/// - Aragón: https://idearagon.aragon.es/wfs
-use std::time::Duration;
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -33,6 +23,8 @@ pub enum SigpacError {
     Geometry(String),
     #[error("Invalid response: {0}")]
     InvalidResponse(String),
+    #[error("Base provider error: {0}")]
+    BaseProvider(#[from] crate::base::BaseProviderError),
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -103,27 +95,19 @@ struct GmlCoordinates {
 
 #[derive(Clone)]
 pub struct SigpacProvider {
-    client: Client,
-    base_url: String,
+    base: BaseClient,
 }
 
 impl SigpacProvider {
     pub fn new(config: ProviderConfig) -> Self {
-        let client = Client::builder()
-            .timeout(Duration::from_secs(config.timeout_seconds))
-            .build()
-            .expect("Failed to create HTTP client");
-
-        Self {
-            client,
-            base_url: config.base_url.clone(),
-        }
+        let base = BaseClient::new(&config);
+        Self { base }
     }
 
     fn build_query_url(&self, query: &agrocore_shared::lpis::LpisQuery) -> String {
         let mut url = format!(
             "{}?service=WFS&version=2.0.0&request=GetFeature&typeNames=SIGPAC&outputFormat=application/json",
-            self.base_url
+            self.base.base_url
         );
 
         let mut filters = Vec::new();
@@ -241,19 +225,13 @@ impl LpisProvider for SigpacProvider {
         query: agrocore_shared::lpis::LpisQuery,
     ) -> Result<agrocore_shared::lpis::PaginatedLpisResponse, String> {
         let url = self.build_query_url(&query);
+        let cache_key = format!("sigpac:list:{}", urlencoding::encode(&url));
 
-        let response = self
-            .client
-            .get(&url)
-            .send()
+        let text = self
+            .base
+            .get_cached_or_fetch(&cache_key, &url)
             .await
             .map_err(|e| format!("SIGPAC request failed: {}", e))?;
-
-        if !response.status().is_success() {
-            return Err(format!("SIGPAC API error: {}", response.status()));
-        }
-
-        let text = response.text().await.map_err(|e| e.to_string())?;
 
         let wfs_fc: WfsFeatureCollection =
             quick_xml::de::from_str(&text).map_err(|e| format!("XML parsing failed: {}", e))?;
@@ -317,22 +295,17 @@ impl LpisProvider for SigpacProvider {
 
         let url = format!(
             "{}?service=WFS&version=2.0.0&request=GetFeature&typeNames=SIGPAC&outputFormat=application/json&CQL_FILTER={}&count=100",
-            self.base_url,
+            self.base.base_url,
             urlencoding::encode(&bbox)
         );
 
-        let response = self
-            .client
-            .get(&url)
-            .send()
+        let cache_key = format!("sigpac:near:{}", urlencoding::encode(&bbox));
+
+        let text = self
+            .base
+            .get_cached_or_fetch(&cache_key, &url)
             .await
             .map_err(|e| format!("SIGPAC spatial search failed: {}", e))?;
-
-        if !response.status().is_success() {
-            return Err(format!("SIGPAC API error: {}", response.status()));
-        }
-
-        let text = response.text().await.map_err(|e| e.to_string())?;
 
         let wfs_fc: WfsFeatureCollection =
             quick_xml::de::from_str(&text).map_err(|e| format!("XML parsing failed: {}", e))?;

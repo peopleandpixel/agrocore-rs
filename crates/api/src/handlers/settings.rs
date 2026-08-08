@@ -2,6 +2,7 @@ use crate::AppState;
 use crate::dto::{ErrorResponse, LpisProviderConfig, LpisProviderConfigList};
 use crate::error::ApiError;
 use actix_web::{HttpResponse, web};
+use agrocore_lpis_providers::config::LpisProvidersConfig;
 use agrocore_shared::SharedError;
 use agrocore_shared::lpis::LpisCountry;
 use serde::{Deserialize, Serialize};
@@ -105,8 +106,46 @@ pub async fn update_lpis_settings(
         .validate()
         .map_err(|e| SharedError::Validation(e.to_string()))?;
 
-    // TODO: Persist to config file / database
-    // For now, just return success
+    // Load current config
+    let mut config = LpisProvidersConfig::load().unwrap_or_default();
+
+    // Update providers from request
+    for (country_code, provider_config) in dto.0.providers {
+        config.providers.insert(
+            country_code,
+            agrocore_lpis_providers::config::ProviderConfig {
+                base_url: provider_config.base_url,
+                auth: None,
+                timeout_seconds: provider_config.timeout_seconds,
+                rate_limit: agrocore_lpis_providers::config::RateLimitConfig {
+                    requests_per_second: provider_config.rate_limit_requests_per_second,
+                    burst_size: provider_config.rate_limit_burst_size,
+                },
+                cache_ttl_seconds: provider_config.cache_ttl_seconds,
+                enabled: provider_config.enabled,
+            },
+        );
+    }
+
+    // Update cache config if provided
+    if let Some(cache_backend) = dto.0.cache_backend {
+        config.cache.backend = match cache_backend.to_lowercase().as_str() {
+            "redis" => agrocore_lpis_providers::config::CacheBackend::Redis,
+            _ => agrocore_lpis_providers::config::CacheBackend::Memory,
+        };
+    }
+    if let Some(ttl) = dto.0.cache_default_ttl_seconds {
+        config.cache.default_ttl_seconds = ttl;
+    }
+    if let Some(max_entries) = dto.0.cache_max_entries {
+        config.cache.max_entries = max_entries;
+    }
+
+    // Save to file
+    config
+        .save()
+        .map_err(|e| SharedError::Internal(format!("Failed to save LPIS config: {}", e)))?;
+
     tracing::info!("LPIS settings updated by user: {}", auth.0.user_id);
 
     Ok(HttpResponse::Ok().json(serde_json::json!({

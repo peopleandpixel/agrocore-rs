@@ -27,6 +27,7 @@ bytes = "1.5"
 
 # Configuration
 config = { workspace = true }
+toml = "0.8"
 
 # Caching
 moka = { workspace = true, features = ["future"] }

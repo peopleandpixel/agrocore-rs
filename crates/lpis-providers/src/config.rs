@@ -147,6 +147,24 @@ impl LpisProvidersConfig {
         config.build()?.try_deserialize()
     }
 
+    /// Save the configuration to the TOML file
+    pub fn save(&self) -> Result<(), ConfigError> {
+        let toml_string = toml::to_string_pretty(self)
+            .map_err(|e| ConfigError::Message(format!("Failed to serialize config: {}", e)))?;
+
+        // Ensure config directory exists
+        if let Some(parent) = std::path::Path::new("config/lpis-providers").parent() {
+            std::fs::create_dir_all(parent).map_err(|e| {
+                ConfigError::Message(format!("Failed to create config directory: {}", e))
+            })?;
+        }
+
+        std::fs::write("config/lpis-providers.toml", toml_string)
+            .map_err(|e| ConfigError::Message(format!("Failed to write config file: {}", e)))?;
+
+        Ok(())
+    }
+
     pub fn get_provider_config(&self, country: &str) -> Option<&ProviderConfig> {
         self.providers.get(country).filter(|c| c.enabled)
     }
