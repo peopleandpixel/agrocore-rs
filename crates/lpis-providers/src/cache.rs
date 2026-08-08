@@ -18,7 +18,9 @@ pub struct LpisCache {
 
 impl LpisCache {
     /// Create a new cache instance from configuration
-    pub async fn new(config: &crate::config::CacheConfig) -> Result<Self, crate::base::BaseProviderError> {
+    pub async fn new(
+        config: &crate::config::CacheConfig,
+    ) -> Result<Self, crate::base::BaseProviderError> {
         let memory =
             if config.enabled && matches!(config.backend, crate::config::CacheBackend::Memory) {
                 Some(
@@ -35,7 +37,10 @@ impl LpisCache {
             if config.enabled && matches!(config.backend, crate::config::CacheBackend::Redis) {
                 if let Some(redis_url) = &config.redis_url {
                     let client = redis::Client::open(redis_url.as_str()).map_err(|e| {
-                        crate::base::BaseProviderError::Configuration(format!("Redis client error: {}", e))
+                        crate::base::BaseProviderError::Configuration(format!(
+                            "Redis client error: {}",
+                            e
+                        ))
                     })?;
                     let manager = ConnectionManager::new(client).await.map_err(|e| {
                         crate::base::BaseProviderError::Configuration(format!(
@@ -95,7 +100,11 @@ impl LpisCache {
     }
 
     /// Set a value in cache with default TTL
-    pub async fn set(&self, key: String, value: Vec<u8>) -> Result<(), crate::base::BaseProviderError> {
+    pub async fn set(
+        &self,
+        key: String,
+        value: Vec<u8>,
+    ) -> Result<(), crate::base::BaseProviderError> {
         if !self.enabled {
             return Ok(());
         }
@@ -111,7 +120,9 @@ impl LpisCache {
             let _: () = conn
                 .set_ex(&key, &value, self.default_ttl.as_secs())
                 .await
-                .map_err(|e| crate::base::BaseProviderError::Cache(crate::cache::CacheError::Redis(e)))?;
+                .map_err(|e| {
+                    crate::base::BaseProviderError::Cache(crate::cache::CacheError::Redis(e))
+                })?;
         }
 
         Ok(())
@@ -137,7 +148,9 @@ impl LpisCache {
             let _: () = conn
                 .set_ex(&key, &value, ttl.as_secs())
                 .await
-                .map_err(|e| crate::base::BaseProviderError::Cache(crate::cache::CacheError::Redis(e)))?;
+                .map_err(|e| {
+                    crate::base::BaseProviderError::Cache(crate::cache::CacheError::Redis(e))
+                })?;
         }
 
         Ok(())
@@ -151,7 +164,9 @@ impl LpisCache {
 
         if let Some(conn) = &self.redis {
             let mut conn = conn.clone();
-            let _: () = conn.del(key).await.map_err(|e| crate::base::BaseProviderError::Cache(crate::cache::CacheError::Redis(e)))?;
+            let _: () = conn.del(key).await.map_err(|e| {
+                crate::base::BaseProviderError::Cache(crate::cache::CacheError::Redis(e))
+            })?;
         }
 
         Ok(())
@@ -165,10 +180,9 @@ impl LpisCache {
 
         if let Some(conn) = &self.redis {
             let mut conn = conn.clone();
-            let _: () = cmd("FLUSHALL")
-                .query_async(&mut conn)
-                .await
-                .map_err(|e| crate::base::BaseProviderError::Cache(crate::cache::CacheError::Redis(e)))?;
+            let _: () = cmd("FLUSHALL").query_async(&mut conn).await.map_err(|e| {
+                crate::base::BaseProviderError::Cache(crate::cache::CacheError::Redis(e))
+            })?;
         }
 
         Ok(())

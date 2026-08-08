@@ -36,7 +36,8 @@ pub struct BaseClient {
     pub client: Client,
     pub base_url: String,
     pub cache: Option<Arc<LpisCache>>,
-    pub rate_limiter: Option<Arc<RateLimiter<NotKeyed, InMemoryState, DefaultClock, NoOpMiddleware>>>,
+    pub rate_limiter:
+        Option<Arc<RateLimiter<NotKeyed, InMemoryState, DefaultClock, NoOpMiddleware>>>,
     pub cache_ttl: Duration,
     pub max_retries: u32,
     pub base_delay: Duration,
@@ -56,10 +57,11 @@ impl BaseClient {
         let rate_limiter = if config.rate_limit.requests_per_second > 0 {
             let quota = Quota::per_second(
                 NonZeroU32::new(config.rate_limit.requests_per_second)
-                    .unwrap_or(NonZeroU32::new(10).unwrap())
-            ).allow_burst(
+                    .unwrap_or(NonZeroU32::new(10).unwrap()),
+            )
+            .allow_burst(
                 NonZeroU32::new(config.rate_limit.burst_size)
-                    .unwrap_or(NonZeroU32::new(20).unwrap())
+                    .unwrap_or(NonZeroU32::new(20).unwrap()),
             );
             Some(Arc::new(RateLimiter::direct(quota)))
         } else {
@@ -92,13 +94,22 @@ impl BaseClient {
             limiter.until_ready().await;
         }
 
-        let response = self.client.get(url).send().await.map_err(BaseProviderError::Http)?;
+        let response = self
+            .client
+            .get(url)
+            .send()
+            .await
+            .map_err(BaseProviderError::Http)?;
 
         Ok(response)
     }
 
     /// Get cached response or fetch and cache with retries
-    pub async fn get_cached_or_fetch(&self, cache_key: &str, url: &str) -> Result<String, BaseProviderError> {
+    pub async fn get_cached_or_fetch(
+        &self,
+        cache_key: &str,
+        url: &str,
+    ) -> Result<String, BaseProviderError> {
         // Try cache first
         #[allow(clippy::collapsible_if)]
         if let Some(cache) = &self.cache {
@@ -111,14 +122,14 @@ impl BaseClient {
         // Fetch from network with retries
         let mut attempt = 0;
         let mut delay = self.base_delay;
-        
+
         loop {
             if let Some(limiter) = &self.rate_limiter {
                 limiter.until_ready().await;
             }
 
             let response = self.client.get(url).send().await;
-            
+
             match response {
                 Ok(resp) => {
                     if resp.status().is_success() {
@@ -126,22 +137,30 @@ impl BaseClient {
 
                         // Store in cache
                         if let Some(cache) = &self.cache {
-                            cache.set_with_ttl(cache_key.to_string(), text.as_bytes().to_vec(), self.cache_ttl).await?;
+                            cache
+                                .set_with_ttl(
+                                    cache_key.to_string(),
+                                    text.as_bytes().to_vec(),
+                                    self.cache_ttl,
+                                )
+                                .await?;
                         }
 
                         return Ok(text);
                     } else {
                         attempt += 1;
                         if attempt >= self.max_retries {
-                            return Err(BaseProviderError::Configuration(
-                                format!("API error: {}", resp.status())
-                            ));
+                            return Err(BaseProviderError::Configuration(format!(
+                                "API error: {}",
+                                resp.status()
+                            )));
                         }
                         // Wait before retry with exponential backoff
                         tokio::time::sleep(delay).await;
                         delay = Duration::from_millis(
-                            (delay.as_millis() as f64 * self.backoff_multiplier) as u64
-                        ).min(self.max_delay);
+                            (delay.as_millis() as f64 * self.backoff_multiplier) as u64,
+                        )
+                        .min(self.max_delay);
                     }
                 }
                 Err(e) => {
@@ -151,8 +170,9 @@ impl BaseClient {
                     }
                     tokio::time::sleep(delay).await;
                     delay = Duration::from_millis(
-                        (delay.as_millis() as f64 * self.backoff_multiplier) as u64
-                    ).min(self.max_delay);
+                        (delay.as_millis() as f64 * self.backoff_multiplier) as u64,
+                    )
+                    .min(self.max_delay);
                 }
             }
         }

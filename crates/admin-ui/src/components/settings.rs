@@ -1,10 +1,10 @@
 use crate::api;
-use agrocore_shared::lpis::LpisCountry;
 use crate::components::form::{
     PHONE_PREFIXES, RequiredLabel, country_flag, is_valid_email, language_flag, normalize_phone,
     split_phone,
 };
 use crate::i18n::{I18n, LANGUAGE_OPTIONS, Language};
+use agrocore_shared::lpis::LpisCountry;
 use icondata::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
