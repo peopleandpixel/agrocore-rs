@@ -179,6 +179,7 @@ CREATE TABLE IF NOT EXISTS animals (
 
 CREATE INDEX IF NOT EXISTS idx_animals_tenant_id ON animals(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_animals_site ON animals(current_site_id);
+CREATE INDEX IF NOT EXISTS idx_animals_species ON animals(species);
 
 -- Tabelle: task_data (Worker-Task-Daten)
 CREATE TABLE IF NOT EXISTS task_data (

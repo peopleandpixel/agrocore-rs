@@ -1,4 +1,6 @@
--- Livestock Tables - Additional tables only (animals table is in 20240101_init.sql)
+-- Livestock Tables
+
+
 CREATE TABLE IF NOT EXISTS grazing_records (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
