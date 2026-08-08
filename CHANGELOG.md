@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-08-05
+
+### Added
+- **Complete Test Suite for LPIS Providers & Settings**
+  - 13 config tests (ProviderConfig, LpisProvidersConfig, CacheConfig, RateLimitConfig, RetryConfig, BaseClient creation, rate limiting)
+  - 3 BaseClient integration tests with mock server (execute_request, get_cached_or_fetch, rate_limiting)
+  - 4 Settings integration tests (route configuration, config serialization roundtrip)
+  - 3 config serialization tests (LpisProviderConfig, LpisProvidersConfig, CacheBackend enum)
+- **All 8 LPIS Providers migrated to BaseClient** (SIGPAC/ES, BRP/NL, RPG/FR, iLPIS/PT, SIAN/IT, LPIS-DE, LPIS-PL, INVEKOS/AT)
+  - Unified caching, rate limiting, and retry logic across all providers
+- **Settings API & UI complete** with persistence
+  - Config file load/save (`load_from_path`, `save_to_path`)
+  - Route configuration verified in tests
+
+### Changed
+- **Version bump: 0.5.9 → 0.6.0**
+- **Test infrastructure** significantly expanded (13+ new tests)
+- **Quality Gates** enforced in development workflow (fmt, check, test, clippy)
+
+### Fixed
+- `LpisProvidersConfig::load()` now correctly reads `config/lpis-providers.toml`
+- `BaseClient` mock server tests use wiremock for reliable HTTP testing
+- Config serialization tests cover roundtrip for all DTOs
+
 ## [0.5.9] - 2026-08-05
 
 ### Added

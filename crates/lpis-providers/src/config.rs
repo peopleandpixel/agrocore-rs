@@ -134,17 +134,29 @@ impl Default for LpisProvidersConfig {
 }
 
 impl LpisProvidersConfig {
+    /// Load configuration from the default location (config/lpis-providers.toml)
     pub fn load() -> Result<Self, ConfigError> {
+        Self::load_from_path("config/lpis-providers.toml")
+    }
+
+    /// Load configuration from a specific file path
+    pub fn load_from_path<P: AsRef<std::path::Path>>(path: P) -> Result<Self, ConfigError> {
+        let path_str = path.as_ref().to_string_lossy();
         let mut config = Config::builder();
 
         // Load from file if exists
-        config =
-            config.add_source(File::new("config/lpis-providers", FileFormat::Toml).required(false));
+        config = config.add_source(File::new(&path_str, FileFormat::Toml).required(false));
 
         // Load from environment variables
         config = config.add_source(config::Environment::with_prefix("LPIS").separator("__"));
 
         config.build()?.try_deserialize()
+    }
+
+    /// Load configuration with a custom config directory
+    pub fn load_from_dir<P: AsRef<std::path::Path>>(config_dir: P) -> Result<Self, ConfigError> {
+        let config_path = config_dir.as_ref().join("lpis-providers.toml");
+        Self::load_from_path(config_path)
     }
 
     /// Save the configuration to the TOML file
@@ -153,13 +165,31 @@ impl LpisProvidersConfig {
             .map_err(|e| ConfigError::Message(format!("Failed to serialize config: {}", e)))?;
 
         // Ensure config directory exists
-        if let Some(parent) = std::path::Path::new("config/lpis-providers").parent() {
+        if let Some(parent) = std::path::Path::new("config/lpis-providers.toml").parent() {
             std::fs::create_dir_all(parent).map_err(|e| {
                 ConfigError::Message(format!("Failed to create config directory: {}", e))
             })?;
         }
 
         std::fs::write("config/lpis-providers.toml", toml_string)
+            .map_err(|e| ConfigError::Message(format!("Failed to write config file: {}", e)))?;
+
+        Ok(())
+    }
+
+    /// Save the configuration to a specific path
+    pub fn save_to_path<P: AsRef<std::path::Path>>(&self, path: P) -> Result<(), ConfigError> {
+        let path = path.as_ref();
+        let toml_string = toml::to_string_pretty(self)
+            .map_err(|e| ConfigError::Message(format!("Failed to serialize config: {}", e)))?;
+
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| {
+                ConfigError::Message(format!("Failed to create config directory: {}", e))
+            })?;
+        }
+
+        std::fs::write(path, toml_string)
             .map_err(|e| ConfigError::Message(format!("Failed to write config file: {}", e)))?;
 
         Ok(())
@@ -223,11 +253,20 @@ impl Default for CacheConfig {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum CacheBackend {
     Memory,
     Redis,
+}
+
+impl std::fmt::Display for CacheBackend {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CacheBackend::Memory => write!(f, "memory"),
+            CacheBackend::Redis => write!(f, "redis"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

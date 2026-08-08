@@ -16,6 +16,8 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/domain/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/crates/infrastructure/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/crates/lpis-providers/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/lpis-providers/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/lpis-providers/tests" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/crates/admin-ui/dist/.stage" />
       <excludeFolder url="file://$MODULE_DIR$/crates/admin-ui/dist/snippets/admin-ui-e32c81e87b81db6a" />
       <excludeFolder url="file://$MODULE_DIR$/target" />

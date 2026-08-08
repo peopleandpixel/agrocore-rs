@@ -43,3 +43,4 @@ jitter = { version = "0.1" }
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util"] }
 mockall = "0.13"
+wiremock = "0.5"

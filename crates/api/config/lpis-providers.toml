@@ -1,0 +1,95 @@
+[providers.PT]
+base_url = "https://ide.ifap.pt/wfs"
+timeout_seconds = 30
+cache_ttl_seconds = 3600
+enabled = true
+
+[providers.PT.rate_limit]
+requests_per_second = 10
+burst_size = 20
+
+[providers.IT]
+base_url = "https://www.sian.it/wfs"
+timeout_seconds = 30
+cache_ttl_seconds = 3600
+enabled = true
+
+[providers.IT.rate_limit]
+requests_per_second = 10
+burst_size = 20
+
+[providers.DE]
+base_url = "https://geodienste.bfn.de/lpis/wfs"
+timeout_seconds = 30
+cache_ttl_seconds = 3600
+enabled = true
+
+[providers.DE.rate_limit]
+requests_per_second = 10
+burst_size = 20
+
+[providers.PL]
+base_url = "https://geoportal.arrim.gov.pl/wfs"
+timeout_seconds = 30
+cache_ttl_seconds = 3600
+enabled = true
+
+[providers.PL.rate_limit]
+requests_per_second = 10
+burst_size = 20
+
+[providers.AT]
+base_url = "https://data.gv.at/wfs"
+timeout_seconds = 30
+cache_ttl_seconds = 3600
+enabled = true
+
+[providers.AT.rate_limit]
+requests_per_second = 10
+burst_size = 20
+
+[providers.FR]
+base_url = "https://geoservices.ign.fr/rpg/wfs"
+timeout_seconds = 30
+cache_ttl_seconds = 3600
+enabled = true
+
+[providers.FR.rate_limit]
+requests_per_second = 10
+burst_size = 20
+
+[providers.ES]
+base_url = "https://sigpac.mapa.gob.es/wfs"
+timeout_seconds = 30
+cache_ttl_seconds = 3600
+enabled = true
+
+[providers.ES.rate_limit]
+requests_per_second = 10
+burst_size = 20
+
+[providers.NL]
+base_url = "https://geodata.nationaalgeoregister.nl/brppercelen/wfs"
+timeout_seconds = 30
+cache_ttl_seconds = 3600
+enabled = true
+
+[providers.NL.rate_limit]
+requests_per_second = 10
+burst_size = 20
+
+[cache]
+enabled = true
+backend = "memory"
+default_ttl_seconds = 3600
+max_entries = 10000
+
+[rate_limit]
+requests_per_second = 10
+burst_size = 20
+
+[retry]
+max_attempts = 3
+base_delay_ms = 100
+max_delay_ms = 5000
+backoff_multiplier = 2.0
