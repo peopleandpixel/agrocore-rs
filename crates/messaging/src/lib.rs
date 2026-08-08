@@ -327,6 +327,345 @@ pub enum DeviceStatus {
     Updating,
 }
 
+// ============================================================
+// Home Assistant MQTT Auto-Discovery
+// ============================================================
+// See: https://www.home-assistant.io/integrations/mqtt/#device-discovery
+
+/// Home Assistant device class for sensors
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum HaDeviceClass {
+    Temperature,
+    Humidity,
+    Moisture,
+    Illuminance,
+    Battery,
+    SignalStrength,
+    Power,
+    Energy,
+    Pressure,
+    Voltage,
+    Current,
+    TemperatureDevice,
+    HumidityDevice,
+}
+
+/// Home Assistant unit of measurement
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum HaUnitOfMeasurement {
+    Celsius,
+    Fahrenheit,
+    Percent,
+    Lux,
+    Volts,
+    Amperes,
+    Watts,
+    KilowattHours,
+    Pascal,
+    Hectopascal,
+    Meter,
+    Kilometer,
+    MeterPerSecond,
+    Db,
+    DbM,
+    Custom(String),
+}
+
+/// Home Assistant entity category
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum HaEntityCategory {
+    Config,
+    Diagnostic,
+    None,
+}
+
+/// Home Assistant sensor device info
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct HaDeviceInfo {
+    pub identifiers: Vec<String>,
+    pub name: String,
+    pub manufacturer: Option<String>,
+    pub model: Option<String>,
+    pub sw_version: Option<String>,
+    pub hw_version: Option<String>,
+    pub via_device: Option<String>,
+}
+
+/// Home Assistant MQTT sensor configuration payload
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct HaSensorConfig {
+    pub name: String,
+    pub unique_id: String,
+    pub state_topic: String,
+    pub device_class: Option<HaDeviceClass>,
+    pub unit_of_measurement: Option<HaUnitOfMeasurement>,
+    pub value_template: Option<String>,
+    pub json_attributes_topic: Option<String>,
+    pub device: Option<HaDeviceInfo>,
+    pub entity_category: Option<HaEntityCategory>,
+    pub icon: Option<String>,
+    pub enabled_by_default: Option<bool>,
+    pub availability_topic: Option<String>,
+    pub payload_available: Option<String>,
+    pub payload_not_available: Option<String>,
+}
+
+/// Home Assistant binary sensor configuration payload
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct HaBinarySensorConfig {
+    pub name: String,
+    pub unique_id: String,
+    pub state_topic: String,
+    pub device_class: Option<String>,
+    pub value_template: Option<String>,
+    pub payload_on: Option<String>,
+    pub payload_off: Option<String>,
+    pub device: Option<HaDeviceInfo>,
+    pub entity_category: Option<HaEntityCategory>,
+    pub icon: Option<String>,
+    pub enabled_by_default: Option<bool>,
+    pub availability_topic: Option<String>,
+    pub payload_available: Option<String>,
+    pub payload_not_available: Option<String>,
+}
+
+/// Home Assistant button configuration payload (for commands)
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct HaButtonConfig {
+    pub name: String,
+    pub unique_id: String,
+    pub command_topic: String,
+    pub payload_press: String,
+    pub device: Option<HaDeviceInfo>,
+    pub entity_category: Option<HaEntityCategory>,
+    pub icon: Option<String>,
+    pub enabled_by_default: Option<bool>,
+    pub availability_topic: Option<String>,
+    pub payload_available: Option<String>,
+    pub payload_not_available: Option<String>,
+}
+
+/// Home Assistant number configuration payload (for numeric settings)
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct HaNumberConfig {
+    pub name: String,
+    pub unique_id: String,
+    pub state_topic: String,
+    pub command_topic: String,
+    pub min: f64,
+    pub max: f64,
+    pub step: Option<f64>,
+    pub unit_of_measurement: Option<HaUnitOfMeasurement>,
+    pub device: Option<HaDeviceInfo>,
+    pub entity_category: Option<HaEntityCategory>,
+    pub icon: Option<String>,
+    pub enabled_by_default: Option<bool>,
+    pub availability_topic: Option<String>,
+    pub payload_available: Option<String>,
+    pub payload_not_available: Option<String>,
+}
+
+/// Generate Home Assistant discovery topic for an entity
+pub fn ha_discovery_topic(entity_type: &str, unique_id: &str) -> String {
+    format!("homeassistant/{}/{}/config", entity_type, unique_id)
+}
+
+/// Generate Home Assistant availability topic for a device
+pub fn ha_availability_topic(device_id: &str) -> String {
+    format!("agrocore/status/{}/availability", device_id)
+}
+
+/// Create device info for Home Assistant from IoTDeviceConfig
+pub fn create_ha_device_info(config: &IoTDeviceConfig) -> HaDeviceInfo {
+    HaDeviceInfo {
+        identifiers: vec![format!("agrocore_{}", config.device_id)],
+        name: config.device_type.clone(),
+        manufacturer: Some("agrocore-rs".to_string()),
+        model: Some(config.device_type.clone()),
+        sw_version: config.metadata.get("firmware_version")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        hw_version: config.metadata.get("hardware_version")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        via_device: Some("agrocore-mqtt".to_string()),
+    }
+}
+
+/// Create Home Assistant sensor config for an IoT capability
+pub fn create_ha_sensor_config(
+    device_id: &str,
+    tenant_id: Uuid,
+    capability: &IoTCapability,
+    device_info: &HaDeviceInfo,
+    topic_prefix: &str,
+) -> Option<HaSensorConfig> {
+    let (device_class, unit, icon, value_template) = match capability {
+        IoTCapability::Temperature => (
+            Some(HaDeviceClass::Temperature),
+            Some(HaUnitOfMeasurement::Celsius),
+            Some("mdi:thermometer".to_string()),
+            Some("{{ value_json.measurements | selectattr('capability', 'eq', 'Temperature') | map(attribute='value') | first }}".to_string()),
+        ),
+        IoTCapability::Humidity => (
+            Some(HaDeviceClass::Humidity),
+            Some(HaUnitOfMeasurement::Percent),
+            Some("mdi:water-percent".to_string()),
+            Some("{{ value_json.measurements | selectattr('capability', 'eq', 'Humidity') | map(attribute='value') | first }}".to_string()),
+        ),
+        IoTCapability::SoilMoisture => (
+            Some(HaDeviceClass::Moisture),
+            Some(HaUnitOfMeasurement::Percent),
+            Some("mdi:water".to_string()),
+            Some("{{ value_json.measurements | selectattr('capability', 'eq', 'SoilMoisture') | map(attribute='value') | first }}".to_string()),
+        ),
+        IoTCapability::Light => (
+            Some(HaDeviceClass::Illuminance),
+            Some(HaUnitOfMeasurement::Lux),
+            Some("mdi:brightness-5".to_string()),
+            Some("{{ value_json.measurements | selectattr('capability', 'eq', 'Light') | map(attribute='value') | first }}".to_string()),
+        ),
+        IoTCapability::BatteryLevel => (
+            Some(HaDeviceClass::Battery),
+            Some(HaUnitOfMeasurement::Percent),
+            Some("mdi:battery".to_string()),
+            Some("{{ value_json.measurements | selectattr('capability', 'eq', 'BatteryLevel') | map(attribute='value') | first }}".to_string()),
+        ),
+        IoTCapability::SignalStrength => (
+            Some(HaDeviceClass::SignalStrength),
+            Some(HaUnitOfMeasurement::DbM),
+            Some("mdi:signal".to_string()),
+            Some("{{ value_json.measurements | selectattr('capability', 'eq', 'SignalStrength') | map(attribute='value') | first }}".to_string()),
+        ),
+        IoTCapability::GPS => (
+            None,
+            None,
+            Some("mdi:crosshairs-gps".to_string()),
+            None,
+        ),
+        IoTCapability::ActuatorControl => (
+            None,
+            None,
+            Some("mdi:valve".to_string()),
+            None,
+        ),
+        IoTCapability::FirmwareUpdate => (
+            None,
+            None,
+            Some("mdi:package-up".to_string()),
+            None,
+        ),
+        IoTCapability::Custom(_) => (
+            None,
+            None,
+            Some("mdi:help-circle".to_string()),
+            None,
+        ),
+    };
+
+    let unique_id = format!("agrocore_{}_{}", device_id, capability_name(capability));
+    let state_topic = format!("{}/telemetry/{}/{}", topic_prefix, tenant_id, device_id);
+    let availability_topic = format!("{}/status/{}/availability", topic_prefix, device_id);
+
+    Some(HaSensorConfig {
+        name: format!("{} {}", device_info.name, capability_display_name(capability)),
+        unique_id: unique_id.clone(),
+        state_topic: state_topic.clone(),
+        device_class,
+        unit_of_measurement: unit,
+        value_template,
+        json_attributes_topic: Some(state_topic.clone()),
+        device: Some(device_info.clone()),
+        entity_category: Some(HaEntityCategory::None),
+        icon,
+        enabled_by_default: Some(true),
+        availability_topic: Some(availability_topic),
+        payload_available: Some("online".to_string()),
+        payload_not_available: Some("offline".to_string()),
+    })
+}
+
+/// Helper to get capability name for unique_id
+fn capability_name(capability: &IoTCapability) -> String {
+    match capability {
+        IoTCapability::Temperature => "temperature".to_string(),
+        IoTCapability::Humidity => "humidity".to_string(),
+        IoTCapability::SoilMoisture => "soil_moisture".to_string(),
+        IoTCapability::Light => "light".to_string(),
+        IoTCapability::GPS => "gps".to_string(),
+        IoTCapability::BatteryLevel => "battery_level".to_string(),
+        IoTCapability::SignalStrength => "signal_strength".to_string(),
+        IoTCapability::ActuatorControl => "actuator_control".to_string(),
+        IoTCapability::FirmwareUpdate => "firmware_update".to_string(),
+        IoTCapability::Custom(s) => s.to_lowercase().replace(' ', "_"),
+    }
+}
+
+/// Helper to get display name for capability
+fn capability_display_name(capability: &IoTCapability) -> String {
+    match capability {
+        IoTCapability::Temperature => "Temperature".to_string(),
+        IoTCapability::Humidity => "Humidity".to_string(),
+        IoTCapability::SoilMoisture => "Soil Moisture".to_string(),
+        IoTCapability::Light => "Light".to_string(),
+        IoTCapability::GPS => "GPS".to_string(),
+        IoTCapability::BatteryLevel => "Battery Level".to_string(),
+        IoTCapability::SignalStrength => "Signal Strength".to_string(),
+        IoTCapability::ActuatorControl => "Actuator".to_string(),
+        IoTCapability::FirmwareUpdate => "Firmware".to_string(),
+        IoTCapability::Custom(s) => s.clone(),
+    }
+}
+
+/// Generate all Home Assistant discovery configs for a device
+pub fn generate_ha_discovery_configs(
+    device_config: &IoTDeviceConfig,
+    topic_prefix: &str,
+) -> Vec<(String, serde_json::Value)> {
+    let device_info = create_ha_device_info(device_config);
+    let mut configs = Vec::new();
+
+    // Add sensor configs for each capability
+    for capability in &device_config.capabilities {
+        if let Some(sensor_config) = create_ha_sensor_config(
+            &device_config.device_id,
+            device_config.tenant_id,
+            capability,
+            &device_info,
+            topic_prefix,
+        ) {
+            let topic = ha_discovery_topic("sensor", &format!("agrocore_{}_{}", device_config.device_id, capability_name(capability)));
+            let payload = serde_json::to_value(sensor_config).unwrap();
+            configs.push((topic, payload));
+        }
+    }
+
+    // Add availability binary sensor
+    let availability_config = HaBinarySensorConfig {
+        name: format!("{} Availability", device_info.name),
+        unique_id: format!("agrocore_{}_availability", device_config.device_id),
+        state_topic: format!("{}/status/{}/availability", topic_prefix, device_config.device_id),
+        device_class: Some("connectivity".to_string()),
+        value_template: Some("{{ value }}".to_string()),
+        payload_on: Some("online".to_string()),
+        payload_off: Some("offline".to_string()),
+        device: Some(device_info.clone()),
+        entity_category: Some(HaEntityCategory::Diagnostic),
+        icon: Some("mdi:server".to_string()),
+        enabled_by_default: Some(true),
+        availability_topic: Some(format!("{}/status/{}/availability", topic_prefix, device_config.device_id)),
+        payload_available: Some("online".to_string()),
+        payload_not_available: Some("offline".to_string()),
+    };
+    let availability_topic = ha_discovery_topic("binary_sensor", &format!("agrocore_{}_availability", device_config.device_id));
+    configs.push((availability_topic, serde_json::to_value(availability_config).unwrap()));
+
+    configs
+}
+
 // MQTT Client wrapper
 pub struct MqttClient {
     client: AsyncClient,

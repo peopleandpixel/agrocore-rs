@@ -19,6 +19,25 @@ services:
       timeout: 5s
       retries: 5
 
+  # MQTT Broker (Mosquitto)
+  mqtt:
+    image: eclipse-mosquitto:2.0
+    container_name: agrocore-mqtt
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./config/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./config/mosquitto/certs:/mosquitto/certs:ro
+      - mqtt_data:/mosquitto/data
+      - mqtt_logs:/mosquitto/log
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-t", "$SYS/broker/version", "-C", "1", "-i", "healthcheck", "-W", "5"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   # API Server
   api:
     build:
@@ -27,6 +46,10 @@ services:
     container_name: agrocore-api
     environment:
       DATABASE_URL: postgresql://agrocore:agrocore@postgres:5432/agrocore
+      MQTT_BROKER_HOST: mqtt
+      MQTT_BROKER_PORT: "1883"
+      MQTT_CLIENT_ID: agrocore-api
+      MQTT_TOPIC_PREFIX: agrocore
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
       RUST_LOG: info
       RUST_BACKTRACE: 1
@@ -34,6 +57,8 @@ services:
       - "8080:8080"
     depends_on:
       postgres:
+        condition: service_healthy
+      mqtt:
         condition: service_healthy
     volumes:
       - ./config:/app/config:ro
@@ -63,6 +88,8 @@ services:
 
 volumes:
   postgres_data:
+  mqtt_data:
+  mqtt_logs:
 
 networks:
   default:
