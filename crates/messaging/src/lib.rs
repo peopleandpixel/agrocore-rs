@@ -485,10 +485,14 @@ pub fn create_ha_device_info(config: &IoTDeviceConfig) -> HaDeviceInfo {
         name: config.device_type.clone(),
         manufacturer: Some("agrocore-rs".to_string()),
         model: Some(config.device_type.clone()),
-        sw_version: config.metadata.get("firmware_version")
+        sw_version: config
+            .metadata
+            .get("firmware_version")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
-        hw_version: config.metadata.get("hardware_version")
+        hw_version: config
+            .metadata
+            .get("hardware_version")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
         via_device: Some("agrocore-mqtt".to_string()),
@@ -571,7 +575,11 @@ pub fn create_ha_sensor_config(
     let availability_topic = format!("{}/status/{}/availability", topic_prefix, device_id);
 
     Some(HaSensorConfig {
-        name: format!("{} {}", device_info.name, capability_display_name(capability)),
+        name: format!(
+            "{} {}",
+            device_info.name,
+            capability_display_name(capability)
+        ),
         unique_id: unique_id.clone(),
         state_topic: state_topic.clone(),
         device_class,
@@ -637,7 +645,14 @@ pub fn generate_ha_discovery_configs(
             &device_info,
             topic_prefix,
         ) {
-            let topic = ha_discovery_topic("sensor", &format!("agrocore_{}_{}", device_config.device_id, capability_name(capability)));
+            let topic = ha_discovery_topic(
+                "sensor",
+                &format!(
+                    "agrocore_{}_{}",
+                    device_config.device_id,
+                    capability_name(capability)
+                ),
+            );
             let payload = serde_json::to_value(sensor_config).unwrap();
             configs.push((topic, payload));
         }
@@ -647,7 +662,10 @@ pub fn generate_ha_discovery_configs(
     let availability_config = HaBinarySensorConfig {
         name: format!("{} Availability", device_info.name),
         unique_id: format!("agrocore_{}_availability", device_config.device_id),
-        state_topic: format!("{}/status/{}/availability", topic_prefix, device_config.device_id),
+        state_topic: format!(
+            "{}/status/{}/availability",
+            topic_prefix, device_config.device_id
+        ),
         device_class: Some("connectivity".to_string()),
         value_template: Some("{{ value }}".to_string()),
         payload_on: Some("online".to_string()),
@@ -656,12 +674,21 @@ pub fn generate_ha_discovery_configs(
         entity_category: Some(HaEntityCategory::Diagnostic),
         icon: Some("mdi:server".to_string()),
         enabled_by_default: Some(true),
-        availability_topic: Some(format!("{}/status/{}/availability", topic_prefix, device_config.device_id)),
+        availability_topic: Some(format!(
+            "{}/status/{}/availability",
+            topic_prefix, device_config.device_id
+        )),
         payload_available: Some("online".to_string()),
         payload_not_available: Some("offline".to_string()),
     };
-    let availability_topic = ha_discovery_topic("binary_sensor", &format!("agrocore_{}_availability", device_config.device_id));
-    configs.push((availability_topic, serde_json::to_value(availability_config).unwrap()));
+    let availability_topic = ha_discovery_topic(
+        "binary_sensor",
+        &format!("agrocore_{}_availability", device_config.device_id),
+    );
+    configs.push((
+        availability_topic,
+        serde_json::to_value(availability_config).unwrap(),
+    ));
 
     configs
 }

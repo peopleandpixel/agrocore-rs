@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-08-08
+
+### Added
+- **MQTT Support for IoT Devices & Home Assistant Integration**
+  - `rumqttc 0.25` dependency with async MQTT client
+  - `MqttConfig`: broker settings, TLS, authentication, topic prefix
+  - IoT event types: `IoTTelemetryEvent`, `IoTDeviceStatusEvent`, `IoTCommandEvent`
+  - `IoTCapability` enum: Temperature, Humidity, SoilMoisture, Light, GPS, BatteryLevel, SignalStrength, ActuatorControl, FirmwareUpdate, Custom
+  - `MqttClient`: async connect, publish_telemetry, publish_status (retained), subscribe_commands/broadcast, event loop
+  - `UnifiedMessagingClient`: dual NATS + MQTT backend with unified publish API
+  - Topic structure: `agrocore/telemetry/{tenant}/{device}`, `agrocore/status/{tenant}/{device}`, `agrocore/commands/{tenant}/{device}`
+
+- **Home Assistant MQTT Auto-Discovery**
+  - `HaSensorConfig`, `HaBinarySensorConfig`, `HaButtonConfig`, `HaNumberConfig`, `HaDeviceInfo`
+  - Capability mapping with device_class, unit_of_measurement, icons, value_templates
+  - `generate_ha_discovery_configs()` for complete device payloads
+  - Availability binary sensors with connectivity device_class
+
+- **Mosquitto MQTT Broker in docker-compose**
+  - `eclipse-mosquitto:2.0` on ports 1883 (MQTT) and 9001 (WebSockets)
+  - TLS certificates (CA, server, client) + PKCS12 for Home Assistant
+  - Password-based authentication
+  - Health checks via `mosquitto_sub`
+
+- **CI/CD Pipeline Fixes**
+  - PostgreSQL service with sqlx migrations in GitHub Actions
+  - Security audit with `continue-on-error: true`
+
+### Changed
+- **Version bump: 0.6.0 → 0.7.0**
+- **Vulnerability fixes**: quick-xml 0.31→0.41, async-nats 0.38→0.50, rand 0.10→0.8, wiremock 0.5→0.6
+
+### Fixed
+- Clippy collapsible_if warnings in messaging crate
+- MQTT borrow checker issue with state_topic clone
+
 ## [0.6.0] - 2026-08-05
 
 ### Added
