@@ -1,199 +1,136 @@
-# GitLab CI/CD Configuration for Agrocore-RS
-# Mirrors the GitHub Actions workflows
+# GitLab CI/CD Pipeline for agrocore-rs
+# This pipeline runs on both GitLab.com and self-hosted GitLab
 
 stages:
-  - fmt
-  - build
+  - quality
   - test
-  - clippy
+  - build
+  - security
   - release
 
 variables:
   CARGO_TERM_COLOR: "always"
+  RUSTFLAGS: "-D warnings"
   CARGO_INCREMENTAL: "0"
-  RUST_BACKTRACE: "1"
-  DATABASE_URL: "postgres://postgres:postgres@postgres:5432/agrocore_test"
-  JWT_SECRET: "ci-test-secret"
 
-# Cache cargo registry and target directories
+# Cache configuration
 cache:
-  key: "${CI_JOB_NAME}-${CI_COMMIT_REF_SLUG}"
+  key: "${CI_COMMIT_REF_SLUG}"
   paths:
-    - .cargo/registry/
+    - .cargo/registry/cache/
+    - .cargo/registry/index/
     - target/
-    - Cargo.lock
+    - .cargo/git/
 
-# Default image with Rust toolchain
-rust:latest:
+# Default before_script
+before_script:
+  - rustup component add rustfmt clippy
+  - cargo --version
+  - rustc --version
+
+# Quality Gates Job
+quality-gates:
+  stage: quality
   image: rust:latest
-  before_script:
-    - rustup component add rustfmt clippy
-    - cargo --version
-    - rustc --version
-
-# =====================
-# Format Check Stage
-# =====================
-cargo_fmt:
-  stage: fmt
-  extends: .rust:latest
   script:
     - cargo fmt --all -- --check
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_COMMIT_BRANCH == "master"
-
-# =====================
-# Build Stage
-# =====================
-cargo_build:
-  stage: build
-  extends: .rust:latest
-  services:
-    - name: postgres:15
-      alias: postgres
-      variables:
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: postgres
-        POSTGRES_DB: agrocore_test
-  script:
-    - cargo build --verbose
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_COMMIT_BRANCH == "master"
-
-# =====================
-# Test Stage
-# =====================
-cargo_test:
-  stage: test
-  extends: .rust:latest
-  services:
-    - name: postgres:15
-      alias: postgres
-      variables:
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: postgres
-        POSTGRES_DB: agrocore_test
-  script:
-    - cargo test --verbose
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_COMMIT_BRANCH == "master"
-  coverage: '/test result: ok\. (\d+) passed/'
-
-# =====================
-# Clippy Stage
-# =====================
-cargo_clippy:
-  stage: clippy
-  extends: .rust:latest
-  services:
-    - name: postgres:15
-      alias: postgres
-      variables:
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: postgres
-        POSTGRES_DB: agrocore_test
-  script:
-    - cargo clippy -- -D warnings
+    - cargo check --workspace
+    - cargo clippy --workspace -- -D warnings
   allow_failure: false
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_COMMIT_BRANCH == "master"
+  timeout: 30m
 
-# =====================
-# Release Stage (on tags)
-# =====================
-release:
-  stage: release
-  extends: .rust:latest
+# Unit & Integration Tests
+test:
+  stage: test
   image: rust:latest
-  before_script:
-    - rustup component add rustfmt clippy
-    - cargo --version
-    - rustc --version
+  needs: [quality-gates]
+  services:
+    - name: postgres:16-alpine
+      alias: postgres
+  variables:
+    POSTGRES_DB: agrocore_test
+    POSTGRES_USER: test
+    POSTGRES_PASSWORD: test
+    DATABASE_URL: "postgresql://test:test@postgres:5432/agrocore_test"
   script:
-    - cargo build --release
-    - |
-      echo "## Agrocore RS ${CI_COMMIT_TAG}" > release_notes.md
-      echo "" >> release_notes.md
-      echo "### Features" >> release_notes.md
-      git log --pretty="- %s (%h)" $(git describe --tags --abbrev=0)..HEAD 2>/dev/null || echo "- Initial release" >> release_notes.md
+    - apt-get update && apt-get install -y pkg-config libssl-dev libpq-dev
+    - cargo test --workspace
+  allow_failure: false
+  timeout: 45m
+
+# Build Admin UI WASM
+build-wasm:
+  stage: build
+  image: rust:latest
+  needs: [quality-gates]
+  script:
+    - rustup target add wasm32-unknown-unknown
+    - cargo install wasm-pack
+    - cd crates/admin-ui
+    - cargo build --target wasm32-unknown-unknown --release
   artifacts:
     paths:
-      - target/release/agrocore-api
-      - release_notes.md
-    expire_in: 1 week
-  rules:
-    - if: $CI_COMMIT_TAG =~ /^v.*/
-  only:
-    - tags
+      - crates/admin-ui/target/wasm32-unknown-unknown/release/admin-ui.wasm
+    expire_in: 7 days
+  allow_failure: false
+  timeout: 30m
 
-# =====================
-# Security Audit (optional)
-# =====================
-cargo_audit:
-  stage: test
-  image: rust:latest
-  before_script:
-    - rustup component add rustfmt clippy
-    - cargo install cargo-audit --locked
-  script:
-    - cargo audit
-  allow_failure: true
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_COMMIT_BRANCH == "master"
-
-# =====================
-# Docker Build (optional)
-# =====================
-docker_build:
+# Docker Build
+docker-build:
   stage: build
   image: docker:latest
+  needs: [quality-gates, test]
   services:
     - docker:dind
   variables:
     DOCKER_TLS_CERTDIR: "/certs"
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    DOCKER_HOST: "tcp://docker:2376"
+    DOCKER_CERT_PATH: "/certs/client"
   script:
-    - |
-      TAG="${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
-      if [ -n "${CI_COMMIT_TAG}" ]; then
-        TAG="${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
-      fi
-      docker build -t "$TAG" -f Dockerfile.api .
-      docker push "$TAG"
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_COMMIT_TAG =~ /^v.*/
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker buildx create --use
+    - docker buildx build --push \
+        --cache-from=type=registry,ref=$CI_REGISTRY_IMAGE:buildcache \
+        --cache-to=type=registry,ref=$CI_REGISTRY_IMAGE:buildcache,mode=max \
+        --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA \
+        --tag $CI_REGISTRY_IMAGE:latest \
+        --file Dockerfile.api .
+    - docker buildx build --push \
+        --cache-from=type=registry,ref=$CI_REGISTRY_IMAGE:buildcache \
+        --cache-to=type=registry,ref=$CI_REGISTRY_IMAGE:buildcache,mode=max \
+        --tag $CI_REGISTRY_IMAGE/admin-ui:$CI_COMMIT_SHA \
+        --tag $CI_REGISTRY_IMAGE/admin-ui:latest \
+        --file Dockerfile.admin-ui .
   only:
     - main
+    - develop
     - tags
+  except:
+    - merge_requests
+  timeout: 30m
 
-# =====================
-# Documentation Deploy (optional)
-# =====================
-pages:
-  stage: deploy
+# Security Audit
+security-audit:
+  stage: security
   image: rust:latest
-  before_script:
-    - rustup component add rustfmt clippy
-    - cargo install cargo-doc2html --locked || true
+  needs: [quality-gates]
   script:
-    - cargo doc --no-deps --document-private-items
-    - mv target/doc public
-  artifacts:
-    paths:
-      - public
-    expire_in: 1 week
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_COMMIT_TAG =~ /^v.*/
+    - cargo install cargo-audit
+    - cargo audit --workspace
+    - cargo install cargo-deny
+    - cargo deny check advisories licenses bans sources || true
+  allow_failure: true
+  timeout: 20m
+
+# Release Job
+release:
+  stage: release
+  image: rust:latest
+  needs: [quality-gates, test, build-wasm, docker-build, security-audit]
+  only:
+    - tags
+  script:
+    - echo "Creating release for $CI_COMMIT_TAG"
+    - cargo install cargo-release
+    - cargo release --version $CI_COMMIT_TAG --no-publish --execute
+  timeout: 30m
