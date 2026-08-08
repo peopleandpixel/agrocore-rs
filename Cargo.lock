@@ -454,6 +454,7 @@ dependencies = [
  "bytes",
  "chrono",
  "failsafe",
+ "futures-util",
  "rumqttc",
  "serde",
  "serde_json",

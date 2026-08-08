@@ -16,6 +16,12 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
+pub mod bridge;
+
+pub use bridge::{
+    BridgeConfig, BridgeRoute, BridgeStats, MqttBridge, MqttBridgeBuilder,
+};
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Event<T> {
     pub id: Uuid,

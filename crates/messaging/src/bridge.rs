@@ -1,15 +1,43 @@
 //! MQTT Bridge - Bidirectional NATS ↔ MQTT Message Forwarding
 
-use crate::{MqttClient, MqttConfig, MessagingClient, UnifiedMessagingClient, Event, IoTTelemetryEvent, IoTDeviceStatusEvent};
-use async_nats::Client as NatsClient;
-use rumqttc::{AsyncClient, Event as MqttEvent, EventLoop, MqttOptions, Packet, QoS};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use crate::{MqttConfig, UnifiedMessagingClient};
+use futures_util::StreamExt;
+use rumqttc::{Event as MqttEvent, Packet, QoS};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::{mpsc, RwLock};
-use tracing::{debug, error, info, warn};
-use uuid::Uuid;
+use tracing::{error, info};
+
+// Custom Serde-Helper für rumqttc::QoS
+mod qos_serde {
+    use super::*;
+
+    pub fn serialize<S>(qos: &QoS, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let val = match qos {
+            QoS::AtMostOnce => 0u8,
+            QoS::AtLeastOnce => 1u8,
+            QoS::ExactlyOnce => 2u8,
+        };
+        serializer.serialize_u8(val)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<QoS, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let val = u8::deserialize(deserializer)?;
+        match val {
+            0 => Ok(QoS::AtMostOnce),
+            1 => Ok(QoS::AtLeastOnce),
+            2 => Ok(QoS::ExactlyOnce),
+            _ => Err(serde::de::Error::custom("Invalid QoS level")),
+        }
+    }
+}
 
 /// Bridge configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -72,6 +100,7 @@ impl Default for BridgeConfig {
 pub struct BridgeRoute {
     pub nats_subject: String,
     pub mqtt_topic: String,
+    #[serde(with = "qos_serde")]
     pub qos: QoS,
     pub retain: bool,
 }
@@ -105,7 +134,7 @@ impl MqttBridge {
         bridge_config: BridgeConfig,
     ) -> anyhow::Result<Self> {
         let unified_client = UnifiedMessagingClient::new(Some(nats_url), Some(mqtt_config)).await?;
-        
+
         Ok(Self {
             unified_client,
             config: bridge_config,
@@ -121,7 +150,7 @@ impl MqttBridge {
 
         // Start NATS to MQTT forwarding
         self.start_nats_to_mqtt().await?;
-        
+
         // Start MQTT to NATS forwarding
         self.start_mqtt_to_nats().await?;
 
@@ -132,7 +161,7 @@ impl MqttBridge {
 
         // Wait for shutdown signal
         shutdown_rx.recv().await;
-        
+
         info!("MQTT Bridge shutting down");
         Ok(())
     }
@@ -141,7 +170,7 @@ impl MqttBridge {
     async fn start_nats_to_mqtt(&self) -> anyhow::Result<()> {
         let nats = self.unified_client.nats()
             .ok_or_else(|| anyhow::anyhow!("NATS not configured"))?;
-        
+
         let mqtt = self.unified_client.mqtt()
             .ok_or_else(|| anyhow::anyhow!("MQTT not configured"))?;
 
@@ -151,10 +180,13 @@ impl MqttBridge {
             let qos = route.qos;
             let retain = route.retain;
             let stats = self.stats.clone();
-            let mqtt = mqtt.clone();
+
+            let nats_client = nats.client.clone();
+            let mqtt_client = mqtt.client.clone();
 
             tokio::spawn(async move {
-                let subscriber = match nats.subscribe(nats_subject.clone()).await {
+                // nats_subject direkt per Value übergeben (ohne `&`)
+                let mut subscriber = match nats_client.subscribe(nats_subject.clone()).await {
                     Ok(sub) => sub,
                     Err(e) => {
                         error!("Failed to subscribe to NATS subject {}: {}", nats_subject, e);
@@ -166,9 +198,8 @@ impl MqttBridge {
 
                 while let Some(msg) = subscriber.next().await {
                     let payload = msg.payload.to_vec();
-                    
-                    // Forward to MQTT
-                    match mqtt.client.publish(mqtt_topic.clone(), qos, false, payload).await {
+
+                    match mqtt_client.publish(mqtt_topic.clone(), qos, retain, payload).await {
                         Ok(_) => {
                             let mut stats = stats.write().await;
                             stats.nats_to_mqtt_messages += 1;
@@ -188,81 +219,83 @@ impl MqttBridge {
     }
 
     /// Start MQTT to NATS forwarding
-    async fn start_mqtt_to_nats(&self) -> anyhow::Result<()> {
+    async fn start_mqtt_to_nats(&mut self) -> anyhow::Result<()> {
         let nats = self.unified_client.nats()
             .ok_or_else(|| anyhow::anyhow!("NATS not configured"))?;
-        
+
         let mqtt = self.unified_client.mqtt()
             .ok_or_else(|| anyhow::anyhow!("MQTT not configured"))?;
 
         // Subscribe to MQTT topics
         for route in &self.config.mqtt_to_nats {
-            mqtt.subscribe_commands(route.mqtt_topic.clone(), route.qos).await?;
+            mqtt.client.subscribe(route.mqtt_topic.clone(), route.qos).await?;
         }
 
-        // Process MQTT events
-        let mut event_loop = mqtt.event_loop.clone();
         let stats = self.stats.clone();
-        let nats = nats.clone();
+        let nats_client = nats.client.clone();
         let routes = self.config.mqtt_to_nats.clone();
 
-        tokio::spawn(async move {
-            info!("Starting MQTT to NATS event processor");
+        // Option A: Falls event_loop in Arc<tokio::sync::Mutex<Option<EventLoop>>> liegt:
+        // let mut event_loop = mqtt.event_loop.lock().await.take();
 
-            loop {
-                match event_loop.poll().await {
-                    Ok(event) => {
-                        if let MqttEvent::Incoming(Packet::Publish(publish)) = event {
-                            let topic = publish.topic;
-                            let payload = publish.payload.to_vec();
-                            
-                            // Find matching route
-                            for route in &routes {
-                                if Self::topic_matches(&topic, &route.mqtt_topic) {
-                                    let subject = route.nats_subject.clone();
-                                    
-                                    match nats.publish(subject.clone(), payload.clone().into()).await {
-                                        Ok(_) => {
-                                            let mut stats = stats.write().await;
-                                            stats.mqtt_to_nats_messages += 1;
-                                            stats.last_mqtt_to_nats = Some(chrono::Utc::now());
+        // Option B: Falls event_loop ein direktes Option<EventLoop> auf MqttClient ist:
+        if let Some(mut event_loop) = mqtt.event_loop.take() {
+            tokio::spawn(async move {
+                info!("Starting MQTT to NATS event processor");
+
+                loop {
+                    match event_loop.poll().await {
+                        Ok(event) => {
+                            if let MqttEvent::Incoming(Packet::Publish(publish)) = event {
+                                let topic = publish.topic;
+                                let payload = publish.payload;
+
+                                for route in &routes {
+                                    if Self::topic_matches(&topic, &route.mqtt_topic) {
+                                        let subject = route.nats_subject.clone();
+
+                                        match nats_client.publish(subject, payload.clone()).await {
+                                            Ok(_) => {
+                                                let mut stats = stats.write().await;
+                                                stats.mqtt_to_nats_messages += 1;
+                                                stats.last_mqtt_to_nats = Some(chrono::Utc::now());
+                                            }
+                                            Err(e) => {
+                                                error!("Failed to forward MQTT message to NATS: {}", e);
+                                                let mut stats = stats.write().await;
+                                                stats.mqtt_errors += 1;
+                                            }
                                         }
-                                        Err(e) => {
-                                            error!("Failed to forward MQTT message to NATS: {}", e);
-                                            let mut stats = stats.write().await;
-                                            stats.mqtt_errors += 1;
-                                        }
+                                        break;
                                     }
-                                    break;
                                 }
                             }
                         }
-                    }
-                    Err(e) => {
-                        error!("MQTT event loop error: {}", e);
-                        // Reconnect logic would go here
-                        return;
+                        Err(e) => {
+                            error!("MQTT event loop error: {}", e);
+                            return;
+                        }
                     }
                 }
             });
+        }
 
         Ok(())
     }
 
     /// Check if MQTT topic matches route pattern (supports wildcards)
     fn topic_matches(topic: &str, pattern: &str) -> bool {
-        // Simple wildcard matching for + and #
         if pattern == "#" {
             return true;
         }
-        
+
         let pattern_parts: Vec<&str> = pattern.split('/').collect();
         let topic_parts: Vec<&str> = topic.split('/').collect();
-        
+
         if pattern_parts.len() != topic_parts.len() {
             return false;
         }
-        
+
         for (p, t) in pattern_parts.iter().zip(topic_parts.iter()) {
             if *p == "+" || *p == "#" {
                 continue;
@@ -271,7 +304,7 @@ impl MqttBridge {
                 return false;
             }
         }
-        
+
         true
     }
 
@@ -362,7 +395,7 @@ impl MqttBridgeBuilder {
     pub async fn build(self) -> anyhow::Result<MqttBridge> {
         let nats_url = self.nats_url.ok_or_else(|| anyhow::anyhow!("NATS URL required"))?;
         let mqtt_config = self.mqtt_config.ok_or_else(|| anyhow::anyhow!("MQTT config required"))?;
-        
+
         MqttBridge::new(&nats_url, mqtt_config, self.bridge_config).await
     }
 }
