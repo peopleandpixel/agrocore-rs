@@ -33,5 +33,4 @@ CREATE TABLE IF NOT EXISTS treatment_records (
 CREATE INDEX IF NOT EXISTS idx_treatment_animal ON treatment_records(animal_id);
 CREATE INDEX IF NOT EXISTS idx_treatment_date ON treatment_records(date);
 
--- Trigger für updated_at
-CREATE TRIGGER set_updated_at_animals BEFORE UPDATE ON animals FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
