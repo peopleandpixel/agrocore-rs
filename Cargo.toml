@@ -43,7 +43,7 @@ mockall = "0.13"
 sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono", "ipnetwork", "bigdecimal", "json"] }
 geozero = { version = "0.15", features = ["with-postgis-sqlx", "with-geo", "with-shp", "with-geojson"] }
 strum = { version = "0.26", features = ["derive"] }
-quick-xml = { version = "0.31", features = ["serialize"] }
+quick-xml = { version = "0.41", features = ["serialize"] }
 urlencoding = "2.1"
 
 moka = { version = "0.12", features = ["sync", "future"] }
