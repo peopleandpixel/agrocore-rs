@@ -1,102 +1,69 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database
   postgres:
-    image: postgis/postgis:16-3.4
+    image: postgres:16-alpine
     container_name: agrocore-postgres
     environment:
       POSTGRES_DB: agrocore
       POSTGRES_USER: agrocore
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agrocore_dev_password}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./migrations:/docker-entrypoint-initdb.d
+      POSTGRES_PASSWORD: agrocore
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U agrocore -d agrocore"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  nats:
-    image: nats:2.10-alpine
-    container_name: agrocore-nats
-    ports:
-      - "4222:4222"
-      - "8222:8222"
-    command: ["-js", "-m", "8222"]
-    healthcheck:
-      test: ["CMD", "nats", "server", "check", "streaming"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
+  # API Server
   api:
     build:
       context: .
       dockerfile: Dockerfile.api
     container_name: agrocore-api
     environment:
-      DATABASE_URL: postgres://agrocore:***@postgres:5432/agrocore
-      NATS_URL: nats://nats:4222
-      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
-      BIND_ADDR: 0.0.0.0:8080
+      DATABASE_URL: postgresql://agrocore:agrocore@postgres:5432/agrocore
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
       RUST_LOG: info
+      RUST_BACKTRACE: 1
     ports:
       - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
-      nats:
-        condition: service_healthy
+    volumes:
+      - ./config:/app/config:ro
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
       interval: 30s
-      timeout: 5s
+      timeout: 10s
       retries: 3
       start_period: 10s
 
-  reporting-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.service
-    container_name: agrocore-reporting
-    environment:
-      DATABASE_URL: postgres://agrocore:***@postgres:5432/agrocore
-      NATS_URL: nats://nats:4222
-      RUST_LOG: info
-    depends_on:
-      postgres:
-        condition: service_healthy
-      nats:
-        condition: service_healthy
-
-  weather-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.service
-    container_name: agrocore-weather
-    environment:
-      DATABASE_URL: postgres://agrocore:***@postgres:5432/agrocore
-      NATS_URL: nats://nats:4222
-      RUST_LOG: info
-    depends_on:
-      postgres:
-        condition: service_healthy
-      nats:
-        condition: service_healthy
-
+  # Admin UI (Nginx + WASM)
   admin-ui:
     build:
       context: .
       dockerfile: Dockerfile.admin-ui
     container_name: agrocore-admin-ui
     ports:
-      - "3000:80"
+      - "80:80"
     depends_on:
-      api:
-        condition: service_healthy
+      - api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
 
 volumes:
   postgres_data:
+
+networks:
+  default:
+    name: agrocore-network
