@@ -46,6 +46,20 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     needs: quality-gates
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: agrocore_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -67,10 +81,21 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y pkg-config libssl-dev libpq-dev
 
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features postgres
+
+      - name: Setup database
+        run: |
+          sqlx database create --database-url postgresql://test:test@localhost:5432/agrocore_test
+          sqlx migrate run --source migrations --database-url postgresql://test:test@localhost:5432/agrocore_test
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/agrocore_test
+
       - name: Run cargo test
         run: cargo test --workspace
         env:
           RUST_LOG: debug
+          DATABASE_URL: postgresql://test:test@localhost:5432/agrocore_test
 
   # Build Admin UI WASM
   build-wasm:
