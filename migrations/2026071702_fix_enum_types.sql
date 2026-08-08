@@ -19,10 +19,6 @@ ALTER COLUMN equipment_type TYPE JSONB USING to_jsonb(equipment_type);
 ALTER TABLE weather_stations
 ALTER COLUMN station_type TYPE JSONB USING to_jsonb(station_type);
 
--- Tabelle: phenology_records
-ALTER TABLE phenology_records
-ALTER COLUMN stage TYPE JSONB USING to_jsonb(stage);
-
 -- Tabelle: harvest_lots
 ALTER TABLE harvest_lots
 ALTER COLUMN status TYPE JSONB USING to_jsonb(status);
