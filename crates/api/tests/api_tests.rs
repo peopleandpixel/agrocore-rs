@@ -86,3 +86,23 @@ async fn test_vineyard_routes_are_registered() {
         assert_ne!(resp.status(), StatusCode::NOT_FOUND, "{uri}");
     }
 }
+
+#[actix_web::test]
+async fn test_remaining_module_routes_are_registered() {
+    let app = test::init_service(App::new().configure(configure)).await;
+    for uri in [
+        "/api/v1/workforce/workers",
+        "/api/v1/weather/data",
+        "/api/v1/compliance/checklists",
+        "/api/v1/finance/cost-centers",
+        "/api/v1/finance/financial-records",
+        "/api/v1/finance/pac-applications",
+        "/api/v1/harvest/seasons",
+        "/api/v1/animals",
+        "/api/v1/specialized/olive-groves",
+    ] {
+        let req = TestRequest::get().uri(uri).to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_ne!(resp.status(), StatusCode::NOT_FOUND, "{uri}");
+    }
+}

@@ -60,10 +60,16 @@ pub async fn list_workers(
     auth: AuthUser,
     query: web::Query<Pagination>,
 ) -> Result<HttpResponse, ApiError> {
+    let roles = auth.roles();
     let result = state
         .db
         .worker_repo()
-        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
+        .find_all_visible(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            query.0,
+            auth.0.user_id,
+            &roles,
+        )
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
@@ -96,10 +102,16 @@ pub async fn get_worker(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
+    let roles = auth.roles();
     let worker = state
         .db
         .worker_repo()
-        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
+        .find_by_id_visible(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            auth.0.user_id,
+            &roles,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Worker not found".into()))?;
     Ok(HttpResponse::Ok().json(worker))
@@ -147,10 +159,16 @@ pub async fn list_work_logs(
     auth: AuthUser,
     query: web::Query<Pagination>,
 ) -> Result<HttpResponse, ApiError> {
+    let roles = auth.roles();
     let result = state
         .db
         .work_log_repo()
-        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
+        .find_all_visible(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            query.0,
+            auth.0.user_id,
+            &roles,
+        )
         .await?;
     Ok(HttpResponse::Ok().json(PaginatedResponseDto {
         data: result.data,
@@ -183,10 +201,16 @@ pub async fn get_work_log(
     auth: AuthUser,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
+    let roles = auth.roles();
     let log = state
         .db
         .work_log_repo()
-        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
+        .find_by_id_visible(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            auth.0.user_id,
+            &roles,
+        )
         .await?
         .ok_or_else(|| SharedError::NotFound("Work log not found".into()))?;
     Ok(HttpResponse::Ok().json(log))

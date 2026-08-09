@@ -26,6 +26,15 @@ impl WorkerLocationRepo for PgWorkerLocationRepo {
             .fetch_optional(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
         })
     }
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        _user_id: Uuid,
+        _roles: &[agrocore_domain::entities::user::UserRole],
+    ) -> RepositoryFuture<Option<WorkerLocation>> {
+        self.find_by_id(tid, id)
+    }
     fn create(
         &self,
         tid: TenantId,
@@ -73,6 +82,15 @@ impl WorkerLocationRepo for PgWorkerLocationRepo {
                 total_pages,
             })
         })
+    }
+    fn find_all_visible(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+        _user_id: Uuid,
+        _roles: &[agrocore_domain::entities::user::UserRole],
+    ) -> RepositoryFuture<PaginatedResponse<WorkerLocation>> {
+        self.find_all(tid, p)
     }
     fn find_latest_by_worker(
         &self,

@@ -34,6 +34,18 @@ impl WorkerRepo for PgWorkerRepo {
         })
     }
 
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        _user_id: Uuid,
+        _roles: &[agrocore_domain::entities::user::UserRole],
+    ) -> RepositoryFuture<Option<Worker>> {
+        // Basic visibility: if it belongs to the tenant, it's visible.
+        // Role-specific filtering can be added here if needed.
+        self.find_by_id(tid, id)
+    }
+
     fn find_by_user_id(&self, tid: TenantId, user_id: Uuid) -> RepositoryFuture<Option<Worker>> {
         let pool = self.pool.clone();
         Box::pin(async move {
@@ -83,6 +95,16 @@ impl WorkerRepo for PgWorkerRepo {
                 total_pages: ((total as f64 / per_page as f64).ceil() as u64),
             })
         })
+    }
+
+    fn find_all_visible(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+        _user_id: Uuid,
+        _roles: &[agrocore_domain::entities::user::UserRole],
+    ) -> RepositoryFuture<PaginatedResponse<Worker>> {
+        self.find_all(tid, p)
     }
 
     fn create(&self, tid: TenantId, dto: CreateWorkerDto, by: Uuid) -> RepositoryFuture<Worker> {

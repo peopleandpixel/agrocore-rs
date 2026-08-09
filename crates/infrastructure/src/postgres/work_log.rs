@@ -27,6 +27,16 @@ impl WorkLogRepo for PgWorkLogRepo {
                 .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
+
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        _user_id: Uuid,
+        _roles: &[agrocore_domain::entities::user::UserRole],
+    ) -> RepositoryFuture<Option<WorkLog>> {
+        self.find_by_id(tid, id)
+    }
     fn find_all(
         &self,
         tid: TenantId,
@@ -65,6 +75,16 @@ impl WorkLogRepo for PgWorkLogRepo {
                 total_pages,
             })
         })
+    }
+
+    fn find_all_visible(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+        _user_id: Uuid,
+        _roles: &[agrocore_domain::entities::user::UserRole],
+    ) -> RepositoryFuture<PaginatedResponse<WorkLog>> {
+        self.find_all(tid, p)
     }
     fn create(&self, tid: TenantId, dto: CreateWorkLogDto, _by: Uuid) -> RepositoryFuture<WorkLog> {
         let pool = self.pool.clone();

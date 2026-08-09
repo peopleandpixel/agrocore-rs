@@ -749,9 +749,23 @@ use crate::entities::workforce::{
 #[cfg_attr(test, automock)]
 pub trait WorkerRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Worker>>;
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[UserRole],
+    ) -> RepositoryFuture<Option<Worker>>;
     fn find_by_user_id(&self, tid: TenantId, user_id: Uuid) -> RepositoryFuture<Option<Worker>>;
     fn find_all(&self, tid: TenantId, p: Pagination)
     -> RepositoryFuture<PaginatedResponse<Worker>>;
+    fn find_all_visible(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+        user_id: Uuid,
+        roles: &[UserRole],
+    ) -> RepositoryFuture<PaginatedResponse<Worker>>;
     fn create(&self, tid: TenantId, dto: CreateWorkerDto, by: Uuid) -> RepositoryFuture<Worker>;
     fn update(
         &self,
@@ -766,10 +780,24 @@ pub trait WorkerRepo: Send + Sync {
 #[cfg_attr(test, automock)]
 pub trait WorkerLocationRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WorkerLocation>>;
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[UserRole],
+    ) -> RepositoryFuture<Option<WorkerLocation>>;
     fn find_all(
         &self,
         tid: TenantId,
         p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<WorkerLocation>>;
+    fn find_all_visible(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+        user_id: Uuid,
+        roles: &[UserRole],
     ) -> RepositoryFuture<PaginatedResponse<WorkerLocation>>;
     fn find_latest_by_worker(
         &self,
@@ -787,10 +815,24 @@ pub trait WorkerLocationRepo: Send + Sync {
 #[cfg_attr(test, automock)]
 pub trait WorkLogRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WorkLog>>;
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[UserRole],
+    ) -> RepositoryFuture<Option<WorkLog>>;
     fn find_all(
         &self,
         tid: TenantId,
         p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<WorkLog>>;
+    fn find_all_visible(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+        user_id: Uuid,
+        roles: &[UserRole],
     ) -> RepositoryFuture<PaginatedResponse<WorkLog>>;
     fn find_by_worker(
         &self,

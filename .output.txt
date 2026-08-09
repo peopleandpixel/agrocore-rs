@@ -1,0 +1,390 @@
+Command finished with exit code 0.
+Command output:
+warning: /home/jens/RustroverProjects/agrocore-rs/Cargo.toml: unused manifest key: workspace.edition
+warning: agrocore-lpis-providers v0.7.8 (/home/jens/RustroverProjects/agrocore-rs/crates/lpis-providers) ignoring invalid dependency `jitter` which is missing a lib target
+    Checking agrocore-api v0.7.8 (/home/jens/RustroverProjects/agrocore-rs/crates/api)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.38s
+warning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`
+warning: /home/jens/RustroverProjects/agrocore-rs/Cargo.toml: unused manifest key: workspace.edition
+warning: agrocore-lpis-providers v0.7.8 (/home/jens/RustroverProjects/agrocore-rs/crates/lpis-providers) ignoring invalid dependency `jitter` which is missing a lib target
+   Compiling agrocore-shared v0.7.8 (/home/jens/RustroverProjects/agrocore-rs/crates/shared)
+   Compiling agrocore-domain v0.7.8 (/home/jens/RustroverProjects/agrocore-rs/crates/domain)
+   Compiling admin-ui v0.7.8 (/home/jens/RustroverProjects/agrocore-rs/crates/admin-ui)
+   Compiling agrocore-infrastructure v0.7.8 (/home/jens/RustroverProjects/agrocore-rs/crates/infrastructure)
+   Compiling agrocore-messaging v0.7.8 (/home/jens/RustroverProjects/agrocore-rs/crates/messaging)
+   Compiling agrocore-lpis-providers v0.7.8 (/home/jens/RustroverProjects/agrocore-rs/crates/lpis-providers)
+   Compiling agrocore-geometry-service v0.7.8 (/home/jens/RustroverProjects/agrocore-rs/crates/geometry-service)
+   Compiling agrocore-asset-registry v0.7.8 (/home/jens/RustroverProjects/agrocore-rs/crates/asset-registry)
+   Compiling agrocore-weather-service v0.7.8 (/home/jens/RustroverProjects/agrocore-rs/crates/weather-service)
+   Compiling agrocore-reporting-service v0.7.8 (/home/jens/RustroverProjects/agrocore-rs/crates/reporting-service)
+   Compiling agrocore-api v0.7.8 (/home/jens/RustroverProjects/agrocore-rs/crates/api)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 34s
+warning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`
+     Running unittests src/main.rs (target/debug/deps/admin_ui-393fd9b98efa2546)
+
+running 10 tests
+test components::form::tests::country_and_language_flags_map_expected_values ... ok
+test components::form::tests::email_validation_accepts_normal_addresses ... ok
+test components::form::tests::email_validation_rejects_invalid_addresses ... ok
+test components::form::tests::normalize_phone_combines_prefix_and_local_digits ... ok
+test components::form::tests::phone_validation_accepts_normalized_international_numbers ... ok
+test components::form::tests::phone_validation_rejects_invalid_values ... ok
+test components::form::tests::split_phone_uses_known_prefixes_and_fallback ... ok
+test i18n::tests::supported_language_codes_are_complete ... ok
+test i18n::tests::setup_wizard_keys_exist_in_all_languages ... ok
+test i18n::tests::every_supported_language_has_the_same_key_set ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running unittests src/lib.rs (target/debug/deps/agrocore_api-bd235b2f9ef1b1a1)
+
+running 10 tests
+test dto_validation_tests::test_api_order_dto_validation ... ok
+test dto_validation_tests::test_api_site_dto_validation ... ok
+test dto_validation_tests::test_api_task_dto_validation ... ok
+test handlers::system::tests::initial_setup_request_deserializes_with_setup_modules ... ok
+test middleware::tests::auth_extractor_rejects_bad_prefix ... ok
+test middleware::tests::auth_extractor_rejects_missing_header ... ok
+test middleware::tests::auth_extractor_role_helpers_cover_admin_manager_and_viewer_paths ... ok
+test middleware::tests::auth_extractor_accepts_valid_token_and_maps_roles ... ok
+test middleware::tests::auth_extractor_rejects_invalid_uuid_claims ... ok
+test dto_validation_tests::test_api_user_dto_validation ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/main.rs (target/debug/deps/agrocore_api-0f2013e9c6217bda)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/api_tests.rs (target/debug/deps/api_tests-04f6ce696a4e5fee)
+
+running 7 tests
+test test_swagger_ui ... ok
+test test_health_endpoint ... ok
+test test_remaining_module_routes_are_registered ... ok
+test test_task_routes_are_registered ... ok
+test test_iot_routes_require_authentication ... ok
+test test_vineyard_routes_are_registered ... ok
+test test_metrics_endpoint ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.52s
+
+     Running tests/auth/mod.rs (target/debug/deps/auth_test-c58b0bb9e7e67908)
+
+running 3 tests
+test test_login_validation_rejects_invalid_email ... ok
+test test_login_validation_accepts_valid_credentials ... ok
+test test_login_validation_rejects_short_password ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/health/mod.rs (target/debug/deps/health_test-41899525c9fd7a78)
+
+running 1 test
+test test_health_endpoint ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+
+     Running tests/rate_limit/mod.rs (target/debug/deps/rate_limit_test-4ef3a25d19451423)
+
+running 2 tests
+test test_governor_burst_size_applied ... ok
+test test_governor_seconds_per_request_default ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/reporting/mod.rs (target/debug/deps/reporting_test-cb3f0b56dcd12410)
+
+running 2 tests
+test test_pagination_bounds ... ok
+test test_pagination_defaults ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/settings_integration_tests.rs (target/debug/deps/settings_integration_tests-c59bb728e5616d1c)
+
+running 4 tests
+test config_serialization_tests::test_cache_backend_enum ... ok
+test config_serialization_tests::test_provider_config_roundtrip ... ok
+test config_serialization_tests::test_providers_config_roundtrip ... ok
+test test_settings_routes_configured ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+     Running unittests src/main.rs (target/debug/deps/agrocore_asset_registry-26d1ba2bf18c3d7e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/agrocore_domain-5f49f7584568f246)
+
+running 18 tests
+test entities::order::tests::auto_presence_starts_and_completes_with_thresholds ... ok
+test entities::order::tests::order_start_and_complete_fail_for_invalid_transitions ... ok
+test entities::order::tests::manual_default_duration_allows_quick_completion ... ok
+test entities::order::tests::order_start_and_complete_update_timestamps_when_allowed ... ok
+test entities::order::tests::recurrence_rule_handles_monthly_and_yearly_dates ... ok
+test entities::order::tests::order_transition_rules_cover_final_and_same_state ... ok
+test entities::plant_protection::tests::test_calculate_treated_area_gross ... ok
+test entities::order::tests::recurring_order_reschedules_on_completion ... ok
+test entities::plant_protection::tests::test_calculate_treated_area_ground ... ok
+test entities::plant_protection::tests::test_calculate_treated_area_herbicide ... ok
+test entities::plant_protection::tests::test_calculate_treated_area_leaf_wall ... ok
+test entities::plant_protection::tests::test_calculate_treated_area_net ... ok
+     Running unittests src/main.rs (target/debug/deps/agrocore_domain-3a4061f96c1f6ed5)
+test entities::plant_protection::tests::test_calculate_treated_area_tree_crown ... ok
+test entities::plant_protection::tests::test_steepness_factors ... ok
+test entities::spatial::tests::overlapping_objects_all_match_the_same_position ... ok
+test entities::spatial::tests::point_objects_use_a_small_radius ... ok
+test entities::spatial::tests::spatial_objects_can_exist_without_site ... ok
+test entities::tenant::tests::tenant_and_create_tenant_validation_cover_required_fields ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/calculation_tests.rs (target/debug/deps/calculation_tests-f4a75aff1ca36714)
+
+running 14 tests
+test test_calculate_difficulty_surcharge ... ok
+test test_calculate_difficulty_surcharge_all_factors ... ok
+test test_calculate_forage_demand_rejects_zero_values ... ok
+test test_calculate_forage_demand ... ok
+test test_calculate_material_amount ... ok
+test test_calculate_nitrogen_demand ... ok
+test test_calculate_nitrogen_demand_rejects_zero_values ... ok
+test test_calculate_profitability_handles_zero_area ... ok
+test test_calculate_tree_crown_volume ... ok
+test test_calculate_tree_crown_volume_rejects_zero_values ... ok
+test test_calculate_water_rate ... ok
+test test_calculate_water_rate_rejects_zero_values ... ok
+     Running tests/nutrition_tests.rs (target/debug/deps/nutrition_tests-5f8f6879ad838052)
+test test_estimate_harvest_date ... ok
+test test_estimate_harvest_date_handles_no_growth_or_finished_state ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test test_calculate_balance ... ok
+test test_calculate_demand ... ok
+test test_calculate_demand_scales_all_nutrients ... ok
+test test_calculate_fertilizer_amount ... ok
+test test_calculate_fertilizer_amount_handles_zero_n ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/order_tests.rs (target/debug/deps/order_tests-5253fa05eaa11f21)
+
+running 7 tests
+test auto_presence_starts_and_completes_with_thresholds ... ok
+test manual_default_duration_allows_quick_completion ... ok
+test order_transition_rules_cover_final_and_same_state ... ok
+test order_start_and_complete_update_timestamps_when_allowed ... ok
+test order_start_and_complete_fail_for_invalid_transitions ... ok
+test recurrence_rule_handles_monthly_and_yearly_dates ... ok
+test recurring_order_reschedules_on_completion ... ok
+
+     Running tests/plant_protection_tests.rs (target/debug/deps/plant_protection_tests-ea1cb87cd56a81d9)
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test test_calculate_treated_area_ground ... ok
+test test_calculate_treated_area_gross ... ok
+test test_calculate_treated_area_leaf_wall ... ok
+test test_calculate_treated_area_net ... ok
+test test_calculate_treated_area_herbicide ... ok
+     Running tests/site_tests.rs (target/debug/deps/site_tests-55f755da0e873d89)
+test test_steepness_factors ... ok
+test test_calculate_treated_area_tree_crown ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test site_property_helpers_return_expected_values ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/spatial_tests.rs (target/debug/deps/spatial_tests-05e32725e4d3dda1)
+
+running 3 tests
+test point_objects_use_a_small_radius ... ok
+test overlapping_objects_all_match_the_same_position ... ok
+test spatial_objects_can_exist_without_site ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/tenant_tests.rs (target/debug/deps/tenant_tests-5909459a31ddc679)
+
+running 1 test
+test tenant_and_create_tenant_validation_cover_required_fields ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/user_tests.rs (target/debug/deps/user_tests-87b4401b459b8e03)
+
+running 2 tests
+test user_role_permissions_cover_core_branches ... ok
+test user_validation_rejects_invalid_names_and_email ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/validation_tests.rs (target/debug/deps/validation_tests-7069fb7b6d5bba18)
+
+running 6 tests
+test test_fertilizer_record_validation ... ok
+test test_order_validation ... ok
+test test_geopoint_validation ... ok
+test test_site_label_validation ... ok
+test test_worklog_validation ... ok
+test test_user_validation ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/workflow_tests.rs (target/debug/deps/workflow_tests-05c71f5baf03a3a8)
+
+running 5 tests
+test order_type_display_covers_livestock_tasks ... ok
+test test_process_status_transition_same_status_returns_none ... ok
+test test_process_status_transition_no_config ... ok
+test test_process_status_transition_without_matching_trigger_returns_none ... ok
+test test_process_status_transition_with_trigger ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/agrocore_geometry_service-92ec54eecfa8af83)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/agrocore_infrastructure-5bc4aab76e809f9e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/agrocore_infrastructure-17a124fddb668f27)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/installer.rs (target/debug/deps/installer-e357b9abe60b5e2b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/postgres_integration.rs (target/debug/deps/postgres_integration-6f41ce71fab2882a)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/agrocore_lpis_providers-b7231de59bf752cd)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/base_client_tests.rs (target/debug/deps/base_client_tests-09edd0e4314c2b6e)
+
+running 3 tests
+test tests::test_base_client_execute_request_mock ... ok
+test tests::test_base_client_get_cached_or_fetch ... ok
+test tests::test_base_client_rate_limiting ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+
+     Running tests/config_tests.rs (target/debug/deps/config_tests-f417bb62aa5e0eb0)
+
+running 10 tests
+test tests::test_lpis_providers_config_default ... ok
+test tests::test_cache_config_default ... ok
+test tests::test_provider_config_default ... ok
+test tests::test_rate_limit_config_default ... ok
+test tests::test_retry_config_default ... ok
+test tests::test_provider_config_serialization ... ok
+test tests::test_lpis_providers_config_serialization ... ok
+test tests::test_base_client_without_rate_limit ... ok
+test tests::test_base_client_with_rate_limit ... ok
+test tests::test_base_client_creation ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+     Running unittests src/lib.rs (target/debug/deps/agrocore_messaging-c24566958246d43a)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/agrocore_reporting_service-f3263ac4ab6f4b08)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/agrocore_shared-66cf74741aa3c516)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/agrocore_shared-147a9c071e700ada)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/agrocore_weather_service-f40b4649c0c24dc9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agrocore_api
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agrocore_domain
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agrocore_infrastructure
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agrocore_lpis_providers
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agrocore_messaging
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agrocore_shared
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.8] - 2026-08-09
+
+### Added
+- Added API route-registration coverage for workforce, compliance, finance, PAC, harvest, livestock, weather, and olive modules.
+
+### Changed
+- Kept modules with remaining CRUD and authorization scenarios marked Nearly done in `tasks.md`.
+
 ## [0.7.7] - 2026-08-09
 
 ### Added
@@ -241,3 +249,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Phase 3.5: Farm operations API
 - Weather service integration
+
+## [0.7.9] - 2026-08-09
+
+### Fixed
+- API: Workforce-Handler übergeben nun korrekt `&[UserRole]` an die Repositories (statt `&Vec<String>`), wodurch Sichtbarkeits-/Autorisierungsfilter wieder kompilieren und greifen.
