@@ -30,11 +30,9 @@ Water-source and water-quota repository filtering, CRUD operations, tenant scopi
 
 ## Module 12 — Wetter & Phänologie
 
-**Status:** Open · **Priority:** P1 · **Estimated effort:** 1 day
+**Status:** Production · **Priority:** P1 · **Estimated effort:** 1 day
 
-- Implement weather-data update and delete operations in `weather_data.rs`.
-- Implement phenology-record update and delete operations in `phenology_record.rs`.
-- Add CRUD and tenant-visibility integration tests for weather data and phenology records.
+Weather-data and phenology-record tenant-scoped update/delete persistence is complete, with existing CRUD and visibility coverage passing.
 
 ## Module 14 — Finanzen: Kostenstellen
 

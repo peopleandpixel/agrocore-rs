@@ -145,14 +145,28 @@ impl WeatherDataRepo for PgWeatherDataRepo {
 
     fn update(
         &self,
-        _tid: TenantId,
-        _id: Uuid,
-        _dto: agrocore_domain::entities::weather::UpdateWeatherDataDto,
+        tid: TenantId,
+        id: Uuid,
+        dto: agrocore_domain::entities::weather::UpdateWeatherDataDto,
     ) -> RepositoryFuture<Option<WeatherData>> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query_as("UPDATE weather_data SET station_id = COALESCE($1, station_id), timestamp = COALESCE($2, timestamp), temperature_c = COALESCE($3, temperature_c), humidity_percent = COALESCE($4, humidity_percent), precipitation_mm = COALESCE($5, precipitation_mm), wind_speed_kmh = COALESCE($6, wind_speed_kmh), wind_direction_deg = COALESCE($7, wind_direction_deg), solar_radiation_wm2 = COALESCE($8, solar_radiation_wm2), pressure_hpa = COALESCE($9, pressure_hpa), soil_temperature_c = COALESCE($10, soil_temperature_c), soil_moisture_percent = COALESCE($11, soil_moisture_percent), leaf_wetness = COALESCE($12, leaf_wetness) WHERE id = $13 AND tenant_id = $14 RETURNING *")
+                .bind(dto.station_id).bind(dto.timestamp).bind(dto.temperature_c).bind(dto.humidity_percent).bind(dto.precipitation_mm).bind(dto.wind_speed_kmh).bind(dto.wind_direction_deg).bind(dto.solar_radiation_wm2).bind(dto.pressure_hpa).bind(dto.soil_temperature_c).bind(dto.soil_moisture_percent).bind(dto.leaf_wetness).bind(id).bind(tid)
+                .fetch_optional(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
 
-    fn delete(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<bool> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query("DELETE FROM weather_data WHERE id = $1 AND tenant_id = $2")
+                .bind(id)
+                .bind(tid)
+                .execute(&pool)
+                .await
+                .map(|r| r.rows_affected() > 0)
+                .map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
 }

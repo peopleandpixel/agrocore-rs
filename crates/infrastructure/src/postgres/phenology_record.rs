@@ -151,15 +151,29 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
 
     fn update(
         &self,
-        _tid: TenantId,
-        _id: Uuid,
-        _dto: UpdatePhenologyRecordDto,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdatePhenologyRecordDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<PhenologyRecord>> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query_as("UPDATE phenology_records SET site_id = COALESCE($1, site_id), observation_date = COALESCE($2, observation_date), stage = COALESCE($3, stage), forecast_next_stage_date = COALESCE($4, forecast_next_stage_date), notes = COALESCE($5, notes), photo_url = COALESCE($6, photo_url), observer_id = COALESCE($7, observer_id) WHERE id = $8 AND tenant_id = $9 RETURNING *")
+                .bind(dto.site_id).bind(dto.observation_date).bind(dto.stage.map(|v| serde_json::to_value(v).unwrap())).bind(dto.forecast_next_stage_date).bind(dto.notes).bind(dto.photo_url).bind(dto.observer_id).bind(id).bind(tid)
+                .fetch_optional(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
 
-    fn delete(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<bool> {
-        Box::pin(async move { Ok(false) })
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query("DELETE FROM phenology_records WHERE id = $1 AND tenant_id = $2")
+                .bind(id)
+                .bind(tid)
+                .execute(&pool)
+                .await
+                .map(|r| r.rows_affected() > 0)
+                .map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
 }
