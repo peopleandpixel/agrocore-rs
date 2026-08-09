@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.7] - 2026-08-09
+
+### Added
+- Completed tenant-scoped cost-center and financial-record update/delete persistence.
+- Added financial-record cost-center filtering with pagination.
+
+### Changed
+- Completed Module 14 and marked Finanzen: Kostenstellen production-ready.
+
 ## [0.7.6] - 2026-08-09
 
 ### Added

@@ -70,11 +70,31 @@ impl FinancialRecordRepo for PgFinancialRecordRepo {
     }
     fn find_by_cost_center(
         &self,
-        _tid: TenantId,
-        _cost_center_id: Uuid,
-        _p: Pagination,
+        tid: TenantId,
+        cost_center_id: Uuid,
+        p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<FinancialRecord>> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".to_string())) })
+        let pool = self.pool.clone();
+        let page = p.page.unwrap_or(0);
+        let per_page = p.per_page.unwrap_or(20);
+        let offset = page * per_page;
+        Box::pin(async move {
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM financial_records WHERE tenant_id = $1 AND cost_center_id = $2")
+                .bind(tid).bind(cost_center_id).fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data = sqlx::query_as("SELECT * FROM financial_records WHERE tenant_id = $1 AND cost_center_id = $2 ORDER BY date DESC LIMIT $3 OFFSET $4")
+                .bind(tid).bind(cost_center_id).bind(per_page as i32).bind(offset as i32).fetch_all(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
+            Ok(PaginatedResponse {
+                data,
+                total: total as u64,
+                page,
+                per_page,
+                total_pages: if total == 0 {
+                    0
+                } else {
+                    (total as f64 / per_page as f64).ceil() as u64
+                },
+            })
+        })
     }
     fn create(
         &self,
@@ -92,14 +112,28 @@ impl FinancialRecordRepo for PgFinancialRecordRepo {
     }
     fn update(
         &self,
-        _tid: TenantId,
-        _id: Uuid,
-        _dto: agrocore_domain::entities::finance::UpdateFinancialRecordDto,
+        tid: TenantId,
+        id: Uuid,
+        dto: agrocore_domain::entities::finance::UpdateFinancialRecordDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<FinancialRecord>> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".to_string())) })
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query_as("UPDATE financial_records SET cost_center_id = COALESCE($1, cost_center_id), date = COALESCE($2, date), amount = COALESCE($3, amount), currency = COALESCE($4, currency), record_type = COALESCE($5, record_type), category = COALESCE($6, category), description = COALESCE($7, description), reference_id = COALESCE($8, reference_id), updated_at = NOW() WHERE id = $9 AND tenant_id = $10 RETURNING *")
+                .bind(dto.cost_center_id).bind(dto.date).bind(dto.amount).bind(dto.currency).bind(dto.record_type.map(|v| serde_json::to_value(v).unwrap())).bind(dto.category).bind(dto.description).bind(dto.reference_id).bind(id).bind(tid)
+                .fetch_optional(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
-    fn delete(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<bool> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".to_string())) })
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query("DELETE FROM financial_records WHERE id = $1 AND tenant_id = $2")
+                .bind(id)
+                .bind(tid)
+                .execute(&pool)
+                .await
+                .map(|r| r.rows_affected() > 0)
+                .map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
 }

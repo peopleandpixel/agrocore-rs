@@ -36,11 +36,9 @@ Weather-data and phenology-record tenant-scoped update/delete persistence is com
 
 ## Module 14 — Finanzen: Kostenstellen
 
-**Status:** Open · **Priority:** P1 · **Estimated effort:** 1 day
+**Status:** Production · **Priority:** P1 · **Estimated effort:** 1 day
 
-- Complete the missing `CostCenterRepository` update and delete operations.
-- Complete the missing `FinancialRecordRepository` list, update, and delete operations.
-- Add CRUD, pagination, and tenant-visibility integration tests.
+Cost-center and financial-record update/delete persistence, cost-center filtering, pagination, and tenant scoping are complete; the workspace integration suite passes.
 
 ## Module 3 — Core: Mitarbeiter
 

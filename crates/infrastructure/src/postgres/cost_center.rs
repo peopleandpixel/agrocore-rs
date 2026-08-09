@@ -90,14 +90,24 @@ impl CostCenterRepo for PgCostCenterRepo {
     }
     fn update(
         &self,
-        _tid: TenantId,
-        _id: Uuid,
-        _dto: agrocore_domain::entities::finance::UpdateCostCenterDto,
+        tid: TenantId,
+        id: Uuid,
+        dto: agrocore_domain::entities::finance::UpdateCostCenterDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<CostCenter>> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".to_string())) })
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query_as("UPDATE cost_centers SET label = COALESCE($1, label), code = COALESCE($2, code), cost_center_type = COALESCE($3, cost_center_type), reference_id = COALESCE($4, reference_id), is_active = COALESCE($5, is_active), updated_at = NOW() WHERE id = $6 AND tenant_id = $7 RETURNING *")
+                .bind(dto.label).bind(dto.code).bind(dto.cost_center_type.map(|v| serde_json::to_value(v).unwrap())).bind(dto.reference_id).bind(dto.is_active).bind(id).bind(tid)
+                .fetch_optional(&pool).await.map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
-    fn delete(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<bool> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".to_string())) })
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query("UPDATE cost_centers SET is_active = false, updated_at = NOW() WHERE id = $1 AND tenant_id = $2")
+                .bind(id).bind(tid).execute(&pool).await.map(|r| r.rows_affected() > 0)
+                .map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
 }
