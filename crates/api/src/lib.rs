@@ -20,6 +20,7 @@ use agrocore_infrastructure::Database;
 use agrocore_lpis_providers::create_default_registry;
 use agrocore_messaging::MessagingClient;
 use agrocore_shared::lpis::LpisRegistry;
+use std::collections::HashMap;
 use std::sync::Arc;
 
 // Re-export for admin-ui
@@ -30,6 +31,7 @@ pub struct AppState {
     pub db: Arc<Database>,
     pub messaging: Arc<MessagingClient>,
     pub lpis_registry: Arc<LpisRegistry>,
+    pub iot_devices: Arc<tokio::sync::RwLock<HashMap<String, dto::IoTDeviceResponse>>>,
 }
 
 #[derive(OpenApi)]
@@ -47,6 +49,14 @@ pub struct AppState {
         handlers::orders::update_order,
         handlers::orders::delete_order,
         handlers::orders::my_tasks,
+        handlers::iot::list_devices,
+        handlers::iot::get_device,
+        handlers::iot::create_device,
+        handlers::iot::update_device,
+        handlers::iot::delete_device,
+        handlers::iot::get_device_telemetry,
+        handlers::iot::send_command,
+        handlers::iot::get_ha_discovery,
         handlers::users::list_users,
         handlers::users::get_user,
         handlers::users::create_user,
@@ -125,6 +135,18 @@ pub struct AppState {
                     dto::PaginatedCostCenterResponse,
                     dto::PaginatedFinancialRecordResponse,
                     dto::PaginatedAnimalResponse,
+                    dto::CreateIoTDeviceDto,
+                    dto::UpdateIoTDeviceDto,
+                    dto::IoTDeviceResponse,
+                    dto::IoTDeviceListResponse,
+                    dto::IoTDeviceTelemetryResponse,
+                    dto::IoTCommandRequestDto,
+                    dto::IoTCommandResponseDto,
+                    dto::HaDiscoveryConfigResponse,
+                    dto::IoTCapabilityDto,
+                    dto::IoTCapabilityType,
+                    dto::DeviceStatusDto,
+                    dto::CommandStatus,
                     agrocore_domain::entities::order::MyTask,
                     agrocore_domain::entities::user::UserRole,
                     agrocore_domain::entities::SiteType,
@@ -228,6 +250,7 @@ pub async fn run_server(
         db: Arc::new(db),
         messaging: Arc::new(messaging),
         lpis_registry,
+        iot_devices: Arc::new(tokio::sync::RwLock::new(HashMap::new())),
     });
 
     let prometheus = PrometheusMetricsBuilder::new("agrocore")

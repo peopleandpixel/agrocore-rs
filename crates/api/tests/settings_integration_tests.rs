@@ -33,7 +33,6 @@ async fn test_settings_routes_configured() {
 #[cfg(test)]
 mod config_serialization_tests {
     use agrocore_api::dto::LpisProviderConfig;
-    use toml;
 
     #[test]
     fn test_provider_config_roundtrip() {

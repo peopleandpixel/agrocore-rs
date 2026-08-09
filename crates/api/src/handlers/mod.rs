@@ -6,6 +6,7 @@ pub mod compliance;
 pub mod equipment;
 pub mod finance;
 pub mod harvest;
+pub mod iot;
 pub mod livestock;
 pub mod nutrition;
 pub mod orders;
@@ -113,6 +114,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .configure(nutrition::configure)
             .configure(harvest::configure)
             .configure(livestock::configure)
+            .configure(iot::configure)
             .configure(agriculture::configure),
     );
 }

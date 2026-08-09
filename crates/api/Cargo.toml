@@ -45,6 +45,7 @@ utoipa = { workspace = true, features = ["uuid", "chrono"] }
 utoipa-swagger-ui = { workspace = true }
 actix-web-prometheus = { workspace = true }
 actix-governor = "0.10"
+tokio = { workspace = true }
 dashmap = "6"
 validator = { workspace = true }
 rust_xlsxwriter = { workspace = true }

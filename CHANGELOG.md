@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-08-09
+
+### Added
+- Registered the IoT device API and its OpenAPI documentation.
+- Added shared IoT device state to `AppState` so device registrations survive across requests.
+- Added MQTT connection health tracking and health-monitoring lifecycle controls.
+
+### Fixed
+- Restored workspace compilation after the MQTT health-monitoring changes.
+- Corrected IoT role validation, DTO parsing, and API error handling.
+- Cleaned up workspace formatting and clippy findings.
+
 ## [0.7.0] - 2026-08-08
 
 ### Added

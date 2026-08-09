@@ -10,5 +10,6 @@ fn test_governor_seconds_per_request_default() {
 fn test_governor_burst_size_applied() {
     // Burst Size 120 = keine 429 Fehler für legitimen Traffic
     // Für normale Nutzung ausreichend
-    assert!(120 > 100);
+    let configured_burst_size = 120;
+    assert!(configured_burst_size > 100);
 }

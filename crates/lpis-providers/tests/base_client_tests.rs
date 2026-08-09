@@ -3,7 +3,6 @@ mod tests {
     use agrocore_lpis_providers::base::BaseClient;
     use agrocore_lpis_providers::config::ProviderConfig;
     use std::time::Duration;
-    use tokio;
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 

@@ -112,6 +112,28 @@ impl AuthExtractor {
             ))
         }
     }
+
+    pub fn require_any_role<I, S>(&self, roles: I) -> agrocore_shared::Result<()>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str>,
+    {
+        let required_roles: Vec<String> = roles
+            .into_iter()
+            .map(|role| role.as_ref().to_ascii_lowercase())
+            .collect();
+        if self.0.roles.iter().any(|role| {
+            required_roles
+                .iter()
+                .any(|required| role.eq_ignore_ascii_case(required))
+        }) {
+            Ok(())
+        } else {
+            Err(agrocore_shared::SharedError::Forbidden(
+                "Required role missing".into(),
+            ))
+        }
+    }
 }
 
 fn parse_uuid(s: &str) -> Result<uuid::Uuid, Error> {

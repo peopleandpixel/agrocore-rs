@@ -36,6 +36,26 @@ impl From<sqlx::Error> for ApiError {
 }
 
 impl ApiError {
+    pub fn forbidden(message: impl Into<String>) -> Self {
+        Self(SharedError::Forbidden(message.into()))
+    }
+
+    pub fn not_found(message: impl Into<String>) -> Self {
+        Self(SharedError::NotFound(message.into()))
+    }
+
+    pub fn validation(message: impl Into<String>) -> Self {
+        Self(SharedError::Validation(message.into()))
+    }
+
+    pub fn conflict(message: impl Into<String>) -> Self {
+        Self(SharedError::Conflict(message.into()))
+    }
+
+    pub fn bad_request(message: impl Into<String>) -> Self {
+        Self(SharedError::Validation(message.into()))
+    }
+
     /// Kurzer, stabiler Fehler-Slug für das `error`-Feld der JSON-Antwort.
     fn slug(&self) -> &'static str {
         match self.0 {
