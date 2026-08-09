@@ -24,11 +24,9 @@ Vineyard site filtering, CRUD routes, migration compatibility, and route integra
 
 ## Module 9 — Wasser
 
-**Status:** Open · **Priority:** P1 · **Estimated effort:** 1 day
+**Status:** Production · **Priority:** P1 · **Estimated effort:** 1 day
 
-- Implement the missing `WaterSourceRepository` methods in `water_source.rs`.
-- Implement the missing `WaterQuotaRepository` methods in `water_quota.rs`.
-- Add CRUD and tenant-visibility integration tests for water sources and quotas.
+Water-source and water-quota repository filtering, CRUD operations, tenant scoping, pagination, and quota balance initialization are complete.
 
 ## Module 12 — Wetter & Phänologie
 
