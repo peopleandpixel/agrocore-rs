@@ -72,11 +72,44 @@ impl VineyardRepo for PgVineyardRepo {
 
     fn find_by_site(
         &self,
-        _tid: TenantId,
-        _site_id: Uuid,
-        _p: Pagination,
+        tid: TenantId,
+        site_id: Uuid,
+        p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Vineyard>> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+        let pool = self.pool.clone();
+        let page = p.page.unwrap_or(0);
+        let per_page = p.per_page.unwrap_or(20);
+        let offset = page * per_page;
+
+        Box::pin(async move {
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM vineyards WHERE tenant_id = $1 AND site_id = $2",
+            )
+            .bind(tid)
+            .bind(site_id)
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            let data: Vec<Vineyard> = sqlx::query_as(
+                "SELECT * FROM vineyards WHERE tenant_id = $1 AND site_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
+            )
+            .bind(tid)
+            .bind(site_id)
+            .bind(per_page as i32)
+            .bind(offset as i32)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            Ok(PaginatedResponse {
+                data,
+                total: total as u64,
+                page,
+                per_page,
+                total_pages: ((total as f64 / per_page as f64).ceil() as u64),
+            })
+        })
     }
 
     fn create(

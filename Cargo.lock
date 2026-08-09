@@ -258,7 +258,7 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
 name = "admin-ui"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "agrocore-shared",
  "base64 0.23.0",
@@ -287,7 +287,7 @@ dependencies = [
 
 [[package]]
 name = "agrocore-api"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "actix-cors",
  "actix-files",
@@ -326,7 +326,7 @@ dependencies = [
 
 [[package]]
 name = "agrocore-asset-registry"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "actix-web",
  "agrocore-domain",
@@ -348,7 +348,7 @@ dependencies = [
 
 [[package]]
 name = "agrocore-domain"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "agrocore-shared",
  "chrono",
@@ -366,7 +366,7 @@ dependencies = [
 
 [[package]]
 name = "agrocore-geometry-service"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "actix-web",
  "agrocore-domain",
@@ -390,7 +390,7 @@ dependencies = [
 
 [[package]]
 name = "agrocore-infrastructure"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "agrocore-domain",
  "agrocore-shared",
@@ -412,7 +412,7 @@ dependencies = [
 
 [[package]]
 name = "agrocore-lpis-providers"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "agrocore-domain",
  "agrocore-shared",
@@ -446,7 +446,7 @@ dependencies = [
 
 [[package]]
 name = "agrocore-messaging"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "agrocore-domain",
  "anyhow",
@@ -468,7 +468,7 @@ dependencies = [
 
 [[package]]
 name = "agrocore-reporting-service"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "actix-web",
  "agrocore-domain",
@@ -492,7 +492,7 @@ dependencies = [
 
 [[package]]
 name = "agrocore-shared"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "async-trait",
  "chrono",
@@ -510,7 +510,7 @@ dependencies = [
 
 [[package]]
 name = "agrocore-weather-service"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "actix-web",
  "agrocore-domain",

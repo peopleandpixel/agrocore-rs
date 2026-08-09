@@ -1,6 +1,7 @@
 use crate::AppState;
 use crate::dto::{
-    MaterialCalculationRequestDto, MaterialCalculationResponseDto, PaginatedResponseDto, SiteDto,
+    CreateVineyardDto, MaterialCalculationRequestDto, MaterialCalculationResponseDto,
+    PaginatedResponseDto, PaginatedVineyardResponse, SiteDto, UpdateVineyardDto, VineyardDto,
     WaterRateCalculationRequestDto, WaterRateCalculationResponseDto,
 };
 use crate::error::ApiError;
@@ -13,9 +14,25 @@ use chrono::Utc;
 use serde::Deserialize;
 use utoipa::IntoParams;
 use uuid::Uuid;
+use validator::Validate;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/specialized/sites").route(web::get().to(list_specialized_sites)))
+        .service(
+            web::resource("/specialized/vineyards")
+                .route(web::get().to(list_vineyards))
+                .route(web::post().to(create_vineyard)),
+        )
+        .service(
+            web::resource("/specialized/vineyards/site/{site_id}")
+                .route(web::get().to(list_vineyards_by_site)),
+        )
+        .service(
+            web::resource("/specialized/vineyards/{id}")
+                .route(web::get().to(get_vineyard))
+                .route(web::put().to(update_vineyard))
+                .route(web::delete().to(delete_vineyard)),
+        )
         .service(web::resource("/calculate/material").route(web::post().to(calculate_material)))
         .service(web::resource("/calculate/water-rate").route(web::post().to(calculate_water_rate)))
         .service(web::resource("/predict/harvest").route(web::get().to(predict_harvest)))
@@ -23,6 +40,124 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             web::resource("/specialized/profitability")
                 .route(web::post().to(calculate_profitability)),
         );
+}
+
+pub async fn list_vineyards(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    query: web::Query<agrocore_shared::Pagination>,
+) -> Result<HttpResponse, ApiError> {
+    let result = state
+        .db
+        .vineyard_repo()
+        .find_all(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            query.into_inner(),
+        )
+        .await?;
+    Ok(HttpResponse::Ok().json(PaginatedVineyardResponse {
+        data: result.data.into_iter().map(VineyardDto::from).collect(),
+        total: result.total,
+        page: result.page,
+        per_page: result.per_page,
+        total_pages: result.total_pages,
+    }))
+}
+
+pub async fn list_vineyards_by_site(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    site_id: web::Path<Uuid>,
+    query: web::Query<agrocore_shared::Pagination>,
+) -> Result<HttpResponse, ApiError> {
+    let result = state
+        .db
+        .vineyard_repo()
+        .find_by_site(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *site_id,
+            query.into_inner(),
+        )
+        .await?;
+    Ok(HttpResponse::Ok().json(PaginatedVineyardResponse {
+        data: result.data.into_iter().map(VineyardDto::from).collect(),
+        total: result.total,
+        page: result.page,
+        per_page: result.per_page,
+        total_pages: result.total_pages,
+    }))
+}
+
+pub async fn get_vineyard(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let vineyard = state
+        .db
+        .vineyard_repo()
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Vineyard not found".into()))?;
+    Ok(HttpResponse::Ok().json(VineyardDto::from(vineyard)))
+}
+
+pub async fn create_vineyard(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    dto: web::Json<CreateVineyardDto>,
+) -> Result<HttpResponse, ApiError> {
+    dto.validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
+    let vineyard = state
+        .db
+        .vineyard_repo()
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner().into(),
+            auth.0.user_id,
+        )
+        .await?;
+    Ok(HttpResponse::Created().json(VineyardDto::from(vineyard)))
+}
+
+pub async fn update_vineyard(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+    dto: web::Json<UpdateVineyardDto>,
+) -> Result<HttpResponse, ApiError> {
+    dto.validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
+    let vineyard = state
+        .db
+        .vineyard_repo()
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner().into(),
+            auth.0.user_id,
+        )
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Vineyard not found".into()))?;
+    Ok(HttpResponse::Ok().json(VineyardDto::from(vineyard)))
+}
+
+pub async fn delete_vineyard(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    if state
+        .db
+        .vineyard_repo()
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
+        .await?
+    {
+        Ok(HttpResponse::NoContent().finish())
+    } else {
+        Err(SharedError::NotFound("Vineyard not found".into()).into())
+    }
 }
 
 #[derive(Debug, Deserialize, IntoParams)]

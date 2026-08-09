@@ -72,3 +72,17 @@ async fn test_task_routes_are_registered() {
         assert_ne!(resp.status(), StatusCode::NOT_FOUND, "{method} {uri}");
     }
 }
+
+#[actix_web::test]
+async fn test_vineyard_routes_are_registered() {
+    let app = test::init_service(App::new().configure(configure)).await;
+    for uri in [
+        "/api/v1/specialized/vineyards",
+        "/api/v1/specialized/vineyards/site/00000000-0000-0000-0000-000000000001",
+        "/api/v1/specialized/vineyards/00000000-0000-0000-0000-000000000001",
+    ] {
+        let req = TestRequest::get().uri(uri).to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_ne!(resp.status(), StatusCode::NOT_FOUND, "{uri}");
+    }
+}

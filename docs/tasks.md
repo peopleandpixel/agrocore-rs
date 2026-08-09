@@ -18,10 +18,9 @@ TaskData update/delete persistence, tenant scoping, migration coverage, and task
 
 ## Module 7 — Spezialkulturen: Weinbau
 
-**Status:** Open · **Priority:** P1 · **Estimated effort:** 0.5 day
+**Status:** Production · **Priority:** Complete
 
-- Implement `VineyardRepo::find_by_site` in `crates/infrastructure/src/postgres/vineyard.rs`.
-- Add repository and handler tests for vineyard site filtering.
+Vineyard site filtering, CRUD routes, migration compatibility, and route integration coverage are complete.
 
 ## Module 9 — Wasser
 
