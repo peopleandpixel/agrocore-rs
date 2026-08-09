@@ -9,6 +9,8 @@ use crate::dto::{
 use crate::error::ApiError;
 use actix_web::{HttpResponse, web};
 use agrocore_messaging::{IoTDeviceConfig, generate_ha_discovery_configs};
+use agrocore_shared::SharedError;
+use sqlx::Row;
 use std::collections::HashMap;
 use tracing::info;
 use uuid::Uuid;
@@ -42,7 +44,42 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     );
 }
 
-// In-memory storage for IoT devices (in production, use database)
+async fn find_device(
+    state: &web::Data<AppState>,
+    device_id: &str,
+) -> Result<Option<IoTDeviceResponse>, ApiError> {
+    let row = sqlx::query("SELECT device FROM iot_devices WHERE device_id = $1")
+        .bind(device_id)
+        .fetch_optional(state.db.pool())
+        .await?;
+
+    row.map(|row| {
+        serde_json::from_value(row.try_get("device")?)
+            .map_err(|error| ApiError(SharedError::Internal(error.to_string())))
+    })
+    .transpose()
+}
+
+async fn persist_device(
+    state: &web::Data<AppState>,
+    device: &IoTDeviceResponse,
+) -> Result<(), ApiError> {
+    let payload = serde_json::to_value(device)
+        .map_err(|error| ApiError(SharedError::Internal(error.to_string())))?;
+    sqlx::query(
+        "INSERT INTO iot_devices (device_id, tenant_id, site_id, device) VALUES ($1, $2, $3, $4)
+         ON CONFLICT (device_id) DO UPDATE SET tenant_id = EXCLUDED.tenant_id,
+         site_id = EXCLUDED.site_id, device = EXCLUDED.device, updated_at = NOW()",
+    )
+    .bind(&device.device_id)
+    .bind(device.tenant_id)
+    .bind(device.site_id)
+    .bind(payload)
+    .execute(state.db.pool())
+    .await?;
+    Ok(())
+}
+
 /// List all IoT devices for a tenant
 #[utoipa::path(
     get,
@@ -67,10 +104,15 @@ pub async fn list_devices(
 ) -> Result<HttpResponse, ApiError> {
     auth.require_any_role(vec!["admin", "manager", "viewer"])?;
 
-    let tenant_id = query
+    let requested_tenant = query
         .get("tenant_id")
         .and_then(|s| s.parse::<Uuid>().ok())
         .unwrap_or(auth.0.tenant_id);
+    let tenant_id = if auth.is_admin() {
+        requested_tenant
+    } else {
+        auth.0.tenant_id
+    };
 
     let site_id = query.get("site_id").and_then(|s| s.parse::<Uuid>().ok());
 
@@ -85,11 +127,17 @@ pub async fn list_devices(
             _ => None,
         });
 
-    let store = state.iot_devices.clone();
-    let devices = store.read().await;
+    let rows = sqlx::query("SELECT device FROM iot_devices WHERE tenant_id = $1")
+        .bind(tenant_id)
+        .fetch_all(state.db.pool())
+        .await?;
+    let devices: Vec<IoTDeviceResponse> = rows
+        .into_iter()
+        .filter_map(|row| serde_json::from_value(row.try_get("device").ok()?).ok())
+        .collect();
 
     let filtered: Vec<IoTDeviceResponse> = devices
-        .values()
+        .iter()
         .filter(|d| d.tenant_id == tenant_id)
         .filter(|d| site_id.is_none_or(|s| d.site_id == Some(s)))
         .filter(|d| status_filter.as_ref().is_none_or(|f| d.status == *f))
@@ -128,10 +176,7 @@ pub async fn get_device(
     auth.require_any_role(vec!["admin", "manager", "viewer"])?;
 
     let device_id = path.into_inner();
-    let store = state.iot_devices.clone();
-    let devices = store.read().await;
-
-    if let Some(device) = devices.get(&device_id) {
+    if let Some(device) = find_device(&state, &device_id).await? {
         if device.tenant_id != auth.0.tenant_id {
             return Err(ApiError::forbidden(
                 "Device belongs to different tenant".to_string(),
@@ -170,16 +215,13 @@ pub async fn create_device(
         .map_err(|e| ApiError::validation(e.to_string()))?;
 
     // Check tenant access
-    if dto.tenant_id != auth.0.tenant_id && !auth.0.roles.contains(&"admin".to_string()) {
+    if dto.tenant_id != auth.0.tenant_id && !auth.is_admin() {
         return Err(ApiError::forbidden(
             "Cannot create device for different tenant".to_string(),
         ));
     }
 
-    let store = state.iot_devices.clone();
-    let mut devices = store.write().await;
-
-    if devices.contains_key(&dto.device_id) {
+    if find_device(&state, &dto.device_id).await?.is_some() {
         return Err(ApiError::conflict("Device ID already exists".to_string()));
     }
 
@@ -201,7 +243,7 @@ pub async fn create_device(
         last_seen: None,
     };
 
-    devices.insert(dto.device_id.clone(), device.clone());
+    persist_device(&state, &device).await?;
 
     info!(
         "IoT device created: {} for tenant {}",
@@ -242,11 +284,8 @@ pub async fn update_device(
     dto.validate()
         .map_err(|e| ApiError::validation(e.to_string()))?;
 
-    let store = state.iot_devices.clone();
-    let mut devices = store.write().await;
-
-    if let Some(device) = devices.get_mut(&device_id) {
-        if device.tenant_id != auth.0.tenant_id && !auth.0.roles.contains(&"admin".to_string()) {
+    if let Some(mut device) = find_device(&state, &device_id).await? {
+        if device.tenant_id != auth.0.tenant_id && !auth.is_admin() {
             return Err(ApiError::forbidden(
                 "Cannot update device from different tenant".to_string(),
             ));
@@ -271,6 +310,7 @@ pub async fn update_device(
         }
 
         device.updated_at = chrono::Utc::now();
+        persist_device(&state, &device).await?;
 
         info!("IoT device updated: {}", device_id);
 
@@ -304,19 +344,21 @@ pub async fn delete_device(
     auth.require_admin()?;
 
     let device_id = path.into_inner();
-    let store = state.iot_devices.clone();
-    let mut devices = store.write().await;
-
-    if let Some(device) = devices.get(&device_id)
+    if let Some(device) = find_device(&state, &device_id).await?
         && device.tenant_id != auth.0.tenant_id
-        && !auth.0.roles.contains(&"admin".to_string())
+        && !auth.is_admin()
     {
         return Err(ApiError::forbidden(
             "Cannot delete device from different tenant".to_string(),
         ));
     }
 
-    if devices.remove(&device_id).is_some() {
+    let deleted = sqlx::query("DELETE FROM iot_devices WHERE device_id = $1")
+        .bind(&device_id)
+        .execute(state.db.pool())
+        .await?
+        .rows_affected();
+    if deleted > 0 {
         info!("IoT device deleted: {}", device_id);
         Ok(HttpResponse::NoContent().finish())
     } else {
@@ -351,11 +393,8 @@ pub async fn get_device_telemetry(
     auth.require_any_role(vec!["admin", "manager", "viewer"])?;
 
     let device_id = path.into_inner();
-    let store = state.iot_devices.clone();
-    let devices = store.read().await;
-
-    if let Some(device) = devices.get(&device_id) {
-        if device.tenant_id != auth.0.tenant_id && !auth.0.roles.contains(&"admin".to_string()) {
+    if let Some(device) = find_device(&state, &device_id).await? {
+        if device.tenant_id != auth.0.tenant_id && !auth.is_admin() {
             return Err(ApiError::forbidden(
                 "Device belongs to different tenant".to_string(),
             ));
@@ -404,11 +443,8 @@ pub async fn send_command(
     let device_id = path.into_inner();
     let dto = dto.0;
 
-    let store = state.iot_devices.clone();
-    let devices = store.read().await;
-
-    if let Some(device) = devices.get(&device_id) {
-        if device.tenant_id != auth.0.tenant_id && !auth.0.roles.contains(&"admin".to_string()) {
+    if let Some(device) = find_device(&state, &device_id).await? {
+        if device.tenant_id != auth.0.tenant_id && !auth.is_admin() {
             return Err(ApiError::forbidden(
                 "Device belongs to different tenant".to_string(),
             ));
@@ -465,11 +501,8 @@ pub async fn get_ha_discovery(
     auth.require_any_role(vec!["admin", "manager"])?;
 
     let device_id = path.into_inner();
-    let store = state.iot_devices.clone();
-    let devices = store.read().await;
-
-    if let Some(device) = devices.get(&device_id) {
-        if device.tenant_id != auth.0.tenant_id && !auth.0.roles.contains(&"admin".to_string()) {
+    if let Some(device) = find_device(&state, &device_id).await? {
+        if device.tenant_id != auth.0.tenant_id && !auth.is_admin() {
             return Err(ApiError::forbidden(
                 "Device belongs to different tenant".to_string(),
             ));

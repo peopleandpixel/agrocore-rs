@@ -6,16 +6,9 @@ Tasks are ordered by priority, then by estimated implementation time. Completed 
 
 ## Module 16 — IoT & Messaging
 
-**Status:** Open · **Priority:** P0 · **Estimated effort:** 1–2 days
+**Status:** Production · **Priority:** Complete
 
-- Fix the MQTT health-monitoring build errors in `crates/messaging/src/lib.rs`:
-  - import the asynchronous `RwLock` and `Duration` types;
-  - correct reconnect-handle locking and cleanup;
-  - restore `cargo check --workspace`.
-- Register `iot::configure` in `crates/api/src/handlers/mod.rs`.
-- Register IoT endpoints and schemas in `ApiDoc`.
-- Move the IoT device store into `AppState` and replace the per-request in-memory fallback with a persistent repository.
-- Add IoT API integration tests covering tenant isolation and CRUD.
+PostgreSQL persistence, tenant-scoped CRUD, route registration, OpenAPI exposure, and IoT route integration coverage are complete.
 
 ## Module 2 — Core: Aufträge & Tasks
 
