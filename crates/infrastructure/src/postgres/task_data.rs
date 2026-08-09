@@ -164,16 +164,17 @@ impl TaskDataRepository for PgTaskDataRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             let id = Uuid::new_v4();
+            let started_at = dto.started_at.unwrap_or_else(Utc::now);
             sqlx::query_as::<_, TaskData>(
                 r#"INSERT INTO task_data (
                     id, tenant_id, order_id, worker_id, site_id, description, 
                     started_at, ended_at, pause_resume_cycles, paused_at, duration_minutes,
                     machine_id, machine_hours, cost_center_id, area_covered,
                     materials_used, observations, gps_track, photo_urls,
-                    pause_resume_cycles, finished_for_day_at, handoff_to_worker_id, is_session_complete,
+                    finished_for_day_at, handoff_to_worker_id, is_session_complete,
                     created_at, updated_at
                    )
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, NOW(), NOW())
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, NOW(), NOW())
                    RETURNING *\"#)
             .bind(id)
             .bind(tid)
@@ -181,7 +182,7 @@ impl TaskDataRepository for PgTaskDataRepo {
             .bind(by)
             .bind(dto.site_id)
             .bind(dto.description)
-            .bind(dto.started_at)
+            .bind(started_at)
             .bind(dto.ended_at)
             .bind(serde_json::to_value(Vec::<PauseResumeCycle>::new()).unwrap_or(serde_json::Value::Null))
             .bind(dto.paused_at)
@@ -194,7 +195,6 @@ impl TaskDataRepository for PgTaskDataRepo {
             .bind(dto.observations)
             .bind(serde_json::to_value(dto.gps_track).unwrap_or(serde_json::Value::Null))
             .bind(serde_json::to_value(dto.photo_urls).unwrap_or(serde_json::Value::Null))
-            .bind(serde_json::to_value(Vec::<PauseResumeCycle>::new()).unwrap_or(serde_json::Value::Null))
             .bind(Option::<DateTime<Utc>>::None)
             .bind(Option::<Uuid>::None)
             .bind(false)
@@ -206,15 +206,73 @@ impl TaskDataRepository for PgTaskDataRepo {
 
     fn update(
         &self,
-        _tid: TenantId,
-        _id: Uuid,
-        _dto: UpdateTaskDataDto,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateTaskDataDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<TaskData>> {
-        Box::pin(async move { Err(SharedError::Internal("Not implemented".into())) })
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query_as::<_, TaskData>(
+                r#"UPDATE task_data SET
+                    order_id = COALESCE($3, order_id),
+                    site_id = COALESCE($4, site_id),
+                    description = COALESCE($5, description),
+                    started_at = COALESCE($6, started_at),
+                    ended_at = COALESCE($7, ended_at),
+                    paused_at = COALESCE($8, paused_at),
+                    duration_minutes = COALESCE($9, duration_minutes),
+                    machine_id = COALESCE($10, machine_id),
+                    machine_hours = COALESCE($11, machine_hours),
+                    cost_center_id = COALESCE($12, cost_center_id),
+                    area_covered = COALESCE($13, area_covered),
+                    materials_used = COALESCE($14, materials_used),
+                    observations = COALESCE($15, observations),
+                    gps_track = COALESCE($16, gps_track),
+                    photo_urls = COALESCE($17, photo_urls),
+                    handoff_to_worker_id = COALESCE($18, handoff_to_worker_id),
+                    is_session_complete = COALESCE($19, is_session_complete),
+                    finished_for_day_at = CASE WHEN $20 THEN COALESCE(finished_for_day_at, NOW()) ELSE finished_for_day_at END,
+                    updated_at = NOW()
+                   WHERE id = $1 AND tenant_id = $2
+                   RETURNING *"#,
+            )
+            .bind(id)
+            .bind(tid)
+            .bind(dto.order_id)
+            .bind(dto.site_id)
+            .bind(dto.description)
+            .bind(dto.started_at)
+            .bind(dto.ended_at)
+            .bind(dto.paused_at)
+            .bind(dto.duration_minutes)
+            .bind(dto.machine_id)
+            .bind(dto.machine_hours)
+            .bind(dto.cost_center_id)
+            .bind(dto.area_covered)
+            .bind(dto.materials_used.map(|v| serde_json::to_value(v).unwrap_or_default()))
+            .bind(dto.observations)
+            .bind(dto.gps_track.map(|v| serde_json::to_value(v).unwrap_or_default()))
+            .bind(dto.photo_urls.map(|v| serde_json::to_value(v).unwrap_or_default()))
+            .bind(dto.handoff_to_worker_id)
+            .bind(dto.is_session_complete)
+            .bind(dto.finish_for_day)
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
 
-    fn delete(&self, _tid: TenantId, _id: Uuid) -> RepositoryFuture<bool> {
-        Box::pin(async move { Ok(false) })
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query("DELETE FROM task_data WHERE id = $1 AND tenant_id = $2")
+                .bind(id)
+                .bind(tid)
+                .execute(&pool)
+                .await
+                .map(|result| result.rows_affected() > 0)
+                .map_err(|e| SharedError::Database(e.to_string()))
+        })
     }
 }

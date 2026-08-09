@@ -12,10 +12,9 @@ PostgreSQL persistence, tenant-scoped CRUD, route registration, OpenAPI exposure
 
 ## Module 2 — Core: Aufträge & Tasks
 
-**Status:** Open · **Priority:** P1 · **Estimated effort:** 1 day
+**Status:** Production · **Priority:** Complete
 
-- Complete `TaskDataRepository::update` and `delete` in `crates/infrastructure/src/postgres/task_data.rs`.
-- Add CRUD, authorization, pagination, and tenant-visibility integration tests for `tasks.rs`.
+TaskData update/delete persistence, tenant scoping, migration coverage, and task-route integration coverage are complete.
 
 ## Module 7 — Spezialkulturen: Weinbau
 

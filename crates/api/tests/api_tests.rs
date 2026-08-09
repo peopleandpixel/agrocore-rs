@@ -52,3 +52,23 @@ async fn test_iot_routes_require_authentication() {
         assert_ne!(resp.status(), StatusCode::NOT_FOUND, "{uri}");
     }
 }
+
+#[actix_web::test]
+async fn test_task_routes_are_registered() {
+    let app = test::init_service(App::new().configure(configure)).await;
+    for (method, uri) in [
+        ("GET", "/api/v1/tasks"),
+        ("GET", "/api/v1/tasks/00000000-0000-0000-0000-000000000001"),
+        (
+            "DELETE",
+            "/api/v1/tasks/00000000-0000-0000-0000-000000000001",
+        ),
+    ] {
+        let req = match method {
+            "DELETE" => TestRequest::delete().uri(uri).to_request(),
+            _ => TestRequest::get().uri(uri).to_request(),
+        };
+        let resp = test::call_service(&app, req).await;
+        assert_ne!(resp.status(), StatusCode::NOT_FOUND, "{method} {uri}");
+    }
+}
