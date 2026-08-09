@@ -11,6 +11,7 @@ use chrono::{DateTime, Utc};
 use failsafe::Config;
 use rumqttc::{AsyncClient, Event as MqttEvent, EventLoop, MqttOptions, QoS};
 use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
 use tracing::info;
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -18,9 +19,7 @@ use validator::Validate;
 
 pub mod bridge;
 
-pub use bridge::{
-    BridgeConfig, BridgeRoute, BridgeStats, MqttBridge, MqttBridgeBuilder,
-};
+pub use bridge::{BridgeConfig, BridgeRoute, BridgeStats, MqttBridge, MqttBridgeBuilder};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Event<T> {
@@ -702,7 +701,7 @@ pub fn generate_ha_discovery_configs(
 // MQTT Client wrapper
 pub struct MqttClient {
     client: AsyncClient,
-    event_loop: EventLoop,
+    event_loop: Arc<Mutex<Option<EventLoop>>>,
     #[allow(dead_code)]
     config: MqttConfig,
     topic_prefix: String,
@@ -735,7 +734,7 @@ impl MqttClient {
 
         Ok(Self {
             client,
-            event_loop,
+            event_loop: Arc::new(Mutex::new(Some(event_loop))),
             topic_prefix: config.topic_prefix.clone(),
             config,
         })
@@ -749,6 +748,16 @@ impl MqttClient {
     /// Build a full topic with prefix
     pub fn build_topic(&self, topic: &str) -> String {
         format!("{}/{}", self.topic_prefix, topic)
+    }
+
+    /// Get the event loop for external processing (used by bridge)
+    pub fn event_loop(&self) -> Arc<Mutex<Option<EventLoop>>> {
+        self.event_loop.clone()
+    }
+
+    /// Get the async client
+    pub fn client(&self) -> &AsyncClient {
+        &self.client
     }
 
     /// Publish telemetry data from IoT device
@@ -779,11 +788,7 @@ impl MqttClient {
     }
 
     /// Subscribe to device commands
-    pub async fn subscribe_commands(
-        &mut self,
-        tenant_id: Uuid,
-        device_id: &str,
-    ) -> anyhow::Result<()> {
+    pub async fn subscribe_commands(&self, tenant_id: Uuid, device_id: &str) -> anyhow::Result<()> {
         let topic = self.build_topic(&format!("commands/{}/{}", tenant_id, device_id));
 
         self.client.subscribe(topic, QoS::AtLeastOnce).await?;
@@ -792,7 +797,7 @@ impl MqttClient {
     }
 
     /// Subscribe to broadcast commands (all devices in tenant)
-    pub async fn subscribe_broadcast_commands(&mut self, tenant_id: Uuid) -> anyhow::Result<()> {
+    pub async fn subscribe_broadcast_commands(&self, tenant_id: Uuid) -> anyhow::Result<()> {
         let topic = self.build_topic(&format!("commands/{}/broadcast", tenant_id));
 
         self.client.subscribe(topic, QoS::AtLeastOnce).await?;
@@ -801,17 +806,30 @@ impl MqttClient {
     }
 
     /// Get next MQTT event from event loop
+    #[allow(clippy::await_holding_lock)]
     pub async fn next_event(&mut self) -> Option<MqttEvent> {
-        self.event_loop.poll().await.ok()
+        let mut guard = self.event_loop.lock().ok()?;
+        guard.as_mut()?.poll().await.ok()
     }
 
     /// Process incoming MQTT events and handle them
+    #[allow(clippy::await_holding_lock)]
     pub async fn process_events<F>(&mut self, mut handler: F) -> anyhow::Result<()>
     where
         F: FnMut(MqttEvent) -> anyhow::Result<()>,
     {
+        let mut event_loop = {
+            let mut guard = self
+                .event_loop
+                .lock()
+                .map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
+            guard
+                .take()
+                .ok_or_else(|| anyhow::anyhow!("Event loop not available"))?
+        };
+
         loop {
-            match self.event_loop.poll().await {
+            match event_loop.poll().await {
                 Ok(event) => {
                     if let Err(e) = handler(event) {
                         tracing::error!("Error handling MQTT event: {}", e);
@@ -845,8 +863,8 @@ impl MqttClient {
 
 // Unified messaging client supporting both NATS and MQTT
 pub struct UnifiedMessagingClient {
-    nats: Option<MessagingClient>,
-    mqtt: Option<MqttClient>,
+    nats: Option<Arc<MessagingClient>>,
+    mqtt: Option<Arc<MqttClient>>,
 }
 
 impl UnifiedMessagingClient {
@@ -855,13 +873,13 @@ impl UnifiedMessagingClient {
         mqtt_config: Option<MqttConfig>,
     ) -> anyhow::Result<Self> {
         let nats = if let Some(url) = nats_url {
-            Some(MessagingClient::connect(url).await?)
+            Some(Arc::new(MessagingClient::connect(url).await?))
         } else {
             None
         };
 
         let mqtt = if let Some(config) = mqtt_config {
-            Some(MqttClient::connect(config).await?)
+            Some(Arc::new(MqttClient::connect(config).await?))
         } else {
             None
         };
@@ -884,16 +902,22 @@ impl UnifiedMessagingClient {
     ) -> anyhow::Result<()> {
         let mut errors = Vec::new();
 
-        if let (Some(nats), Some(subject)) = (&self.nats, nats_subject)
-            && let Err(e) = nats.publish(subject, event).await
-        {
-            errors.push(format!("NATS: {}", e));
+        if let Some(nats) = &self.nats {
+            #[allow(clippy::collapsible_if)]
+            if let Some(subject) = nats_subject {
+                if let Err(e) = nats.publish(subject, event).await {
+                    errors.push(format!("NATS: {}", e));
+                }
+            }
         }
 
-        if let (Some(mqtt), Some(topic)) = (&self.mqtt, mqtt_topic)
-            && let Err(e) = mqtt.publish_event(topic, event, false).await
-        {
-            errors.push(format!("MQTT: {}", e));
+        if let Some(mqtt) = &self.mqtt {
+            #[allow(clippy::collapsible_if)]
+            if let Some(topic) = mqtt_topic {
+                if let Err(e) = mqtt.publish_event(topic, event, false).await {
+                    errors.push(format!("MQTT: {}", e));
+                }
+            }
         }
 
         if !errors.is_empty() {
@@ -926,11 +950,11 @@ impl UnifiedMessagingClient {
 
     /// Subscribe to commands for a device
     pub async fn subscribe_device_commands(
-        &mut self,
+        &self,
         tenant_id: Uuid,
         device_id: &str,
     ) -> anyhow::Result<()> {
-        if let Some(mqtt) = &mut self.mqtt {
+        if let Some(mqtt) = &self.mqtt {
             mqtt.subscribe_commands(tenant_id, device_id).await
         } else {
             Err(anyhow::anyhow!("MQTT not configured"))
@@ -938,13 +962,13 @@ impl UnifiedMessagingClient {
     }
 
     /// Get NATS client if available
-    pub fn nats(&self) -> Option<&MessagingClient> {
-        self.nats.as_ref()
+    pub fn nats(&self) -> Option<Arc<MessagingClient>> {
+        self.nats.clone()
     }
 
     /// Get MQTT client if available
-    pub fn mqtt(&self) -> Option<&MqttClient> {
-        self.mqtt.as_ref()
+    pub fn mqtt(&self) -> Option<Arc<MqttClient>> {
+        self.mqtt.clone()
     }
 }
 
@@ -1029,6 +1053,35 @@ impl MessagingClient {
         }
     }
 
+    /// Publiziert raw bytes an NATS (für Bridge-Forwarding)
+    pub async fn publish_raw(&self, subject: &str, payload: Vec<u8>) -> anyhow::Result<()> {
+        let mut attempts = 0;
+        let max_attempts = 3;
+        let payload: Bytes = Bytes::from(payload);
+
+        loop {
+            match self
+                .client
+                .publish(subject.to_string(), payload.clone())
+                .await
+            {
+                Ok(_) => return Ok(()),
+                Err(e) if attempts < max_attempts => {
+                    attempts += 1;
+                    tracing::warn!("Failed to publish raw to NATS, attempt {}: {}", attempts, e);
+                    tokio::time::sleep(tokio::time::Duration::from_millis(100 * attempts)).await;
+                }
+                Err(e) => {
+                    return Err(anyhow::anyhow!(
+                        "Failed to publish raw after {} attempts: {}",
+                        max_attempts,
+                        e
+                    ));
+                }
+            }
+        }
+    }
+
     pub async fn subscribe(&self, subject: &str) -> anyhow::Result<async_nats::Subscriber> {
         let subscriber = self.client.subscribe(subject.to_string()).await?;
         Ok(subscriber)
@@ -1076,13 +1129,6 @@ impl MessagingClient {
                 }
             }
         }
-    }
-
-    pub async fn publish_raw(&self, subject: &str, payload: Vec<u8>) -> anyhow::Result<()> {
-        self.client
-            .publish(subject.to_string(), payload.into())
-            .await?;
-        Ok(())
     }
 
     /// Publish IoT telemetry via NATS (for internal services)

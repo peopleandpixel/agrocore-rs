@@ -20,4 +20,5 @@ bytes = "1.0"
 utoipa.workspace = true
 validator.workspace = true
 rumqttc.workspace = true
+
 futures-util = "0.3.32"
