@@ -21,3 +21,4 @@ strum = { version = "0.26", features = ["derive"] }
 [features]
 default = ["sqlx"]
 sqlx = ["dep:sqlx", "agrocore-shared/sqlx"]
+mocks = []

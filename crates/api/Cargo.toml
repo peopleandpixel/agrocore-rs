@@ -24,6 +24,10 @@ path = "tests/auth/mod.rs"
 name = "reporting_test"
 path = "tests/reporting/mod.rs"
 
+[[test]]
+name = "workforce_test"
+path = "tests/workforce_integration.rs"
+
 [dependencies]
 agrocore-domain = { path = "../domain" }
 agrocore-infrastructure = { path = "../infrastructure" }
@@ -59,8 +63,39 @@ geo = { workspace = true }
 [features]
 default = ["sqlx"]
 sqlx = ["dep:sqlx"]
+mocks = ["agrocore-domain/mocks", "agrocore-infrastructure/mocks", "agrocore-messaging/mocks"]
 
 [dev-dependencies]
 testcontainers = "0.27.3"
 testcontainers-modules = { version = "0.15.0", features = ["postgres"] }
 toml = "0.8"
+[[test]]
+name = "compliance_test"
+path = "tests/compliance_integration.rs"
+[[test]]
+name = "olive_test"
+path = "tests/olive_integration.rs"
+[[test]]
+name = "harvest_test"
+path = "tests/harvest_integration.rs"
+[[test]]
+name = "livestock_test"
+path = "tests/livestock_integration.rs"
+[[test]]
+name = "finance_test"
+path = "tests/finance_integration.rs"
+[[test]]
+name = "sites_test"
+path = "tests/sites_integration.rs"
+[[test]]
+name = "equipment_test"
+path = "tests/equipment_integration.rs"
+[[test]]
+name = "weather_test"
+path = "tests/weather_integration.rs"
+[[test]]
+name = "water_test"
+path = "tests/water_integration.rs"
+[[test]]
+name = "reporting_integration_test"
+path = "tests/reporting_integration.rs"

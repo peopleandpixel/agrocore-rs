@@ -1178,7 +1178,15 @@ impl UnifiedMessagingClient {
     }
 }
 
-pub struct MessagingClient {
+#[derive(Clone)]
+pub enum MessagingClient {
+    Nats(NatsMessagingClient),
+    #[cfg(any(test, feature = "mocks"))]
+    Mock(Arc<std::sync::Mutex<std::collections::HashMap<String, Vec<u8>>>>),
+}
+
+#[derive(Clone)]
+pub struct NatsMessagingClient {
     client: Client,
     circuit_breaker: failsafe::StateMachine<
         failsafe::failure_policy::OrElse<
@@ -1220,10 +1228,24 @@ impl MessagingClient {
 
         let circuit_breaker = Config::new().build();
 
-        Ok(Self {
+        Ok(Self::Nats(NatsMessagingClient {
             client,
             circuit_breaker,
-        })
+        }))
+    }
+
+    #[cfg(any(test, feature = "mocks"))]
+    pub fn new_mock() -> Self {
+        Self::Mock(Arc::new(std::sync::Mutex::new(
+            std::collections::HashMap::new(),
+        )))
+    }
+
+    #[cfg(any(test, feature = "mocks"))]
+    pub fn set_mock_response(&self, subject: &str, response: Vec<u8>) {
+        if let Self::Mock(m) = self {
+            m.lock().unwrap().insert(subject.to_string(), response);
+        }
     }
 
     /// Publiziert ein Event an NATS. Nutzt `bytes::Bytes` für zero-copy Payload.
@@ -1232,65 +1254,85 @@ impl MessagingClient {
         subject: &str,
         event: &Event<T>,
     ) -> anyhow::Result<()> {
-        let mut attempts = 0;
-        let max_attempts = 3;
-        let payload: Bytes = Bytes::from(serde_json::to_vec(event)?);
+        match self {
+            Self::Nats(n) => {
+                let mut attempts = 0;
+                let max_attempts = 3;
+                let payload: Bytes = Bytes::from(serde_json::to_vec(event)?);
 
-        loop {
-            match self
-                .client
-                .publish(subject.to_string(), payload.clone())
-                .await
-            {
-                Ok(_) => return Ok(()),
-                Err(e) if attempts < max_attempts => {
-                    attempts += 1;
-                    tracing::warn!("Failed to publish to NATS, attempt {}: {}", attempts, e);
-                    tokio::time::sleep(tokio::time::Duration::from_millis(100 * attempts)).await;
-                }
-                Err(e) => {
-                    return Err(anyhow::anyhow!(
-                        "Failed to publish after {} attempts: {}",
-                        max_attempts,
-                        e
-                    ));
+                loop {
+                    match n.client.publish(subject.to_string(), payload.clone()).await {
+                        Ok(_) => return Ok(()),
+                        Err(e) if attempts < max_attempts => {
+                            attempts += 1;
+                            tracing::warn!(
+                                "Failed to publish to NATS, attempt {}: {}",
+                                attempts,
+                                e
+                            );
+                            tokio::time::sleep(tokio::time::Duration::from_millis(100 * attempts))
+                                .await;
+                        }
+                        Err(e) => {
+                            return Err(anyhow::anyhow!(
+                                "Failed to publish after {} attempts: {}",
+                                max_attempts,
+                                e
+                            ));
+                        }
+                    }
                 }
             }
+            #[cfg(any(test, feature = "mocks"))]
+            Self::Mock(_) => Ok(()),
         }
     }
 
     /// Publiziert raw bytes an NATS (für Bridge-Forwarding)
     pub async fn publish_raw(&self, subject: &str, payload: Vec<u8>) -> anyhow::Result<()> {
-        let mut attempts = 0;
-        let max_attempts = 3;
-        let payload: Bytes = Bytes::from(payload);
+        match self {
+            Self::Nats(n) => {
+                let mut attempts = 0;
+                let max_attempts = 3;
+                let payload: Bytes = Bytes::from(payload);
 
-        loop {
-            match self
-                .client
-                .publish(subject.to_string(), payload.clone())
-                .await
-            {
-                Ok(_) => return Ok(()),
-                Err(e) if attempts < max_attempts => {
-                    attempts += 1;
-                    tracing::warn!("Failed to publish raw to NATS, attempt {}: {}", attempts, e);
-                    tokio::time::sleep(tokio::time::Duration::from_millis(100 * attempts)).await;
-                }
-                Err(e) => {
-                    return Err(anyhow::anyhow!(
-                        "Failed to publish raw after {} attempts: {}",
-                        max_attempts,
-                        e
-                    ));
+                loop {
+                    match n.client.publish(subject.to_string(), payload.clone()).await {
+                        Ok(_) => return Ok(()),
+                        Err(e) if attempts < max_attempts => {
+                            attempts += 1;
+                            tracing::warn!(
+                                "Failed to publish raw to NATS, attempt {}: {}",
+                                attempts,
+                                e
+                            );
+                            tokio::time::sleep(tokio::time::Duration::from_millis(100 * attempts))
+                                .await;
+                        }
+                        Err(e) => {
+                            return Err(anyhow::anyhow!(
+                                "Failed to publish raw after {} attempts: {}",
+                                max_attempts,
+                                e
+                            ));
+                        }
+                    }
                 }
             }
+            #[cfg(any(test, feature = "mocks"))]
+            Self::Mock(_) => Ok(()),
         }
     }
 
     pub async fn subscribe(&self, subject: &str) -> anyhow::Result<async_nats::Subscriber> {
-        let subscriber = self.client.subscribe(subject.to_string()).await?;
-        Ok(subscriber)
+        match self {
+            Self::Nats(n) => {
+                let subscriber = n.client.subscribe(subject.to_string()).await?;
+                Ok(subscriber)
+            }
+            #[cfg(any(test, feature = "mocks"))]
+            Self::Mock(_) => Err(anyhow::anyhow!("Mock subscribe not implemented")),
+        }
     }
 
     pub async fn request<T: Serialize, R: for<'de> Deserialize<'de>>(
@@ -1298,40 +1340,60 @@ impl MessagingClient {
         subject: &str,
         payload: &T,
     ) -> anyhow::Result<R> {
-        let mut attempts = 0;
-        let max_attempts = 3;
-        let payload_bytes: Bytes = Bytes::from(serde_json::to_vec(payload)?);
+        match self {
+            Self::Nats(n) => {
+                let mut attempts = 0;
+                let max_attempts = 3;
+                let payload_bytes: Bytes = Bytes::from(serde_json::to_vec(payload)?);
 
-        loop {
-            if !self.circuit_breaker.is_call_permitted() {
-                return Err(anyhow::anyhow!(
-                    "Circuit breaker is open for subject: {}",
-                    subject
-                ));
+                loop {
+                    if !n.circuit_breaker.is_call_permitted() {
+                        return Err(anyhow::anyhow!(
+                            "Circuit breaker is open for subject: {}",
+                            subject
+                        ));
+                    }
+
+                    match n
+                        .client
+                        .request(subject.to_string(), payload_bytes.clone())
+                        .await
+                    {
+                        Ok(response) => {
+                            n.circuit_breaker.on_success();
+                            let result = serde_json::from_slice(&response.payload)?;
+                            return Ok(result);
+                        }
+                        Err(e) if attempts < max_attempts => {
+                            attempts += 1;
+                            tracing::warn!(
+                                "Failed to request from NATS, attempt {}: {}",
+                                attempts,
+                                e
+                            );
+                            tokio::time::sleep(tokio::time::Duration::from_millis(200 * attempts))
+                                .await;
+                        }
+                        Err(e) => {
+                            n.circuit_breaker.on_error();
+                            return Err(anyhow::anyhow!(
+                                "Request failed after {} attempts: {}",
+                                max_attempts,
+                                e
+                            ));
+                        }
+                    }
+                }
             }
-
-            match self
-                .client
-                .request(subject.to_string(), payload_bytes.clone())
-                .await
-            {
-                Ok(response) => {
-                    self.circuit_breaker.on_success();
-                    let result = serde_json::from_slice(&response.payload)?;
-                    return Ok(result);
-                }
-                Err(e) if attempts < max_attempts => {
-                    attempts += 1;
-                    tracing::warn!("Failed to request from NATS, attempt {}: {}", attempts, e);
-                    tokio::time::sleep(tokio::time::Duration::from_millis(200 * attempts)).await;
-                }
-                Err(e) => {
-                    self.circuit_breaker.on_error();
-                    return Err(anyhow::anyhow!(
-                        "Request failed after {} attempts: {}",
-                        max_attempts,
-                        e
-                    ));
+            #[cfg(any(test, feature = "mocks"))]
+            Self::Mock(m) => {
+                let res = m.lock().unwrap().get(subject).cloned();
+                match res {
+                    Some(bytes) => {
+                        let result = serde_json::from_slice(&bytes)?;
+                        Ok(result)
+                    }
+                    None => Err(anyhow::anyhow!("No mock response for subject: {}", subject)),
                 }
             }
         }

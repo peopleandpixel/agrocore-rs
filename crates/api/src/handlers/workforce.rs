@@ -51,6 +51,21 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                 web::resource("/locations")
                     .route(web::get().to(get_latest_locations))
                     .route(web::post().to(report_location)),
+            )
+            // Worker Task Status routes
+            .service(
+                web::resource("/tasks/{id}/status")
+                    .route(web::get().to(get_task_worker_statuses))
+                    .route(web::post().to(create_worker_task_status)),
+            )
+            .service(
+                web::resource("/tasks/{id}/status/{worker_id}")
+                    .route(web::get().to(get_worker_task_status))
+                    .route(web::put().to(update_worker_task_status)),
+            )
+            .service(
+                web::resource("/tasks/{id}/status/aggregate")
+                    .route(web::get().to(get_aggregated_task_status)),
             ),
     );
 }

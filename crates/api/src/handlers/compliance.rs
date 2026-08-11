@@ -1,8 +1,9 @@
 use crate::AppState;
 use crate::dto::{
-    ApplicatorLicenseDto, CreateApplicatorLicenseDto, CreateComplianceChecklistDto, ErrorResponse,
-    PaginatedResponseDto, UpdateApplicatorLicenseDto, UpdateComplianceChecklistDto,
-    UpdateFertilizerRecordDto,
+    ApplicatorLicenseDto, CreateApplicatorLicenseDto, CreateComplianceChecklistDto,
+    CreatePlantProtectionDto, ErrorResponse, PaginatedResponseDto, PlantProtectionRecordDto,
+    UpdateApplicatorLicenseDto, UpdateComplianceChecklistDto, UpdateFertilizerRecordDto,
+    UpdatePlantProtectionDto,
 };
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
@@ -43,7 +44,14 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     )
     .service(
         web::resource("/compliance/plant-protection")
-            .route(web::get().to(list_plant_protection_records)),
+            .route(web::get().to(list_plant_protection_records))
+            .route(web::post().to(create_plant_protection_record)),
+    )
+    .service(
+        web::resource("/compliance/plant-protection/{id}")
+            .route(web::get().to(get_plant_protection_record))
+            .route(web::put().to(update_plant_protection_record))
+            .route(web::delete().to(delete_plant_protection_record)),
     )
     .service(
         web::resource("/compliance/applicator-licenses")
@@ -469,5 +477,73 @@ pub async fn delete_applicator_license(
         Ok(HttpResponse::NoContent().finish())
     } else {
         Err(SharedError::NotFound("Applicator license not found".into()).into())
+    }
+}
+
+pub async fn create_plant_protection_record(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    dto: web::Json<CreatePlantProtectionDto>,
+) -> Result<HttpResponse, ApiError> {
+    let record = state
+        .db
+        .plant_protection_record_repo()
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner().into(),
+            auth.0.user_id,
+        )
+        .await?;
+    Ok(HttpResponse::Created().json(PlantProtectionRecordDto::from(record)))
+}
+
+pub async fn get_plant_protection_record(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let record = state
+        .db
+        .plant_protection_record_repo()
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Plant protection record not found".into()))?;
+    Ok(HttpResponse::Ok().json(PlantProtectionRecordDto::from(record)))
+}
+
+pub async fn update_plant_protection_record(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+    dto: web::Json<UpdatePlantProtectionDto>,
+) -> Result<HttpResponse, ApiError> {
+    let record = state
+        .db
+        .plant_protection_record_repo()
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner().into(),
+            auth.0.user_id,
+        )
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Plant protection record not found".into()))?;
+    Ok(HttpResponse::Ok().json(PlantProtectionRecordDto::from(record)))
+}
+
+pub async fn delete_plant_protection_record(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let success = state
+        .db
+        .plant_protection_record_repo()
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
+        .await?;
+    if success {
+        Ok(HttpResponse::NoContent().finish())
+    } else {
+        Err(SharedError::NotFound("Plant protection record not found".into()).into())
     }
 }

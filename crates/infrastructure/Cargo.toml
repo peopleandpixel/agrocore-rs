@@ -23,6 +23,7 @@ argon2 = { workspace = true }
 [features]
 default = ["sqlx"]
 sqlx = ["dep:sqlx", "agrocore-shared/sqlx"]
+mocks = ["agrocore-domain/mocks"]
 
 [dev-dependencies]
 testcontainers = "0.27.3"

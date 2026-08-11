@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2026-08-11
+
+### Changed
+- Increased version to 0.8.1 after verifying codebase with cargo fmt, check, test, and clippy.
+- Fixed infrastructure tests to work with mock features.
+
+## [0.8.0] - 2026-08-09
+
+### Added
+- **Full Integration Test Suite for API & Domain**
+  - Implemented 10+ new integration test suites using mock repositories and messaging.
+  - Added comprehensive coverage for Workforce, Compliance (Checklists, Audit, Plant Protection), Specialized Crops (Olives), Harvest Logistics (Seasons, Lots, Deliveries, Cold Chain), Livestock, Finance (PAC, Cost Centers, Records), Sites, Equipment, and Weather modules.
+  - Verification of tenant-scoping, authorization, and DTO mappings across all major modules.
+- **Enhanced Mocking Infrastructure**
+  - Boxed `MockDatabase` variant to optimize memory layout and satisfy Clippy.
+  - Added `set_mock_response` to `MessagingClient` for configurable request/response testing (NATS simulation).
+  - Updated all integration tests to utilize the new optimized mock infrastructure.
+
+### Fixed
+- API: Implemented missing CRUD handlers for Plant Protection records.
+- API: Fixed `PaginatedResponseDto` to support deserialization in tests.
+- API: Fixed `Equipment` list handler to correctly utilize repository methods.
+
+## [0.7.9] - 2026-08-09
+
+### Fixed
+- API: Workforce-Handler übergeben nun korrekt `&[UserRole]` an die Repositories (statt `&Vec<String>`), wodurch Sichtbarkeits-/Autorisierungsfilter wieder kompilieren und greifen.
+
 ## [0.7.8] - 2026-08-09
 
 ### Added
@@ -249,8 +277,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Phase 3.5: Farm operations API
 - Weather service integration
-
-## [0.7.9] - 2026-08-09
-
-### Fixed
-- API: Workforce-Handler übergeben nun korrekt `&[UserRole]` an die Repositories (statt `&Vec<String>`), wodurch Sichtbarkeits-/Autorisierungsfilter wieder kompilieren und greifen.

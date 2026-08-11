@@ -6,14 +6,14 @@ use std::pin::Pin;
 use uuid::Uuid;
 
 use crate::entities::user::UserRole;
-#[cfg(test)]
+#[cfg(any(test, feature = "mocks"))]
 use mockall::automock;
 
 pub type RepositoryFuture<T> = Pin<Box<dyn Future<Output = Result<T>> + Send>>;
 
 pub trait VisibilityAwareEntity {}
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait Repository<T>: Send + Sync
 where
     T: Serialize + Send + Sync + 'static,
@@ -31,7 +31,7 @@ use crate::entities::equipment::{CreateEquipmentDto, Equipment, UpdateEquipmentD
 use crate::entities::site::{CreateSiteDto, Site, UpdateSiteDto};
 use crate::entities::spatial::SpatialObject;
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait EquipmentRepository: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Equipment>>;
     fn find_by_id_visible(
@@ -69,7 +69,7 @@ pub trait EquipmentRepository: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait SiteRepository: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Site>>;
     fn find_by_id_visible(
@@ -98,7 +98,7 @@ pub trait SiteRepository: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait SpatialObjectRepository: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<SpatialObject>>;
     fn find_all(
@@ -117,7 +117,7 @@ pub trait SpatialObjectRepository: Send + Sync {
 
 use crate::entities::livestock::{Animal, CreateAnimalDto, UpdateAnimalDto};
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait AnimalRepository: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Animal>>;
     fn find_by_id_visible(
@@ -156,7 +156,7 @@ use crate::entities::worker_task_status::{
     CreateWorkerTaskStatusDto, WorkerTaskStatus, WorkerTaskStatusType,
 };
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait WorkerTaskStatusRepository: Send + Sync {
     fn find_by_task_and_worker(
         &self,
@@ -186,7 +186,7 @@ pub trait WorkerTaskStatusRepository: Send + Sync {
 // --- Order Repository ---
 use crate::entities::order::{CreateOrderDto, Order, UpdateOrderDto};
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait OrderRepository: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Order>>;
     fn find_by_id_visible(
@@ -224,7 +224,7 @@ pub trait OrderRepository: Send + Sync {
 // --- Tenant Repository ---
 use crate::entities::tenant::{CreateTenantDto, Tenant, UpdateTenantDto};
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait TenantRepository: Send + Sync {
     fn find_by_id(&self, id: Uuid) -> RepositoryFuture<Option<Tenant>>;
     fn find_all(&self, p: Pagination) -> RepositoryFuture<PaginatedResponse<Tenant>>;
@@ -236,7 +236,7 @@ pub trait TenantRepository: Send + Sync {
 // --- User Repository ---
 use crate::entities::user::{AuthResponse, CreateUserDto, LoginDto, UpdateUserDto, User};
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait UserRepository: Send + Sync {
     fn count_all(&self) -> RepositoryFuture<i64>;
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<User>>;
@@ -282,7 +282,7 @@ use crate::entities::plant_protection::{
     UpdateApplicatorLicenseDto, UpdatePlantProtectionDto,
 };
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait PlantProtectionRecordRepo: Send + Sync {
     fn find_by_id(
         &self,
@@ -337,7 +337,7 @@ use crate::entities::compliance::{
     UpdateComplianceChecklistDto,
 };
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait ComplianceChecklistRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<ComplianceChecklist>>;
     fn find_all(
@@ -361,7 +361,7 @@ pub trait ComplianceChecklistRepo: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait AuditLogRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<AuditLog>>;
     fn find_all(
@@ -379,7 +379,7 @@ use crate::entities::weather::{
     WeatherStation,
 };
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait WeatherStationRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WeatherStation>>;
     fn find_all(
@@ -403,7 +403,7 @@ pub trait WeatherStationRepo: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait WeatherDataRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WeatherData>>;
     fn find_all(
@@ -427,7 +427,7 @@ pub trait WeatherDataRepo: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait PhenologyRecordRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<PhenologyRecord>>;
     fn find_all(
@@ -464,7 +464,7 @@ use crate::entities::harvest::{
     UpdateHarvestDeliveryDto, UpdateHarvestLotDto, UpdateHarvestSeasonDto,
 };
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait HarvestSeasonRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<HarvestSeason>>;
     fn find_all(
@@ -488,7 +488,7 @@ pub trait HarvestSeasonRepo: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait HarvestLotRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<HarvestLot>>;
     fn find_all(
@@ -518,7 +518,7 @@ pub trait HarvestLotRepo: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait HarvestDeliveryRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<HarvestDelivery>>;
     fn find_all(
@@ -548,7 +548,7 @@ pub trait HarvestDeliveryRepo: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait ColdChainLogRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<ColdChainLog>>;
     fn find_all(
@@ -578,7 +578,7 @@ use crate::entities::olive::{
     UpdateOliveOilRecordDto,
 };
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait OliveGroveRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<OliveGrove>>;
     fn find_all(
@@ -608,7 +608,7 @@ pub trait OliveGroveRepo: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait OliveOilRecordRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<OliveOilRecord>>;
     fn find_all(
@@ -644,7 +644,7 @@ use crate::entities::water::{
     UpdateWaterSourceDto, UpdateWaterUsageDto, WaterQuota, WaterSource, WaterUsage,
 };
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait WaterSourceRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WaterSource>>;
     fn find_all(
@@ -674,7 +674,7 @@ pub trait WaterSourceRepo: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait WaterUsageRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WaterUsage>>;
     fn find_all(
@@ -710,7 +710,7 @@ pub trait WaterUsageRepo: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait WaterQuotaRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WaterQuota>>;
     fn find_all(
@@ -746,7 +746,7 @@ use crate::entities::workforce::{
     WorkLog, Worker, WorkerLocation,
 };
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait WorkerRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Worker>>;
     fn find_by_id_visible(
@@ -777,7 +777,7 @@ pub trait WorkerRepo: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait WorkerLocationRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WorkerLocation>>;
     fn find_by_id_visible(
@@ -812,7 +812,7 @@ pub trait WorkerLocationRepo: Send + Sync {
     ) -> RepositoryFuture<WorkerLocation>;
 }
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait WorkLogRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WorkLog>>;
     fn find_by_id_visible(
@@ -856,7 +856,7 @@ use crate::entities::fertilizer::{
     CreateFertilizerRecordDto, FertilizerRecord, UpdateFertilizerRecordDto,
 };
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait FertilizerRecordRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<FertilizerRecord>>;
     fn find_all(
@@ -893,7 +893,7 @@ use crate::entities::finance::{
     UpdatePACApplicationDto,
 };
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait PACApplicationRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<PACApplication>>;
     fn find_by_id_visible(
@@ -930,7 +930,7 @@ pub trait PACApplicationRepo: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait CostCenterRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<CostCenter>>;
     fn find_by_id_visible(
@@ -961,7 +961,7 @@ pub trait CostCenterRepo: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait FinancialRecordRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<FinancialRecord>>;
     fn find_by_id_visible(
@@ -1004,7 +1004,7 @@ use crate::entities::vineyard::{
     UpdateVineyardDto, Vineyard,
 };
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait VineyardRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Vineyard>>;
     fn find_all(
@@ -1030,7 +1030,7 @@ pub trait VineyardRepo: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait KelterDeliveryRepo: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<KelterDelivery>>;
     fn find_all(
@@ -1063,7 +1063,7 @@ pub trait KelterDeliveryRepo: Send + Sync {
 // --- Task Data Repository ---
 use crate::entities::task::{CreateTaskDataDto, TaskData, UpdateTaskDataDto};
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "mocks"), automock)]
 pub trait TaskDataRepository: Send + Sync {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<TaskData>>;
     fn find_all(
