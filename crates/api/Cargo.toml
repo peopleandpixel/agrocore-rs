@@ -29,6 +29,7 @@ name = "workforce_test"
 path = "tests/workforce_integration.rs"
 
 [dependencies]
+once_cell = "1.19"
 agrocore-domain = { path = "../domain" }
 agrocore-infrastructure = { path = "../infrastructure" }
 agrocore-shared = { path = "../shared", features = ["sqlx"] }

@@ -2,6 +2,13 @@ pub mod entities;
 pub mod repositories;
 pub mod services;
 
+#[cfg(feature = "mocks")]
+pub mod mocks {
+    pub use super::repositories::*;
+    // Mockall generates Mock* types for each trait with automock
+    // These are generated as module-level items when the mocks feature is enabled
+}
+
 pub use agrocore_shared::{PaginatedResponse, Pagination, Result};
 pub use entities::tenant::TenantId;
 pub use entities::user::UserRole;
@@ -15,3 +22,7 @@ pub use repositories::{
     WaterUsageRepo, WeatherDataRepo, WeatherStationRepo, WorkLogRepo, WorkerLocationRepo,
     WorkerRepo, WorkerTaskStatusRepository,
 };
+
+// Re-export mock types when mocks feature is enabled
+#[cfg(feature = "mocks")]
+pub use mocks::*;

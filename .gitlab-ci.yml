@@ -57,7 +57,7 @@ test:
     - cargo install sqlx-cli --no-default-features --features postgres
     - sqlx database create --database-url postgresql://test:***@postgres:5432/agrocore_test
     - sqlx migrate run --source migrations --database-url postgresql://test:***@postgres:5432/agrocore_test
-    - cargo test --workspace
+    - cargo test --workspace --features=mocks
   allow_failure: false
   timeout: 45m
 

@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.3] - 2026-08-11
+
+### Fixed
+- **CI/CD Pipeline**: Updated GitHub Actions and GitLab CI to run tests with `--features=mocks` so integration tests compile and pass
+- Both pipelines now explicitly enable the `mocks` feature for `cargo test --workspace --features=mocks`
+
+### Changed
+- Version bump: 0.8.2 → 0.8.3
+
+## [0.8.2] - 2026-08-11
+
+### Added
+- **Performance Optimizations (Task 4 Quick Wins)**
+  - **DecodingKey Caching**: Cached JWT DecodingKey in AuthExtractor middleware using OnceLock for improved auth performance
+  - **PgPoolOptions Configuration**: Configurable database connection pool via environment variables (DATABASE_MAX_CONNECTIONS, DATABASE_MIN_CONNECTIONS, DATABASE_IDLE_TIMEOUT_SECS, DATABASE_MAX_LIFETIME_SECS)
+  - **Repository Factory Macro**: `repo!` macro in shared crate to reduce boilerplate for repository instantiation
+  - **Messaging Topic Precomputation**: Precomputed static NATS subjects as constants to avoid repeated string allocations
+  - **Rollen-Mapping Optimization**: Pre-converted role strings to UserRole enums during token validation, eliminating per-call conversion overhead
+- **Mock Infrastructure Fixes**
+  - Fixed mock feature flag propagation across domain, infrastructure, and postgres crates
+  - Mock types now properly generated and exported when `mocks` feature is enabled
+  - Updated all `#[cfg(any(test, feature = "mocks"))]` to `#[cfg(feature = "mocks")]` for consistent feature gating
+
+### Changed
+- Version bump: 0.8.1 → 0.8.2
+- Mock feature now properly includes mockall dependency
+
+### Fixed
+- Infrastructure tests now compile and run with mock features enabled
+- Domain crate mock types (MockSiteRepository, MockUserRepository, etc.) now properly available
+- Consistent feature gating across workspace for mock functionality
+
 ## [0.8.1] - 2026-08-11
 
 ### Changed

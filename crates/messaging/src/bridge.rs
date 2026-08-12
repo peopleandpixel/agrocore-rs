@@ -1,6 +1,10 @@
 //! MQTT Bridge - Bidirectional NATS ↔ MQTT Message Forwarding
 
-use crate::{MqttConfig, UnifiedMessagingClient};
+use crate::{
+    MqttConfig, NATS_SUBJECT_COMMANDS_BRIDGE, NATS_SUBJECT_COMMANDS_BRIDGE_BROADCAST,
+    NATS_SUBJECT_DEVICE_STATUS, NATS_SUBJECT_EVENTS, NATS_SUBJECT_TELEMETRY,
+    UnifiedMessagingClient,
+};
 use futures_util::StreamExt;
 use rumqttc::{Event as MqttEvent, Packet, QoS};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -57,19 +61,19 @@ impl Default for BridgeConfig {
         Self {
             nats_to_mqtt: vec![
                 BridgeRoute {
-                    nats_subject: "events.>".to_string(),
+                    nats_subject: NATS_SUBJECT_EVENTS.to_string(),
                     mqtt_topic: "agrocore/events".to_string(),
                     qos: QoS::AtLeastOnce,
                     retain: false,
                 },
                 BridgeRoute {
-                    nats_subject: "telemetry.>".to_string(),
+                    nats_subject: NATS_SUBJECT_TELEMETRY.to_string(),
                     mqtt_topic: "agrocore/telemetry".to_string(),
                     qos: QoS::AtLeastOnce,
                     retain: false,
                 },
                 BridgeRoute {
-                    nats_subject: "device.status.>".to_string(),
+                    nats_subject: NATS_SUBJECT_DEVICE_STATUS.to_string(),
                     mqtt_topic: "agrocore/status".to_string(),
                     qos: QoS::AtLeastOnce,
                     retain: true,
@@ -77,13 +81,13 @@ impl Default for BridgeConfig {
             ],
             mqtt_to_nats: vec![
                 BridgeRoute {
-                    nats_subject: "commands.bridge".to_string(),
+                    nats_subject: NATS_SUBJECT_COMMANDS_BRIDGE.to_string(),
                     mqtt_topic: "agrocore/commands/+/+".to_string(),
                     qos: QoS::AtLeastOnce,
                     retain: false,
                 },
                 BridgeRoute {
-                    nats_subject: "commands.bridge.broadcast".to_string(),
+                    nats_subject: NATS_SUBJECT_COMMANDS_BRIDGE_BROADCAST.to_string(),
                     mqtt_topic: "agrocore/commands/+/broadcast".to_string(),
                     qos: QoS::AtLeastOnce,
                     retain: false,

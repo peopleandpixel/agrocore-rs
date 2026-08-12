@@ -92,7 +92,7 @@ jobs:
           DATABASE_URL: postgresql://test:test@localhost:5432/agrocore_test
 
       - name: Run cargo test
-        run: cargo test --workspace
+        run: cargo test --workspace --features=mocks
         env:
           RUST_LOG: debug
           DATABASE_URL: postgresql://test:test@localhost:5432/agrocore_test

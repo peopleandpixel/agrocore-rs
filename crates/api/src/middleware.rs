@@ -1,5 +1,6 @@
 use actix_web::{Error, FromRequest, HttpRequest};
-use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode};
+use agrocore_shared::config::decoding_key;
+use jsonwebtoken::{Algorithm, Validation, decode};
 use serde::Deserialize;
 use std::future::{Ready, ready};
 
@@ -42,12 +43,7 @@ impl FromRequest for AuthExtractor {
                         return ready(Err(actix_web::error::ErrorUnauthorized("No Bearer prefix")));
                     }
                 };
-                let secret = agrocore_shared::config::jwt_secret();
-                match decode::<Claims>(
-                    token,
-                    &DecodingKey::from_secret(secret.as_bytes()),
-                    &Validation::new(Algorithm::HS256),
-                ) {
+                match decode::<Claims>(token, decoding_key(), &Validation::new(Algorithm::HS256)) {
                     Ok(token_data) => match (
                         parse_uuid(&token_data.claims.sub),
                         parse_uuid(&token_data.claims.tenant_id),

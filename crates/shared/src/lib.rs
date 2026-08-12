@@ -168,3 +168,14 @@ impl From<sqlx::Error> for SharedError {
         SharedError::Database(err.to_string())
     }
 }
+
+/// Macro to create repository instances with reduced boilerplate.
+/// Usage: `repo!(PgSiteRepo, SiteRepository, pool)`
+#[macro_export]
+macro_rules! repo {
+    ($repo_type:ty, $trait_type:ty, $pool:expr) => {{
+        use std::sync::Arc;
+        let repo_instance = <$repo_type>::new($pool.clone());
+        std::convert::Into::<Arc<dyn $trait_type>>::into(Arc::new(repo_instance))
+    }};
+}

@@ -27,11 +27,11 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub enum Database {
     Postgres(PostgresDb),
-    #[cfg(any(test, feature = "mocks"))]
+    #[cfg(feature = "mocks")]
     Mock(Box<MockDatabase>),
 }
 
-#[cfg(any(test, feature = "mocks"))]
+#[cfg(feature = "mocks")]
 #[derive(Clone, Default)]
 pub struct MockDatabase {
     pub site_repo: Option<Arc<agrocore_domain::repositories::MockSiteRepository>>,
@@ -78,7 +78,7 @@ impl Database {
     pub fn pool(&self) -> &PgPool {
         match self {
             Self::Postgres(db) => db.pool(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(_) => panic!("MockDatabase has no pool"),
         }
     }
@@ -91,7 +91,7 @@ impl Database {
     pub fn site_repo(&self) -> Arc<dyn SiteRepository> {
         match self {
             Self::Postgres(db) => db.site_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => {
                 m.site_repo.clone().expect("site_repo mock not set") as Arc<dyn SiteRepository>
             }
@@ -101,7 +101,7 @@ impl Database {
     pub fn user_repo(&self) -> Arc<dyn UserRepository> {
         match self {
             Self::Postgres(db) => db.user_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => {
                 m.user_repo.clone().expect("user_repo mock not set") as Arc<dyn UserRepository>
             }
@@ -111,7 +111,7 @@ impl Database {
     pub fn order_repo(&self) -> Arc<dyn OrderRepository> {
         match self {
             Self::Postgres(db) => db.order_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => {
                 m.order_repo.clone().expect("order_repo mock not set") as Arc<dyn OrderRepository>
             }
@@ -121,7 +121,7 @@ impl Database {
     pub fn tenant_repo(&self) -> Arc<dyn TenantRepository> {
         match self {
             Self::Postgres(db) => Arc::new(PgTenantRepo::new(db.pool.clone())),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m.tenant_repo.clone().expect("tenant_repo mock not set")
                 as Arc<dyn TenantRepository>,
         }
@@ -130,7 +130,7 @@ impl Database {
     pub fn equipment_repo(&self) -> Arc<dyn EquipmentRepository> {
         match self {
             Self::Postgres(db) => db.equipment_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .equipment_repo
                 .clone()
@@ -142,7 +142,7 @@ impl Database {
     pub fn animal_repo(&self) -> Arc<dyn AnimalRepository> {
         match self {
             Self::Postgres(db) => db.animal_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m.animal_repo.clone().expect("animal_repo mock not set")
                 as Arc<dyn AnimalRepository>,
         }
@@ -151,7 +151,7 @@ impl Database {
     pub fn weather_station_repo(&self) -> Arc<dyn WeatherStationRepo> {
         match self {
             Self::Postgres(db) => db.weather_station_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .weather_station_repo
                 .clone()
@@ -163,7 +163,7 @@ impl Database {
     pub fn weather_data_repo(&self) -> Arc<dyn WeatherDataRepo> {
         match self {
             Self::Postgres(db) => db.weather_data_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .weather_data_repo
                 .clone()
@@ -175,7 +175,7 @@ impl Database {
     pub fn fertilizer_record_repo(&self) -> Arc<dyn FertilizerRecordRepo> {
         match self {
             Self::Postgres(db) => db.fertilizer_record_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .fertilizer_record_repo
                 .clone()
@@ -187,7 +187,7 @@ impl Database {
     pub fn plant_protection_record_repo(&self) -> Arc<dyn PlantProtectionRecordRepo> {
         match self {
             Self::Postgres(db) => db.plant_protection_record_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .plant_protection_record_repo
                 .clone()
@@ -199,7 +199,7 @@ impl Database {
     pub fn harvest_season_repo(&self) -> Arc<dyn HarvestSeasonRepo> {
         match self {
             Self::Postgres(db) => db.harvest_season_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .harvest_season_repo
                 .clone()
@@ -211,7 +211,7 @@ impl Database {
     pub fn harvest_lot_repo(&self) -> Arc<dyn HarvestLotRepo> {
         match self {
             Self::Postgres(db) => db.harvest_lot_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .harvest_lot_repo
                 .clone()
@@ -223,7 +223,7 @@ impl Database {
     pub fn harvest_delivery_repo(&self) -> Arc<dyn HarvestDeliveryRepo> {
         match self {
             Self::Postgres(db) => db.harvest_delivery_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .harvest_delivery_repo
                 .clone()
@@ -235,7 +235,7 @@ impl Database {
     pub fn olive_grove_repo(&self) -> Arc<dyn OliveGroveRepo> {
         match self {
             Self::Postgres(db) => db.olive_grove_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .olive_grove_repo
                 .clone()
@@ -247,7 +247,7 @@ impl Database {
     pub fn olive_oil_record_repo(&self) -> Arc<dyn OliveOilRecordRepo> {
         match self {
             Self::Postgres(db) => db.olive_oil_record_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .olive_oil_record_repo
                 .clone()
@@ -259,7 +259,7 @@ impl Database {
     pub fn vineyard_repo(&self) -> Arc<dyn VineyardRepo> {
         match self {
             Self::Postgres(db) => db.vineyard_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m.vineyard_repo.clone().expect("vineyard_repo mock not set")
                 as Arc<dyn VineyardRepo>,
         }
@@ -268,7 +268,7 @@ impl Database {
     pub fn water_source_repo(&self) -> Arc<dyn WaterSourceRepo> {
         match self {
             Self::Postgres(db) => db.water_source_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .water_source_repo
                 .clone()
@@ -280,7 +280,7 @@ impl Database {
     pub fn water_usage_repo(&self) -> Arc<dyn WaterUsageRepo> {
         match self {
             Self::Postgres(db) => db.water_usage_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .water_usage_repo
                 .clone()
@@ -292,7 +292,7 @@ impl Database {
     pub fn water_quota_repo(&self) -> Arc<dyn WaterQuotaRepo> {
         match self {
             Self::Postgres(db) => db.water_quota_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .water_quota_repo
                 .clone()
@@ -304,7 +304,7 @@ impl Database {
     pub fn worker_repo(&self) -> Arc<dyn WorkerRepo> {
         match self {
             Self::Postgres(db) => db.worker_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => {
                 m.worker_repo.clone().expect("worker_repo mock not set") as Arc<dyn WorkerRepo>
             }
@@ -314,7 +314,7 @@ impl Database {
     pub fn worker_location_repo(&self) -> Arc<dyn WorkerLocationRepo> {
         match self {
             Self::Postgres(db) => db.worker_location_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .worker_location_repo
                 .clone()
@@ -326,7 +326,7 @@ impl Database {
     pub fn work_log_repo(&self) -> Arc<dyn WorkLogRepo> {
         match self {
             Self::Postgres(db) => db.work_log_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => {
                 m.work_log_repo.clone().expect("work_log_repo mock not set") as Arc<dyn WorkLogRepo>
             }
@@ -336,7 +336,7 @@ impl Database {
     pub fn worker_task_status_repo(&self) -> Arc<dyn WorkerTaskStatusRepository> {
         match self {
             Self::Postgres(db) => db.worker_task_status_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .worker_task_status_repo
                 .clone()
@@ -348,7 +348,7 @@ impl Database {
     pub fn task_data_repo(&self) -> Arc<dyn TaskDataRepository> {
         match self {
             Self::Postgres(db) => db.task_data_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .task_data_repo
                 .clone()
@@ -360,7 +360,7 @@ impl Database {
     pub fn spatial_object_repo(&self) -> Arc<dyn SpatialObjectRepository> {
         match self {
             Self::Postgres(db) => db.spatial_object_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .spatial_object_repo
                 .clone()
@@ -372,7 +372,7 @@ impl Database {
     pub fn phenology_record_repo(&self) -> Arc<dyn PhenologyRecordRepo> {
         match self {
             Self::Postgres(db) => db.phenology_record_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .phenology_record_repo
                 .clone()
@@ -384,7 +384,7 @@ impl Database {
     pub fn pac_application_repo(&self) -> Arc<dyn PACApplicationRepo> {
         match self {
             Self::Postgres(db) => db.pac_application_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .pac_application_repo
                 .clone()
@@ -396,7 +396,7 @@ impl Database {
     pub fn cold_chain_log_repo(&self) -> Arc<dyn ColdChainLogRepo> {
         match self {
             Self::Postgres(db) => db.cold_chain_log_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .cold_chain_log_repo
                 .clone()
@@ -408,7 +408,7 @@ impl Database {
     pub fn audit_log_repo(&self) -> Arc<dyn AuditLogRepo> {
         match self {
             Self::Postgres(db) => db.audit_log_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => {
                 m.audit_log_repo
                     .clone()
@@ -420,7 +420,7 @@ impl Database {
     pub fn compliance_checklist_repo(&self) -> Arc<dyn ComplianceChecklistRepo> {
         match self {
             Self::Postgres(db) => db.compliance_checklist_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .compliance_checklist_repo
                 .clone()
@@ -432,7 +432,7 @@ impl Database {
     pub fn cost_center_repo(&self) -> Arc<dyn CostCenterRepo> {
         match self {
             Self::Postgres(db) => db.cost_center_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .cost_center_repo
                 .clone()
@@ -444,7 +444,7 @@ impl Database {
     pub fn financial_record_repo(&self) -> Arc<dyn FinancialRecordRepo> {
         match self {
             Self::Postgres(db) => db.financial_record_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .financial_record_repo
                 .clone()
@@ -456,7 +456,7 @@ impl Database {
     pub fn kelter_delivery_repo(&self) -> Arc<dyn KelterDeliveryRepo> {
         match self {
             Self::Postgres(db) => db.kelter_delivery_repo(),
-            #[cfg(any(test, feature = "mocks"))]
+            #[cfg(feature = "mocks")]
             Self::Mock(m) => m
                 .kelter_delivery_repo
                 .clone()
@@ -478,10 +478,12 @@ impl PostgresDb {
     }
 
     pub async fn connect(database_url: &str) -> anyhow::Result<Self> {
+        let pool_options = agrocore_shared::config::pg_pool_options();
         let mut retry_count = 0;
         let max_retries = 10;
         let pool = loop {
-            match PgPool::connect(database_url).await {
+            let opts = pool_options.clone();
+            match opts.connect(database_url).await {
                 Ok(pool) => break pool,
                 Err(e) if retry_count < max_retries => {
                     retry_count += 1;

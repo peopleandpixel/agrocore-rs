@@ -19,6 +19,13 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
+// Precomputed static NATS subjects to avoid repeated string allocations
+pub const NATS_SUBJECT_EVENTS: &str = "events.>";
+pub const NATS_SUBJECT_TELEMETRY: &str = "telemetry.>";
+pub const NATS_SUBJECT_DEVICE_STATUS: &str = "device.status.>";
+pub const NATS_SUBJECT_COMMANDS_BRIDGE: &str = "commands.bridge";
+pub const NATS_SUBJECT_COMMANDS_BRIDGE_BROADCAST: &str = "commands.bridge.broadcast";
+
 pub mod bridge;
 
 pub use bridge::{BridgeConfig, BridgeRoute, BridgeStats, MqttBridge, MqttBridgeBuilder};

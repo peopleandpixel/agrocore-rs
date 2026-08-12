@@ -38,7 +38,7 @@ pub use audit_log::PgAuditLogRepo;
 pub use cold_chain_log::PgColdChainLogRepo;
 pub use compliance::PgComplianceChecklistRepo;
 pub use cost_center::PgCostCenterRepo;
-#[cfg(any(test, feature = "mocks"))]
+#[cfg(feature = "mocks")]
 pub use database::MockDatabase;
 pub use database::{Database, PostgresDb};
 pub use equipment::PgEquipmentRepo;
