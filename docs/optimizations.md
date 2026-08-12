@@ -5,13 +5,13 @@ Dieses Dokument enthält Vorschläge zur Verbesserung der Performance, Sicherhei
 ## 1. Performance-Optimierungen
 
 ### 1.1 Datenbank-Interaktionen
-*   **Batch-Updates & N+1 Problematik:** In den Repositories (z.B. `PgUserRepo::update`) werden assoziierte Daten wie `user_sites` in einer Schleife einzeln gelöscht und eingefügt. Dies führt zu N+1 Datenbank-Aufrufen.
+*   **Batch-Updates & N+1 Problematik:** In den Repositories (z.B. `PgUserRepo::update`) wurden assoiierte Daten wie `user_sites` in einer Schleife einzeln gelöscht und eingefügt. Dies führte zu N+1 Datenbank-Aufrufen. ✅ **Resolved (0.8.4):** Batch-INSERT via `SELECT $1, unnest($2::uuid[])` ersetzt die Schleife durch eine einzige Query.
 *   *Lösung:* Verwendung von `UNNEST` oder Batch-Insert-Statements, um alle Datensätze mit einer einzigen Query zu aktualisieren.
-*   **Subqueries vs. Joins:** Bei der Abfrage von Listen (z.B. `find_all` bei Usern) wird für jeden Datensatz eine Subquery ausgeführt, um assoziierte IDs zu sammeln (`json_agg`).
+*   **Subqueries vs. Joins:** Bei der Abfrage von Listen (z.B. `find_all` bei Usern) wurde für jeden Datensatz eine Subquery ausgeführt, um assoiierte IDs zu sammeln (`json_agg`). ✅ **Resolved (0.8.4):** Alle `PgUserRepo`-Queries verwenden nun `LEFT JOIN user_sites` + `GROUP BY u.id` + `json_agg` als einzige Query, keine correlated Subqueries mehr.
 *   *Lösung:* Einsatz von `LEFT JOIN` und Aggregation auf Datenbankebene, um die Anzahl der Abfragen zu reduzieren.
-*   **Pool-Konfiguration:** Die Datenbankverbindung nutzt Standardeinstellungen.
+*   **Pool-Konfiguration:** Die Datenbankverbindung nutzt Standardeinstellungen. ✅ **Resolved (0.8.2 + 0.8.4):** `PgPoolOptions` konfigurierbar via Env-Variablen (`DATABASE_MAX_CONNECTIONS`, `DATABASE_MIN_CONNECTIONS`, `DATABASE_IDLE_TIMEOUT_SECS`, `DATABASE_MAX_LIFETIME_SECS`, `DATABASE_ACQUIRE_TIMEOUT_SECS`, `DATABASE_CONNECT_TIMEOUT_SECS`).
 *   *Lösung:* Explizite Konfiguration des `PgPoolOptions` (z.B. `max_connections`, `min_connections`, `idle_timeout`, `max_lifetime`), angepasst an die Lastprofile der Dienste.
-*   **Repository Factory Pattern:** Alle Repository-Methoden in `PostgresDb` folgen dem identischen Muster `Arc::new(PgXyzRepo::new(self.pool.clone()))`, was zu Boilerplate-Code führt.
+*   **Repository Factory Pattern:** Alle Repository-Methoden in `PostgresDb` folgen dem identischen Muster `Arc::new(PgXyzRepo::new(self.pool.clone()))`, was zu Boilerplate-Code führt. ✅ **Partially Resolved (0.8.2):** `repo!` Makro in shared crate reduziert Boilerplate für Repository-Instanziierung.
 *   *Lösung:* Einführung einer generischen Repository-Factory oder eines Makros zur Reduktion des Boilerplates und zentralen Fehlerbehandlung.
 
 ### 1.2 Speicher- und Ressourcenmanagement

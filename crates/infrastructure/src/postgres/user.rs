@@ -24,20 +24,27 @@ use crate::jwt::generate_jwt;
 use crate::postgres::error_mapper::map_db_error;
 use argon2::{Argon2, PasswordHasher, PasswordVerifier};
 
+/// Shared SQL query fragment for selecting a user with assigned site IDs via LEFT JOIN.
+/// Replaces the correlated subquery `COALESCE((SELECT json_agg(site_id) FROM user_sites WHERE user_id = u.id), '[]'::json)`
+/// with a LEFT JOIN + GROUP BY approach to eliminate per-row subquery execution (N+1 avoidance at the SQL level).
+const USER_SELECT_FIELDS: &str = r#"SELECT u.id, u.tenant_id, u.firstname, u.lastname, u.email, u.password_hash, u.roles, u.is_active, u.internal_cost_per_hour, u.external_cost_per_hour, u.color, u.language, u.last_login, u.refresh_token, u.refresh_token_expires_at, u.created_at, u.updated_at,
+                   COALESCE(json_agg(us.site_id) FILTER (WHERE us.site_id IS NOT NULL), '[]'::json) as assigned_site_ids
+                   FROM users u
+                   LEFT JOIN user_sites us ON u.id = us.user_id"#;
+
 impl UserRepository for PgUserRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<User>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            let user = sqlx::query_as::<_, User>(
-                r#"SELECT id, tenant_id, firstname, lastname, email, password_hash, roles, is_active, internal_cost_per_hour, external_cost_per_hour, color, language, last_login, refresh_token, refresh_token_expires_at, created_at, updated_at,
-                   COALESCE((SELECT json_agg(site_id) FROM user_sites WHERE user_id = u.id), '[]'::json) as assigned_site_ids
-                   FROM users u 
-                   WHERE u.id = $1 AND u.tenant_id = $2 AND u.is_active = true"#)
-                .bind(id)
-                .bind(tid)
-                .fetch_optional(&pool)
-                .await
-                .map_err(map_db_error)?;
+            let user = sqlx::query_as::<_, User>(&format!(
+                "{} WHERE u.id = $1 AND u.tenant_id = $2 AND u.is_active = true GROUP BY u.id",
+                USER_SELECT_FIELDS
+            ))
+            .bind(id)
+            .bind(tid)
+            .fetch_optional(&pool)
+            .await
+            .map_err(map_db_error)?;
             Ok(user)
         })
     }
@@ -56,15 +63,14 @@ impl UserRepository for PgUserRepo {
         let pool = self.pool.clone();
         let email = email.to_string();
         Box::pin(async move {
-            sqlx::query_as::<_, User>(
-                r#"SELECT id, tenant_id, firstname, lastname, email, password_hash, roles, is_active, internal_cost_per_hour, external_cost_per_hour, color, language, last_login, refresh_token, refresh_token_expires_at, created_at, updated_at,
-                   COALESCE((SELECT json_agg(site_id) FROM user_sites WHERE user_id = u.id), '[]'::json) as assigned_site_ids
-                   FROM users u 
-                   WHERE u.email = $1 AND u.is_active = true"#)
-                .bind(email)
-                .fetch_optional(&pool)
-                .await
-                .map_err(map_db_error)
+            sqlx::query_as::<_, User>(&format!(
+                "{} WHERE u.email = $1 AND u.is_active = true GROUP BY u.id",
+                USER_SELECT_FIELDS
+            ))
+            .bind(email)
+            .fetch_optional(&pool)
+            .await
+            .map_err(map_db_error)
         })
     }
 
@@ -83,18 +89,16 @@ impl UserRepository for PgUserRepo {
             .await
             .map_err(map_db_error)?;
 
-            let data: Vec<User> = sqlx::query_as(
-                r#"SELECT id, tenant_id, firstname, lastname, email, password_hash, roles, is_active, internal_cost_per_hour, external_cost_per_hour, color, language, last_login, refresh_token, refresh_token_expires_at, created_at, updated_at,
-                   COALESCE((SELECT json_agg(site_id) FROM user_sites WHERE user_id = u.id), '[]'::json) as assigned_site_ids
-                   FROM users u 
-                   WHERE u.tenant_id = $1 AND u.is_active = true 
-                   LIMIT $2 OFFSET $3"#)
-                .bind(tid)
-                .bind(per_page as i32)
-                .bind(offset as i32)
-                .fetch_all(&pool)
-                .await
-                .map_err(map_db_error)?;
+            let data: Vec<User> = sqlx::query_as(&format!(
+                "{} WHERE u.tenant_id = $1 AND u.is_active = true GROUP BY u.id LIMIT $2 OFFSET $3",
+                USER_SELECT_FIELDS
+            ))
+            .bind(tid)
+            .bind(per_page as i32)
+            .bind(offset as i32)
+            .fetch_all(&pool)
+            .await
+            .map_err(map_db_error)?;
 
             Ok(PaginatedResponse {
                 data,
@@ -140,7 +144,8 @@ impl UserRepository for PgUserRepo {
             let user = sqlx::query_as::<_, User>(
                 r#"INSERT INTO users (id, tenant_id, firstname, lastname, email, password_hash, roles, is_active, created_at, updated_at)
                    VALUES ($1, $2, $3, $4, $5, $6, $7, true, NOW(), NOW())
-                   RETURNING id, tenant_id, firstname, lastname, email, password_hash, roles, is_active, internal_cost_per_hour, external_cost_per_hour, color, language, last_login, refresh_token, refresh_token_expires_at, created_at, updated_at"#)
+                   RETURNING id, tenant_id, firstname, lastname, email, password_hash, roles, is_active, internal_cost_per_hour, external_cost_per_hour, color, language, last_login, refresh_token, refresh_token_expires_at, created_at, updated_at"#,
+            )
             .bind(id)
             .bind(tid)
             .bind(&dto.firstname)
@@ -173,9 +178,9 @@ impl UserRepository for PgUserRepo {
             let mut tx = pool.begin().await.map_err(map_db_error)?;
 
             sqlx::query(
-                r#"UPDATE users SET 
-                   firstname = COALESCE($1, firstname), 
-                   lastname = COALESCE($2, lastname), 
+                r#"UPDATE users SET
+                   firstname = COALESCE($1, firstname),
+                   lastname = COALESCE($2, lastname),
                    is_active = COALESCE($3, is_active),
                    updated_at = NOW()
                    WHERE id = $4 AND tenant_id = $5"#,
@@ -190,32 +195,35 @@ impl UserRepository for PgUserRepo {
             .map_err(map_db_error)?;
 
             if let Some(site_ids) = dto.assigned_site_ids {
+                // Batch delete all user_sites for this user in a single query
                 sqlx::query("DELETE FROM user_sites WHERE user_id = $1")
                     .bind(id)
                     .execute(&mut *tx)
                     .await
                     .map_err(map_db_error)?;
 
-                for site_id in site_ids {
-                    sqlx::query("INSERT INTO user_sites (user_id, site_id) VALUES ($1, $2)")
-                        .bind(id)
-                        .bind(site_id)
-                        .execute(&mut *tx)
-                        .await
-                        .map_err(map_db_error)?;
+                // Batch insert using UNNEST to avoid N+1 individual INSERT statements
+                if !site_ids.is_empty() {
+                    sqlx::query(
+                        "INSERT INTO user_sites (user_id, site_id) SELECT $1, unnest($2::uuid[])",
+                    )
+                    .bind(id)
+                    .bind(site_ids)
+                    .execute(&mut *tx)
+                    .await
+                    .map_err(map_db_error)?;
                 }
             }
 
-            let user = sqlx::query_as::<_, User>(
-                r#"SELECT id, tenant_id, firstname, lastname, email, password_hash, roles, is_active, internal_cost_per_hour, external_cost_per_hour, color, language, last_login, refresh_token, refresh_token_expires_at, created_at, updated_at,
-                   COALESCE((SELECT json_agg(site_id) FROM user_sites WHERE user_id = u.id), '[]'::json) as assigned_site_ids
-                   FROM users u 
-                   WHERE u.id = $1 AND u.tenant_id = $2"#)
-                .bind(id)
-                .bind(tid)
-                .fetch_optional(&mut *tx)
-                .await
-                .map_err(map_db_error)?;
+            let user = sqlx::query_as::<_, User>(&format!(
+                "{} WHERE u.id = $1 AND u.tenant_id = $2 GROUP BY u.id",
+                USER_SELECT_FIELDS
+            ))
+            .bind(id)
+            .bind(tid)
+            .fetch_optional(&mut *tx)
+            .await
+            .map_err(map_db_error)?;
 
             tx.commit().await.map_err(map_db_error)?;
             Ok(user)
@@ -238,16 +246,15 @@ impl UserRepository for PgUserRepo {
     fn authenticate(&self, dto: LoginDto) -> RepositoryFuture<AuthResponse> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            let user = sqlx::query_as::<_, User>(
-                r#"SELECT id, tenant_id, firstname, lastname, email, password_hash, roles, is_active, internal_cost_per_hour, external_cost_per_hour, color, language, last_login, refresh_token, refresh_token_expires_at, created_at, updated_at,
-                   COALESCE((SELECT json_agg(site_id) FROM user_sites WHERE user_id = u.id), '[]'::json) as assigned_site_ids
-                   FROM users u 
-                   WHERE u.email = $1 AND u.is_active = true"#)
-                .bind(&dto.email)
-                .fetch_optional(&pool)
-                .await
-                .map_err(map_db_error)?
-                .ok_or_else(|| SharedError::Unauthorized("Invalid credentials".into()))?;
+            let user = sqlx::query_as::<_, User>(&format!(
+                "{} WHERE u.email = $1 AND u.is_active = true GROUP BY u.id",
+                USER_SELECT_FIELDS
+            ))
+            .bind(&dto.email)
+            .fetch_optional(&pool)
+            .await
+            .map_err(map_db_error)?
+            .ok_or_else(|| SharedError::Unauthorized("Invalid credentials".into()))?;
 
             Argon2::default()
                 .verify_password(dto.password.as_bytes(), user.password_hash.as_str())
@@ -271,15 +278,14 @@ impl UserRepository for PgUserRepo {
         let pool = self.pool.clone();
         let token = refresh_token.to_string();
         Box::pin(async move {
-            sqlx::query_as::<_, User>(
-                r#"SELECT id, tenant_id, firstname, lastname, email, password_hash, roles, is_active, internal_cost_per_hour, external_cost_per_hour, color, language, last_login, refresh_token, refresh_token_expires_at, created_at, updated_at,
-                   COALESCE((SELECT json_agg(site_id) FROM user_sites WHERE user_id = u.id), '[]'::json) as assigned_site_ids
-                   FROM users u 
-                   WHERE u.refresh_token = $1 AND u.is_active = true"#)
-                .bind(token)
-                .fetch_optional(&pool)
-                .await
-                .map_err(map_db_error)
+            sqlx::query_as::<_, User>(&format!(
+                "{} WHERE u.refresh_token = $1 AND u.is_active = true GROUP BY u.id",
+                USER_SELECT_FIELDS
+            ))
+            .bind(token)
+            .fetch_optional(&pool)
+            .await
+            .map_err(map_db_error)
         })
     }
 

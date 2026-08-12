@@ -479,11 +479,28 @@ impl PostgresDb {
 
     pub async fn connect(database_url: &str) -> anyhow::Result<Self> {
         let pool_options = agrocore_shared::config::pg_pool_options();
+        let connect_timeout = agrocore_shared::config::connect_timeout();
         let mut retry_count = 0;
         let max_retries = 10;
+
+        // Append connect_timeout to the database URL as a query parameter
+        let database_url_with_timeout = if database_url.contains('?') {
+            format!(
+                "{}&connect_timeout={}",
+                database_url,
+                connect_timeout.as_secs()
+            )
+        } else {
+            format!(
+                "{}?connect_timeout={}",
+                database_url,
+                connect_timeout.as_secs()
+            )
+        };
+
         let pool = loop {
             let opts = pool_options.clone();
-            match opts.connect(database_url).await {
+            match opts.connect(&database_url_with_timeout).await {
                 Ok(pool) => break pool,
                 Err(e) if retry_count < max_retries => {
                     retry_count += 1;

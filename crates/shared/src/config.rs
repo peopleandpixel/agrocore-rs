@@ -34,6 +34,13 @@ pub fn decoding_key() -> &'static DecodingKey {
 
 /// Database connection pool configuration from environment variables.
 /// All values have sensible defaults for production use.
+///
+/// Environment variables:
+/// - `DATABASE_MAX_CONNECTIONS` (default: 20) - Maximum number of connections in the pool
+/// - `DATABASE_MIN_CONNECTIONS` (default: 1) - Minimum number of connections to maintain
+/// - `DATABASE_IDLE_TIMEOUT_SECS` (default: 600) - Idle connection timeout in seconds
+/// - `DATABASE_MAX_LIFETIME_SECS` (default: 1800) - Maximum connection lifetime in seconds
+/// - `DATABASE_ACQUIRE_TIMEOUT_SECS` (default: 30) - Timeout for acquiring a connection from the pool
 #[cfg(feature = "sqlx")]
 pub fn pg_pool_options() -> PgPoolOptions {
     let max_connections = std::env::var("DATABASE_MAX_CONNECTIONS")
@@ -54,12 +61,32 @@ pub fn pg_pool_options() -> PgPoolOptions {
         .and_then(|v| v.parse().ok())
         .map(std::time::Duration::from_secs)
         .unwrap_or(std::time::Duration::from_secs(1800));
+    let acquire_timeout = std::env::var("DATABASE_ACQUIRE_TIMEOUT_SECS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .map(std::time::Duration::from_secs)
+        .unwrap_or(std::time::Duration::from_secs(30));
 
     PgPoolOptions::new()
         .max_connections(max_connections)
         .min_connections(min_connections)
         .idle_timeout(idle_timeout)
         .max_lifetime(max_lifetime)
+        .acquire_timeout(acquire_timeout)
+}
+
+/// Returns the connect timeout from environment variable.
+/// This timeout applies to the initial TCP connection establishment.
+///
+/// Environment variable:
+/// - `DATABASE_CONNECT_TIMEOUT_SECS` (default: 10) - Connection establishment timeout
+#[cfg(feature = "sqlx")]
+pub fn connect_timeout() -> std::time::Duration {
+    std::env::var("DATABASE_CONNECT_TIMEOUT_SECS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .map(std::time::Duration::from_secs)
+        .unwrap_or(std::time::Duration::from_secs(10))
 }
 
 /// Validates that JWT secret is properly configured
