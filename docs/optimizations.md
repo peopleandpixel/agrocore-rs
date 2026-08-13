@@ -15,13 +15,13 @@ Dieses Dokument enthält Vorschläge zur Verbesserung der Performance, Sicherhei
 *   *Lösung:* Einführung einer generischen Repository-Factory oder eines Makros zur Reduktion des Boilerplates und zentralen Fehlerbehandlung.
 
 ### 1.2 Speicher- und Ressourcenmanagement
-*   **Repository-Instanziierung:** In `Database`-Methoden wird bei jedem Aufruf ein neues `Arc::new(Repo::new(pool))` erstellt.
+*   **Repository-Instanziierung:** In `Database`-Methoden wurde bei jedem Aufruf ein neues `Arc::new(Repo::new(pool))` erstellt.
 *   *Lösung:* Vorab-Instanziierung der Repositories im `PostgresDb`-Struct, da diese zustandslos sind und nur den Pool halten.
-*   **String-Allokationen im Messaging:** In den Messaging-Clients (NATS/MQTT) werden Themenpfade (`subjects/topics`) oft bei jedem Senden neu allokiert (`to_string()`).
-*   *Lösung:* Verwendung von `Cow<'static, str>` oder vorberechneten Strings für statische Themenpfade.
-*   **DecodingKey Caching:** In `AuthExtractor` wird bei jeder Anfrage ein neuer `DecodingKey` aus dem JWT-Secret erstellt, was bei hoher Request-Rate ineffizient ist.
+*   **String-Allokationen im Messaging:** In den Messaging-Clients (NATS/MQTT) wurden Themenpfade (`subjects/topics`) oft bei jedem Senden neu allokiert (`to_string()`).
+*   *Lösung:* Verwendung von `Cow<'static, str>` oder vorberechneten Strings für statische Themenpfade. ✅ **Resolved (0.8.2):** Statische NATS-Subjects als Konstanten vordefiniert.
+*   **DecodingKey Caching:** In `AuthExtractor` wurde bei jeder Anfrage ein neuer `DecodingKey` aus dem JWT-Secret erstellt, was bei hoher Request-Rate ineffizient ist. ✅ **Resolved (0.8.2):** `DecodingKey` via `OnceLock` gecacht.
 *   *Lösung:* Einführung eines gecachten `DecodingKey` das nur bei Secret-Change aktualisiert wird.
-*   **Rollen-Mapping Optimierung:** Die Konvertierung von String-Rollen zu `UserRole` Enums erfolgt bei jedem Aufruf der `roles()` Methode in `AuthenticatedUser`.
+*   **Rollen-Mapping Optimierung:** Die Konvertierung von String-Rollen zu `UserRole` Enums erfolgt bei jedem Aufruf der `roles()` Methode in `AuthenticatedUser`. ✅ **Resolved (0.8.2):** Rollen werden während Token-Entschlüsselung direkt als `UserRole` Vector gespeichert.
 *   *Lösung:* Memoisierung des konvertierten Vectors oder direkte Speicherung als `UserRole` Vector im Claims während der Token-Entschlüsselung.
 
 ### 1.3 DTO & Serialisierung
@@ -58,7 +58,7 @@ Dieses Dokument enthält Vorschläge zur Verbesserung der Performance, Sicherhei
 *   **Repository Boilerplate:** Es gibt eine hohe Anzahl an Repositories mit viel repetitivem Code.
 *   *Lösung:* Einführung von Basis-Traits oder Makros, um Standard-CRUD-Operationen zu vereinheitlichen.
 *   **Modern Rust Async Traits:** Das Projekt nutzt `Pin<Box<dyn Future<Output = Result<T>> + Send>>` für async Methoden in Traits.
-*   *Lösung:* Da Rust 1.75+ (und Edition 2024) native Unterstützung für `async fn` in Traits bietet, könnte dies den Code erheblich vereinfachen und die Lesbarkeit verbessern.
+*   *Lösung:* Da Rust 1.75+ (und Edition 2024) native Unterstützung für `async fn` in Traits bietet, könnte dies den Code erheblich vereinfachen und die Lesbarkeit verbessern. ✅ **Partially Resolved (0.8.4):** Das Projekt verwendet bereits Edition 2024, aber das Refactoring der Repository-Traits von `Pin<Box<dyn Future>>` zu nativen `async fn` ist noch offen.
 *   **Configuration Management:** Konfiguration ist derzeit über verschiedene Wege verteilt (Umgebungsvariablen, Hardcoded Werte, einzelne Config-Funktionen).
 *   *Lösung:* Zentralisierte Konfiguration mittels eines `Config`-Structs mit automatischem Laden aus Environment, .env-Dateien und optionalem Hot-Reload während der Entwicklung.
 
