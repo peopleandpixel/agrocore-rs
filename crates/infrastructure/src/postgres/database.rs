@@ -120,7 +120,7 @@ impl Database {
 
     pub fn tenant_repo(&self) -> Arc<dyn TenantRepository> {
         match self {
-            Self::Postgres(db) => Arc::new(PgTenantRepo::new(db.pool.clone())),
+            Self::Postgres(db) => db.tenant_repo.clone(),
             #[cfg(feature = "mocks")]
             Self::Mock(m) => m.tenant_repo.clone().expect("tenant_repo mock not set")
                 as Arc<dyn TenantRepository>,
@@ -467,16 +467,52 @@ impl Database {
 }
 
 /// PostgreSQL Database Wrapper
+///
+/// Repositories are pre-instantiated during `connect()` and cached as `Arc`
+/// clones. Since all PostgreSQL repositories are stateless (they only hold a
+/// `PgPool` reference), we can clone the `Arc` instead of allocating a new
+/// `Arc::new(Repo::new(pool))` on every method call. This eliminates redundant
+/// heap allocations on every repository access.
 #[derive(Clone)]
 pub struct PostgresDb {
     pub pool: PgPool,
+    /// Pre-instantiated repository Arcs — cloned on access instead of re-created.
+    pub site_repo: Arc<dyn SiteRepository>,
+    pub user_repo: Arc<dyn UserRepository>,
+    pub order_repo: Arc<dyn OrderRepository>,
+    pub tenant_repo: Arc<dyn TenantRepository>,
+    pub equipment_repo: Arc<dyn EquipmentRepository>,
+    pub animal_repo: Arc<dyn AnimalRepository>,
+    pub weather_station_repo: Arc<dyn WeatherStationRepo>,
+    pub weather_data_repo: Arc<dyn WeatherDataRepo>,
+    pub fertilizer_record_repo: Arc<dyn FertilizerRecordRepo>,
+    pub plant_protection_record_repo: Arc<dyn PlantProtectionRecordRepo>,
+    pub harvest_season_repo: Arc<dyn HarvestSeasonRepo>,
+    pub harvest_lot_repo: Arc<dyn HarvestLotRepo>,
+    pub harvest_delivery_repo: Arc<dyn HarvestDeliveryRepo>,
+    pub olive_grove_repo: Arc<dyn OliveGroveRepo>,
+    pub olive_oil_record_repo: Arc<dyn OliveOilRecordRepo>,
+    pub vineyard_repo: Arc<dyn VineyardRepo>,
+    pub water_source_repo: Arc<dyn WaterSourceRepo>,
+    pub water_usage_repo: Arc<dyn WaterUsageRepo>,
+    pub water_quota_repo: Arc<dyn WaterQuotaRepo>,
+    pub worker_repo: Arc<dyn WorkerRepo>,
+    pub worker_location_repo: Arc<dyn WorkerLocationRepo>,
+    pub work_log_repo: Arc<dyn WorkLogRepo>,
+    pub worker_task_status_repo: Arc<dyn WorkerTaskStatusRepository>,
+    pub task_data_repo: Arc<dyn TaskDataRepository>,
+    pub spatial_object_repo: Arc<dyn SpatialObjectRepository>,
+    pub phenology_record_repo: Arc<dyn PhenologyRecordRepo>,
+    pub pac_application_repo: Arc<dyn PACApplicationRepo>,
+    pub cold_chain_log_repo: Arc<dyn ColdChainLogRepo>,
+    pub audit_log_repo: Arc<dyn AuditLogRepo>,
+    pub compliance_checklist_repo: Arc<dyn ComplianceChecklistRepo>,
+    pub cost_center_repo: Arc<dyn CostCenterRepo>,
+    pub financial_record_repo: Arc<dyn FinancialRecordRepo>,
+    pub kelter_delivery_repo: Arc<dyn KelterDeliveryRepo>,
 }
 
 impl PostgresDb {
-    pub fn pool(&self) -> &PgPool {
-        &self.pool
-    }
-
     pub async fn connect(database_url: &str) -> anyhow::Result<Self> {
         let pool_options = agrocore_shared::config::pg_pool_options();
         let connect_timeout = agrocore_shared::config::connect_timeout();
@@ -522,160 +558,242 @@ impl PostgresDb {
             }
         };
         sqlx::migrate!("../../migrations").run(&pool).await?;
-        Ok(Self { pool })
+
+        // Pre-instantiate all repositories once — Arc::clone is cheap (refcount increment)
+        // compared to Arc::new(Repo::new(pool.clone())) which allocates on every call.
+        Ok(Self {
+            site_repo: Arc::new(PgSiteRepo::new(pool.clone())),
+            user_repo: Arc::new(PgUserRepo::new(pool.clone())),
+            order_repo: Arc::new(PgOrderRepo::new(pool.clone())),
+            tenant_repo: Arc::new(PgTenantRepo::new(pool.clone())),
+            equipment_repo: Arc::new(PgEquipmentRepo::new(pool.clone())),
+            animal_repo: Arc::new(PgAnimalRepo::new(pool.clone())),
+            weather_station_repo: Arc::new(PgWeatherStationRepo::new(pool.clone())),
+            weather_data_repo: Arc::new(PgWeatherDataRepo::new(pool.clone())),
+            fertilizer_record_repo: Arc::new(PgFertilizerRecordRepo::new(pool.clone())),
+            plant_protection_record_repo: Arc::new(PgPlantProtectionRecordRepo::new(pool.clone())),
+            harvest_season_repo: Arc::new(PgHarvestSeasonRepo::new(pool.clone())),
+            harvest_lot_repo: Arc::new(PgHarvestLotRepo::new(pool.clone())),
+            harvest_delivery_repo: Arc::new(PgHarvestDeliveryRepo::new(pool.clone())),
+            olive_grove_repo: Arc::new(PgOliveGroveRepo::new(pool.clone())),
+            olive_oil_record_repo: Arc::new(PgOliveOilRecordRepo::new(pool.clone())),
+            vineyard_repo: Arc::new(PgVineyardRepo::new(pool.clone())),
+            water_source_repo: Arc::new(crate::postgres::water_source::PgWaterSourceRepo::new(
+                pool.clone(),
+            )),
+            water_usage_repo: Arc::new(crate::postgres::water_usage::PgWaterUsageRepo::new(
+                pool.clone(),
+            )),
+            water_quota_repo: Arc::new(crate::postgres::water_quota::PgWaterQuotaRepo::new(
+                pool.clone(),
+            )),
+            worker_repo: Arc::new(PgWorkerRepo::new(pool.clone())),
+            worker_location_repo: Arc::new(PgWorkerLocationRepo::new(pool.clone())),
+            work_log_repo: Arc::new(PgWorkLogRepo::new(pool.clone())),
+            worker_task_status_repo: Arc::new(PgWorkerTaskStatusRepo::new(pool.clone())),
+            task_data_repo: Arc::new(PgTaskDataRepo::new(pool.clone())),
+            spatial_object_repo: Arc::new(PgSiteRepo::new(pool.clone())),
+            phenology_record_repo: Arc::new(PgPhenologyRecordRepo::new(pool.clone())),
+            pac_application_repo: Arc::new(
+                crate::postgres::pac_application::PgPACApplicationRepo::new(pool.clone()),
+            ),
+            cold_chain_log_repo: Arc::new(PgColdChainLogRepo::new(pool.clone())),
+            audit_log_repo: Arc::new(PgAuditLogRepo::new(pool.clone())),
+            cost_center_repo: Arc::new(PgCostCenterRepo::new(pool.clone())),
+            financial_record_repo: Arc::new(PgFinancialRecordRepo::new(pool.clone())),
+            compliance_checklist_repo: Arc::new(PgComplianceChecklistRepo::new(pool.clone())),
+            kelter_delivery_repo: Arc::new(PgKelterDeliveryRepo::new(pool.clone())),
+            pool,
+        })
     }
 
-    // Core repositories
-    pub fn site_repo(&self) -> Arc<dyn SiteRepository> {
-        Arc::new(PgSiteRepo::new(self.pool.clone()))
+    /// Creates a PostgresDb from an already-established pool (used by tests).
+    /// Pre-instantiates all repositories just like `connect()`.
+    pub fn from_pool(pool: PgPool) -> Self {
+        Self {
+            site_repo: Arc::new(PgSiteRepo::new(pool.clone())),
+            user_repo: Arc::new(PgUserRepo::new(pool.clone())),
+            order_repo: Arc::new(PgOrderRepo::new(pool.clone())),
+            tenant_repo: Arc::new(PgTenantRepo::new(pool.clone())),
+            equipment_repo: Arc::new(PgEquipmentRepo::new(pool.clone())),
+            animal_repo: Arc::new(PgAnimalRepo::new(pool.clone())),
+            weather_station_repo: Arc::new(PgWeatherStationRepo::new(pool.clone())),
+            weather_data_repo: Arc::new(PgWeatherDataRepo::new(pool.clone())),
+            fertilizer_record_repo: Arc::new(PgFertilizerRecordRepo::new(pool.clone())),
+            plant_protection_record_repo: Arc::new(PgPlantProtectionRecordRepo::new(pool.clone())),
+            harvest_season_repo: Arc::new(PgHarvestSeasonRepo::new(pool.clone())),
+            harvest_lot_repo: Arc::new(PgHarvestLotRepo::new(pool.clone())),
+            harvest_delivery_repo: Arc::new(PgHarvestDeliveryRepo::new(pool.clone())),
+            olive_grove_repo: Arc::new(PgOliveGroveRepo::new(pool.clone())),
+            olive_oil_record_repo: Arc::new(PgOliveOilRecordRepo::new(pool.clone())),
+            vineyard_repo: Arc::new(PgVineyardRepo::new(pool.clone())),
+            water_source_repo: Arc::new(crate::postgres::water_source::PgWaterSourceRepo::new(
+                pool.clone(),
+            )),
+            water_usage_repo: Arc::new(crate::postgres::water_usage::PgWaterUsageRepo::new(
+                pool.clone(),
+            )),
+            water_quota_repo: Arc::new(crate::postgres::water_quota::PgWaterQuotaRepo::new(
+                pool.clone(),
+            )),
+            worker_repo: Arc::new(PgWorkerRepo::new(pool.clone())),
+            worker_location_repo: Arc::new(PgWorkerLocationRepo::new(pool.clone())),
+            work_log_repo: Arc::new(PgWorkLogRepo::new(pool.clone())),
+            worker_task_status_repo: Arc::new(PgWorkerTaskStatusRepo::new(pool.clone())),
+            task_data_repo: Arc::new(PgTaskDataRepo::new(pool.clone())),
+            spatial_object_repo: Arc::new(PgSiteRepo::new(pool.clone())),
+            phenology_record_repo: Arc::new(PgPhenologyRecordRepo::new(pool.clone())),
+            pac_application_repo: Arc::new(
+                crate::postgres::pac_application::PgPACApplicationRepo::new(pool.clone()),
+            ),
+            cold_chain_log_repo: Arc::new(PgColdChainLogRepo::new(pool.clone())),
+            audit_log_repo: Arc::new(PgAuditLogRepo::new(pool.clone())),
+            cost_center_repo: Arc::new(PgCostCenterRepo::new(pool.clone())),
+            financial_record_repo: Arc::new(PgFinancialRecordRepo::new(pool.clone())),
+            compliance_checklist_repo: Arc::new(PgComplianceChecklistRepo::new(pool.clone())),
+            kelter_delivery_repo: Arc::new(PgKelterDeliveryRepo::new(pool.clone())),
+            pool,
+        }
+    }
+
+    pub fn pool(&self) -> &PgPool {
+        &self.pool
     }
 
     pub fn map_db_error(e: sqlx::Error) -> agrocore_shared::SharedError {
         crate::postgres::error_mapper::map_db_error(e)
     }
 
+    // Core repositories — clone the pre-instantiated Arc instead of creating new instances
+    pub fn site_repo(&self) -> Arc<dyn SiteRepository> {
+        self.site_repo.clone()
+    }
+
     pub fn user_repo(&self) -> Arc<dyn UserRepository> {
-        Arc::new(PgUserRepo::new(self.pool.clone()))
+        self.user_repo.clone()
     }
 
     pub fn order_repo(&self) -> Arc<dyn OrderRepository> {
-        Arc::new(PgOrderRepo::new(self.pool.clone()))
+        self.order_repo.clone()
     }
 
     pub fn tenant_repo(&self) -> Arc<dyn TenantRepository> {
-        Arc::new(PgTenantRepo::new(self.pool.clone()))
+        self.tenant_repo.clone()
     }
 
     pub fn equipment_repo(&self) -> Arc<dyn EquipmentRepository> {
-        Arc::new(PgEquipmentRepo::new(self.pool.clone()))
+        self.equipment_repo.clone()
     }
 
     pub fn animal_repo(&self) -> Arc<dyn AnimalRepository> {
-        Arc::new(PgAnimalRepo::new(self.pool.clone()))
+        self.animal_repo.clone()
     }
 
-    // Weather repositories
     pub fn weather_station_repo(&self) -> Arc<dyn WeatherStationRepo> {
-        Arc::new(PgWeatherStationRepo::new(self.pool.clone()))
+        self.weather_station_repo.clone()
     }
 
     pub fn weather_data_repo(&self) -> Arc<dyn WeatherDataRepo> {
-        Arc::new(PgWeatherDataRepo::new(self.pool.clone()))
+        self.weather_data_repo.clone()
     }
 
-    // Agricultural records
     pub fn fertilizer_record_repo(&self) -> Arc<dyn FertilizerRecordRepo> {
-        Arc::new(PgFertilizerRecordRepo::new(self.pool.clone()))
+        self.fertilizer_record_repo.clone()
     }
 
     pub fn plant_protection_record_repo(&self) -> Arc<dyn PlantProtectionRecordRepo> {
-        Arc::new(PgPlantProtectionRecordRepo::new(self.pool.clone()))
+        self.plant_protection_record_repo.clone()
     }
 
     pub fn harvest_season_repo(&self) -> Arc<dyn HarvestSeasonRepo> {
-        Arc::new(PgHarvestSeasonRepo::new(self.pool.clone()))
+        self.harvest_season_repo.clone()
     }
 
     pub fn harvest_lot_repo(&self) -> Arc<dyn HarvestLotRepo> {
-        Arc::new(PgHarvestLotRepo::new(self.pool.clone()))
+        self.harvest_lot_repo.clone()
     }
 
     pub fn harvest_delivery_repo(&self) -> Arc<dyn HarvestDeliveryRepo> {
-        Arc::new(PgHarvestDeliveryRepo::new(self.pool.clone()))
+        self.harvest_delivery_repo.clone()
     }
 
-    // Olive repositories
     pub fn olive_grove_repo(&self) -> Arc<dyn OliveGroveRepo> {
-        Arc::new(PgOliveGroveRepo::new(self.pool.clone()))
+        self.olive_grove_repo.clone()
     }
 
     pub fn olive_oil_record_repo(&self) -> Arc<dyn OliveOilRecordRepo> {
-        Arc::new(PgOliveOilRecordRepo::new(self.pool.clone()))
+        self.olive_oil_record_repo.clone()
     }
 
-    // Vineyard repository
     pub fn vineyard_repo(&self) -> Arc<dyn VineyardRepo> {
-        Arc::new(PgVineyardRepo::new(self.pool.clone()))
+        self.vineyard_repo.clone()
     }
 
-    // Water repositories
     pub fn water_source_repo(&self) -> Arc<dyn WaterSourceRepo> {
-        Arc::new(crate::postgres::water_source::PgWaterSourceRepo::new(
-            self.pool.clone(),
-        ))
+        self.water_source_repo.clone()
     }
 
     pub fn water_usage_repo(&self) -> Arc<dyn WaterUsageRepo> {
-        Arc::new(crate::postgres::water_usage::PgWaterUsageRepo::new(
-            self.pool.clone(),
-        ))
+        self.water_usage_repo.clone()
     }
 
     pub fn water_quota_repo(&self) -> Arc<dyn WaterQuotaRepo> {
-        Arc::new(crate::postgres::water_quota::PgWaterQuotaRepo::new(
-            self.pool.clone(),
-        ))
+        self.water_quota_repo.clone()
     }
 
-    // Worker repositories
     pub fn worker_repo(&self) -> Arc<dyn WorkerRepo> {
-        Arc::new(PgWorkerRepo::new(self.pool.clone()))
+        self.worker_repo.clone()
     }
 
     pub fn worker_location_repo(&self) -> Arc<dyn WorkerLocationRepo> {
-        Arc::new(PgWorkerLocationRepo::new(self.pool.clone()))
+        self.worker_location_repo.clone()
     }
 
     pub fn work_log_repo(&self) -> Arc<dyn WorkLogRepo> {
-        Arc::new(PgWorkLogRepo::new(self.pool.clone()))
+        self.work_log_repo.clone()
     }
 
     pub fn worker_task_status_repo(&self) -> Arc<dyn WorkerTaskStatusRepository> {
-        Arc::new(PgWorkerTaskStatusRepo::new(self.pool.clone()))
+        self.worker_task_status_repo.clone()
     }
 
     pub fn task_data_repo(&self) -> Arc<dyn TaskDataRepository> {
-        Arc::new(PgTaskDataRepo::new(self.pool.clone()))
+        self.task_data_repo.clone()
     }
 
     pub fn spatial_object_repo(&self) -> Arc<dyn SpatialObjectRepository> {
-        Arc::new(PgSiteRepo::new(self.pool.clone()))
+        self.spatial_object_repo.clone()
     }
 
-    // Phenology
     pub fn phenology_record_repo(&self) -> Arc<dyn PhenologyRecordRepo> {
-        Arc::new(PgPhenologyRecordRepo::new(self.pool.clone()))
+        self.phenology_record_repo.clone()
     }
 
-    // PAC
     pub fn pac_application_repo(&self) -> Arc<dyn PACApplicationRepo> {
-        Arc::new(crate::postgres::pac_application::PgPACApplicationRepo::new(
-            self.pool.clone(),
-        ))
+        self.pac_application_repo.clone()
     }
 
-    // ColdChain
     pub fn cold_chain_log_repo(&self) -> Arc<dyn ColdChainLogRepo> {
-        Arc::new(PgColdChainLogRepo::new(self.pool.clone()))
+        self.cold_chain_log_repo.clone()
     }
 
     pub fn audit_log_repo(&self) -> Arc<dyn AuditLogRepo> {
-        Arc::new(PgAuditLogRepo::new(self.pool.clone()))
+        self.audit_log_repo.clone()
     }
 
     pub fn cost_center_repo(&self) -> Arc<dyn CostCenterRepo> {
-        Arc::new(PgCostCenterRepo::new(self.pool.clone()))
+        self.cost_center_repo.clone()
     }
 
     pub fn financial_record_repo(&self) -> Arc<dyn FinancialRecordRepo> {
-        Arc::new(PgFinancialRecordRepo::new(self.pool.clone()))
+        self.financial_record_repo.clone()
     }
 
     pub fn compliance_checklist_repo(&self) -> Arc<dyn ComplianceChecklistRepo> {
-        Arc::new(PgComplianceChecklistRepo::new(self.pool.clone()))
+        self.compliance_checklist_repo.clone()
     }
 
     pub fn kelter_delivery_repo(&self) -> Arc<dyn KelterDeliveryRepo> {
-        Arc::new(PgKelterDeliveryRepo::new(self.pool.clone()))
+        self.kelter_delivery_repo.clone()
     }
 }

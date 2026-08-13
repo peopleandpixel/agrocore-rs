@@ -5,15 +5,15 @@ Dieses Dokument enthält Vorschläge zur Verbesserung der Performance, Sicherhei
 > **Hinweis:** Die folgenden Aufgaben wurden bereits erledigt und sind aus diesem Dokument entfernt worden:
 > - **Task 4 Quick Wins** (alle 5): DecodingKey Caching, PgPoolOptions Konfiguration, Repository Factory Macro, Messaging Topic Precomputation, Rollen-Mapping Optimierung — alle ✅ in v0.8.2
 > - **Task 1.1** (Batch-Updates & N+1, Subqueries vs. Joins, Pool-Konfiguration) — ✅ in v0.8.4
-> - **Task 1.1c** (erweiterte Pool-Konfiguration: acquire_timeout, connect_timeout) — ✅ in v0.8.5
+> - **Task 1.1c erweiterte Pool-Konfiguration** (acquire_timeout, connect_timeout) — ✅ in v0.8.5
+> - **Task 1.1c Repository Pre-instantiation** (Pre-instanziierung aller Repos im PostgresDb-Struct) — ✅ in v0.8.6
 > - **Task 2.1 CORS-Konfiguration** — ✅ in v0.8.5
 
 ## 1. Performance-Optimierungen
 
-### 1.1c Repository Factory Pattern (offen)
-*   **Repository Factory Pattern:** Alle Repository-Methoden in `PostgresDb` folgen dem identischen Muster `Arc::new(PgXyzRepo::new(self.pool.clone()))`, was zu Boilerplate-Code führt.
-*   *Lösung:* Einführung einer generischen Repository-Factory oder eines Makros zur Reduktion des Boilerplates und zentralen Fehlerbehandlung.
-*   *Status:* ✅ **Partially Resolved (0.8.2):** `repo!` Makro in shared crate reduziert Boilerplate für Repository-Instanziierung. Vollständige Factory-Implementierung noch offen.
+### 1.1c Repository Pre-instantiation (Resolved ✓)
+*   ~~**Repository-Instanziierung:** In `Database`-Methoden wurde bei jedem Aufruf ein neues `Arc::new(Repo::new(pool))` erstellt.~~
+*   ~~*Lösung:* Vorab-Instanziierung der Repositories im `PostgresDb`-Struct, da diese zustandslos sind und nur den Pool halten.~~ ✅ **Resolved (0.8.6):** Alle 32 Repositories werden in `PostgresDb::connect()` und `from_pool()` einmalig als `Arc`-Fields initialisiert. Repository-Zugriffe geben nun `self.xxx_repo.clone()` (Refcount-Inkrement) zurück statt `Arc::new(Repo::new(pool.clone()))` (Heap-Allocation) auf jedem Aufruf.
 
 ### 1.2 Speicher- und Ressourcenmanagement
 

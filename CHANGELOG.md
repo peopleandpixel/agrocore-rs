@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.6] - 2026-08-12
+
+### Added
+- **Repository Pre-instantiation (Task 1.1c)**
+  - Pre-instantiate all PostgreSQL repositories in `PostgresDb::connect()` and `from_pool()`
+  - Repositories are cached as `Arc` fields in the struct, eliminating repeated `Arc::new(Repo::new(pool.clone()))` heap allocations on every method call
+  - `Arc::clone` (refcount increment) replaces allocation on every repository access
+  - Repository access methods (`site_repo()`, `user_repo()`, etc.) now return `self.xxx_repo.clone()` instead of `Arc::new(PgXxxRepo::new(self.pool.clone()))`
+
+### Changed
+- `PostgresDb` struct now has 33 fields: `pool` + 32 pre-instantiated repository Arcs
+- `Database::tenant_repo()` now delegates to `db.tenant_repo.clone()` instead of `Arc::new(PgTenantRepo::new(db.pool.clone()))`
+- Test fixtures updated to use `PostgresDb::from_pool()` instead of struct literal construction
+
 ## [0.8.5] - 2026-08-12
 
 ### Added

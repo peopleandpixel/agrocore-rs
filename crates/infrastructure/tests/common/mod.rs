@@ -42,9 +42,9 @@ impl PostgresTestFixture {
 
         sqlx::migrate!("../../migrations").run(&pool).await?;
 
-        let database = Database::Postgres(agrocore_infrastructure::postgres::PostgresDb {
-            pool: pool.clone(),
-        });
+        let database = Database::Postgres(
+            agrocore_infrastructure::postgres::PostgresDb::from_pool(pool.clone()),
+        );
 
         Ok(Self {
             pool,
