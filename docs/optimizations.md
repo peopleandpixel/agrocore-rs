@@ -2,27 +2,23 @@
 
 Dieses Dokument enthält Vorschläge zur Verbesserung der Performance, Sicherheit und Code-Qualität des AgroCore-RS Projekts.
 
+> **Hinweis:** Die folgenden Aufgaben wurden bereits erledigt und sind aus diesem Dokument entfernt worden:
+> - **Task 4 Quick Wins** (alle 5): DecodingKey Caching, PgPoolOptions Konfiguration, Repository Factory Macro, Messaging Topic Precomputation, Rollen-Mapping Optimierung — alle ✅ in v0.8.2
+> - **Task 1.1** (Batch-Updates & N+1, Subqueries vs. Joins, Pool-Konfiguration) — ✅ in v0.8.4
+> - **Task 1.1c** (erweiterte Pool-Konfiguration: acquire_timeout, connect_timeout) — ✅ in v0.8.5
+> - **Task 2.1 CORS-Konfiguration** — ✅ in v0.8.5
+
 ## 1. Performance-Optimierungen
 
-### 1.1 Datenbank-Interaktionen
-*   **Batch-Updates & N+1 Problematik:** In den Repositories (z.B. `PgUserRepo::update`) wurden assoiierte Daten wie `user_sites` in einer Schleife einzeln gelöscht und eingefügt. Dies führte zu N+1 Datenbank-Aufrufen. ✅ **Resolved (0.8.4):** Batch-INSERT via `SELECT $1, unnest($2::uuid[])` ersetzt die Schleife durch eine einzige Query.
-*   *Lösung:* Verwendung von `UNNEST` oder Batch-Insert-Statements, um alle Datensätze mit einer einzigen Query zu aktualisieren.
-*   **Subqueries vs. Joins:** Bei der Abfrage von Listen (z.B. `find_all` bei Usern) wurde für jeden Datensatz eine Subquery ausgeführt, um assoiierte IDs zu sammeln (`json_agg`). ✅ **Resolved (0.8.4):** Alle `PgUserRepo`-Queries verwenden nun `LEFT JOIN user_sites` + `GROUP BY u.id` + `json_agg` als einzige Query, keine correlated Subqueries mehr.
-*   *Lösung:* Einsatz von `LEFT JOIN` und Aggregation auf Datenbankebene, um die Anzahl der Abfragen zu reduzieren.
-*   **Pool-Konfiguration:** Die Datenbankverbindung nutzt Standardeinstellungen. ✅ **Resolved (0.8.2 + 0.8.4):** `PgPoolOptions` konfigurierbar via Env-Variablen (`DATABASE_MAX_CONNECTIONS`, `DATABASE_MIN_CONNECTIONS`, `DATABASE_IDLE_TIMEOUT_SECS`, `DATABASE_MAX_LIFETIME_SECS`, `DATABASE_ACQUIRE_TIMEOUT_SECS`, `DATABASE_CONNECT_TIMEOUT_SECS`).
-*   *Lösung:* Explizite Konfiguration des `PgPoolOptions` (z.B. `max_connections`, `min_connections`, `idle_timeout`, `max_lifetime`), angepasst an die Lastprofile der Dienste.
-*   **Repository Factory Pattern:** Alle Repository-Methoden in `PostgresDb` folgen dem identischen Muster `Arc::new(PgXyzRepo::new(self.pool.clone()))`, was zu Boilerplate-Code führt. ✅ **Partially Resolved (0.8.2):** `repo!` Makro in shared crate reduziert Boilerplate für Repository-Instanziierung.
+### 1.1c Repository Factory Pattern (offen)
+*   **Repository Factory Pattern:** Alle Repository-Methoden in `PostgresDb` folgen dem identischen Muster `Arc::new(PgXyzRepo::new(self.pool.clone()))`, was zu Boilerplate-Code führt.
 *   *Lösung:* Einführung einer generischen Repository-Factory oder eines Makros zur Reduktion des Boilerplates und zentralen Fehlerbehandlung.
+*   *Status:* ✅ **Partially Resolved (0.8.2):** `repo!` Makro in shared crate reduziert Boilerplate für Repository-Instanziierung. Vollständige Factory-Implementierung noch offen.
 
 ### 1.2 Speicher- und Ressourcenmanagement
-*   **Repository-Instanziierung:** In `Database`-Methoden wurde bei jedem Aufruf ein neues `Arc::new(Repo::new(pool))` erstellt.
+
+*   **Repository-Instanziierung:** In `Database`-Methoden wird bei jedem Aufruf ein neues `Arc::new(Repo::new(pool))` erstellt.
 *   *Lösung:* Vorab-Instanziierung der Repositories im `PostgresDb`-Struct, da diese zustandslos sind und nur den Pool halten.
-*   **String-Allokationen im Messaging:** In den Messaging-Clients (NATS/MQTT) wurden Themenpfade (`subjects/topics`) oft bei jedem Senden neu allokiert (`to_string()`).
-*   *Lösung:* Verwendung von `Cow<'static, str>` oder vorberechneten Strings für statische Themenpfade. ✅ **Resolved (0.8.2):** Statische NATS-Subjects als Konstanten vordefiniert.
-*   **DecodingKey Caching:** In `AuthExtractor` wurde bei jeder Anfrage ein neuer `DecodingKey` aus dem JWT-Secret erstellt, was bei hoher Request-Rate ineffizient ist. ✅ **Resolved (0.8.2):** `DecodingKey` via `OnceLock` gecacht.
-*   *Lösung:* Einführung eines gecachten `DecodingKey` das nur bei Secret-Change aktualisiert wird.
-*   **Rollen-Mapping Optimierung:** Die Konvertierung von String-Rollen zu `UserRole` Enums erfolgt bei jedem Aufruf der `roles()` Methode in `AuthenticatedUser`. ✅ **Resolved (0.8.2):** Rollen werden während Token-Entschlüsselung direkt als `UserRole` Vector gespeichert.
-*   *Lösung:* Memoisierung des konvertierten Vectors oder direkte Speicherung als `UserRole` Vector im Claims während der Token-Entschlüsselung.
 
 ### 1.3 DTO & Serialisierung
 *   **Selektive Validierung:** Die neuen IoT-DTOs verwenden `validator::Validate` für alle Felder bei jedem Request. Bei hohen Durchsatzraten könnte die Validierung bestimmter Felder (wie bereits validierte UUIDs über Routing) überflüssig sein.
@@ -33,9 +29,7 @@ Dieses Dokument enthält Vorschläge zur Verbesserung der Performance, Sicherhei
 ## 2. Sicherheits-Verbesserungen
 
 ### 2.1 API-Sicherheit
-*   **CORS-Konfiguration:** Aktuell wurde `Cors::permissive()` verwendet, was alle Origins erlaubt. ✅ **Resolved (0.8.5):** Implementierung einer expliziten Whitelist via `CORS_ALLOWED_ORIGINS` Umweltvariable; fällt mit Warnung auf permissives Verhalten zurück wenn nicht gesetzt.
-*   *Lösung:* Implementierung einer expliziten Whitelist für erlaubte Origins in der Produktionsumgebung.
-*   **Abhängigkeiten:** Einige sicherheitsrelevante Crates nutzen Vorabversionen (z.B. `argon2 = \"0.6.0-rc.8\"`).
+*   **Abhängigkeiten:** Einige sicherheitsrelevante Crates nutzen Vorabversionen (z.B. `argon2 = "0.6.0-rc.8"`).
 *   *Lösung:* Wechsel auf stabile Versionen, um unentdeckte Bugs in Release Candidates zu vermeiden.
 
 ### 2.2 Infrastruktur-Sicherheit
@@ -58,7 +52,7 @@ Dieses Dokument enthält Vorschläge zur Verbesserung der Performance, Sicherhei
 *   **Repository Boilerplate:** Es gibt eine hohe Anzahl an Repositories mit viel repetitivem Code.
 *   *Lösung:* Einführung von Basis-Traits oder Makros, um Standard-CRUD-Operationen zu vereinheitlichen.
 *   **Modern Rust Async Traits:** Das Projekt nutzt `Pin<Box<dyn Future<Output = Result<T>> + Send>>` für async Methoden in Traits.
-*   *Lösung:* Da Rust 1.75+ (und Edition 2024) native Unterstützung für `async fn` in Traits bietet, könnte dies den Code erheblich vereinfachen und die Lesbarkeit verbessern. ✅ **Partially Resolved (0.8.4):** Das Projekt verwendet bereits Edition 2024, aber das Refactoring der Repository-Traits von `Pin<Box<dyn Future>>` zu nativen `async fn` ist noch offen.
+*   *Lösung:* Da Rust 1.75+ (und Edition 2024) native Unterstützung für `async fn` in Traits bietet, könnte dies den Code erheblich vereinfachen und die Lesbarkeit verbessern.
 *   **Configuration Management:** Konfiguration ist derzeit über verschiedene Wege verteilt (Umgebungsvariablen, Hardcoded Werte, einzelne Config-Funktionen).
 *   *Lösung:* Zentralisierte Konfiguration mittels eines `Config`-Structs mit automatischem Laden aus Environment, .env-Dateien und optionalem Hot-Reload während der Entwicklung.
 
@@ -75,11 +69,3 @@ Dieses Dokument enthält Vorschläge zur Verbesserung der Performance, Sicherhei
 *   *Lösung:* Einführung von eigenen Metrics zur Erfassung von Geschäftsprozessen und KPIs.
 *   **Distributed Tracing Integration:** Verbesserung der bestehenden Tracing-Integration um mehr Span-Attributes für bessere Debugbarkeit hinzuzufügen (z.B. Tenant-ID, User-ID, Operationstyp).
 *   *Lösung:* Standardisierung dessen, was in Tracing-Spans aufgezeichnet wird über alle Service-Grenzen hinweg.
-
-## 4. Schnell umsetzbare Quick Wins (≤ 1 Stunde jeweils)
-
-1. **~~DecodingKey Caching in Middleware~~** ✅ - Introduce cached DecodingKey in AuthExtractor
-2. **~~Einführung von PgPoolOptions Konfiguration~~** ✅ - Expose connection pool configuration via environment variables
-3. **~~Repository Boilerplate Reduktion durch einfaches Makro~~** ✅ - Create a repository factory macro
-4. **~~Überprüfung der Messaging-Topic Erstellung~~** ✅ - Identify and precompute static topics in messaging clients
-5. **~~Rollen-Mapping Optimierung~~** ✅ - Memoize or pre-convert role strings to UserRole enums
