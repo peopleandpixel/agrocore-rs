@@ -236,6 +236,38 @@ impl utoipa::Modify for SecurityAddon {
     }
 }
 
+/// Builds a CORS configuration from the `CORS_ALLOWED_ORIGINS` environment variable.
+/// If the variable is set, only the specified origins are allowed.
+/// If unset, falls back to permissive mode (all origins) for development.
+///
+/// The env var accepts a comma-separated list of origins, e.g.:
+/// `CORS_ALLOWED_ORIGINS=https://app.example.com,https://admin.example.com`
+fn build_cors() -> Cors {
+    match std::env::var("CORS_ALLOWED_ORIGINS") {
+        Ok(origins_str) => {
+            let mut cors = Cors::default()
+                .max_age(3600)
+                .allow_any_method()
+                .allow_any_header()
+                .supports_credentials();
+            for origin in origins_str.split(',') {
+                let origin = origin.trim();
+                if !origin.is_empty() {
+                    cors = cors.allowed_origin(origin);
+                }
+            }
+            cors
+        }
+        Err(_) => {
+            tracing::warn!(
+                "CORS_ALLOWED_ORIGINS not set - using permissive CORS policy (all origins allowed). \
+                 Set CORS_ALLOWED_ORIGINS in production for security."
+            );
+            Cors::permissive().max_age(3600)
+        }
+    }
+}
+
 pub async fn run_server(
     db: Database,
     messaging: MessagingClient,
@@ -263,8 +295,7 @@ pub async fn run_server(
         .unwrap();
 
     HttpServer::new(move || {
-        let cors = Cors::permissive().max_age(3600);
-
+        let cors = build_cors();
         let security_headers = actix_web::middleware::DefaultHeaders::new()
             .add(("X-Content-Type-Options", "nosniff"))
             .add(("X-Frame-Options", "DENY"))

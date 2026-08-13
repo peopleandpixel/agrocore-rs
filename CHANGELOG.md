@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.5] - 2026-08-12
+
+### Added
+- **Security: CORS Configuration (Task 2.1)**
+  - **Explicit CORS Whitelist**: Replaced `Cors::permissive()` with `build_cors()` function that reads `CORS_ALLOWED_ORIGINS` environment variable for a comma-separated list of allowed origins
+  - Falls back to permissive mode with a warning log when `CORS_ALLOWED_ORIGINS` is not set (development convenience)
+  - Production environments should set `CORS_ALLOWED_ORIGINS=https://your-domain.com` for proper origin restriction
+
+### Changed
+- Version bump: 0.8.4 → 0.8.5
+
 ## [0.8.4] - 2026-08-12
 
 ### Added

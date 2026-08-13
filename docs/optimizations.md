@@ -33,7 +33,7 @@ Dieses Dokument enthält Vorschläge zur Verbesserung der Performance, Sicherhei
 ## 2. Sicherheits-Verbesserungen
 
 ### 2.1 API-Sicherheit
-*   **CORS-Konfiguration:** Aktuell wird `Cors::permissive()` verwendet, was alle Origins erlaubt.
+*   **CORS-Konfiguration:** Aktuell wurde `Cors::permissive()` verwendet, was alle Origins erlaubt. ✅ **Resolved (0.8.5):** Implementierung einer expliziten Whitelist via `CORS_ALLOWED_ORIGINS` Umweltvariable; fällt mit Warnung auf permissives Verhalten zurück wenn nicht gesetzt.
 *   *Lösung:* Implementierung einer expliziten Whitelist für erlaubte Origins in der Produktionsumgebung.
 *   **Abhängigkeiten:** Einige sicherheitsrelevante Crates nutzen Vorabversionen (z.B. `argon2 = \"0.6.0-rc.8\"`).
 *   *Lösung:* Wechsel auf stabile Versionen, um unentdeckte Bugs in Release Candidates zu vermeiden.
