@@ -15,10 +15,9 @@ Dieses Dokument enthält Vorschläge zur Verbesserung der Performance, Sicherhei
 *   ~~**Repository-Instanziierung:** In `Database`-Methoden wurde bei jedem Aufruf ein neues `Arc::new(Repo::new(pool))` erstellt.~~
 *   ~~*Lösung:* Vorab-Instanziierung der Repositories im `PostgresDb`-Struct, da diese zustandslos sind und nur den Pool halten.~~ ✅ **Resolved (0.8.6):** Alle 32 Repositories werden in `PostgresDb::connect()` und `from_pool()` einmalig als `Arc`-Fields initialisiert. Repository-Zugriffe geben nun `self.xxx_repo.clone()` (Refcount-Inkrement) zurück statt `Arc::new(Repo::new(pool.clone()))` (Heap-Allocation) auf jedem Aufruf.
 
-### 1.2 Speicher- und Ressourcenmanagement
-
-*   **Repository-Instanziierung:** In `Database`-Methoden wird bei jedem Aufruf ein neues `Arc::new(Repo::new(pool))` erstellt.
-*   *Lösung:* Vorab-Instanziierung der Repositories im `PostgresDb`-Struct, da diese zustandslos sind und nur den Pool halten.
+### 1.2 Speicher- und Ressourcenmanagement (Resolved ✓)
+*   ~~**Repository-Instanziierung:** In `Database`-Methoden wurde bei jedem Aufruf ein neues `Arc::new(Repo::new(pool))` erstellt.~~
+*   ~~*Lösung:* Vorab-Instanziierung der Repositories im `PostgresDb`-Struct, da diese zustandslos sind und nur den Pool halten.~~ ✅ **Resolved (0.8.6):** Siehe Task 1.1c oben — alle 32 Repositories werden einmalig in `PostgresDb::connect()`/`from_pool()` initialisiert und als gecachte `Arc`-Fields gehalten.
 
 ### 1.3 DTO & Serialisierung
 *   **Selektive Validierung:** Die neuen IoT-DTOs verwenden `validator::Validate` für alle Felder bei jedem Request. Bei hohen Durchsatzraten könnte die Validierung bestimmter Felder (wie bereits validierte UUIDs über Routing) überflüssig sein.
