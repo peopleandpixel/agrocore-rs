@@ -1,4 +1,6 @@
-use crate::dto::{CreateOrderDto, CreateSiteDto, CreateTaskDataDto, CreateUserDto};
+use crate::dto::{
+    CreateOrderDto, CreateSiteDto, CreateTaskDataDto, CreateUserDto, IoTCommandRequestDto,
+};
 use agrocore_domain::entities::site::GeoPoint;
 use agrocore_domain::entities::{CropType, OrderType, SiteType};
 use uuid::Uuid;
@@ -104,5 +106,40 @@ fn test_api_task_dto_validation() {
     assert!(dto.validate().is_err());
 
     dto.description = "Working on the field".to_string();
+    assert!(dto.validate().is_ok());
+}
+
+#[test]
+fn test_iot_command_request_dto_validation() {
+    // Empty command_type fails validation
+    let dto = IoTCommandRequestDto {
+        command_type: "".to_string(),
+        payload: serde_json::Value::Null,
+        timeout_seconds: None,
+    };
+    assert!(dto.validate().is_err());
+
+    // Valid command_type passes
+    let dto = IoTCommandRequestDto {
+        command_type: "reboot".to_string(),
+        payload: serde_json::json!({"force": true}),
+        timeout_seconds: Some(30),
+    };
+    assert!(dto.validate().is_ok());
+
+    // timeout_seconds out of range fails
+    let dto = IoTCommandRequestDto {
+        command_type: "reboot".to_string(),
+        payload: serde_json::Value::Null,
+        timeout_seconds: Some(999),
+    };
+    assert!(dto.validate().is_err());
+
+    // timeout_seconds within range passes
+    let dto = IoTCommandRequestDto {
+        command_type: "firmware_update".to_string(),
+        payload: serde_json::Value::Null,
+        timeout_seconds: Some(120),
+    };
     assert!(dto.validate().is_ok());
 }

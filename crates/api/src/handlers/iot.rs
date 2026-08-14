@@ -442,6 +442,8 @@ pub async fn send_command(
 
     let device_id = path.into_inner();
     let dto = dto.0;
+    dto.validate()
+        .map_err(|e| ApiError::validation(e.to_string()))?;
 
     if let Some(device) = find_device(&state, &device_id).await? {
         if device.tenant_id != auth.0.tenant_id && !auth.is_admin() {

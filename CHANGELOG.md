@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.7] - 2026-08-12
+
+### Added
+- **Selective DTO Validation (Task 1.3a)**
+  - `IoTCommandRequestDto` now has `#[validate(length(...))]` on `command_type` and `#[validate(range(...))]` on `timeout_seconds`
+  - `send_command` handler now calls `dto.validate()` before processing the command
+  - Added `test_iot_command_request_dto_validation` test covering all validation scenarios
+
+### Note
+- `serde_json::Value` fields (like `payload`) cannot use `#[validate]` directly — they require `#[validate(nested)]` for struct-based validation, or are left unvalidated since arbitrary JSON payloads cannot be meaningfully validated by the `validator` crate
+
 ## [0.8.6] - 2026-08-12
 
 ### Added

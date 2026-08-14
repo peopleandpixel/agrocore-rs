@@ -193,8 +193,10 @@ pub struct IoTMeasurementDto {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Validate)]
 pub struct IoTCommandRequestDto {
+    #[validate(length(min = 1, max = 100))]
     pub command_type: String,
     pub payload: serde_json::Value,
+    #[validate(range(min = 1, max = 300))]
     pub timeout_seconds: Option<u64>,
 }
 
