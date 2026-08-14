@@ -23,6 +23,8 @@ impl PgUserRepo {
 use crate::jwt::generate_jwt;
 use crate::postgres::error_mapper::map_db_error;
 use argon2::{Argon2, PasswordHasher, PasswordVerifier};
+use password_hash::{PasswordHash, SaltString};
+use rand::thread_rng;
 
 /// Shared SQL query fragment for selecting a user with assigned site IDs via LEFT JOIN.
 /// Replaces the correlated subquery `COALESCE((SELECT json_agg(site_id) FROM user_sites WHERE user_id = u.id), '[]'::json)`
@@ -136,8 +138,9 @@ impl UserRepository for PgUserRepo {
             let mut tx = pool.begin().await.map_err(map_db_error)?;
             let id = Uuid::new_v4();
 
+            let salt = SaltString::generate(&mut rand::thread_rng());
             let password_hash = Argon2::default()
-                .hash_password(dto.password.as_bytes())
+                .hash_password(dto.password.as_bytes(), &salt)
                 .map_err(|e| SharedError::Internal(format!("Hashing error: {}", e)))?
                 .to_string();
 
@@ -256,8 +259,10 @@ impl UserRepository for PgUserRepo {
             .map_err(map_db_error)?
             .ok_or_else(|| SharedError::Unauthorized("Invalid credentials".into()))?;
 
+            let hash = PasswordHash::new(user.password_hash.as_str())
+                .map_err(|e| SharedError::Unauthorized(format!("Invalid hash: {}", e)))?;
             Argon2::default()
-                .verify_password(dto.password.as_bytes(), user.password_hash.as_str())
+                .verify_password(dto.password.as_bytes(), &hash)
                 .map_err(|_| SharedError::Unauthorized("Invalid credentials".into()))?;
 
             let token = generate_jwt(&user)

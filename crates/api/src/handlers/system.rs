@@ -97,8 +97,12 @@ pub async fn initial_setup(
     let admin_id = Uuid::new_v4();
     // Replicating Argon2 hashing from PgUserRepo to ensure atomicity within the transaction
     use argon2::PasswordHasher;
+    use password_hash::SaltString;
+    use rand::thread_rng;
+
+    let salt = SaltString::generate(&mut thread_rng());
     let password_hash = argon2::Argon2::default()
-        .hash_password(dto.admin.password.as_bytes())
+        .hash_password(dto.admin.password.as_bytes(), &salt)
         .map_err(|e| SharedError::Internal(format!("Hashing error: {}", e)))?
         .to_string();
 

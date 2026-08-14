@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.9] - 2026-08-12
+
+### Changed
+- **Dependency Security Upgrade (Task 2.1)**
+  - Upgraded `argon2` from pre-release `0.6.0-rc.8` to stable `0.5.1`, eliminating release-candidate risk in production
+  - Added `password-hash = "0.5"` as a workspace dependency
+  - Added `rand` as a direct dependency to `agrocore-infrastructure` (was only available via workspace but not referenced)
+  - Updated `hash_password` calls to explicitly generate and pass a `SaltString::generate(&mut rand::thread_rng())` (argon2 0.5.x requires explicit salt)
+  - Updated `verify_password` to parse stored hash strings via `PasswordHash::new()` before verification (argon2 0.5.x API change)
+  - All password hashing/verification in `PgUserRepo` and `initial_setup` handler adapted to the stable API
+
 ## [0.8.8] - 2026-08-12
 
 ### Added

@@ -18,7 +18,7 @@ Dieses Dokument enthält Vorschläge zur Verbesserung der Performance, Sicherhei
 ### 1.2 Speicher- und Ressourcenmanagement (Resolved ✓)
 *   ~~**Repository-Instanziierung:** In `Database`-Methoden wurde bei jedem Aufruf ein neues `Arc::new(Repo::new(pool))` erstellt.~~
 *   ~~*Lösung:* Vorab-Instanziierung der Repositories im `PostgresDb`-Struct, da diese zustandslos sind und nur den Pool halten.~~ ✅ **Resolved (0.8.6):** Siehe Task 1.1c oben — alle 32 Repositories werden einmalig in `PostgresDb::connect()`/`from_pool()` initialisiert und als gecachte `Arc`-Fields gehalten.
-
+go on
 ### 1.3 DTO & Serialisierung
 *   ~~**Selektive Validierung:** Die neuen IoT-DTOs verwenden `validator::Validate` für alle Felder bei jedem Request. Bei hohen Durchsatzraten könnte die Validierung bestimmter Felder (wie bereits validierte UUIDs über Routing) überflüssig sein.~~
 *   ~~*Lösung:* Einführung von Validierungsgruppen oder bedingter Validierung abhängig vom Endpunkttyp und Datenherkunft.~~ ✅ **Resolved (0.8.7):** `IoTCommandRequestDto` erhählt `#[validate(length(...))]`/`#[validate(range(...))]` Attribute; `send_command` Handler ruft `.validate()` auf. UUIDs validiert durch serde; `serde_json::Value` lässt sich nicht mit `#[validate]` validieren.
@@ -28,8 +28,8 @@ Dieses Dokument enthält Vorschläge zur Verbesserung der Performance, Sicherhei
 ## 2. Sicherheits-Verbesserungen
 
 ### 2.1 API-Sicherheit
-*   **Abhängigkeiten:** Einige sicherheitsrelevante Crates nutzen Vorabversionen (z.B. `argon2 = "0.6.0-rc.8"`).
-*   *Lösung:* Wechsel auf stabile Versionen, um unentdeckte Bugs in Release Candidates zu vermeiden.
+*   ~~**Abhängigkeiten:** Einige sicherheitsrelevante Crates nutzen Vorabversionen (z.B. `argon2 = "0.6.0-rc.8"`).~~
+*   ~~*Lösung:* Wechsel auf stabile Versionen, um unentdeckte Bugs in Release Candidates zu vermeiden.~~ ✅ **Erledigt (0.8.9):** Upgrade `argon2` von `0.6.0-rc.8` auf stabile `0.5.1`. `password-hash = "0.5"` hinzugefügt. `hash_password`/`verify_password` Calls an die 0.5.x API angepasst (`SaltString::generate`, `PasswordHash::new()`).
 
 ### 2.2 Infrastruktur-Sicherheit
 *   **MQTT Verschlüsselung:** Der MQTT-Client unterstützt aktuell kein TLS (nur als Kommentar vorbereitet).
