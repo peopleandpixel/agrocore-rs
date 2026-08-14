@@ -514,49 +514,27 @@ pub struct PostgresDb {
 
 impl PostgresDb {
     pub async fn connect(database_url: &str) -> anyhow::Result<Self> {
-        let pool_options = agrocore_shared::config::pg_pool_options();
-        let connect_timeout = agrocore_shared::config::connect_timeout();
-        let mut retry_count = 0;
-        let max_retries = 10;
+        let config = agrocore_shared::config::AgroCoreConfig::global();
+        let pool_options = config.pg_pool_options();
+        let connect_timeout_secs = config.database_connect_timeout_secs;
 
         // Append connect_timeout to the database URL as a query parameter
         let database_url_with_timeout = if database_url.contains('?') {
-            format!(
-                "{}&connect_timeout={}",
-                database_url,
-                connect_timeout.as_secs()
-            )
+            format!("{}&connect_timeout={}", database_url, connect_timeout_secs)
         } else {
-            format!(
-                "{}?connect_timeout={}",
-                database_url,
-                connect_timeout.as_secs()
-            )
+            format!("{}?connect_timeout={}", database_url, connect_timeout_secs)
         };
 
-        let pool = loop {
+        let pool = agrocore_shared::with_retry("connect to database", 10, 1, || {
             let opts = pool_options.clone();
-            match opts.connect(&database_url_with_timeout).await {
-                Ok(pool) => break pool,
-                Err(e) if retry_count < max_retries => {
-                    retry_count += 1;
-                    tracing::warn!(
-                        "Failed to connect to database (attempt {}/{}): {}. Retrying in 1s...",
-                        retry_count,
-                        max_retries,
-                        e
-                    );
-                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-                }
-                Err(e) => {
-                    return Err(anyhow::anyhow!(
-                        "Failed to connect to database after {} attempts: {}",
-                        max_retries,
-                        e
-                    ));
-                }
-            }
-        };
+            let url = database_url_with_timeout.clone();
+            Box::pin(async move {
+                opts.connect(&url)
+                    .await
+                    .map_err(|e| anyhow::anyhow!("database connection error: {}", e))
+            })
+        })
+        .await?;
         sqlx::migrate!("../../migrations").run(&pool).await?;
 
         // Pre-instantiate all repositories once — Arc::clone is cheap (refcount increment)

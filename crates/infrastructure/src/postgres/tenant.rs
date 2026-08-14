@@ -3,19 +3,10 @@ use agrocore_domain::repositories::{
     PaginatedResponse, Pagination, RepositoryFuture, TenantRepository,
 };
 use agrocore_shared::SharedError;
-use sqlx::PgPool;
+use agrocore_shared::pg_repo;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct PgTenantRepo {
-    pool: PgPool,
-}
-
-impl PgTenantRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+pg_repo!(PgTenantRepo);
 
 impl TenantRepository for PgTenantRepo {
     fn find_by_id(&self, id: Uuid) -> RepositoryFuture<Option<Tenant>> {

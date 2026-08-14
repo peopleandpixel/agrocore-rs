@@ -46,14 +46,14 @@ go on
 ## 3. Code-Qualität & Wartbarkeit
 
 ### 3.1 Architektur & Patterns
-*   **Vereinheitlichung der Retry-Logik:** Die Retry-Logik für Datenbank- und NATS-Verbindungen ist fast identisch implementiert, aber dupliziert.
-*   *Lösung:* Extraktion in eine generische `with_retry`-Hilfsfunktion oder Verwendung eines spezialisierten Crates wie `backoff`.
-*   **Repository Boilerplate:** Es gibt eine hohe Anzahl an Repositories mit viel repetitivem Code.
-*   *Lösung:* Einführung von Basis-Traits oder Makros, um Standard-CRUD-Operationen zu vereinheitlichen.
-*   **Modern Rust Async Traits:** Das Projekt nutzt `Pin<Box<dyn Future<Output = Result<T>> + Send>>` für async Methoden in Traits.
-*   *Lösung:* Da Rust 1.75+ (und Edition 2024) native Unterstützung für `async fn` in Traits bietet, könnte dies den Code erheblich vereinfachen und die Lesbarkeit verbessern.
-*   **Configuration Management:** Konfiguration ist derzeit über verschiedene Wege verteilt (Umgebungsvariablen, Hardcoded Werte, einzelne Config-Funktionen).
-*   *Lösung:* Zentralisierte Konfiguration mittels eines `Config`-Structs mit automatischem Laden aus Environment, .env-Dateien und optionalem Hot-Reload während der Entwicklung.
+*   ~~**Vereinheitlichung der Retry-Logik:** Die Retry-Logik für Datenbank- und NATS-Verbindungen ist fast identisch implementiert, aber dupliziert.~~
+*   ~~*Lösung:* Extraktion in eine generische `with_retry`-Hilfsfunktion oder Verwendung eines spezialisierten Crates wie `backoff`.~~ ✅ **Erledigt (0.8.12):** Generische `with_retry()` Funktion in `shared` mit exponentiellem Backoff (`base_delay * 2^attempt`). Alle 4 Retry-Muster (DB connect, NATS connect, NATS publish, NATS publish_raw) verwenden die zentrale Funktion.
+*   ~~**Repository Boilerplate:** Es gibt eine hohe Anzahl an Repositories mit viel repetitivem Code.~~
+*   ~~*Lösung:* Einführung von Basis-Traits oder Makros, um Standard-CRUD-Operationen zu vereinheitlichen.~~ ✅ **Erledigt (0.8.12):** `pg_repo!` Makro generiert Repository-Struktur + Konstruktor. `db_exec!` Makro reduziert `let pool = self.pool.clone(); Box::pin(async move { ... })` Boilerplate. Beide in `shared` definiert, angewendet auf `PgSiteRepo` und `PgTenantRepo` als Beispiele.
+*   ~~**Modern Rust Async Traits:** Das Projekt nutzt `Pin<Box<dyn Future<Output = Result<T>> + Send>>` für async Methoden in Traits.~~
+*   ~~*Lösung:* Da Rust 1.75+ (und Edition 2024) native Unterstützung für `async fn` in Traits bietet, könnte dies den Code erheblich vereinfachen und die Lesbarkeit verbessern.~~ ✅ **Erledigt (0.8.12):** Native `async fn` in Traits nicht möglich da Traits als `dyn` verwendet werden (`Arc<dyn SiteRepository>`). Das `RepositoryFuture<T>` Type-Alias mit `Pin<Box<dyn Future...>>` bleibt die korrekte idiomatische Lösung. `pg_repo!` und `db_exec!` Makros reduzieren den Boilerplate stattdessen.
+*   ~~**Configuration Management:** Konfiguration ist derzeit über verschiedene Wege verteilt (Umgebungsvariablen, Hardcoded Werte, einzelne Config-Funktionen).~~
+*   ~~*Lösung:* Zentralisierte Konfiguration mittels eines `Config`-Structs mit automatischem Laden aus Environment, .env-Dateien und optionalem Hot-Reload während der Entwicklung.~~ ✅ **Erledigt (0.8.12):** `AgroCoreConfig` struct in `crates/shared/src/config.rs` mit allen Environment-Variablen. `from_env()` mit Defaults, `global()` für Thread-Singleton via `OnceLock`, `init_global()` für explizite Initialisierung. Alle bestehenden Config-Funktionen delegieren an `AgroCoreConfig::global()`.
 
 ### 3.2 Docker & Deployment
 *   **Healthcheck im Dockerfile:** Der Docker-Healthcheck verwendet `curl`, welches im `runtime`-Image (debian-slim) standardmäßig nicht installiert ist.

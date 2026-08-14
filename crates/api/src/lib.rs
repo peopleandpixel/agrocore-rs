@@ -66,11 +66,12 @@ fn build_cors() -> Cors {
     }
 }
 
-/// Initialize the token revocation list from environment variables.
-/// If `REDIS_URL` is set, uses Redis; otherwise falls back to in-memory store.
+/// Initialize the token revocation list from centralized configuration.
+/// If `REDIS_URL` is set in `AgroCoreConfig`, uses Redis; otherwise falls back to in-memory store.
 fn init_token_revocation() -> TokenRevocationList {
-    match std::env::var("REDIS_URL") {
-        Ok(url) => match TokenRevocationList::from_redis(&url) {
+    let config = agrocore_shared::config::AgroCoreConfig::global();
+    match &config.redis_url {
+        Some(url) => match TokenRevocationList::from_redis(url) {
             Ok(trl) => trl,
             Err(e) => {
                 tracing::warn!(
@@ -80,7 +81,7 @@ fn init_token_revocation() -> TokenRevocationList {
                 TokenRevocationList::new()
             }
         },
-        Err(_) => TokenRevocationList::new(),
+        None => TokenRevocationList::new(),
     }
 }
 

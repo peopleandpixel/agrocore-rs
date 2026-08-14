@@ -1262,31 +1262,16 @@ pub struct NatsMessagingClient {
 impl MessagingClient {
     pub async fn connect(url: &str) -> anyhow::Result<Self> {
         info!("Connecting to NATS at {}", url);
-        let mut retry_count = 0;
-        let max_retries = 10;
-
-        let client = loop {
-            match async_nats::connect(url).await {
-                Ok(client) => break client,
-                Err(e) if retry_count < max_retries => {
-                    retry_count += 1;
-                    tracing::warn!(
-                        "Failed to connect to NATS (attempt {}/{}): {}. Retrying in 1s...",
-                        retry_count,
-                        max_retries,
-                        e
-                    );
-                    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-                }
-                Err(e) => {
-                    return Err(anyhow::anyhow!(
-                        "Failed to connect to NATS after {} attempts: {}",
-                        max_retries,
-                        e
-                    ));
-                }
-            }
-        };
+        let url_owned = url.to_string();
+        let client = agrocore_shared::with_retry("connect to NATS", 10, 1, || {
+            let url = url_owned.clone();
+            Box::pin(async move {
+                async_nats::connect(&url)
+                    .await
+                    .map_err(|e| anyhow::anyhow!("nats connection error: {}", e))
+            })
+        })
+        .await?;
 
         let circuit_breaker = Config::new().build();
 
@@ -1318,32 +1303,21 @@ impl MessagingClient {
     ) -> anyhow::Result<()> {
         match self {
             Self::Nats(n) => {
-                let mut attempts = 0;
-                let max_attempts = 3;
                 let payload: Bytes = Bytes::from(serde_json::to_vec(event)?);
-
-                loop {
-                    match n.client.publish(subject.to_string(), payload.clone()).await {
-                        Ok(_) => return Ok(()),
-                        Err(e) if attempts < max_attempts => {
-                            attempts += 1;
-                            tracing::warn!(
-                                "Failed to publish to NATS, attempt {}: {}",
-                                attempts,
-                                e
-                            );
-                            tokio::time::sleep(tokio::time::Duration::from_millis(100 * attempts))
-                                .await;
-                        }
-                        Err(e) => {
-                            return Err(anyhow::anyhow!(
-                                "Failed to publish after {} attempts: {}",
-                                max_attempts,
-                                e
-                            ));
-                        }
-                    }
-                }
+                let client = n.client.clone();
+                let subject_owned = subject.to_string();
+                agrocore_shared::with_retry("publish to NATS", 3, 0, || {
+                    let client = client.clone();
+                    let subject = subject_owned.clone();
+                    let payload = payload.clone();
+                    Box::pin(async move {
+                        client
+                            .publish(subject, payload)
+                            .await
+                            .map_err(|e| anyhow::anyhow!("nats publish error: {}", e))
+                    })
+                })
+                .await
             }
             #[cfg(any(test, feature = "mocks"))]
             Self::Mock(_) => Ok(()),
@@ -1354,32 +1328,21 @@ impl MessagingClient {
     pub async fn publish_raw(&self, subject: &str, payload: Vec<u8>) -> anyhow::Result<()> {
         match self {
             Self::Nats(n) => {
-                let mut attempts = 0;
-                let max_attempts = 3;
                 let payload: Bytes = Bytes::from(payload);
-
-                loop {
-                    match n.client.publish(subject.to_string(), payload.clone()).await {
-                        Ok(_) => return Ok(()),
-                        Err(e) if attempts < max_attempts => {
-                            attempts += 1;
-                            tracing::warn!(
-                                "Failed to publish raw to NATS, attempt {}: {}",
-                                attempts,
-                                e
-                            );
-                            tokio::time::sleep(tokio::time::Duration::from_millis(100 * attempts))
-                                .await;
-                        }
-                        Err(e) => {
-                            return Err(anyhow::anyhow!(
-                                "Failed to publish raw after {} attempts: {}",
-                                max_attempts,
-                                e
-                            ));
-                        }
-                    }
-                }
+                let client = n.client.clone();
+                let subject_owned = subject.to_string();
+                agrocore_shared::with_retry("publish raw to NATS", 3, 1, || {
+                    let client = client.clone();
+                    let subject = subject_owned.clone();
+                    let payload = payload.clone();
+                    Box::pin(async move {
+                        client
+                            .publish(subject, payload)
+                            .await
+                            .map_err(|e| anyhow::anyhow!("nats publish error: {}", e))
+                    })
+                })
+                .await
             }
             #[cfg(any(test, feature = "mocks"))]
             Self::Mock(_) => Ok(()),

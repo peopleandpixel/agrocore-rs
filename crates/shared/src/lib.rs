@@ -11,7 +11,6 @@ use sqlx;
 pub mod config;
 pub mod lpis;
 pub mod telemetry;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema)]
 pub struct Id(pub Uuid);
 
@@ -169,6 +168,63 @@ impl From<sqlx::Error> for SharedError {
     }
 }
 
+/// Generic retry helper with exponential backoff.
+///
+/// Repeatedly calls `operation` up to `max_retries` times, sleeping
+/// `base_delay * 2^attempt` milliseconds between attempts.
+/// Logs each retry at `warn` level and returns the final error on exhaustion.
+///
+/// # Arguments
+/// * `operation_name` — human-readable name for logging (e.g. "connect to database")
+/// * `max_retries` — maximum number of retry attempts
+/// * `base_delay_secs` — base delay in seconds; actual delay grows exponentially
+/// * `operation` — async closure returning `Result<T, E>`
+///
+/// # Example
+/// ```ignore
+/// let pool = with_retry(
+///     "connect to database",
+///     10, 1,
+///     || async { pool_options.connect(&url).await },
+/// ).await?;
+/// ```
+pub async fn with_retry<F, T, E>(
+    operation_name: &str,
+    max_retries: u32,
+    base_delay_secs: u64,
+    operation: F,
+) -> std::result::Result<T, E>
+where
+    F: Fn()
+        -> std::pin::Pin<Box<dyn std::future::Future<Output = std::result::Result<T, E>> + Send>>,
+    E: std::fmt::Display,
+{
+    let mut retry_count = 0u32;
+
+    loop {
+        match operation().await {
+            Ok(result) => return Ok(result),
+            Err(e) if retry_count < max_retries => {
+                retry_count += 1;
+                let delay =
+                    std::time::Duration::from_secs(base_delay_secs * (1u64 << (retry_count - 1)));
+                tracing::warn!(
+                    "Failed to {} (attempt {}/{}): {}. Retrying in {:?}...",
+                    operation_name,
+                    retry_count,
+                    max_retries,
+                    e,
+                    delay
+                );
+                tokio::time::sleep(delay).await;
+            }
+            Err(e) => {
+                return Err(e);
+            }
+        }
+    }
+}
+
 /// Macro to create repository instances with reduced boilerplate.
 /// Usage: `repo!(PgSiteRepo, SiteRepository, pool)`
 #[macro_export]
@@ -177,5 +233,54 @@ macro_rules! repo {
         use std::sync::Arc;
         let repo_instance = <$repo_type>::new($pool.clone());
         std::convert::Into::<Arc<dyn $trait_type>>::into(Arc::new(repo_instance))
+    }};
+}
+
+/// Macro to generate a PostgreSQL repository struct with pool field and constructor.
+/// Eliminates the boilerplate of `struct PgXxxRepo { pool: PgPool }` + `fn new()`.
+///
+/// Usage: `pg_repo!(PgSiteRepo);`
+/// Generates:
+/// ```ignore
+/// #[derive(Clone)]
+/// pub struct PgSiteRepo {
+///     pool: PgPool,
+/// }
+/// impl PgSiteRepo {
+///     pub fn new(pool: PgPool) -> Self {
+///         Self { pool }
+///     }
+/// }
+/// ```
+#[cfg(feature = "sqlx")]
+#[macro_export]
+macro_rules! pg_repo {
+    ($struct_name:ident) => {
+        #[derive(Clone)]
+        pub struct $struct_name {
+            pub pool: sqlx::PgPool,
+        }
+
+        impl $struct_name {
+            pub fn new(pool: sqlx::PgPool) -> Self {
+                Self { pool }
+            }
+        }
+    };
+}
+
+/// Macro to execute a database query with automatic pool cloning and error mapping.
+/// Reduces the common pattern: `let pool = self.pool.clone(); Box::pin(async move { ... })`.
+///
+/// Usage: `db_exec!(self.pool, { sqlx::query_as!(...).fetch_optional(&pool).await })`
+#[cfg(feature = "sqlx")]
+#[macro_export]
+macro_rules! db_exec {
+    ($pool:expr, $body:expr) => {{
+        let pool = $pool.clone();
+        std::boxed::Box::pin(async move {
+            let result: Result<_, sqlx::Error> = async { $body }.await;
+            result
+        })
     }};
 }

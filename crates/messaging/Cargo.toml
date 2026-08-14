@@ -16,6 +16,7 @@ thiserror.workspace = true
 uuid.workspace = true
 chrono.workspace = true
 agrocore-domain = { path = "../domain" }
+agrocore-shared = { path = "../shared" }
 bytes = "1.0"
 utoipa.workspace = true
 validator.workspace = true

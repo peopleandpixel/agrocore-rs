@@ -7,24 +7,11 @@ use agrocore_domain::repositories::{
     PaginatedResponse, Pagination, RepositoryFuture, SiteRepository, SpatialObjectRepository,
 };
 use agrocore_shared::SharedError;
-use sqlx::PgPool;
+use agrocore_shared::pg_repo;
 use sqlx::prelude::FromRow;
-use std::future::Future;
-use std::pin::Pin;
 use uuid::Uuid;
 
-type Fut<T> = Pin<Box<dyn Future<Output = agrocore_shared::Result<T>> + Send>>;
-
-#[derive(Clone)]
-pub struct PgSiteRepo {
-    pool: PgPool,
-}
-
-impl PgSiteRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+pg_repo!(PgSiteRepo);
 
 impl SiteRepository for PgSiteRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Site>> {

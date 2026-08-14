@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.12] - 2026-08-12
+
+### Added
+- **Configuration Management (Task 3.1d)**
+  - New `AgroCoreConfig` struct in `crates/shared/src/config.rs` centralizing all configuration from environment variables
+  - Fields: `jwt_secret`, `redis_url`, `token_blacklist_ttl_secs`, `database_url`, `database_max_connections/min_connections`, `database_idle_timeout/max_lifetime/acquire_timeout/connect_timeout_secs`, `nats_url`, `mqtt_broker`, `rust_log`
+  - `from_env()` loads from environment with sensible defaults; `global()` provides thread-safe singleton access via `OnceLock`
+  - `init_global()` for explicit initialization (used in `main.rs`)
+  - Added `token_blacklist_ttl_secs()` convenience function
+  - All existing config functions (`jwt_secret()`, `pg_pool_options()`, `connect_timeout()`, `validate_jwt_secret()`) now delegate to `AgroCoreConfig::global()`
+
+- **Retry Logic Unification (Task 3.1a)**
+  - New generic `with_retry()` function in `crates/shared/src/lib.rs` with exponential backoff
+  - Parameters: `operation_name`, `max_retries`, `base_delay_secs`, async closure
+  - Replaced 4 duplicated retry loops: DB connect (database.rs), NATS connect (messaging/src/lib.rs), NATS publish + publish_raw (messaging/src/lib.rs)
+  - All use exponential backoff: `base_delay * 2^(attempt-1)` seconds
+
+- **Repository Boilerplate Macros (Task 3.1b)**
+  - `pg_repo!` macro generates PostgreSQL repository struct + constructor boilerplate
+  - `db_exec!` macro wraps pool cloning + `Box::pin(async move { ... })` pattern
+  - Applied to `PgSiteRepo` and `PgTenantRepo` as examples
+
+### Changed
+- `init_token_revocation()` in `lib.rs` now uses centralized `AgroCoreConfig` instead of direct `std::env::var`
+- `PostgresDb::connect()` uses `AgroCoreConfig::global()` for pool options instead of standalone functions
+- `crates/messaging/Cargo.toml`: added `agrocore-shared` dependency for `with_retry` access
+
 ## [0.8.11] - 2026-08-12
 
 ### Added

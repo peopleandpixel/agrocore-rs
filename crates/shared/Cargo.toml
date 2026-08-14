@@ -18,6 +18,7 @@ async-trait = "0.1"
 serde_json = { workspace = true }
 geo = { workspace = true }
 jsonwebtoken = { workspace = true, features = ["rust_crypto"] }
+tokio = { workspace = true, features = ["time"] }
 
 [features]
 # sqlx is not default - must be explicitly enabled by crates that need it
