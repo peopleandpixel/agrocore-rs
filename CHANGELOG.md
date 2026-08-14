@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.8] - 2026-08-12
+
+### Added
+- **Modular OpenAPI Documentation (Task 1.3b)**
+  - Extracted the monolithic `#[derive(OpenApi)]` `ApiDoc` from `lib.rs` into a dedicated `openapi.rs` module
+  - 13 per-module `OpenApi` structs (`AuthApiDoc`, `SitesApiDoc`, `OrdersApiDoc`, `UsersApiDoc`, `TasksApiDoc`, `WeatherApiDoc`, `FinanceApiDoc`, `ReportingApiDoc`, `LivestockApiDoc`, `SigpacApiDoc`, `SettingsApiDoc`, `IotApiDoc`, `ErrorApiDoc`)
+  - Combined `ApiDoc` struct merges all modules at startup via `utoipa::OpenApi::merge()`
+  - `openapi_with_security()` adds bearer-JWT security scheme at runtime
+  - Improves incremental compilation: editing one module's OpenAPI spec only recompiles that module
+
 ## [0.8.7] - 2026-08-12
 
 ### Added

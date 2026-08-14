@@ -22,8 +22,8 @@ Dieses Dokument enthält Vorschläge zur Verbesserung der Performance, Sicherhei
 ### 1.3 DTO & Serialisierung
 *   ~~**Selektive Validierung:** Die neuen IoT-DTOs verwenden `validator::Validate` für alle Felder bei jedem Request. Bei hohen Durchsatzraten könnte die Validierung bestimmter Felder (wie bereits validierte UUIDs über Routing) überflüssig sein.~~
 *   ~~*Lösung:* Einführung von Validierungsgruppen oder bedingter Validierung abhängig vom Endpunkttyp und Datenherkunft.~~ ✅ **Resolved (0.8.7):** `IoTCommandRequestDto` erhählt `#[validate(length(...))]`/`#[validate(range(...))]` Attribute; `send_command` Handler ruft `.validate()` auf. UUIDs validiert durch serde; `serde_json::Value` lässt sich nicht mit `#[validate]` validieren.
-*   **OpenAPI Dokumentation Größe:** Die `ApiDoc` Struktur in `crates/api/src/lib.rs` ist sehr groß geworden und enthält alle Endpunkte. Für große Anwendungen könnte eine Aufteilung nach Modulen die Kompilierzeiten verbessern.
-*   *Lösung:* Modulare OpenAPI-Dokumentation mit separaten `OpenApi`-Structs pro API-Bereich die zur Laufzeit kombiniert werden.
+*   ~~**OpenAPI Dokumentation Größe:** Die `ApiDoc` Struktur in `crates/api/src/lib.rs` ist sehr groß geworden und enthält alle Endpunkte. Für große Anwendungen könnte eine Aufteilung nach Modulen die Kompilierzeiten verbessern.~~
+*   ~~*Lösung:* Modulare OpenAPI-Dokumentation mit separaten `OpenApi`-Structs pro API-Bereich die zur Laufzeit kombiniert werden.~~ ✅ **Resolved (0.8.8):** Extracted into `crates/api/src/openapi.rs` — 13 per-module `OpenApi` structs merged at runtime via `utoipa::OpenApi::merge()`.
 
 ## 2. Sicherheits-Verbesserungen
 

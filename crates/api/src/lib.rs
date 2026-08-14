@@ -4,13 +4,13 @@ use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_web::{App, HttpServer, web};
 use actix_web_prometheus::PrometheusMetricsBuilder;
 use tracing_actix_web::TracingLogger;
-use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 pub mod dto;
 pub mod error;
 pub mod handlers;
 pub mod middleware;
+pub mod openapi;
 pub mod services;
 
 #[cfg(test)]
@@ -30,210 +30,6 @@ pub struct AppState {
     pub db: Arc<Database>,
     pub messaging: Arc<MessagingClient>,
     pub lpis_registry: Arc<LpisRegistry>,
-}
-
-#[derive(OpenApi)]
-#[openapi(
-    paths(
-        handlers::auth::login,
-        handlers::sites::list_sites,
-        handlers::sites::get_site,
-        handlers::sites::create_site,
-        handlers::sites::update_site,
-        handlers::sites::delete_site,
-        handlers::orders::list_orders,
-        handlers::orders::get_order,
-        handlers::orders::create_order,
-        handlers::orders::update_order,
-        handlers::orders::delete_order,
-        handlers::orders::my_tasks,
-        handlers::iot::list_devices,
-        handlers::iot::get_device,
-        handlers::iot::create_device,
-        handlers::iot::update_device,
-        handlers::iot::delete_device,
-        handlers::iot::get_device_telemetry,
-        handlers::iot::send_command,
-        handlers::iot::get_ha_discovery,
-        handlers::users::list_users,
-        handlers::users::get_user,
-        handlers::users::create_user,
-        handlers::users::update_user,
-        handlers::users::delete_user,
-        handlers::tasks::list_tasks,
-        handlers::tasks::get_task,
-        handlers::tasks::create_task,
-        handlers::tasks::update_task,
-        handlers::tasks::delete_task,
-        handlers::weather::list_stations,
-        handlers::weather::get_station,
-        handlers::weather::create_station,
-        handlers::weather::list_weather_data,
-        handlers::weather::create_weather_data,
-        handlers::weather::list_phenology,
-        handlers::weather::create_phenology,
-        handlers::finance::list_pac_applications,
-        handlers::finance::create_pac_application,
-        handlers::finance::get_pac_application,
-        handlers::finance::list_cost_centers,
-        handlers::finance::create_cost_center,
-        handlers::finance::get_cost_center,
-        handlers::finance::list_financial_records,
-        handlers::finance::create_financial_record,
-        handlers::finance::get_financial_record,
-        handlers::reporting::export_orders_excel,
-        handlers::reporting::export_sites_geojson,
-        handlers::reporting::export_pac_sip,
-        handlers::livestock::list_animals,
-                handlers::livestock::get_animal,
-                handlers::livestock::create_animal,
-                handlers::livestock::update_animal,
-                handlers::livestock::delete_animal,
-                handlers::livestock::add_treatment,
-                handlers::livestock::add_grazing,
-                handlers::sigpac::list_sigpac_parcels,
-                handlers::sigpac::get_sigpac_parcel,
-                handlers::sigpac::search_parcels_near_point,
-                handlers::sites::import_sites,
-                handlers::sites::import_geojson,
-                handlers::sites::import_shapefile,
-                handlers::settings::get_lpis_settings,
-                handlers::settings::update_lpis_settings,
-                handlers::settings::list_lpis_providers,
-            ),
-            components(
-                schemas(
-                    handlers::auth::LoginRequest,
-                    dto::AuthResponseDto,
-                    dto::SiteDto,
-                    dto::OrderDto,
-                    dto::UserDto,
-                    dto::TaskDataDto,
-                    dto::CreateSiteDto,
-                    dto::UpdateSiteDto,
-                    dto::CreateOrderDto,
-                    dto::UpdateOrderDto,
-                    agrocore_domain::entities::order::RecurrenceRule,
-                    agrocore_domain::entities::order::RecurrenceCadence,
-                    agrocore_domain::entities::order::TaskExecutionMode,
-                    agrocore_domain::entities::order::TaskExecutionPolicy,
-                    agrocore_domain::entities::order::TaskAutomationState,
-                    dto::CreateUserDto,
-                    dto::UpdateUserDto,
-                    dto::CreateTaskDataDto,
-                    dto::ErrorResponse,
-                    dto::PaginatedSiteResponse,
-                    dto::PaginatedOrderResponse,
-                    dto::PaginatedUserResponse,
-                    dto::PaginatedTaskResponse,
-                    dto::PaginatedWeatherStationResponse,
-                    dto::PaginatedWeatherDataResponse,
-                    dto::PaginatedPhenologyResponse,
-                    dto::PaginatedPACApplicationResponse,
-                    dto::PaginatedCostCenterResponse,
-                    dto::PaginatedFinancialRecordResponse,
-                    dto::PaginatedAnimalResponse,
-                    dto::CreateIoTDeviceDto,
-                    dto::UpdateIoTDeviceDto,
-                    dto::IoTDeviceResponse,
-                    dto::IoTDeviceListResponse,
-                    dto::IoTDeviceTelemetryResponse,
-                    dto::IoTCommandRequestDto,
-                    dto::IoTCommandResponseDto,
-                    dto::HaDiscoveryConfigResponse,
-                    dto::IoTCapabilityDto,
-                    dto::IoTCapabilityType,
-                    dto::DeviceStatusDto,
-                    dto::CommandStatus,
-                    agrocore_domain::entities::order::MyTask,
-                    agrocore_domain::entities::user::UserRole,
-                    agrocore_domain::entities::SiteType,
-                    agrocore_domain::entities::CropType,
-                    agrocore_domain::entities::BbchStage,
-                    agrocore_domain::entities::OrderType,
-                    agrocore_domain::entities::OrderStatus,
-                    agrocore_domain::entities::compliance::AuditAction,
-                    agrocore_domain::entities::compliance::ChecklistType,
-                    agrocore_domain::entities::compliance::ComplianceStatus,
-                    agrocore_domain::entities::vineyard::DocArea,
-                    agrocore_domain::entities::vineyard::QualityGrade,
-                    agrocore_domain::entities::vineyard::Vineyard,
-                    agrocore_domain::entities::vineyard::KelterDelivery,
-                    agrocore_domain::entities::vineyard::CreateVineyardDto,
-                    agrocore_domain::entities::vineyard::UpdateVineyardDto,
-                    agrocore_domain::entities::vineyard::CreateKelterDeliveryDto,
-                    agrocore_domain::entities::vineyard::UpdateKelterDeliveryDto,
-                    agrocore_domain::entities::olive::OliveGrove,
-                    agrocore_domain::entities::olive::OliveOilRecord,
-                    agrocore_domain::entities::olive::OilGrade,
-                    agrocore_domain::entities::olive::CreateOliveGroveDto,
-                    agrocore_domain::entities::olive::UpdateOliveGroveDto,
-                    agrocore_domain::entities::olive::CreateOliveOilRecordDto,
-                    agrocore_domain::entities::olive::UpdateOliveOilRecordDto,
-                    agrocore_domain::entities::water::WaterSourceType,
-                    agrocore_domain::entities::water::IrrigationMethod,
-                    agrocore_domain::entities::workforce::ContractType,
-                    agrocore_domain::entities::finance::PACApplication,
-                    agrocore_domain::entities::finance::PACStatus,
-                    agrocore_domain::entities::finance::EcoSchemeParticipation,
-                    agrocore_domain::entities::finance::CostCenter,
-                    agrocore_domain::entities::finance::CostCenterType,
-                    agrocore_domain::entities::finance::FinancialRecord,
-                    agrocore_domain::entities::finance::FinancialRecordType,
-                    agrocore_domain::entities::finance::CreatePACApplicationDto,
-                    agrocore_domain::entities::finance::CreateCostCenterDto,
-                    agrocore_domain::entities::finance::CreateFinancialRecordDto,
-                    agrocore_domain::entities::finance::EcoSchemeParticipation,
-                    agrocore_domain::entities::livestock::Animal,
-                    agrocore_domain::entities::livestock::AnimalSpecies,
-                    agrocore_domain::entities::livestock::AnimalStatus,
-                    agrocore_domain::entities::livestock::TreatmentRecord,
-                    agrocore_domain::entities::livestock::GrazingRecord,
-                    agrocore_domain::entities::livestock::CreateAnimalDto,
-                    agrocore_domain::entities::livestock::UpdateAnimalDto,
-                    handlers::sigpac::SigpacParcelDto,
-                    handlers::sigpac::PaginatedSigpacParcelResponse,
-                    handlers::sigpac::SigpacParcelQuery,
-                    handlers::sigpac::NearPointQuery,
-                    dto::ImportSitesRequest,
-                    dto::GeoJsonImportRequest,
-                    dto::ShapefileImportRequest,
-                    dto::ImportResult,
-                    dto::ImportError,
-                    dto::ImportWarning,
-                    dto::DuplicateDetectionResult,
-                    dto::DuplicateMatchType,
-                    dto::LpisValidationResult,
-                    dto::GeoJsonFeature,
-                    dto::GeoJsonGeometry,
-                    dto::LpisProviderConfig,
-                    dto::LpisSettingsResponse,
-                    dto::UpdateLpisSettingsRequest,
-                    dto::LpisProviderConfigList,
-                )
-            ),
-    modifiers(&SecurityAddon),
-    tags(
-        (name = "agrocore-rs", description = "AgroCore API")
-    )
-)]
-struct ApiDoc;
-
-struct SecurityAddon;
-
-impl utoipa::Modify for SecurityAddon {
-    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
-        let components = openapi.components.as_mut().unwrap();
-        components.add_security_scheme(
-            "bearer_auth",
-            utoipa::openapi::security::SecurityScheme::Http(
-                utoipa::openapi::security::HttpBuilder::new()
-                    .scheme(utoipa::openapi::security::HttpAuthScheme::Bearer)
-                    .bearer_format("JWT")
-                    .build(),
-            ),
-        );
-    }
 }
 
 /// Builds a CORS configuration from the `CORS_ALLOWED_ORIGINS` environment variable.
@@ -313,10 +109,10 @@ pub async fn run_server(
             .wrap(security_headers)
             .wrap(Governor::new(&gov_conf))
             .wrap(cors)
-            .service(
-                SwaggerUi::new("/swagger-ui/{_:.*}")
-                    .url("/api-docs/openapi.json", ApiDoc::openapi()),
-            )
+            .service(SwaggerUi::new("/swagger-ui/{_:.*}").url(
+                "/api-docs/openapi.json",
+                openapi::ApiDoc::openapi_with_security(),
+            ))
             .configure(handlers::configure)
             .service(
                 fs::Files::new("/admin", "/var/lib/agrocore/admin-ui")
