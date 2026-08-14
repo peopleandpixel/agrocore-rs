@@ -5,16 +5,7 @@ use agrocore_shared::{PaginatedResponse, Pagination, SharedError};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct PgWeatherDataRepo {
-    pool: PgPool,
-}
-
-impl PgWeatherDataRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+agrocore_shared::pg_repo!(PgWeatherDataRepo);
 
 impl WeatherDataRepo for PgWeatherDataRepo {
     fn create(&self, tid: TenantId, dto: CreateWeatherDataDto) -> RepositoryFuture<WeatherData> {

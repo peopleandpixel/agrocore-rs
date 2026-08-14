@@ -10,16 +10,7 @@ use agrocore_shared::SharedError;
 use sqlx::{PgPool, Postgres};
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct PgPlantProtectionRecordRepo {
-    pool: PgPool,
-}
-
-impl PgPlantProtectionRecordRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+agrocore_shared::pg_repo!(PgPlantProtectionRecordRepo);
 
 impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
     fn find_by_id(

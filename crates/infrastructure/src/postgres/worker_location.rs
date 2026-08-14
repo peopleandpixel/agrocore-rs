@@ -5,15 +5,7 @@ use agrocore_shared::{PaginatedResponse, Pagination, SharedError};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct PgWorkerLocationRepo {
-    pool: PgPool,
-}
-impl PgWorkerLocationRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+agrocore_shared::pg_repo!(PgWorkerLocationRepo);
 
 impl WorkerLocationRepo for PgWorkerLocationRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WorkerLocation>> {

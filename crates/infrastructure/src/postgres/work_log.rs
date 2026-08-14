@@ -5,15 +5,7 @@ use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct PgWorkLogRepo {
-    pool: PgPool,
-}
-impl PgWorkLogRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+agrocore_shared::pg_repo!(PgWorkLogRepo);
 
 impl WorkLogRepo for PgWorkLogRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WorkLog>> {

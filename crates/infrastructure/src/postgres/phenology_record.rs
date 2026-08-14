@@ -9,16 +9,7 @@ use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct PgPhenologyRecordRepo {
-    pool: PgPool,
-}
-
-impl PgPhenologyRecordRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+agrocore_shared::pg_repo!(PgPhenologyRecordRepo);
 
 impl PhenologyRecordRepo for PgPhenologyRecordRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<PhenologyRecord>> {

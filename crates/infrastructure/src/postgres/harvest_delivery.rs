@@ -9,16 +9,7 @@ use uuid::Uuid;
 
 type Fut<T> = RepositoryFuture<T>;
 
-#[derive(Clone)]
-pub struct PgHarvestDeliveryRepo {
-    pool: PgPool,
-}
-
-impl PgHarvestDeliveryRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+agrocore_shared::pg_repo!(PgHarvestDeliveryRepo);
 
 impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> Fut<Option<HarvestDelivery>> {

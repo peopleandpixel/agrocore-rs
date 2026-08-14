@@ -9,16 +9,7 @@ use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct PgComplianceChecklistRepo {
-    pool: PgPool,
-}
-
-impl PgComplianceChecklistRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+agrocore_shared::pg_repo!(PgComplianceChecklistRepo);
 
 impl ComplianceChecklistRepo for PgComplianceChecklistRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<ComplianceChecklist>> {

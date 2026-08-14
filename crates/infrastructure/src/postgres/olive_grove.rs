@@ -7,16 +7,7 @@ use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct PgOliveGroveRepo {
-    pool: PgPool,
-}
-
-impl PgOliveGroveRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+agrocore_shared::pg_repo!(PgOliveGroveRepo);
 
 impl OliveGroveRepo for PgOliveGroveRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<OliveGrove>> {

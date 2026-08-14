@@ -9,16 +9,7 @@ use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct PgUserRepo {
-    pool: PgPool,
-}
-
-impl PgUserRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+agrocore_shared::pg_repo!(PgUserRepo);
 
 use crate::jwt::generate_jwt;
 use crate::postgres::error_mapper::map_db_error;

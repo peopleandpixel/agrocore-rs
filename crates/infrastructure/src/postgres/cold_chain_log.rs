@@ -9,15 +9,7 @@ use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct PgColdChainLogRepo {
-    pool: PgPool,
-}
-impl PgColdChainLogRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+agrocore_shared::pg_repo!(PgColdChainLogRepo);
 
 impl ColdChainLogRepo for PgColdChainLogRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<ColdChainLog>> {

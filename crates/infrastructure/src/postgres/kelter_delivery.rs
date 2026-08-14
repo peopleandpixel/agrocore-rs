@@ -9,16 +9,7 @@ use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct PgKelterDeliveryRepo {
-    pool: PgPool,
-}
-
-impl PgKelterDeliveryRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+agrocore_shared::pg_repo!(PgKelterDeliveryRepo);
 
 impl KelterDeliveryRepo for PgKelterDeliveryRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<KelterDelivery>> {

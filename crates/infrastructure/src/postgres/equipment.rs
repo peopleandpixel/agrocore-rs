@@ -13,16 +13,7 @@ use uuid::Uuid;
 
 type Fut<T> = Pin<Box<dyn Future<Output = agrocore_shared::Result<T>> + Send>>;
 
-#[derive(Clone)]
-pub struct PgEquipmentRepo {
-    pool: PgPool,
-}
-
-impl PgEquipmentRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+agrocore_shared::pg_repo!(PgEquipmentRepo);
 
 impl EquipmentRepository for PgEquipmentRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Equipment>> {

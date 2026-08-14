@@ -7,16 +7,7 @@ use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct PgWorkerTaskStatusRepo {
-    pool: PgPool,
-}
-
-impl PgWorkerTaskStatusRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+agrocore_shared::pg_repo!(PgWorkerTaskStatusRepo);
 
 impl WorkerTaskStatusRepository for PgWorkerTaskStatusRepo {
     fn find_by_task_and_worker(

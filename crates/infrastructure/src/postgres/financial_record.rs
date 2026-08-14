@@ -8,15 +8,7 @@ use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct PgFinancialRecordRepo {
-    pool: PgPool,
-}
-impl PgFinancialRecordRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+agrocore_shared::pg_repo!(PgFinancialRecordRepo);
 
 impl FinancialRecordRepo for PgFinancialRecordRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<FinancialRecord>> {

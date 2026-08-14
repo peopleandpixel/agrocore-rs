@@ -7,15 +7,7 @@ use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct PgWaterQuotaRepo {
-    pool: PgPool,
-}
-impl PgWaterQuotaRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+agrocore_shared::pg_repo!(PgWaterQuotaRepo);
 
 impl WaterQuotaRepo for PgWaterQuotaRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WaterQuota>> {

@@ -7,16 +7,7 @@ use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct PgAuditLogRepo {
-    pool: PgPool,
-}
-
-impl PgAuditLogRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+agrocore_shared::pg_repo!(PgAuditLogRepo);
 
 impl AuditLogRepo for PgAuditLogRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<AuditLog>> {

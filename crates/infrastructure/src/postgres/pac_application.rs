@@ -11,15 +11,7 @@ use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct PgPACApplicationRepo {
-    pool: PgPool,
-}
-impl PgPACApplicationRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
+agrocore_shared::pg_repo!(PgPACApplicationRepo);
 
 impl PACApplicationRepo for PgPACApplicationRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<PACApplication>> {

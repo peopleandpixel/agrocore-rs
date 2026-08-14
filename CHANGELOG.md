@@ -5,7 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.12] - 2026-08-12
+|## [0.8.13] - 2026-08-12
+
+### Changed
+- **Repository Boilerplate Macros Applied to All Repos (Task 3.1b follow-up)**
+  - Applied `pg_repo!` macro to all 30 PostgreSQL repository structs, replacing 5+ lines of boilerplate per repo with a single macro invocation
+  - Total reduction: ~300 lines of boilerplate eliminated across `crates/infrastructure/src/postgres/`
+
+### Changed (existing 0.8.12)
 
 ### Added
 - **Configuration Management (Task 3.1d)**
