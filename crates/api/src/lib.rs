@@ -16,6 +16,7 @@ pub mod services;
 #[cfg(test)]
 mod dto_validation_tests;
 
+use crate::middleware::TokenRevocationList;
 use agrocore_infrastructure::Database;
 use agrocore_lpis_providers::create_default_registry;
 use agrocore_messaging::MessagingClient;
@@ -30,6 +31,7 @@ pub struct AppState {
     pub db: Arc<Database>,
     pub messaging: Arc<MessagingClient>,
     pub lpis_registry: Arc<LpisRegistry>,
+    pub token_revocation: Arc<TokenRevocationList>,
 }
 
 /// Builds a CORS configuration from the `CORS_ALLOWED_ORIGINS` environment variable.
@@ -64,6 +66,24 @@ fn build_cors() -> Cors {
     }
 }
 
+/// Initialize the token revocation list from environment variables.
+/// If `REDIS_URL` is set, uses Redis; otherwise falls back to in-memory store.
+fn init_token_revocation() -> TokenRevocationList {
+    match std::env::var("REDIS_URL") {
+        Ok(url) => match TokenRevocationList::from_redis(&url) {
+            Ok(trl) => trl,
+            Err(e) => {
+                tracing::warn!(
+                    "Failed to initialize Redis-backed token revocation list: {}. Falling back to in-memory store.",
+                    e
+                );
+                TokenRevocationList::new()
+            }
+        },
+        Err(_) => TokenRevocationList::new(),
+    }
+}
+
 pub async fn run_server(
     db: Database,
     messaging: MessagingClient,
@@ -76,6 +96,7 @@ pub async fn run_server(
         db: Arc::new(db),
         messaging: Arc::new(messaging),
         lpis_registry,
+        token_revocation: Arc::new(init_token_revocation()),
     });
 
     let prometheus = PrometheusMetricsBuilder::new("agrocore")
@@ -83,7 +104,7 @@ pub async fn run_server(
         .build()
         .unwrap();
 
-    // Governor Rate Limiting: 120 req/min (2 req/sec) per IP
+    // Default rate limit: 120 req/min (2 req/sec) per IP
     let gov_conf = GovernorConfigBuilder::default()
         .seconds_per_request(1)
         .burst_size(120)

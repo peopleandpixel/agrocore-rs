@@ -1,8 +1,124 @@
 use actix_web::{Error, FromRequest, HttpRequest};
 use agrocore_shared::config::decoding_key;
+use dashmap::DashMap;
 use jsonwebtoken::{Algorithm, Validation, decode};
+use redis::AsyncCommands;
 use serde::Deserialize;
 use std::future::{Ready, ready};
+use std::net::IpAddr;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+
+/// Token revocation list — stores revoked JWT IDs (jti) with TTL.
+/// Uses Redis if available, falls back to in-memory DashMap with TTL.
+#[derive(Clone)]
+pub struct TokenRevocationList {
+    inner: Arc<TRLInner>,
+}
+
+#[derive(Clone)]
+enum TRLInner {
+    Redis(redis::Client),
+    Memory(Arc<RevocationMemoryStore>),
+}
+
+#[derive(Default)]
+struct RevocationMemoryStore {
+    /// Map of jti -> expiry Instant
+    entries: DashMap<String, Instant>,
+}
+
+impl RevocationMemoryStore {
+    fn new() -> Self {
+        Self {
+            entries: DashMap::new(),
+        }
+    }
+
+    fn insert(&self, jti: String, ttl: Duration) {
+        self.entries.insert(jti, Instant::now() + ttl);
+    }
+
+    fn contains(&self, jti: &str) -> bool {
+        match self.entries.get(jti) {
+            Some(entry) => *entry.value() > Instant::now(),
+            None => false,
+        }
+    }
+}
+
+impl Default for TokenRevocationList {
+    fn default() -> Self {
+        Self {
+            inner: Arc::new(TRLInner::Memory(Arc::new(RevocationMemoryStore::new()))),
+        }
+    }
+}
+
+impl TokenRevocationList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn from_redis(redis_url: &str) -> Result<Self, redis::RedisError> {
+        let client = redis::Client::open(redis_url)?;
+        Ok(Self {
+            inner: Arc::new(TRLInner::Redis(client)),
+        })
+    }
+
+    pub async fn revoke(&self, jti: &str, ttl: Duration) -> Result<(), redis::RedisError> {
+        match &*self.inner {
+            TRLInner::Redis(client) => {
+                let mut conn = client.get_async_connection().await?;
+                let _: () = conn
+                    .set_ex(format!("revoked_jti:{}", jti), "1", ttl.as_secs())
+                    .await?;
+            }
+            TRLInner::Memory(store) => {
+                store.insert(jti.to_string(), ttl);
+            }
+        }
+        Ok(())
+    }
+
+    pub async fn is_revoked(&self, jti: &str) -> bool {
+        match &*self.inner {
+            TRLInner::Redis(client) => {
+                let mut conn = match client.get_async_connection().await {
+                    Ok(c) => c,
+                    Err(_) => return false,
+                };
+                let exists: bool = conn
+                    .exists(format!("revoked_jti:{}", jti))
+                    .await
+                    .unwrap_or(false);
+                exists
+            }
+            TRLInner::Memory(store) => store.contains(jti),
+        }
+    }
+}
+
+/// Custom key extractor that falls back to localhost when peer address is unavailable.
+/// This allows the Governor middleware to work in test environments where no peer addr is set.
+#[derive(Clone)]
+pub struct TestableIpKeyExtractor;
+
+impl actix_governor::KeyExtractor for TestableIpKeyExtractor {
+    type Key = IpAddr;
+    type KeyExtractionError = actix_governor::SimpleKeyExtractionError<&'static str>;
+
+    fn extract(
+        &self,
+        req: &actix_web::dev::ServiceRequest,
+    ) -> Result<Self::Key, Self::KeyExtractionError> {
+        req.peer_addr()
+            .map(|socket| socket.ip())
+            .ok_or_else(|| actix_governor::SimpleKeyExtractionError::new("no peer addr"))
+            .or_else(|_| Ok("127.0.0.1".parse().unwrap()))
+    }
+}
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Claims {
@@ -10,6 +126,7 @@ pub struct Claims {
     pub tenant_id: String,
     pub roles: Vec<String>,
     pub exp: usize,
+    pub jti: String,
 }
 
 #[derive(Clone)]
@@ -17,6 +134,7 @@ pub struct AuthenticatedUser {
     pub user_id: uuid::Uuid,
     pub tenant_id: uuid::Uuid,
     pub roles: Vec<String>,
+    pub jti: String,
 }
 
 pub struct AuthExtractor(pub AuthenticatedUser);
@@ -53,6 +171,7 @@ impl FromRequest for AuthExtractor {
                                 user_id,
                                 tenant_id,
                                 roles: token_data.claims.roles,
+                                jti: token_data.claims.jti,
                             })))
                         }
                         _ => ready(Err(actix_web::error::ErrorUnauthorized("Invalid UUID"))),
@@ -152,6 +271,7 @@ mod tests {
         tenant_id: String,
         roles: Vec<String>,
         exp: usize,
+        jti: String,
     }
 
     fn signed_token(sub: &str, tenant_id: &str, roles: Vec<&str>) -> String {
@@ -163,6 +283,7 @@ mod tests {
                 tenant_id: tenant_id.to_string(),
                 roles: roles.into_iter().map(String::from).collect(),
                 exp: usize::MAX / 2,
+                jti: uuid::Uuid::new_v4().to_string(),
             },
             &EncodingKey::from_secret(agrocore_shared::config::jwt_secret().as_bytes()),
         )
@@ -234,6 +355,7 @@ mod tests {
             user_id: uuid::Uuid::new_v4(),
             tenant_id: uuid::Uuid::new_v4(),
             roles: vec![String::from("Admin")],
+            jti: uuid::Uuid::new_v4().to_string(),
         });
         assert!(admin.require_admin().is_ok());
         assert!(admin.require_manager().is_ok());
@@ -242,6 +364,7 @@ mod tests {
             user_id: uuid::Uuid::new_v4(),
             tenant_id: uuid::Uuid::new_v4(),
             roles: vec![String::from("Manager")],
+            jti: uuid::Uuid::new_v4().to_string(),
         });
         assert!(manager.require_admin().is_err());
         assert!(manager.require_manager().is_ok());
@@ -250,6 +373,7 @@ mod tests {
             user_id: uuid::Uuid::new_v4(),
             tenant_id: uuid::Uuid::new_v4(),
             roles: vec![String::from("Viewer"), String::from("Unknown")],
+            jti: uuid::Uuid::new_v4().to_string(),
         });
         assert!(!viewer.is_admin());
         assert!(!viewer.is_manager());

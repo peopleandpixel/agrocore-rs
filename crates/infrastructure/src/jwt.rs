@@ -10,6 +10,7 @@ pub struct Claims {
     pub tenant_id: String,
     pub roles: Vec<String>,
     pub exp: usize,
+    pub jti: String,
 }
 
 pub fn generate_jwt(user: &User) -> anyhow::Result<String> {
@@ -32,6 +33,7 @@ pub fn generate_jwt(user: &User) -> anyhow::Result<String> {
         tenant_id: user.tenant_id.to_string(),
         roles,
         exp: expiration.timestamp() as usize,
+        jti: uuid::Uuid::new_v4().to_string(),
     };
 
     let secret = jwt_secret();

@@ -132,3 +132,35 @@ pub async fn refresh_token(
         roles: user.roles,
     }))
 }
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/logout",
+    responses(
+        (status = 204, description = "Successfully logged out"),
+        (status = 401, description = "Unauthorized", body = ErrorResponse)
+    ),
+    tag = "auth"
+)]
+pub async fn logout(
+    state: web::Data<AppState>,
+    auth: crate::middleware::AuthExtractor,
+) -> Result<HttpResponse, ApiError> {
+    // Revoke the current JWT by adding its jti to the revocation list
+    let ttl = std::time::Duration::from_secs(3600);
+    state
+        .token_revocation
+        .revoke(&auth.0.jti, ttl)
+        .await
+        .map_err(|e| SharedError::Internal(format!("Failed to revoke token: {}", e)))?;
+
+    // Clear server-side refresh token
+    state
+        .db
+        .user_repo()
+        .invalidate_refresh_token(auth.0.user_id)
+        .await?;
+
+    tracing::info!("User {} logged out, token revoked", auth.0.user_id);
+    Ok(HttpResponse::NoContent().finish())
+}

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.11] - 2026-08-12
+
+### Added
+- **Token Revocation System (Task 2.3a)**
+  - `TokenRevocationList` struct with dual backend: Redis (when `REDIS_URL` is set) or in-memory `DashMap` with TTL
+  - Added `jti` (JWT ID) claim to JWT tokens for unique identification
+  - New `POST /api/v1/auth/logout` endpoint that revokes the current JWT token by adding its `jti` to the revocation list with matching TTL, and clears the server-side refresh token
+  - Added `token_revocation: Arc<TokenRevocationList>` to `AppState`
+  - In-memory fallback uses `RevocationMemoryStore` with `DashMap` for thread-safe revocation checks
+  - Redis backend uses `SETEX` for atomic set-with-expiry, preventing stale entries
+- **Differentiated Rate Limiting (Task 2.3b)**
+  - Auth endpoints (`/auth/login`, `/auth/refresh`, `/auth/logout`) now have stricter rate limit: 10 requests per 60 seconds per IP
+  - Other endpoints retain the default: 120 requests per minute per IP
+  - Implemented via scoped `Governor` middleware wrapper on auth routes in `handlers::configure`
+
+### Changed
+- `Claims` struct in both `jwt.rs` and `middleware.rs`: added `jti: String` field
+- `AuthenticatedUser` struct: added `jti: String` field
+- `generate_jwt`: generates `jti` as UUID v4
+- Auth endpoint tests updated with `jti` in test claim structs
+
 ## [0.8.10] - 2026-08-12
 
 ### Changed

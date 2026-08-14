@@ -38,10 +38,10 @@ go on
 *   ~~*Lösung:* Korrektes Error-Handling, um sicherzustellen, dass ungültige Zustände (z.B. alter Token noch aktiv, neuer nicht gespeichert) vermieden werden.~~ ✅ **Erledigt (0.8.10):** `login` und `refresh_token` Handler verwenden jetzt `map_err` für `update_refresh_token` statt `let _ =`, verhindert inkonsistente Token-States.
 
 ### 2.3 Authentifizierung & Autorisierung
-*   **Token-Revocation:** Aktuell gibt es kein Mechanismus zur sofortigen Widerruf von kompromittierten Tokens außerhalb der natürlichen Ablaufzeit.
-*   *Lösung:* Implementierung eines Token-Blacklists mittels Redis oder Datenbank-Tabelle mit kurzen TTL für widerrufene Tokens.
-*   **Rate Limiting Differenzierung:** Aktuell gilt das gleiche Rate-Limit für alle Endpunkte unabhängig von ihrer Sensitivität oder Ressourcenintensität.
-*   *Lösung:* Implementierung von differenzierten Rate-Limits basierend auf Endpunkt-Typen (z.B. strengere Limits für Auth-Endpunkte, höhere Limits für Lese-Operationen).
+*   ~~**Token-Revocation:** Aktuell gibt es kein Mechanismus zur sofortigen Widerruf von kompromittierten Tokens außerhalb der natürlichen Ablaufzeit.~~
+*   ~~*Lösung:* Implementierung eines Token-Blacklists mittels Redis oder Datenbank-Tabelle mit kurzen TTL für widerrufene Tokens.~~ ✅ **Erledigt (0.8.11):** Implementiert `TokenRevocationList` mit dual Backend: Redis (SETEX) oder In-Memory DashMap mit TTL. JWT Claims erweitert mit `jti` (UUID v4). Neuer `POST /api/v1/auth/logout` Endpoint widerruft Token via jti. `TokenRevocationList` im AppState initialisiert aus `REDIS_URL` oder In-Memory Fallback.
+*   ~~**Rate Limiting Differenzierung:** Aktuell gilt das gleiche Rate-Limit für alle Endpunkte unabhängig von ihrer Sensitivität oder Ressourcenintensität.~~
+*   ~~*Lösung:* Implementierung von differenzierten Rate-Limits basierend auf Endpunkt-Typen (z.B. strengere Limits für Auth-Endpunkte, höhere Limits für Lese-Operationen).~~ ✅ **Erledigt (0.8.11):** Auth-Endpunkte (`/auth/login`, `/auth/refresh`, `/auth/logout`) erhalten strengeres Limit (10 req/60s pro IP) via scoped `Governor` Middleware. Alle anderen Endpunkte behalten Standard-Limit (120 req/min pro IP).
 
 ## 3. Code-Qualität & Wartbarkeit
 

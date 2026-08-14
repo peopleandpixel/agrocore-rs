@@ -13,6 +13,7 @@ struct TestClaims {
     tenant_id: String,
     roles: Vec<String>,
     exp: usize,
+    jti: String,
 }
 
 fn signed_token(sub: &str, tenant_id: &str, roles: Vec<&str>) -> String {
@@ -23,6 +24,7 @@ fn signed_token(sub: &str, tenant_id: &str, roles: Vec<&str>) -> String {
             tenant_id: tenant_id.to_string(),
             roles: roles.into_iter().map(String::from).collect(),
             exp: usize::MAX / 2,
+            jti: uuid::Uuid::new_v4().to_string(),
         },
         &EncodingKey::from_secret(agrocore_shared::config::jwt_secret().as_bytes()),
     )
@@ -45,6 +47,7 @@ async fn test_export_orders_excel() {
         db: Arc::new(Database::Mock(Box::new(mock_db))),
         messaging: Arc::new(messaging),
         lpis_registry: Arc::new(agrocore_lpis_providers::create_default_registry()),
+        token_revocation: Arc::new(agrocore_api::middleware::TokenRevocationList::new()),
     };
 
     let app = test::init_service(
@@ -88,6 +91,7 @@ async fn test_export_sites_geojson() {
         db: Arc::new(Database::Mock(Box::new(mock_db))),
         messaging: Arc::new(messaging),
         lpis_registry: Arc::new(agrocore_lpis_providers::create_default_registry()),
+        token_revocation: Arc::new(agrocore_api::middleware::TokenRevocationList::new()),
     };
 
     let app = test::init_service(

@@ -23,11 +23,31 @@ pub mod weather;
 pub mod workforce;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
+    // Auth endpoints with stricter rate limiting (10 req/min per IP)
+    let auth_gov_conf = actix_governor::GovernorConfigBuilder::default()
+        .seconds_per_request(60)
+        .burst_size(10)
+        .key_extractor(crate::middleware::TestableIpKeyExtractor)
+        .finish()
+        .unwrap();
     cfg.service(
         web::scope("/api/v1")
             .service(web::resource("/health").route(web::get().to(health)))
-            .service(web::resource("/auth/login").route(web::post().to(auth::login)))
-            .service(web::resource("/auth/refresh").route(web::post().to(auth::refresh_token)))
+            .service(
+                web::resource("/auth/login")
+                    .wrap(actix_governor::Governor::new(&auth_gov_conf))
+                    .route(web::post().to(auth::login)),
+            )
+            .service(
+                web::resource("/auth/refresh")
+                    .wrap(actix_governor::Governor::new(&auth_gov_conf))
+                    .route(web::post().to(auth::refresh_token)),
+            )
+            .service(
+                web::resource("/auth/logout")
+                    .wrap(actix_governor::Governor::new(&auth_gov_conf))
+                    .route(web::post().to(auth::logout)),
+            )
             .service(
                 web::resource("/sites")
                     .route(web::get().to(sites::list_sites))
