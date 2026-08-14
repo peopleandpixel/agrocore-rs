@@ -48,8 +48,9 @@ RUN cargo build --workspace --release --bin agrocore-api
 FROM debian:bookworm-slim AS runtime
 
 # Install runtime dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
+    curl \
     libssl3 \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*
@@ -66,9 +67,6 @@ COPY --from=builder /app/target/release/agrocore-api /usr/local/bin/agrocore-api
 # Copy config directory
 COPY config/ /app/config/
 
-# Create config directory
-RUN mkdir -p /app/config
-
 # Set ownership
 RUN chown -R agrocore:agrocore /app
 
@@ -80,7 +78,7 @@ EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/api/v1/health || exit 1
+    CMD curl -sf http://localhost:8080/api/v1/health || exit 1
 
 # Run the application
 CMD ["agrocore-api"]

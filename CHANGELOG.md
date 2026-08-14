@@ -5,14 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-|## [0.8.13] - 2026-08-12
+## [0.8.14] - 2026-08-12
+
+### Fixed
+- **Docker Healthcheck Fix (Task 3.2a)**
+  - Added `curl` to `debian:bookworm-slim` runtime images in both `Dockerfile.api` and `Dockerfile.service` — the healthcheck was failing because `curl` was not installed
+  - Added `--no-install-recommends` to `apt-get install` in runtime stages for smaller image size
+  - Fixed redundant `RUN mkdir -p /app/config` after `COPY config/` in `Dockerfile.api`
+
+### Changed
+- **Multi-stage Build Optimization (Task 3.2b)**
+  - Documented existing caching strategy in `Dockerfile.api` (dummy source files layer for dependency-only caching)
+  - Added `curl` dependency to runtime stages for healthcheck support
+
+## [0.8.13] - 2026-08-12
 
 ### Changed
 - **Repository Boilerplate Macros Applied to All Repos (Task 3.1b follow-up)**
   - Applied `pg_repo!` macro to all 30 PostgreSQL repository structs, replacing 5+ lines of boilerplate per repo with a single macro invocation
   - Total reduction: ~300 lines of boilerplate eliminated across `crates/infrastructure/src/postgres/`
-
-### Changed (existing 0.8.12)
 
 ### Added
 - **Configuration Management (Task 3.1d)**

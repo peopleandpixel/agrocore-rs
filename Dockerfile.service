@@ -25,8 +25,9 @@ RUN cargo build --release --workspace --exclude admin-ui
 FROM debian:bookworm-slim AS runtime
 
 # Install runtime dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
+    curl \
     libssl3 \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*

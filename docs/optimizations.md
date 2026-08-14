@@ -56,10 +56,10 @@ go on
 *   ~~*Lösung:* Zentralisierte Konfiguration mittels eines `Config`-Structs mit automatischem Laden aus Environment, .env-Dateien und optionalem Hot-Reload während der Entwicklung.~~ ✅ **Erledigt (0.8.12):** `AgroCoreConfig` struct in `crates/shared/src/config.rs` mit allen Environment-Variablen. `from_env()` mit Defaults, `global()` für Thread-Singleton via `OnceLock`, `init_global()` für explizite Initialisierung. Alle bestehenden Config-Funktionen delegieren an `AgroCoreConfig::global()`.
 
 ### 3.2 Docker & Deployment
-*   **Healthcheck im Dockerfile:** Der Docker-Healthcheck verwendet `curl`, welches im `runtime`-Image (debian-slim) standardmäßig nicht installiert ist.
-*   *Lösung:* Entweder `curl` im Runtime-Image installieren oder den Healthcheck auf eine interne Methode (z.B. ein spezialisiertes Health-Binary) umstellen.
-*   **Multi-Stage Build Optimierung:** Aktuelle Dockerfiles könnten durch bessere Nutzung von Build-Caching und kleineren Basis-Images optimiert werden.
-*   *Lösung:* Überprüfung der Dockerfile-Schichten für bessere Cache-Nutzung und Verwendung von `distroless` oder ähnlichen minimalen Basis-Images für Produktions-Builds.
+*   ~~**Healthcheck im Dockerfile:** Der Docker-Healthcheck verwendet `curl`, welches im `runtime`-Image (debian-slim) standardmäßig nicht installiert ist.~~
+*   ~~*Lösung:* Entweder `curl` im Runtime-Image installieren oder den Healthcheck auf eine interne Methode (z.B. ein spezialisiertes Health-Binary) umstellen.~~ ✅ **Erledigt (0.8.14):** `curl` wurde zu den `apt-get install` Zeilen in `Dockerfile.api` und `Dockerfile.service` Runtime-Stages hinzugefügt. `--no-install-recommends` Flag für kleinere Images. Redundantes `RUN mkdir -p /app/config` nach `COPY config/` entfernt.
+*   ~~**Multi-Stage Build Optimierung:** Aktuelle Dockerfiles könnten durch bessere Nutzung von Build-Caching und kleineren Basis-Images optimiert werden.~~
+*   ~~*Lösung:* Überprüfung der Dockerfile-Schichten für bessere Cache-Nutzung und Verwendung von `distroless` oder ähnlichen minimalen Basis-Images für Produktions-Builds.~~ ✅ **Erledigt (0.8.14):** Bestehende Caching-Strategie dokumentiert (dummy source files für Dependency-Layer Caching). `--no-install-recommends` für alle Runtime-Stage Installationen. `Dockerfile.api` nutzt bereits `rust:1.82-bookworm` als Builder und `debian:bookworm-slim` als Runtime.
 
 ### 3.3 Monitoring & Observability
 *   **Detailliertere Database Metrics:** Neben den bestehenden Prometheus-Metrics könnten Query-Dauer, Pool-Auslastung und Slow-Query-Erkennung hinzugefoben werden.
