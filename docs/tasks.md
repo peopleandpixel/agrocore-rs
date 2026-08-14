@@ -1,198 +1,170 @@
 # Agrocore-RS Open Tasks
 
-Last updated: 2026-08-14
+Letztes Update: 2026-08-14
 
-Tasks are ordered by priority, then by estimated implementation time. Completed work is omitted; a module with no remaining work is marked complete for reference.
+Tasks sind nach Priorität und geschätztem Implementierungsaufwand geordnet.
+Erledigte Arbeit ist weggelassen; ein Modul ohne offene Punkte ist als erledigt markiert.
 
 ## Module 17 — KI-Analytics
 
-**Status:** Planned · **Priority:** P4 · **Estimated effort:** 8–15 days per feature
+**Status:** Geplant · **Priorität:** P4 · **Aufwand:** 8–15 Tage pro Feature
 
-- Define the data and evaluation requirements for yield prediction.
-- Define disease and pest early-warning models.
-- Define irrigation, fertilization, KPI, satellite-monitoring, and generative-reporting features.
-- Implement features only after the production modules and sync foundation are stable.
+- [ ] Definition der Daten- und Evaluierungsanforderungen für Ertragsprognosen.
+- [ ] Definition von Krankheits- und Schädlingsfrühwarnsystemen.
+- [ ] Definition von Bewässerungs-, Düngungs-, KPI-, Satelliten-Monitoring- und generativen Reporting-Features.
+- [ ] Implementierung erst nach Stabilisierung der Produktionsmodule und Sync-Grundlagen.
 
 ---
 
-## Additional Missing Features & Improvement Roadmap
+## Admin-UI Status & Missing Features
 
-Below is a checklist of what's still needed to become a complete, competitive farming software platform.
-Grouped by category and compared against commercial competitors (John Deere Operations Center,
-Climate FieldView, FarmLogs, AgriWebb, SmartFarmPilot, Traction Ag).
+### Was bereits funktioniert (kompiliert & hat echte API-Integration)
 
-### Core Missing Features
+- [x] Login & Setup-Workflow
+- [x] Dashboard mit Systemstatus
+- [x] Site-Management (CRUD: Site-Typ, Kultur, Sorte, Fläche)
+- [x] Aufträge & Tasks (wiederkehrende Tasks, Mitarbeiter-Zuweisung, Status-Verfolgung)
+- [x] Worker-Tasks-Ansicht (eigene Aufgaben für Arbeiter)
+- [x] Tierhaltung (Tierschau, Behandlungen, Bewegungen)
+- [x] Wetterintegration (Open-Meteo Geocoding + aktuelle Wetterdaten)
+- [x] Finanzen (PAC-Anträge, Kostenstellen)
+- [x] Equipment-Verwaltung
+- [x] Compliance-Tracking
+- [x] Ressourcenverwaltung (Wasser, Dünger)
+- [x] Einstellungen
+- [x] Import-Wizard (SIGPAC, GeoJSON, Shapefile)
+- [x] Audit-Log
+- [x] Kartenansicht
+- [x] 10-Sprachunterstützung (DE, EN, ES, FR, PT, IT, PL, RO, UK, NL)
+- [x] Dark/Light-Theme
+- [x] PWA-Unterstützung
 
-#### Crop Planning & Rotation
-- [ ] Succession planting planning — recommend next crops based on previous harvests
-- [ ] Crop rotation recommendations — N-P-K balance, disease break cycles, soil health
-- [ ] Planting schedule optimization — frost dates, weather forecasts, soil temperature
-- [ ] Cover crop planning — select species, schedule planting/harvesting
-- [ ] Fertilization schedules — automated based on soil tests + crop requirements
-- [ ] Seed variety performance tracking — compare yields across varieties by field/region
+### Gefundene Stubs & Placeholders
 
-#### Equipment Management
-- [ ] Equipment maintenance scheduling — based on hours, calendar, or usage thresholds
-- [ ] Maintenance cost tracking — parts, labor, downtime costs per equipment
-- [ ] Fuel consumption tracking — gallons/hour, per operation, per field
-- [ ] Equipment usage logging — who used what, when, for how long
-- [ ] Equipment depreciation tracking — automatic depreciation for financial reporting
-- [ ] Equipment assignment to tasks — link specific machines to specific operations
+- [ ] **Analytics Profitability Chart** — Platzhalter ("—") statt echter Visualisierung
+- [ ] **Analytics Harvest Prediction** — API-Aufruf existiert, aber Ergebnis-Anzeige ist begrenzt
+- [ ] **Equipment Maintenance Scheduling** — UI vorhanden, aber keine Wartungsdaten/Termine
+- [ ] **Formularvalidierung** — viele Forms fehlen Validierung (z.B. Equipment-Formular ohne Code-Validierung)
+- [ ] **Pagination** — viele Listen Komponenten laden alle Daten auf einmal (keine Pagination)
+- [ ] **Search/Filter** — Site-Management, User-Liste, Equipment haben keine Such-/Filter-Funktion
 
-#### Livestock Management
-- [ ] Breeding records — heat detection, AI, calving/mating schedules
-- [ ] Feed consumption tracking — ration formulation, feed efficiency ratios
-- [ ] Milk production tracking — daily yields, butterfat/protein percentages (dairy)
-- [ ] Health treatment records — medications, withdrawal periods, vet visits
-- [ ] Weight gain tracking — individual animal or group average daily gain
-- [ ] Livestock movement records — births, deaths, purchases, sales, transfers
-- [ ] Grazing management — paddock rotation, rest periods, stocking rates
-
-#### Financial Management
-- [ ] Accounting integration — QuickBooks, Xero, or built-in double-entry bookkeeping
-- [ ] Budgeting & forecasting — projected vs actual comparisons
-- [ ] Cost tracking per field — inputs, labor, equipment, overhead allocated
-- [ ] Revenue tracking per crop — yield × price, contract vs spot sales
-- [ ] Cash flow management — inflow/outflow scheduling
-- [ ] Tax reporting — Schedule F, depreciation, input cost deductions
-- [ ] Input cost tracking — seed, fertilizer, chemicals, fuel, with receipt scanning
+### Kritisch fehlend (MVP-Level)
 
 #### Inventory Management
-- [ ] Multi-location inventory — track across barns, sheds, grain bins
-- [ ] Lot/batch tracking — traceability from purchase to application
-- [ ] Expiration date tracking — seed, chemicals, feed, with alerts
-- [ ] FEFO/FIFO picking — first-expired/first-in-first-out for perishables
-- [ ] Automatic stock updates — from harvest, usage, or purchase records
-- [ ] Inventory valuation — FIFO, weighted average, actual cost methods
+- [ ] Multi-Lagerverwaltung (Silo, Scheune, Werkstatt)
+- [ ] Lot-/Chargen-Tracking (Rückverfolgbarkeit von Saatgut, Dünger, Medikamenten)
+- [ ] Ablaufdatum-Tracking mit Warnungen
+- [ ] FEFO/FIFO-Logistik
+- [ ] Bestandsbewertung (FIFO, Durchschnittskosten, Act-Cost)
 
-#### Customer & Sales Management
-- [ ] Customer CRM — contact management, order history, preferences
-- [ ] CSA management — subscription box ordering, delivery scheduling
-- [ ] Wholesale order processing — bulk orders, pricing tiers, delivery routing
-- [ ] Direct-to-consumer sales — online storefront, payment processing
-- [ ] Sales analytics — revenue by customer, product mix, seasonal trends
+#### Kunden & Verkauf
+- [ ] Kunden-CRM (Kontakte, Bestellhistorie, Vorlieben)
+- [ ] CSA-Verwaltung (Abonnement-Boxen, Lieferplanung)
+- [ ] Großhandelsaufträge (Staffelpreise, Lieferplanung)
+- [ ] Direktverkauf (Onlineshop, Zahlungsabwicklung)
 
-#### Weather & Environmental Monitoring
-- [ ] Hyperlocal weather station — integration with Davis, Campbell Scientific, or similar
-- [ ] Soil moisture monitoring — IoT sensor integration with irrigation control
-- [ ] Growing degree day (GDD) tracking — crop development stage prediction
-- [ ] Frost/freeze alerts — automated notifications based on forecasts
-- [ ] Disease/pest risk modeling — based on weather conditions + crop stage
-- [ ] Irrigation scheduling — ET-based recommendations, soil moisture triggers
+#### Job & Arbeitskräfte-Management
+- [ ] Arbeitszeit-Erfassung (Clock-In/Clock-Out mit GPS)
+- [ ] Arbeitskosten-Tracking (Stundensatz pro Arbeiter)
+- [ ] Arbeitskräfte-Zuteilung zu Aufträgen
 
-### Mobile & Field Operations
+#### Equipment Management
+- [ ] Wartungsplanung (basierend auf Betriebsstunden, Kalender, Nutzungsschwellen)
+- [ ] Wartungskosten-Tracking (Teile, Arbeitszeit, Ausfallkosten)
+- [ ] Kraftstoffverbrauch (Liter/Stunde, pro Operation, pro Feld)
+- [ ] Nutzung-Logging (wer hat was, wann, wie lange)
+- [ ] Abschreibung (automatische Amortisation für Finanzberichte)
+- [ ] Equipment-Suche und Filterung
 
-#### Mobile-First Features
-- [ ] Offline-first mobile app — sync when connectivity restored
-- [ ] Mobile-optimized UI — touch targets, simplified navigation
-- [ ] Barcode/QR code scanning — for equipment, inventory, field ID
-- [ ] GPS-enabled field mapping — boundary recording, point-of-interest tagging
-- [ ] Mobile time tracking — workers clock in/out with GPS location
-- [ ] Photo documentation — attach images to tasks, issues, inspections
-- [ ] Voice-to-text notes — hands-free field observations
-- [ ] Push notifications — weather alerts, task reminders, maintenance due
+#### Tierhaltung (Erweiterung)
+- [ ] Zucht-Records (Brunft, KI, Kalbung/Meerschweinchenpaarung)
+- [ ] Futteraufnahme-Tracking (Ration, Verschwendung, Futterwert)
+- [ ] Milchproduktions-Tracking (Tagesproduktion, Butterfett/Protein)
+- [ ] Bewegungsdokumentation (Geburten, Todesfälle, Käufe, Verkäufe)
+- [ ] Weide-Management (Flächenrotation, Ruheperioden, Tierstandort)
 
-#### In-Field Operations
-- [ ] Work order dispatch — assign tasks to workers with mobile notifications
-- [ ] Field activity recording — real-time logging of planting, spraying, harvesting
-- [ ] Equipment telematics integration — receive data from John Deere, Case IH, etc.
-- [ ] Input application tracking — what, how much, where, when applied
-- [ ] Yield monitor data import — from combine harvesters
-- [ ] Drone/UAV integration — NDVI imagery, spray coverage mapping
+#### Finanzen (Erweiterung)
+- [ ] Buchhaltungs-Integration (QuickBooks, Xero, Doppelte Buchführung)
+- [ ] Budgetierung & Prognosen (geplant vs. tatsächlich)
+- [ ] Feldkalkulation (Eingangs- vs Ausgangswerte)
+- [ ] Umsatz-Tracking pro Kultur
+- [ ] Geldfluss-Management (Verbindlichkeiten/Zahlungseingänge planen)
+- [ ] Steuerberichtswesen (Schedule F, Abschreibungen, Dünger-Kosten-Abzug)
+- [ ] Eingangs-Kosten-Tracking (Saatgut, Dünger, Chemikalien, Kraftstoff, QR-Code-Scans)
 
-### Advanced Analytics & AI
+#### Wetter & Umwelt
+- [ ] Hyperlokaler Wetterstation-Integration (Davis, Campbell Scientific)
+- [ ] Bodenfeuchtigkeits-Monitoring (IoT-Sensor-Integration mit Bewässerungssteuerung)
+- [ ] Wachstumsgradtag-Tracking (Kartoffelernte-Prognose)
+- [ ] Fröst-/Einfrierwarnungen
+- [ ] Krankheits-/Schädlings-Risiko-Modell
 
-#### Predictive Analytics
-- [ ] Yield prediction — ML model based on historical data, weather, soil
-- [ ] Input optimization recommendations — nitrogen rates, planting density
-- [ ] Equipment failure prediction — based on sensor data + maintenance history
-- [ ] Market price forecasting — for crop marketing planning
-- [ ] Weather impact assessment — quantify losses from frost, hail, drought
+### Mittel- / Langfristig
 
-#### Reporting & Dashboards
-- [ ] Custom report builder — drag-and-drop dashboard creation
-- [ ] Export to Excel/PDF — standard and custom templates
-- [ ] Regulatory reporting — USDA, state agencies, organic certification
-- [ ] Benchmarking — compare performance against regional peers
-- [ ] API for external BI tools — Power BI, Tableau integration
+#### Mobile First (P2)
+- [ ] Offline-first Mobile-App (Sync bei Wiederherstellung der Konnektivität)
+- [ ] Barcode/QR-Code-Scanner (Equipment, Inventar, Feld-ID)
+- [ ] GPS-Feld-Grenzen (Boundary Recording)
+- [ ] Mobile Zeiterfassung (Clock-In/Clock-Out mit GPS)
+- [ ] Foto-Dokumentation (Anhänge an Tasks, Probleme, Inspektionen)
+- [ ] Sprach-zu-Text-Notizen
+- [ ] Push-Benachrichtigungen (Wetterwarnungen, Task-Erinnerungen)
+- [ ] Feldaktivitäten-Recording (Pflanzen, Spritzen, Ernten in Echtzeit)
+- [ ] Ernte-Daten-Import (Combine-Harvester)
+- [ ] Drohnen/UAV-Integration (NDVI-Bilder)
 
-#### Data Science
-- [ ] Satellite/sensor data fusion — combine multiple data sources
-- [ ] Anomaly detection — unusual patterns in operations or sensors
-- [ ] Prescription mapping — variable-rate application maps for inputs
-- [ ] Soil sampling management — grid sampling plans, lab result tracking
+#### Präzisionslandwirtschaft (P3)
+- [ ] Variablen-Düngungs-Plane (VRA für Sämaschinen, Spritzer, Streuer)
+- [ ] GPS-Auto-Steuerung (Anbindung an Lenksysteme)
+- [ ] Drohnen-Spritzen-Integration (Management + Steuerung)
+- [ ] Automatisierte Bewässerungssteuerung (IoT-Ventile)
 
-### Integration & Ecosystem
+#### Nachhaltigkeit & Compliance (P3)
+- [ ] Kohlenstoff-Gutschriften-Tracking (CO2-Sequestrierung messen + berichten)
+- [ ] Wasser-Nutzungs-Monitoring (Bewässerungseffizienz, regulatorische Compliance)
+- [ ] Chemische-Anwendungs-Logs (REI, beschränkte Verwendung)
+- [ ] Biologische-Zertifizierung (Eingangs-Tracking, Pufferzonen, Inspektionen)
+- [ ] Nachhaltigkeits-Metriken (Boden-Gesundheit, Biodiversität, Dünger-Reduzierung)
 
-#### Third-Party Integrations
-- [ ] Equipment OEM integration — John Deere, Case IH, Kubota API connectivity
-- [ ] Weather API integration — NOAA, AccuWeather, OpenWeatherMap premium
-- [ ] Drone data processing — Pix4D, DroneDeploy integration
-- [ ] Lab result integration — soil tests, tissue tests, feed analysis
-- [ ] Government data — FSA, NRCS, FAA (for drone operations)
-- [ ] Marketplace integration — commodity price feeds, grain elevator bids
+#### Fortgeschrittene Business-Features (P3)
+- [ ] Multi-Betriebs-Management (Haltereien, Pachtverträge, Mieter)
+- [ ] Vertrags-Landwirtschaft (Erzeuger-Verträge, Qualitätsprämien)
+- [ ] Lohnarbeits-Management (Gehälter, Zertifizierungen, Planung)
+- [ ] Equipment-Sharing (Vermietungs-Marktplatz zwischen Bauern)
+- [ ] Versicherungs-Integration (Schadens-Dokumentation, Risiko-Bewertung)
 
-#### Data Standards
-- [ ] ISO 11783 (ISOBUS) — for agricultural equipment data exchange
-- [ ] ADAPT framework — industry standard for ag data interoperability
-- [ ] GeoJSON export — for GIS software compatibility
-- [ ] Common data models — follow FAO or USDA data standards
+#### KI & Robotik (P4)
+- [ ] Computer Vision (Pflanzen-Krankheiten-Erkennung, Unkraut-Identifikation)
+- [ ] Roboter-Krähen (autonome Roboter-Steuerung + Monitoring)
+- [ ] KI-Beratungsassistent (Chat-Interface für agronomische Fragen)
+- [ ] Autonome Geräte (Flotten-Management für selbstfahrende Traktoren)
 
-### Advanced Features (Competitive Differentiators)
+#### Fortschrittliche Technologien (P4)
+- [ ] Augmented Reality (AR) — Feld-Daten-Overlay auf Live-Kamera
+- [ ] Digital Twin (virtuelles Bauernhof-Modell für Szenario-Planung)
+- [ ] Blockchain-Rückverfolgbarkeit (Lieferketten-Transparenz)
+- [ ] Generatives KI für Planung (automatisierte Ernte/Lebensmittel-Unternehmensplanung)
 
-#### Precision Agriculture
-- [ ] Variable rate application (VRA) — prescriptions for seeders, sprayers, spreaders
-- [ ] Auto-steer/GPS guidance — integration with guidance systems
-- [ ] Drone spraying integration — manage and control spray drones
-- [ ] Automated irrigation control — IoT valves, scheduling, monitoring
+---
 
-#### Sustainability & Compliance
-- [ ] Carbon credit tracking — measure and report carbon sequestration
-- [ ] Water usage monitoring — irrigation efficiency, regulatory compliance
-- [ ] Chemical application logs — REI (re-entry intervals), restricted use reporting
-- [ ] Organic certification management — track inputs, buffer zones, inspections
-- [ ] Sustainability metrics — soil health, biodiversity, input reduction
+## Phase 3: Docker & Deployment
 
-#### Advanced Business Features
-- [ ] Multi-farm management — holdings, leases, tenant tracking
-- [ ] Contract farming — manage grower contracts, quality premiums
-- [ ] Labor management — payroll, certifications, scheduling
-- [ ] Equipment sharing — rental marketplace between farmers
-- [ ] Insurance integration — claim documentation, risk assessment
+Siehe [optimizations.md](docs/optimizations.md) §3.2 — bereits erledigt (0.8.14).
 
-### Future Enhancements
+---
 
-#### AI & Robotics
-- [ ] Computer vision — plant disease detection, weed identification
-- [ ] Robotic weeding — autonomous robot control and monitoring
-- [ ] AI agronomist assistant — chat interface for agronomic questions
-- [ ] Autonomous equipment — fleet management for self-driving tractors
+## Phase 4: Monitoring & Observability
 
-#### Advanced Technologies
-- [ ] Augmented Reality (AR) — overlay field data on live camera view
-- [ ] Digital twin — virtual farm model for scenario planning
-- [ ] Blockchain traceability — supply chain transparency for food safety
-- [ ] Genererative AI for planning — automated crop/livestock enterprise planning
+### Detailliertere Database Metrics
+- [ ] Query-Dauer-Monitoring (sqlx-Middleware oder `sqlx-metrics`)
+- [ ] Pool-Auslastung (aktive/idle Verbindungen)
+- [ ] Slow-Query-Erkennung + Logging
 
-### Technical Debt & Architecture Improvements
+### Business Metrics
+- [ ] Aktive Geräte pro Tenant
+- [ ] Übertragene Telemetrie-Nachrichten pro Stunde
+- [ ] Erfolgreich verarbeitete Import-Dateien
 
-#### Code Quality
-- [ ] db_exec! macro — properly implemented and applied to all repository methods
-- [ ] Repository trait modernization — investigate async trait alternatives
-- [ ] Error handling consistency — standardize error types across crates
-- [ ] Documentation tests — add doctests for all public APIs
-- [ ] Benchmark suite — add criterion benchmarks for critical paths
-
-#### DevOps
-- [ ] Kubernetes deployment manifests — Helm charts for production
-- [ ] Automated database migrations — Flyway or sqlx-cli in CI/CD
-- [ ] Canary deployment strategy — gradual rollout of new versions
-- [ ] Backup/restore procedures — automated database backups
-- [ ] Disaster recovery plan — documented DR procedures
-
-#### Security
-- [ ] OAuth2/OIDC integration — Google, Microsoft, Okta SSO
-- [ ] API key management — for third-party integrations
-- [ ] Data encryption at rest — PostgreSQL TDE or application-level
-- [ ] Audit logging — track all data changes with who/when/why
-- [ ] Penetration testing — annual security assessment
+### Distributed Tracing
+- [ ] Span-Attribute: Tenant-ID, User-ID, Operationstyp
+- [ ] Konsistente Tracing-Standardisierung über alle Service-Grenzen
