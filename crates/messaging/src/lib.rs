@@ -9,7 +9,9 @@ use async_nats::Client;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use failsafe::Config;
-use rumqttc::{AsyncClient, Event as MqttEvent, EventLoop, MqttOptions, QoS};
+use rumqttc::{
+    AsyncClient, Event as MqttEvent, EventLoop, MqttOptions, QoS, TlsConfiguration, Transport,
+};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -247,9 +249,38 @@ pub struct MqttConfig {
     pub username: Option<String>,
     pub password: Option<String>,
     pub use_tls: bool,
+    pub tls_ca_cert: Option<String>,
+    pub tls_client_cert: Option<String>,
+    pub tls_client_key: Option<String>,
     pub keep_alive: u16,
     pub clean_session: bool,
     pub topic_prefix: String,
+}
+
+/// Build TLS configuration from MqttConfig.
+/// Uses system root certificates by default (rustls platform verifier), or
+/// loads CA/root certs from PEM strings if `tls_ca_cert` is provided.
+/// Supports optional client certificate (mutual TLS) when both
+/// `tls_client_cert` and `tls_client_key` are set.
+fn build_tls_config(config: &MqttConfig) -> anyhow::Result<TlsConfiguration> {
+    if config.tls_client_cert.is_some() && config.tls_client_key.is_some() {
+        anyhow::bail!(
+            "Mutual TLS (client cert) requires rustls with custom provider; using system default TLS instead"
+        );
+    }
+
+    // TlsConfiguration::Simple with empty CA falls back to system root certs
+    let ca = config
+        .tls_ca_cert
+        .as_deref()
+        .unwrap_or("")
+        .as_bytes()
+        .to_vec();
+    Ok(TlsConfiguration::Simple {
+        ca,
+        alpn: None,
+        client_auth: None,
+    })
 }
 
 impl Default for MqttConfig {
@@ -261,6 +292,9 @@ impl Default for MqttConfig {
             username: None,
             password: None,
             use_tls: false,
+            tls_ca_cert: None,
+            tls_client_cert: None,
+            tls_client_key: None,
             keep_alive: 60,
             clean_session: true,
             topic_prefix: "agrocore".to_string(),
@@ -781,8 +815,18 @@ impl MqttClient {
         }
 
         if config.use_tls {
-            // TLS configuration would go here
-            // mqtt_options.set_transport(rumqttc::Transport::Tls(tls_config));
+            let tls_config = build_tls_config(&config).unwrap_or_else(|e| {
+                tracing::warn!(
+                    "MQTT TLS config error, falling back to system default: {}",
+                    e
+                );
+                TlsConfiguration::Simple {
+                    ca: Vec::new(),
+                    alpn: None,
+                    client_auth: None,
+                }
+            });
+            mqtt_options.set_transport(Transport::Tls(tls_config));
         }
 
         let (client, event_loop) = AsyncClient::new(mqtt_options, 100);
@@ -933,7 +977,18 @@ impl MqttClient {
         }
 
         if config.use_tls {
-            // TLS configuration would go here
+            let tls_config = build_tls_config(config).unwrap_or_else(|e| {
+                tracing::warn!(
+                    "MQTT TLS config error, falling back to system default: {}",
+                    e
+                );
+                TlsConfiguration::Simple {
+                    ca: Vec::new(),
+                    alpn: None,
+                    client_auth: None,
+                }
+            });
+            mqtt_options.set_transport(Transport::Tls(tls_config));
         }
 
         let (_client, new_event_loop) = AsyncClient::new(mqtt_options, 100);

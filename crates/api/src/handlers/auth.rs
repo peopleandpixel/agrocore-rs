@@ -51,11 +51,12 @@ pub async fn login(
     let refresh_expires_at = Utc::now() + chrono::Duration::days(7);
 
     // Update user with refresh token
-    let _ = state
+    state
         .db
         .user_repo()
         .update_refresh_token(user.user_id, &refresh_token, refresh_expires_at)
-        .await;
+        .await
+        .map_err(|e| SharedError::Internal(format!("Failed to store refresh token: {}", e)))?;
 
     Ok(HttpResponse::Ok().json(AuthResponseDto {
         token: user.token,
@@ -113,11 +114,12 @@ pub async fn refresh_token(
     let refresh_expires_at = Utc::now() + chrono::Duration::days(7);
 
     // Update refresh token in database
-    let _ = state
+    state
         .db
         .user_repo()
         .update_refresh_token(user.id, &new_refresh_token, refresh_expires_at)
-        .await;
+        .await
+        .map_err(|e| SharedError::Internal(format!("Failed to update refresh token: {}", e)))?;
 
     Ok(HttpResponse::Ok().json(AuthResponseDto {
         token: new_token,

@@ -4,7 +4,7 @@ resolver = "2"
 edition = "2024"
 
 [workspace.package]
-version = "0.8.9"
+version = "0.8.10"
 authors = ["Jens Reinemuth <jens@reinemuth.pt>"]
 license = "GPL-3.0-or-later"
 
@@ -52,4 +52,4 @@ redis = { version = "0.24", features = ["tokio-comp", "connection-manager", "jso
 governor = { version = "0.6", features = ["jitter"] }
 retry = { version = "0.1" }
 jitter = { version = "0.1" }
-rumqttc = "0.25"
+rumqttc = { version = "0.25", features = ["use-rustls-no-provider"] }

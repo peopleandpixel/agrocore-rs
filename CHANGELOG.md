@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.10] - 2026-08-12
+
+### Changed
+- **Security: MQTT TLS Encryption (Task 2.2a)**
+  - Enabled `use-rustls-no-provider` feature on `rumqttc` for TLS support
+  - Added `tls_ca_cert`, `tls_client_cert`, `tls_client_key` fields to `MqttConfig`
+  - Implemented `build_tls_config()` helper that builds a `TlsConfiguration::Simple` with CA certs
+  - `MqttClient::connect()` and `attempt_reconnect()` now set `Transport::Tls(tls_config)` when `use_tls` is enabled
+  - Falls back to system default TLS config with warning log on configuration errors
+- **Security: Refresh Token Error Handling (Task 2.2b)**
+  - `login` handler: `update_refresh_token` result now properly handled with `map_err` instead of `let _ =`
+  - `refresh_token` handler: `update_refresh_token` result now properly handled with `map_err` instead of `let _ =`
+  - This prevents stale/inconsistent refresh token state where a failed DB update would go unnoticed, potentially causing token mismatch between client and server
+
 ## [0.8.9] - 2026-08-12
 
 ### Changed

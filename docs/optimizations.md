@@ -32,10 +32,10 @@ go on
 *   ~~*Lösung:* Wechsel auf stabile Versionen, um unentdeckte Bugs in Release Candidates zu vermeiden.~~ ✅ **Erledigt (0.8.9):** Upgrade `argon2` von `0.6.0-rc.8` auf stabile `0.5.1`. `password-hash = "0.5"` hinzugefügt. `hash_password`/`verify_password` Calls an die 0.5.x API angepasst (`SaltString::generate`, `PasswordHash::new()`).
 
 ### 2.2 Infrastruktur-Sicherheit
-*   **MQTT Verschlüsselung:** Der MQTT-Client unterstützt aktuell kein TLS (nur als Kommentar vorbereitet).
-*   *Lösung:* Implementierung der TLS-Unterstützung in `MqttClient`, um Telemetriedaten sicher zu übertragen.
-*   **Fehlerbehandlung bei Tokens:** Fehler beim Aktualisieren von Refresh-Tokens werden aktuell mit `let _ = ...` ignoriert.
-*   *Lösung:* Korrektes Error-Handling, um sicherzustellen, dass ungültige Zustände (z.B. alter Token noch aktiv, neuer nicht gespeichert) vermieden werden.
+*   ~~**MQTT Verschlüsselung:** Der MQTT-Client unterstützt aktuell kein TLS (nur als Kommentar vorbereitet).~~
+*   ~~*Lösung:* Implementierung der TLS-Unterstützung in `MqttClient`, um Telemetriedaten sicher zu übertragen.~~ ✅ **Erledigt (0.8.10):** Aktiviert `use-rustls-no-provider` Feature in rumqttc. Implementiert `build_tls_config()` mit `TlsConfiguration::Simple` für CA-Zertifikate. `connect()` und `attempt_reconnect()` setzen `Transport::Tls()` wenn `use_tls=true`. Felder `tls_ca_cert`, `tls_client_cert`, `tls_client_key` in `MqttConfig` hinzugefügt.
+*   ~~**Fehlerbehandlung bei Tokens:** Fehler beim Aktualisieren von Refresh-Tokens werden aktuell mit `let _ = ...` ignoriert.~~
+*   ~~*Lösung:* Korrektes Error-Handling, um sicherzustellen, dass ungültige Zustände (z.B. alter Token noch aktiv, neuer nicht gespeichert) vermieden werden.~~ ✅ **Erledigt (0.8.10):** `login` und `refresh_token` Handler verwenden jetzt `map_err` für `update_refresh_token` statt `let _ =`, verhindert inkonsistente Token-States.
 
 ### 2.3 Authentifizierung & Autorisierung
 *   **Token-Revocation:** Aktuell gibt es kein Mechanismus zur sofortigen Widerruf von kompromittierten Tokens außerhalb der natürlichen Ablaufzeit.
