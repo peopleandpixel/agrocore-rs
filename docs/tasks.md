@@ -51,11 +51,11 @@ Erledigte Arbeit ist weggelassen; ein Modul ohne offene Punkte ist als erledigt 
 ### Kritisch fehlend (MVP-Level)
 
 #### Inventory Management
-- [ ] Multi-Lagerverwaltung (Silo, Scheune, Werkstatt)
-- [ ] Lot-/Chargen-Tracking (Rückverfolgbarkeit von Saatgut, Dünger, Medikamenten)
-- [ ] Ablaufdatum-Tracking mit Warnungen
-- [ ] FEFO/FIFO-Logistik
-- [ ] Bestandsbewertung (FIFO, Durchschnittskosten, Act-Cost)
+- [x] Multi-Lagerverwaltung (Silo, Scheune, Werkstatt) — locations table + UI
+- [x] Lot-/Chargen-Tracking (Rückverfolgbarkeit von Saatgut, Dünger, Medikamenten)
+- [x] Ablaufdatum-Tracking mit Warnungen
+- [x] FEFO/FIFO-Logistik
+- [x] Bestandsbewertung (FIFO, Durchschnittskosten, Act-Cost)
 
 #### Kunden & Verkauf
 - [ ] Kunden-CRM (Kontakte, Bestellhistorie, Vorlieben)

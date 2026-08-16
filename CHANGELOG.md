@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.16] - 2026-08-14
+
+### Added
+- **Inventory Management Complete Implementation**
+  - Full PostgreSQL-backed inventory module: items, locations, transactions, balances
+  - Multi-location inventory management (Silo, Scheune, Werkstatt) with stock transfers
+  - Lot/batch number tracking (batch_number field on all transactions)
+  - Expiration date tracking with warning thresholds (LuTriangleAlert icon in UI)
+  - FIFO/FEFO inventory method selection per item (FEFO = earliest expiry first)
+  - Stock valuation tracking (average_unit_cost, total_value, total_cost)
+  - REST API endpoints: CRUD items/locations, stock_in, stock_out, transfer, adjust, balances
+  - Admin UI: inventory items table, balances, locations tab, add item form, transactions modal
+
+### Changed
+- Version bump: 0.8.15 → 0.8.16
+- Updated docs/tasks.md: marked all Inventory Management tasks as complete
+
 ## [0.8.15] - 2026-08-13
 
 ### Fixed

@@ -1192,7 +1192,7 @@ pub struct PaginatedInventoryResponse<T> {
     pub total_pages: u64,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct InventoryLocationDto {
     pub id: uuid::Uuid,
     pub name: String,
@@ -1336,4 +1336,47 @@ pub async fn transfer_inventory(req: TransferRequest) -> Result<InventoryTransac
 
 pub async fn adjust_inventory(req: AdjustRequest) -> Result<InventoryTransactionDto, String> {
     post_json("/api/v1/inventory/adjust", &req, true).await
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct UpdateInventoryItemRequest {
+    pub category: String,
+    pub name: String,
+    pub sku: Option<String>,
+    pub description: Option<String>,
+    pub unit: String,
+    pub minimum_stock: f64,
+    pub inventory_method: String,
+}
+
+pub async fn update_inventory_item(
+    id: uuid::Uuid,
+    req: UpdateInventoryItemRequest,
+) -> Result<InventoryItemDto, String> {
+    let url = format!("/api/v1/inventory/items/{}", id);
+    let request = Request::put(&api_url(&url));
+    let request = with_auth(request);
+    let resp = request
+        .json(&req)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<InventoryItemDto>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::api;
+
+    #[test]
+    fn test_paginated_inventory_response_default() {
+        let resp = api::PaginatedInventoryResponse::<api::InventoryItemDto>::default();
+        assert_eq!(resp.total, 0);
+    }
 }
