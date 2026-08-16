@@ -4,8 +4,9 @@ use crate::postgres::{
     equipment::PgEquipmentRepo, fertilizer_record::PgFertilizerRecordRepo,
     financial_record::PgFinancialRecordRepo, harvest_delivery::PgHarvestDeliveryRepo,
     harvest_lot::PgHarvestLotRepo, harvest_season::PgHarvestSeasonRepo,
-    kelter_delivery::PgKelterDeliveryRepo, olive_grove::PgOliveGroveRepo,
-    olive_oil_record::PgOliveOilRecordRepo, order::PgOrderRepo,
+    inventory_item::PgInventoryItemRepo, inventory_location::PgInventoryLocationRepo,
+    inventory_transaction::PgInventoryTransactionRepo, kelter_delivery::PgKelterDeliveryRepo,
+    olive_grove::PgOliveGroveRepo, olive_oil_record::PgOliveOilRecordRepo, order::PgOrderRepo,
     phenology_record::PgPhenologyRecordRepo, plant_protection_record::PgPlantProtectionRecordRepo,
     site::PgSiteRepo, task_data::PgTaskDataRepo, tenant::PgTenantRepo, user::PgUserRepo,
     vineyard::PgVineyardRepo, weather_data::PgWeatherDataRepo,
@@ -15,7 +16,8 @@ use crate::postgres::{
 use agrocore_domain::repositories::{
     AnimalRepository, AuditLogRepo, ColdChainLogRepo, ComplianceChecklistRepo, CostCenterRepo,
     EquipmentRepository, FertilizerRecordRepo, FinancialRecordRepo, HarvestDeliveryRepo,
-    HarvestLotRepo, HarvestSeasonRepo, KelterDeliveryRepo, OliveGroveRepo, OliveOilRecordRepo,
+    HarvestLotRepo, HarvestSeasonRepo, InventoryItemRepository, InventoryLocationRepo,
+    InventoryTransactionRepo, KelterDeliveryRepo, OliveGroveRepo, OliveOilRecordRepo,
     OrderRepository, PACApplicationRepo, PhenologyRecordRepo, PlantProtectionRecordRepo,
     SiteRepository, SpatialObjectRepository, TaskDataRepository, TenantRepository, UserRepository,
     VineyardRepo, WaterQuotaRepo, WaterSourceRepo, WaterUsageRepo, WeatherDataRepo,
@@ -72,6 +74,12 @@ pub struct MockDatabase {
     pub cost_center_repo: Option<Arc<agrocore_domain::repositories::MockCostCenterRepo>>,
     pub financial_record_repo: Option<Arc<agrocore_domain::repositories::MockFinancialRecordRepo>>,
     pub kelter_delivery_repo: Option<Arc<agrocore_domain::repositories::MockKelterDeliveryRepo>>,
+    pub inventory_item_repo:
+        Option<Arc<agrocore_domain::repositories::MockInventoryItemRepository>>,
+    pub inventory_transaction_repo:
+        Option<Arc<agrocore_domain::repositories::MockInventoryTransactionRepo>>,
+    pub inventory_location_repo:
+        Option<Arc<agrocore_domain::repositories::MockInventoryLocationRepo>>,
 }
 
 impl Database {
@@ -464,6 +472,42 @@ impl Database {
                 as Arc<dyn KelterDeliveryRepo>,
         }
     }
+
+    pub fn inventory_item_repo(&self) -> Arc<dyn InventoryItemRepository> {
+        match self {
+            Self::Postgres(db) => db.inventory_item_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => m
+                .inventory_item_repo
+                .clone()
+                .expect("inventory_item_repo mock not set")
+                as Arc<dyn InventoryItemRepository>,
+        }
+    }
+
+    pub fn inventory_transaction_repo(&self) -> Arc<dyn InventoryTransactionRepo> {
+        match self {
+            Self::Postgres(db) => db.inventory_transaction_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => m
+                .inventory_transaction_repo
+                .clone()
+                .expect("inventory_transaction_repo mock not set")
+                as Arc<dyn InventoryTransactionRepo>,
+        }
+    }
+
+    pub fn inventory_location_repo(&self) -> Arc<dyn InventoryLocationRepo> {
+        match self {
+            Self::Postgres(db) => db.inventory_location_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => m
+                .inventory_location_repo
+                .clone()
+                .expect("inventory_location_repo mock not set")
+                as Arc<dyn InventoryLocationRepo>,
+        }
+    }
 }
 
 /// PostgreSQL Database Wrapper
@@ -510,6 +554,9 @@ pub struct PostgresDb {
     pub cost_center_repo: Arc<dyn CostCenterRepo>,
     pub financial_record_repo: Arc<dyn FinancialRecordRepo>,
     pub kelter_delivery_repo: Arc<dyn KelterDeliveryRepo>,
+    pub inventory_item_repo: Arc<dyn InventoryItemRepository>,
+    pub inventory_transaction_repo: Arc<dyn InventoryTransactionRepo>,
+    pub inventory_location_repo: Arc<dyn InventoryLocationRepo>,
 }
 
 impl PostgresDb {
@@ -581,6 +628,9 @@ impl PostgresDb {
             financial_record_repo: Arc::new(PgFinancialRecordRepo::new(pool.clone())),
             compliance_checklist_repo: Arc::new(PgComplianceChecklistRepo::new(pool.clone())),
             kelter_delivery_repo: Arc::new(PgKelterDeliveryRepo::new(pool.clone())),
+            inventory_item_repo: Arc::new(PgInventoryItemRepo::new(pool.clone())),
+            inventory_transaction_repo: Arc::new(PgInventoryTransactionRepo::new(pool.clone())),
+            inventory_location_repo: Arc::new(PgInventoryLocationRepo::new(pool.clone())),
             pool,
         })
     }
@@ -630,6 +680,9 @@ impl PostgresDb {
             financial_record_repo: Arc::new(PgFinancialRecordRepo::new(pool.clone())),
             compliance_checklist_repo: Arc::new(PgComplianceChecklistRepo::new(pool.clone())),
             kelter_delivery_repo: Arc::new(PgKelterDeliveryRepo::new(pool.clone())),
+            inventory_item_repo: Arc::new(PgInventoryItemRepo::new(pool.clone())),
+            inventory_transaction_repo: Arc::new(PgInventoryTransactionRepo::new(pool.clone())),
+            inventory_location_repo: Arc::new(PgInventoryLocationRepo::new(pool.clone())),
             pool,
         }
     }
@@ -773,5 +826,17 @@ impl PostgresDb {
 
     pub fn kelter_delivery_repo(&self) -> Arc<dyn KelterDeliveryRepo> {
         self.kelter_delivery_repo.clone()
+    }
+
+    pub fn inventory_item_repo(&self) -> Arc<dyn InventoryItemRepository> {
+        self.inventory_item_repo.clone()
+    }
+
+    pub fn inventory_transaction_repo(&self) -> Arc<dyn InventoryTransactionRepo> {
+        self.inventory_transaction_repo.clone()
+    }
+
+    pub fn inventory_location_repo(&self) -> Arc<dyn InventoryLocationRepo> {
+        self.inventory_location_repo.clone()
     }
 }

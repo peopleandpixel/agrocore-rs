@@ -1,12 +1,12 @@
 [workspace]
 members = ["crates/*"]
 resolver = "2"
-edition = "2024"
 
 [workspace.package]
-version = "0.8.14"
+version = "0.8.15"
 authors = ["Jens Reinemuth <jens@reinemuth.pt>"]
 license = "GPL-3.0-or-later"
+edition = "2024"
 
 
 [workspace.dependencies]

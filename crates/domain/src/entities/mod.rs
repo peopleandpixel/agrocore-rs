@@ -17,6 +17,7 @@ pub mod equipment;
 pub mod fertilizer;
 pub mod finance;
 pub mod harvest;
+pub mod inventory;
 pub mod livestock;
 pub mod olive;
 pub mod order;

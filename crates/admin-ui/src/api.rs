@@ -1164,3 +1164,176 @@ pub async fn search_parcels_near_point(
     );
     get_json(&url, true).await
 }
+
+// --- Inventory API ---
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct InventoryItemDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub category: String,
+    pub name: String,
+    pub sku: Option<String>,
+    pub description: Option<String>,
+    pub unit: String,
+    pub minimum_stock: f64,
+    pub inventory_method: String,
+    pub is_active: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct PaginatedInventoryResponse<T> {
+    pub data: Vec<T>,
+    pub total: u64,
+    pub page: u64,
+    pub per_page: u64,
+    pub total_pages: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InventoryLocationDto {
+    pub id: uuid::Uuid,
+    pub name: String,
+    pub code: Option<String>,
+    pub description: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InventoryBalanceDto {
+    pub item_id: uuid::Uuid,
+    pub item_name: String,
+    pub category: String,
+    pub unit: String,
+    pub total_quantity: f64,
+    pub available_quantity: f64,
+    pub reserved_quantity: f64,
+    pub average_unit_cost: Option<f64>,
+    pub total_value: Option<f64>,
+    pub minimum_stock: f64,
+    pub is_below_minimum: bool,
+    pub inventory_method: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InventoryTransactionDto {
+    pub id: uuid::Uuid,
+    pub item_id: uuid::Uuid,
+    pub transaction_type: String,
+    pub quantity: f64,
+    pub unit_cost: Option<f64>,
+    pub total_cost: Option<f64>,
+    pub batch_number: Option<String>,
+    pub expiration_date: Option<String>,
+    pub location: Option<String>,
+    pub notes: Option<String>,
+    pub created_by: Option<uuid::Uuid>,
+    pub created_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CreateInventoryItemRequest {
+    pub category: String,
+    pub name: String,
+    pub sku: Option<String>,
+    pub description: Option<String>,
+    pub unit: String,
+    pub minimum_stock: f64,
+    pub inventory_method: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct StockInRequest {
+    pub item_id: uuid::Uuid,
+    pub quantity: f64,
+    pub unit_cost: Option<f64>,
+    pub batch_number: Option<String>,
+    pub expiration_date: Option<String>,
+    pub location: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct StockOutRequest {
+    pub item_id: uuid::Uuid,
+    pub quantity: f64,
+    pub location: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TransferRequest {
+    pub item_id: uuid::Uuid,
+    pub quantity: f64,
+    pub from_location: String,
+    pub to_location: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AdjustRequest {
+    pub item_id: uuid::Uuid,
+    pub quantity: f64,
+    pub notes: String,
+}
+
+pub async fn fetch_inventory_items() -> Result<PaginatedInventoryResponse<InventoryItemDto>, String>
+{
+    get_json("/api/v1/inventory/items", true).await
+}
+
+pub async fn fetch_inventory_balances() -> Result<Vec<InventoryBalanceDto>, String> {
+    get_json("/api/v1/inventory/balances", true).await
+}
+
+pub async fn fetch_below_minimum() -> Result<Vec<InventoryBalanceDto>, String> {
+    get_json("/api/v1/inventory/balances/below-minimum", true).await
+}
+
+pub async fn fetch_inventory_locations()
+-> Result<PaginatedInventoryResponse<InventoryLocationDto>, String> {
+    get_json("/api/v1/inventory/locations", true).await
+}
+
+pub async fn fetch_item_transactions(
+    item_id: uuid::Uuid,
+) -> Result<PaginatedInventoryResponse<InventoryTransactionDto>, String> {
+    get_json(
+        &format!("/api/v1/inventory/items/{}/transactions", item_id),
+        true,
+    )
+    .await
+}
+
+pub async fn create_inventory_item(
+    req: CreateInventoryItemRequest,
+) -> Result<InventoryItemDto, String> {
+    post_json("/api/v1/inventory/items", &req, true).await
+}
+
+pub async fn delete_inventory_item(id: uuid::Uuid) -> Result<(), String> {
+    let req = Request::delete(&api_url(&format!("/api/v1/inventory/items/{}", id)));
+    let req = with_auth(req);
+    let resp = req.send().await.map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    Ok(())
+}
+
+pub async fn stock_in(req: StockInRequest) -> Result<InventoryTransactionDto, String> {
+    post_json("/api/v1/inventory/stock-in", &req, true).await
+}
+
+pub async fn stock_out(req: StockOutRequest) -> Result<InventoryTransactionDto, String> {
+    post_json("/api/v1/inventory/stock-out", &req, true).await
+}
+
+pub async fn transfer_inventory(req: TransferRequest) -> Result<InventoryTransactionDto, String> {
+    post_json("/api/v1/inventory/transfer", &req, true).await
+}
+
+pub async fn adjust_inventory(req: AdjustRequest) -> Result<InventoryTransactionDto, String> {
+    post_json("/api/v1/inventory/adjust", &req, true).await
+}

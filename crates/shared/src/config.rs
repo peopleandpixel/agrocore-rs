@@ -232,7 +232,7 @@ impl AgroCoreConfig {
 /// - Falls back to `dev-secret` if not set (logs warning)
 /// - Never falls back to insecure default in production
 pub fn jwt_secret() -> &'static str {
-    &JWT_SECRET
+    JWT_SECRET
         .get_or_init(|| {
             let secret = AgroCoreConfig::global().jwt_secret.clone();
             if secret == "dev-secret" {

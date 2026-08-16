@@ -15,7 +15,8 @@ pub use entities::user::UserRole;
 pub use repositories::{
     AnimalRepository, AuditLogRepo, ColdChainLogRepo, ComplianceChecklistRepo, CostCenterRepo,
     EquipmentRepository, FertilizerRecordRepo, FinancialRecordRepo, HarvestDeliveryRepo,
-    HarvestLotRepo, HarvestSeasonRepo, KelterDeliveryRepo, OliveGroveRepo, OliveOilRecordRepo,
+    HarvestLotRepo, HarvestSeasonRepo, InventoryItemRepository, InventoryLocationRepo,
+    InventoryTransactionRepo, KelterDeliveryRepo, OliveGroveRepo, OliveOilRecordRepo,
     OrderRepository, PACApplicationRepo, PhenologyRecordRepo, PlantProtectionRecordRepo,
     RepositoryFuture, SiteRepository, SpatialObjectRepository, TaskDataRepository,
     TenantRepository, UserRepository, VineyardRepo, WaterQuotaRepo, WaterSourceRepo,

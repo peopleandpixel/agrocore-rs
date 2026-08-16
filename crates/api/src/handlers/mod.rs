@@ -6,6 +6,7 @@ pub mod compliance;
 pub mod equipment;
 pub mod finance;
 pub mod harvest;
+pub mod inventory;
 pub mod iot;
 pub mod livestock;
 pub mod nutrition;
@@ -122,6 +123,53 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route(web::get().to(equipment::get_equipment))
                     .route(web::put().to(equipment::update_equipment))
                     .route(web::delete().to(equipment::delete_equipment)),
+            )
+            // Inventory routes
+            .service(
+                web::resource("/inventory/items")
+                    .route(web::get().to(inventory::list_inventory_items))
+                    .route(web::post().to(inventory::create_inventory_item)),
+            )
+            .service(
+                web::resource("/inventory/items/{id}")
+                    .route(web::get().to(inventory::get_inventory_item))
+                    .route(web::put().to(inventory::update_inventory_item))
+                    .route(web::delete().to(inventory::delete_inventory_item)),
+            )
+            .service(
+                web::resource("/inventory/balances")
+                    .route(web::get().to(inventory::list_inventory_balances)),
+            )
+            .service(
+                web::resource("/inventory/balances/below-minimum")
+                    .route(web::get().to(inventory::list_below_minimum)),
+            )
+            .service(
+                web::resource("/inventory/items/{id}/transactions")
+                    .route(web::get().to(inventory::list_item_transactions)),
+            )
+            .service(
+                web::resource("/inventory/transactions")
+                    .route(web::post().to(inventory::create_transaction)),
+            )
+            .service(
+                web::resource("/inventory/stock-in").route(web::post().to(inventory::stock_in)),
+            )
+            .service(
+                web::resource("/inventory/stock-out").route(web::post().to(inventory::stock_out)),
+            )
+            .service(
+                web::resource("/inventory/transfer")
+                    .route(web::post().to(inventory::transfer_inventory)),
+            )
+            .service(
+                web::resource("/inventory/adjust")
+                    .route(web::post().to(inventory::adjust_inventory)),
+            )
+            .service(
+                web::resource("/inventory/locations")
+                    .route(web::get().to(inventory::list_inventory_locations))
+                    .route(web::post().to(inventory::create_inventory_location)),
             )
             .configure(settings::configure)
             .configure(compliance::configure)

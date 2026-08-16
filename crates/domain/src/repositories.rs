@@ -1094,3 +1094,134 @@ pub trait TaskDataRepository: Send + Sync {
     ) -> RepositoryFuture<Option<TaskData>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
+
+// --- Inventory Repository ---
+use crate::entities::inventory::{
+    CreateInventoryItemDto, CreateInventoryLocationDto, CreateInventoryTransactionDto,
+    InventoryBalance, InventoryItem, InventoryLocation, InventoryTransaction,
+    UpdateInventoryItemDto, UpdateInventoryLocationDto,
+};
+
+#[cfg_attr(feature = "mocks", automock)]
+pub trait InventoryItemRepository: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<InventoryItem>>;
+    fn find_by_sku(&self, tid: TenantId, sku: &str) -> RepositoryFuture<Option<InventoryItem>>;
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<InventoryItem>>;
+    fn find_below_minimum(&self, tid: TenantId) -> RepositoryFuture<Vec<InventoryBalance>>;
+    fn find_balances(&self, tid: TenantId) -> RepositoryFuture<Vec<InventoryBalance>>;
+    fn find_balance_by_item(
+        &self,
+        tid: TenantId,
+        item_id: Uuid,
+    ) -> RepositoryFuture<Option<InventoryBalance>>;
+    fn create(
+        &self,
+        tid: TenantId,
+        dto: CreateInventoryItemDto,
+        by: Uuid,
+    ) -> RepositoryFuture<InventoryItem>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateInventoryItemDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<InventoryItem>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+#[cfg_attr(feature = "mocks", automock)]
+pub trait InventoryTransactionRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid)
+    -> RepositoryFuture<Option<InventoryTransaction>>;
+    fn find_by_item(
+        &self,
+        tid: TenantId,
+        item_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<InventoryTransaction>>;
+    fn find_recent_transactions(
+        &self,
+        tid: TenantId,
+        limit: u32,
+    ) -> RepositoryFuture<Vec<InventoryTransaction>>;
+    fn create_transaction(
+        &self,
+        tid: TenantId,
+        dto: CreateInventoryTransactionDto,
+        by: Uuid,
+    ) -> RepositoryFuture<InventoryTransaction>;
+    #[allow(clippy::too_many_arguments)]
+    fn stock_in(
+        &self,
+        tid: TenantId,
+        item_id: Uuid,
+        quantity: f64,
+        unit_cost: Option<f64>,
+        batch_number: Option<String>,
+        expiration_date: Option<String>,
+        location: Option<String>,
+        notes: Option<String>,
+        by: Uuid,
+    ) -> RepositoryFuture<InventoryTransaction>;
+    fn stock_out(
+        &self,
+        tid: TenantId,
+        item_id: Uuid,
+        quantity: f64,
+        location: Option<String>,
+        notes: Option<String>,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<InventoryTransaction>>;
+    fn transfer(
+        &self,
+        tid: TenantId,
+        item_id: Uuid,
+        quantity: f64,
+        from_location: &str,
+        to_location: &str,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<InventoryTransaction>>;
+    fn adjust(
+        &self,
+        tid: TenantId,
+        item_id: Uuid,
+        quantity: f64,
+        notes: &str,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<InventoryTransaction>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+#[cfg_attr(feature = "mocks", automock)]
+pub trait InventoryLocationRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<InventoryLocation>>;
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<InventoryLocation>>;
+    fn find_by_code(
+        &self,
+        tid: TenantId,
+        code: &str,
+    ) -> RepositoryFuture<Option<InventoryLocation>>;
+    fn create(
+        &self,
+        tid: TenantId,
+        dto: CreateInventoryLocationDto,
+        by: Uuid,
+    ) -> RepositoryFuture<InventoryLocation>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateInventoryLocationDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<InventoryLocation>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}

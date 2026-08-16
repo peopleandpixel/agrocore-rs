@@ -2432,6 +2432,17 @@ nav_analytics:
   ro: Analytics
   uk: Аналітика
   nl: Analyses
+nav_inventory:
+  en: Inventory
+  de: Inventar
+  es: Inventario
+  fr: Inventaire
+  pt: Inventário
+  it: Inventario
+  pl: Inwentaryzacja
+  ro: Inventar
+  uk: Інвентар
+  nl: Inventaris
 nav_audit:
   en: Audit Logs
   de: Audit-Logs

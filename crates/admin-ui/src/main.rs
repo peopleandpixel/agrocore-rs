@@ -9,6 +9,7 @@ use crate::components::dashboard::DashboardView;
 use crate::components::equipment::EquipmentManagement;
 use crate::components::finance::FinanceManagement;
 use crate::components::import::DataImport;
+use crate::components::inventory::InventoryManagement;
 use crate::components::livestock::LivestockManagement;
 use crate::components::login::LoginView;
 use crate::components::map::MapView;
@@ -22,7 +23,7 @@ use crate::components::weather::WeatherManagement;
 use crate::components::wizard::WizardView;
 use crate::components::worker_tasks::WorkerTasksPage;
 use I::{
-    ImMagicWand, LuBeef, LuBriefcase, LuChartBar, LuChartNoAxesColumn, LuCircleUser,
+    ImMagicWand, LuBeef, LuBox, LuBriefcase, LuChartBar, LuChartNoAxesColumn, LuCircleUser,
     LuClipboardList, LuCloudSun, LuFileDown, LuHistory, LuLayoutDashboard, LuLogOut, LuMap,
     LuMapPin, LuMenu, LuSettings, LuSquareCheck, LuSun, LuTractor, LuUsers, LuWallet,
 };
@@ -203,6 +204,7 @@ fn AuthenticatedShell(
                             <Route path=path!("/weather") view=|| view! { <WeatherManagement /> } />
                             <Route path=path!("/finance") view=|| view! { <FinanceManagement /> } />
                             <Route path=path!("/equipment") view=|| view! { <EquipmentManagement /> } />
+                            <Route path=path!("/inventory") view=|| view! { <InventoryManagement /> } />
                             <Route path=path!("/analytics") view=|| view! { <AnalyticsPage /> } />
                             <Route path=path!("/audit") view=|| view! { <AuditLogPage /> } />
                             <Route path=path!("/resources") view=|| view! { <ResourcesPage /> } />
@@ -259,6 +261,9 @@ fn AuthenticatedShell(
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
                         <a href="/analytics"><Icon icon=LuChartBar width="20" height="20" />{crate::t!(t, "nav_analytics")}</a>
+                    </li>
+                    <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
+                        <a href="/inventory"><Icon icon=LuBox width="20" height="20" />{crate::t!(t, "nav_inventory")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin) { "" } else { "hidden" }>
                         <a href="/audit"><Icon icon=LuHistory width="20" height="20" />{crate::t!(t, "nav_audit")}</a>

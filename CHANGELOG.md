@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.15] - 2026-08-13
+
+### Fixed
+- **Workspace Edition Configuration (Cargo.toml)**
+  - Moved `edition = "2024"` into `[workspace.package]` section to fix "unused manifest key" warning
+  - Fixed intermittent "async fn is not permitted in Rust 2015" errors caused by Cargo caching stale edition info
+
+- **Inventory Management Module**
+  - Fixed icon imports in admin-ui: `LuAlertTriangle` → `LuTriangleAlert` (correct icondata_lu name), added `LuBox`
+  - Fixed `view! {}` type mismatches in if/else branches by using `.into_any()` pattern
+  - Added `#[derive(Default)]` to `PaginatedInventoryResponse<T>` and `InventoryItemDto`
+  - Fixed `t!` macro usage in `format!()` calls (added `()` to call the closure)
+  - Replaced `view! {}.into_any()` with `().into_any()` to fix clippy `unit_arg` warnings
+  - Removed `utoipa::ToSchema` from `UnitOfMeasure` and `InventoryCategory` enums (utoipa doesn't support enums with internal data)
+  - Added custom serde serialization and `#[schema(value_type = String)]` annotations for enum fields in OpenAPI schemas
+  - Added `Display` and `Default` impls for `InventoryCategory` and `UnitOfMeasure` enums
+
+- **Infrastructure Layer**
+  - Fixed repository imports in PostgreSQL implementations (`crate::entities` → `agrocore_domain::entities`)
+  - Removed lifetime issue in `find_below_minimum` caused by unused `self.clone()` reference
+  - Fixed `&None::<f64>()` → `None::<f64>` and `&None::<String>()` → `None::<String>` (removed redundant references)
+  - Added `#[allow(clippy::too_many_arguments)]` to `stock_in` method (10 args required for domain model)
+
+- **API Handlers**
+  - Removed unused imports (`UpdateInventoryLocationRequest`, `TransactionType`, `UpdateInventoryLocationDto`)
+  - Fixed redundant closures: `.map_err(|e| SharedError::Validation(e))` → `.map_err(SharedError::Validation)`
+  - Removed unused imports in test module
+
+- **Shared Crate**
+  - Fixed needless_borrow in `jwt_secret()` function (removed unneeded `&`)
+
 ## [0.8.14] - 2026-08-12
 
 ### Fixed
