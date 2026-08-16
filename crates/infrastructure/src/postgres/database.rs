@@ -1,12 +1,13 @@
 use crate::postgres::{
-    animal::PgAnimalRepo, audit_log::PgAuditLogRepo, cold_chain_log::PgColdChainLogRepo,
-    compliance::PgComplianceChecklistRepo, cost_center::PgCostCenterRepo,
-    equipment::PgEquipmentRepo, fertilizer_record::PgFertilizerRecordRepo,
-    financial_record::PgFinancialRecordRepo, harvest_delivery::PgHarvestDeliveryRepo,
-    harvest_lot::PgHarvestLotRepo, harvest_season::PgHarvestSeasonRepo,
-    inventory_item::PgInventoryItemRepo, inventory_location::PgInventoryLocationRepo,
-    inventory_transaction::PgInventoryTransactionRepo, kelter_delivery::PgKelterDeliveryRepo,
-    olive_grove::PgOliveGroveRepo, olive_oil_record::PgOliveOilRecordRepo, order::PgOrderRepo,
+    animal::PgAnimalRepo, audit_log::PgAuditLogRepo, clock_entry::PgClockEntryRepo,
+    cold_chain_log::PgColdChainLogRepo, compliance::PgComplianceChecklistRepo,
+    cost_center::PgCostCenterRepo, equipment::PgEquipmentRepo,
+    fertilizer_record::PgFertilizerRecordRepo, financial_record::PgFinancialRecordRepo,
+    harvest_delivery::PgHarvestDeliveryRepo, harvest_lot::PgHarvestLotRepo,
+    harvest_season::PgHarvestSeasonRepo, inventory_item::PgInventoryItemRepo,
+    inventory_location::PgInventoryLocationRepo, inventory_transaction::PgInventoryTransactionRepo,
+    kelter_delivery::PgKelterDeliveryRepo, olive_grove::PgOliveGroveRepo,
+    olive_oil_record::PgOliveOilRecordRepo, order::PgOrderRepo,
     phenology_record::PgPhenologyRecordRepo, plant_protection_record::PgPlantProtectionRecordRepo,
     site::PgSiteRepo, task_data::PgTaskDataRepo, tenant::PgTenantRepo, user::PgUserRepo,
     vineyard::PgVineyardRepo, weather_data::PgWeatherDataRepo,
@@ -14,14 +15,15 @@ use crate::postgres::{
     worker_location::PgWorkerLocationRepo, worker_task_status::PgWorkerTaskStatusRepo,
 };
 use agrocore_domain::repositories::{
-    AnimalRepository, AuditLogRepo, ColdChainLogRepo, ComplianceChecklistRepo, CostCenterRepo,
-    EquipmentRepository, FertilizerRecordRepo, FinancialRecordRepo, HarvestDeliveryRepo,
-    HarvestLotRepo, HarvestSeasonRepo, InventoryItemRepository, InventoryLocationRepo,
-    InventoryTransactionRepo, KelterDeliveryRepo, OliveGroveRepo, OliveOilRecordRepo,
-    OrderRepository, PACApplicationRepo, PhenologyRecordRepo, PlantProtectionRecordRepo,
-    SiteRepository, SpatialObjectRepository, TaskDataRepository, TenantRepository, UserRepository,
-    VineyardRepo, WaterQuotaRepo, WaterSourceRepo, WaterUsageRepo, WeatherDataRepo,
-    WeatherStationRepo, WorkLogRepo, WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
+    AnimalRepository, AuditLogRepo, ClockEntryRepo, ColdChainLogRepo, ComplianceChecklistRepo,
+    CostCenterRepo, EquipmentRepository, FertilizerRecordRepo, FinancialRecordRepo,
+    HarvestDeliveryRepo, HarvestLotRepo, HarvestSeasonRepo, InventoryItemRepository,
+    InventoryLocationRepo, InventoryTransactionRepo, KelterDeliveryRepo, OliveGroveRepo,
+    OliveOilRecordRepo, OrderRepository, PACApplicationRepo, PhenologyRecordRepo,
+    PlantProtectionRecordRepo, SiteRepository, SpatialObjectRepository, TaskDataRepository,
+    TenantRepository, UserRepository, VineyardRepo, WaterQuotaRepo, WaterSourceRepo,
+    WaterUsageRepo, WeatherDataRepo, WeatherStationRepo, WorkLogRepo, WorkerLocationRepo,
+    WorkerRepo, WorkerTaskStatusRepository,
 };
 use sqlx::PgPool;
 use std::sync::Arc;
@@ -80,6 +82,7 @@ pub struct MockDatabase {
         Option<Arc<agrocore_domain::repositories::MockInventoryTransactionRepo>>,
     pub inventory_location_repo:
         Option<Arc<agrocore_domain::repositories::MockInventoryLocationRepo>>,
+    pub clock_entry_repo: Option<Arc<agrocore_domain::repositories::MockClockEntryRepo>>,
 }
 
 impl Database {
@@ -508,6 +511,18 @@ impl Database {
                 as Arc<dyn InventoryLocationRepo>,
         }
     }
+
+    pub fn clock_entry_repo(&self) -> Arc<dyn ClockEntryRepo> {
+        match self {
+            Self::Postgres(db) => db.clock_entry_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => m
+                .clock_entry_repo
+                .clone()
+                .expect("clock_entry_repo mock not set")
+                as Arc<dyn ClockEntryRepo>,
+        }
+    }
 }
 
 /// PostgreSQL Database Wrapper
@@ -557,6 +572,7 @@ pub struct PostgresDb {
     pub inventory_item_repo: Arc<dyn InventoryItemRepository>,
     pub inventory_transaction_repo: Arc<dyn InventoryTransactionRepo>,
     pub inventory_location_repo: Arc<dyn InventoryLocationRepo>,
+    pub clock_entry_repo: Arc<dyn ClockEntryRepo>,
 }
 
 impl PostgresDb {
@@ -631,6 +647,7 @@ impl PostgresDb {
             inventory_item_repo: Arc::new(PgInventoryItemRepo::new(pool.clone())),
             inventory_transaction_repo: Arc::new(PgInventoryTransactionRepo::new(pool.clone())),
             inventory_location_repo: Arc::new(PgInventoryLocationRepo::new(pool.clone())),
+            clock_entry_repo: Arc::new(PgClockEntryRepo::new(pool.clone())),
             pool,
         })
     }
@@ -683,6 +700,7 @@ impl PostgresDb {
             inventory_item_repo: Arc::new(PgInventoryItemRepo::new(pool.clone())),
             inventory_transaction_repo: Arc::new(PgInventoryTransactionRepo::new(pool.clone())),
             inventory_location_repo: Arc::new(PgInventoryLocationRepo::new(pool.clone())),
+            clock_entry_repo: Arc::new(PgClockEntryRepo::new(pool.clone())),
             pool,
         }
     }
@@ -838,5 +856,9 @@ impl PostgresDb {
 
     pub fn inventory_location_repo(&self) -> Arc<dyn InventoryLocationRepo> {
         self.inventory_location_repo.clone()
+    }
+
+    pub fn clock_entry_repo(&self) -> Arc<dyn ClockEntryRepo> {
+        self.clock_entry_repo.clone()
     }
 }

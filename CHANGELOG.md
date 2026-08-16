@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.17] - 2026-08-14
+
+### Added
+- **Job & Arbeitskräfte-Management: Arbeitszeiterfassung (Clock-In/Clock-Out mit GPS)**
+  - New `ClockEntry` entity with `ClockEntryType` (ClockIn/ClockOut), GPS coordinates (lat/lng), task_id, notes, and timestamp
+  - `ClockSession` convenience struct combining clock-in + clock-out with computed duration_hours
+  - `ClockEntryRepo` trait with 9 methods (find_by_id, find_all, find_by_worker, find_active_session, find_sessions, create, update, delete, total_hours_worked)
+  - PostgreSQL implementation `PgClockEntryRepo` with SQL queries for all CRUD + session pairing logic
+  - REST API endpoints: `/clock-entries` (list/create), `/clock-entries/{id}` (get/update/delete), `/workers/{id}/clock-entries` (worker-specific list), `/workers/{id}/clock-active` (active session), `/workers/{id}/clock-sessions` (session history), `/workers/{id}/hours-worked` (total hours)
+  - Admin UI: WorkersPage component with worker list, hourly rate display, clock-in/out buttons, and route registration at `/workers`
+
+- **Job & Arbeitskräfte-Management: Arbeitskosten-Tracking (Stundensatz pro Arbeiter)**
+  - Added `hourly_rate: Option<f64>` field to `Worker` entity, `CreateWorkerDto`, and `UpdateWorkerDto`
+  - Migration adds `hourly_rate NUMERIC(10,2)` column to workers table
+  - Updated PostgreSQL repo INSERT/UPDATE queries to include `hourly_rate`
+  - Admin UI WorkerDto includes `hourly_rate` field
+
+- **Migration: `2026081404_workforce_clock_entries.sql`**
+  - Creates `clock_entries` table with all fields
+  - Adds `hourly_rate` column to existing `workers` table
+  - Indexes for tenant, worker, entry_type, timestamp, and composite worker+timestamp
+
+### Changed
+- Version bump: 0.8.16 → 0.8.17
+
 ## [0.8.16] - 2026-08-14
 
 ### Added

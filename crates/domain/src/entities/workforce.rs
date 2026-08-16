@@ -20,6 +20,7 @@ pub struct Worker {
     pub certifications: Vec<Certification>,
     pub emergency_contact: Option<String>,
     pub nationality: Option<String>,
+    pub hourly_rate: Option<f64>,
     pub is_active: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -69,6 +70,7 @@ pub struct CreateWorkerDto {
     pub skills: Option<Vec<String>>,
     pub emergency_contact: Option<String>,
     pub nationality: Option<String>,
+    pub hourly_rate: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
@@ -79,6 +81,7 @@ pub struct UpdateWorkerDto {
     pub certifications: Option<Vec<Certification>>,
     pub emergency_contact: Option<String>,
     pub nationality: Option<String>,
+    pub hourly_rate: Option<f64>,
     pub is_active: Option<bool>,
 }
 
@@ -134,4 +137,56 @@ pub struct UpdateWorkLogDto {
     pub site_id: Option<Uuid>,
     pub is_night_shift: Option<bool>,
     pub breaks_taken: Option<u32>,
+}
+
+// --- Clock-In/Clock-Out Entries (Arbeitszeiterfassung) ---
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow, ToSchema)]
+pub struct ClockEntry {
+    pub id: Uuid,
+    pub tenant_id: TenantId,
+    pub worker_id: Uuid,
+    #[sqlx(json)]
+    pub entry_type: ClockEntryType,
+    pub timestamp: DateTime<Utc>,
+    pub lat: Option<f64>,
+    pub lng: Option<f64>,
+    pub task_id: Option<Uuid>,
+    pub notes: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ClockEntryType {
+    ClockIn,
+    ClockOut,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct CreateClockEntryDto {
+    pub worker_id: Uuid,
+    pub entry_type: ClockEntryType,
+    pub timestamp: DateTime<Utc>,
+    pub lat: Option<f64>,
+    pub lng: Option<f64>,
+    pub task_id: Option<Uuid>,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct UpdateClockEntryDto {
+    pub lat: Option<f64>,
+    pub lng: Option<f64>,
+    pub task_id: Option<Uuid>,
+    pub notes: Option<String>,
+}
+
+/// A paired clock-in/clock-out session with computed duration
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ClockSession {
+    pub worker_id: Uuid,
+    pub clock_in: ClockEntry,
+    pub clock_out: Option<ClockEntry>,
+    pub duration_hours: Option<f64>,
 }

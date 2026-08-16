@@ -851,6 +851,58 @@ pub trait WorkLogRepo: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
+// --- Clock Entry Repository (Arbeitszeiterfassung) ---
+use crate::entities::workforce::{ClockEntry, CreateClockEntryDto, UpdateClockEntryDto};
+
+#[cfg_attr(feature = "mocks", automock)]
+pub trait ClockEntryRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<ClockEntry>>;
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<ClockEntry>>;
+    fn find_by_worker(
+        &self,
+        tid: TenantId,
+        worker_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<ClockEntry>>;
+    fn find_active_session(
+        &self,
+        tid: TenantId,
+        worker_id: Uuid,
+    ) -> RepositoryFuture<Option<ClockEntry>>;
+    fn find_sessions(
+        &self,
+        tid: TenantId,
+        worker_id: Uuid,
+        from: chrono::DateTime<chrono::Utc>,
+        to: chrono::DateTime<chrono::Utc>,
+    ) -> RepositoryFuture<Vec<crate::entities::workforce::ClockSession>>;
+    fn create(
+        &self,
+        tid: TenantId,
+        dto: CreateClockEntryDto,
+        by: Uuid,
+    ) -> RepositoryFuture<ClockEntry>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateClockEntryDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<ClockEntry>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+    fn total_hours_worked(
+        &self,
+        tid: TenantId,
+        worker_id: Uuid,
+        from: chrono::DateTime<chrono::Utc>,
+        to: chrono::DateTime<chrono::Utc>,
+    ) -> RepositoryFuture<f64>;
+}
+
 // --- Fertilizer Record Repository ---
 use crate::entities::fertilizer::{
     CreateFertilizerRecordDto, FertilizerRecord, UpdateFertilizerRecordDto,

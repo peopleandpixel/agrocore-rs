@@ -104,14 +104,15 @@ impl WorkerRepo for PgWorkerRepo {
         Box::pin(async move {
             let id = Uuid::new_v4();
             let entity = sqlx::query_as::<_, Worker>(
-                r#"INSERT INTO workers (id, tenant_id, user_id, contract_type, language, is_active, created_at, updated_at)
-                   VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
+                r#"INSERT INTO workers (id, tenant_id, user_id, contract_type, language, hourly_rate, is_active, created_at, updated_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, true, NOW(), NOW())
                    RETURNING *"#)
             .bind(id)
             .bind(tid)
             .bind(dto.user_id)
             .bind(serde_json::to_value(&dto.contract_type).unwrap())
             .bind(&dto.language)
+            .bind(dto.hourly_rate)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
@@ -156,12 +157,13 @@ impl WorkerRepo for PgWorkerRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let entity = sqlx::query_as::<_, Worker>(
-                r#"UPDATE workers SET language = COALESCE($1, language), updated_at = NOW()
+                r#"UPDATE workers SET language = COALESCE($1, language), hourly_rate = COALESCE($4, hourly_rate), updated_at = NOW()
                    WHERE id = $2 AND tenant_id = $3 RETURNING *"#,
             )
             .bind(&dto.language)
             .bind(id)
             .bind(tid)
+            .bind(dto.hourly_rate)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;

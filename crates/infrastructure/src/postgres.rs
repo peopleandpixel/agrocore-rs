@@ -1,5 +1,6 @@
 mod animal;
 mod audit_log;
+mod clock_entry;
 mod cold_chain_log;
 mod compliance;
 mod cost_center;
@@ -38,6 +39,7 @@ mod worker_task_status;
 
 pub use animal::PgAnimalRepo;
 pub use audit_log::PgAuditLogRepo;
+pub use clock_entry::PgClockEntryRepo;
 pub use cold_chain_log::PgColdChainLogRepo;
 pub use compliance::PgComplianceChecklistRepo;
 pub use cost_center::PgCostCenterRepo;

@@ -30,6 +30,7 @@ async fn test_worker_repository_crud() {
         skills: None,
         emergency_contact: None,
         nationality: None,
+        hourly_rate: None,
     };
 
     let worker = repo

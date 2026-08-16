@@ -1,6 +1,7 @@
 //! Worker Task Status DTOs
 
 use agrocore_domain::entities::worker_task_status::{WorkerTaskStatus, WorkerTaskStatusType};
+use agrocore_domain::entities::workforce::ClockEntry;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -98,4 +99,109 @@ pub struct WorkerTaskStatusAggregateDto {
     pub task_id: Uuid,
     pub aggregated_status: WorkerTaskStatusTypeDto,
     pub worker_statuses: Vec<WorkerTaskStatusDto>,
+}
+
+// --- Clock Entry DTOs (Arbeitszeiterfassung) ---
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ClockEntryTypeDto {
+    ClockIn,
+    ClockOut,
+}
+
+impl From<ClockEntryTypeDto> for agrocore_domain::entities::workforce::ClockEntryType {
+    fn from(t: ClockEntryTypeDto) -> Self {
+        match t {
+            ClockEntryTypeDto::ClockIn => Self::ClockIn,
+            ClockEntryTypeDto::ClockOut => Self::ClockOut,
+        }
+    }
+}
+
+impl From<agrocore_domain::entities::workforce::ClockEntryType> for ClockEntryTypeDto {
+    fn from(t: agrocore_domain::entities::workforce::ClockEntryType) -> Self {
+        match t {
+            agrocore_domain::entities::workforce::ClockEntryType::ClockIn => Self::ClockIn,
+            agrocore_domain::entities::workforce::ClockEntryType::ClockOut => Self::ClockOut,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ClockEntryDto {
+    pub id: Uuid,
+    pub tenant_id: Uuid,
+    pub worker_id: Uuid,
+    pub entry_type: ClockEntryTypeDto,
+    pub timestamp: String,
+    pub lat: Option<f64>,
+    pub lng: Option<f64>,
+    pub task_id: Option<Uuid>,
+    pub notes: Option<String>,
+    pub created_at: String,
+}
+
+impl From<ClockEntry> for ClockEntryDto {
+    fn from(e: ClockEntry) -> Self {
+        Self {
+            id: e.id,
+            tenant_id: e.tenant_id.into(),
+            worker_id: e.worker_id,
+            entry_type: e.entry_type.into(),
+            timestamp: e.timestamp.to_rfc3339(),
+            lat: e.lat,
+            lng: e.lng,
+            task_id: e.task_id,
+            notes: e.notes,
+            created_at: e.created_at.to_rfc3339(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PaginatedClockEntryResponse {
+    pub data: Vec<ClockEntryDto>,
+    pub total: u64,
+    pub page: u64,
+    pub per_page: u64,
+    pub total_pages: u64,
+}
+
+#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
+pub struct CreateClockEntryRequest {
+    pub worker_id: Uuid,
+    pub entry_type: ClockEntryTypeDto,
+    pub timestamp: Option<String>,
+    pub lat: Option<f64>,
+    pub lng: Option<f64>,
+    pub task_id: Option<Uuid>,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct UpdateClockEntryRequest {
+    pub lat: Option<f64>,
+    pub lng: Option<f64>,
+    pub task_id: Option<Uuid>,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ClockSessionDto {
+    pub worker_id: Uuid,
+    pub clock_in: ClockEntryDto,
+    pub clock_out: Option<ClockEntryDto>,
+    pub duration_hours: Option<f64>,
+}
+
+impl From<agrocore_domain::entities::workforce::ClockSession> for ClockSessionDto {
+    fn from(s: agrocore_domain::entities::workforce::ClockSession) -> Self {
+        Self {
+            worker_id: s.worker_id,
+            clock_in: s.clock_in.into(),
+            clock_out: s.clock_out.map(|e| e.into()),
+            duration_hours: s.duration_hours,
+        }
+    }
 }

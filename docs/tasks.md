@@ -64,9 +64,9 @@ Erledigte Arbeit ist weggelassen; ein Modul ohne offene Punkte ist als erledigt 
 - [ ] Direktverkauf (Onlineshop, Zahlungsabwicklung)
 
 #### Job & Arbeitskräfte-Management
-- [ ] Arbeitszeit-Erfassung (Clock-In/Clock-Out mit GPS)
-- [ ] Arbeitskosten-Tracking (Stundensatz pro Arbeiter)
-- [ ] Arbeitskräfte-Zuteilung zu Aufträgen
+- [x] Arbeitszeit-Erfassung (Clock-In/Clock-Out mit GPS)
+- [x] Arbeitskosten-Tracking (Stundensatz pro Arbeiter)
+- [x] Arbeitskräfte-Zuteilung zu Aufträgen
 
 #### Equipment Management
 - [ ] Wartungsplanung (basierend auf Betriebsstunden, Kalender, Nutzungsschwellen)
@@ -93,6 +93,7 @@ Erledigte Arbeit ist weggelassen; ein Modul ohne offene Punkte ist als erledigt 
 - [ ] Eingangs-Kosten-Tracking (Saatgut, Dünger, Chemikalien, Kraftstoff, QR-Code-Scans)
 
 #### Wetter & Umwelt
+- [ ] Anbindung diverser Wetterdienste kostenlos und kostenpflichtig (z.B. OpenWeather, Weather Underground)
 - [ ] Hyperlokaler Wetterstation-Integration (Davis, Campbell Scientific)
 - [ ] Bodenfeuchtigkeits-Monitoring (IoT-Sensor-Integration mit Bewässerungssteuerung)
 - [ ] Wachstumsgradtag-Tracking (Kartoffelernte-Prognose)

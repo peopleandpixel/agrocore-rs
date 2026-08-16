@@ -22,6 +22,7 @@ use crate::components::users::UserManagement;
 use crate::components::weather::WeatherManagement;
 use crate::components::wizard::WizardView;
 use crate::components::worker_tasks::WorkerTasksPage;
+use crate::components::workers::WorkersPage;
 use I::{
     ImMagicWand, LuBeef, LuBox, LuBriefcase, LuChartBar, LuChartNoAxesColumn, LuCircleUser,
     LuClipboardList, LuCloudSun, LuFileDown, LuHistory, LuLayoutDashboard, LuLogOut, LuMap,
@@ -213,6 +214,7 @@ fn AuthenticatedShell(
                             <Route path=path!("/settings") view=|| view! { <SettingsPage /> } />
                             <Route path=path!("/wizard") view=|| view! { <WizardView /> } />
                             <Route path=path!("/worker/tasks") view=|| view! { <WorkerTasksPage /> } />
+                            <Route path=path!("/workers") view=|| view! { <WorkersPage /> } />
                         </Routes>
                     </Router>
                 </div>
@@ -272,6 +274,9 @@ fn AuthenticatedShell(
                         <a href="/compliance"><Icon icon=LuChartNoAxesColumn width="20" height="20" />{crate::t!(t, "nav_compliance")}</a>
                     </li>
                     <li><a href="/settings"><Icon icon=LuSettings width="20" height="20" />{crate::t!(t, "nav_settings")}</a></li>
+                    <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
+                        <a href="/workers"><Icon icon=LuUsers width="20" height="20" />{crate::t!(t, "nav_workers")}</a>
+                    </li>
                     // Worker-only navigation
                     <li class=move || if user_role.get() == UserRole::Worker { "" } else { "hidden" }>
                         <a href="/worker/tasks"><Icon icon=LuClipboardList width="20" height="20" />{crate::t!(t, "nav_my_tasks")}</a>

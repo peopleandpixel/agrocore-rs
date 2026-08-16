@@ -58,6 +58,7 @@ async fn test_list_workers_with_pagination_and_tenant_filtering() {
         certifications: vec![],
         emergency_contact: None,
         nationality: None,
+        hourly_rate: None,
         is_active: true,
         created_at: Utc::now(),
         updated_at: Utc::now(),
@@ -120,6 +121,7 @@ async fn test_create_worker_authorization() {
         skills: None,
         emergency_contact: None,
         nationality: None,
+        hourly_rate: None,
     };
 
     let worker = Worker {
@@ -132,6 +134,7 @@ async fn test_create_worker_authorization() {
         certifications: vec![],
         emergency_contact: None,
         nationality: None,
+        hourly_rate: None,
         is_active: true,
         created_at: Utc::now(),
         updated_at: Utc::now(),
@@ -225,6 +228,7 @@ async fn test_report_location() {
             certifications: vec![],
             emergency_contact: None,
             nationality: None,
+            hourly_rate: None,
             is_active: true,
             created_at: Utc::now(),
             updated_at: Utc::now(),

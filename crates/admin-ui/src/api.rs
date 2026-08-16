@@ -1380,3 +1380,225 @@ mod tests {
         assert_eq!(resp.total, 0);
     }
 }
+
+// =============================================================================
+// Worker & Job Arbeitskräfte-Management API
+// =============================================================================
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct WorkerDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub user_id: uuid::Uuid,
+    pub contract_type: String,
+    pub language: Option<String>,
+    pub skills: Vec<String>,
+    pub certifications: Vec<serde_json::Value>,
+    pub emergency_contact: Option<String>,
+    pub nationality: Option<String>,
+    pub hourly_rate: Option<f64>,
+    pub is_active: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateWorkerRequest {
+    pub user_id: uuid::Uuid,
+    pub contract_type: String,
+    pub language: Option<String>,
+    pub skills: Option<Vec<String>>,
+    pub emergency_contact: Option<String>,
+    pub nationality: Option<String>,
+    pub hourly_rate: Option<f64>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateWorkerRequest {
+    pub contract_type: Option<String>,
+    pub language: Option<String>,
+    pub skills: Option<Vec<String>>,
+    pub certifications: Option<Vec<serde_json::Value>>,
+    pub emergency_contact: Option<String>,
+    pub nationality: Option<String>,
+    pub hourly_rate: Option<f64>,
+    pub is_active: Option<bool>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PaginatedWorkerResponse {
+    pub data: Vec<WorkerDto>,
+    pub total: u64,
+    pub page: u64,
+    pub per_page: u64,
+    pub total_pages: u64,
+}
+
+pub async fn fetch_workers() -> Result<PaginatedWorkerResponse, String> {
+    get_json("/api/v1/workforce/workers", true).await
+}
+
+pub async fn fetch_worker(id: uuid::Uuid) -> Result<WorkerDto, String> {
+    get_json(&format!("/api/v1/workforce/workers/{}", id), true).await
+}
+
+pub async fn create_worker(req: &CreateWorkerRequest) -> Result<WorkerDto, String> {
+    post_json("/api/v1/workforce/workers", req, true).await
+}
+
+pub async fn update_worker(id: uuid::Uuid, req: &UpdateWorkerRequest) -> Result<WorkerDto, String> {
+    let request = Request::put(&api_url(&format!("/api/v1/workforce/workers/{}", id)));
+    let request = with_auth(request);
+    let resp = request
+        .json(&req)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<WorkerDto>().await.map_err(|e| e.to_string())
+}
+
+// --- Clock Entry DTOs (Arbeitszeiterfassung) ---
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ClockEntryDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub worker_id: uuid::Uuid,
+    pub entry_type: String,
+    pub timestamp: String,
+    pub lat: Option<f64>,
+    pub lng: Option<f64>,
+    pub task_id: Option<uuid::Uuid>,
+    pub notes: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateClockEntryRequest {
+    pub worker_id: uuid::Uuid,
+    pub entry_type: String,
+    pub timestamp: Option<String>,
+    pub lat: Option<f64>,
+    pub lng: Option<f64>,
+    pub task_id: Option<uuid::Uuid>,
+    pub notes: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PaginatedClockEntryResponse {
+    pub data: Vec<ClockEntryDto>,
+    pub total: u64,
+    pub page: u64,
+    pub per_page: u64,
+    pub total_pages: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ClockSessionDto {
+    pub worker_id: uuid::Uuid,
+    pub clock_in: ClockEntryDto,
+    pub clock_out: Option<ClockEntryDto>,
+    pub duration_hours: Option<f64>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct HoursWorkedResponse {
+    pub worker_id: uuid::Uuid,
+    pub total_hours: f64,
+}
+
+pub async fn fetch_clock_entries(
+    worker_id: Option<uuid::Uuid>,
+) -> Result<PaginatedClockEntryResponse, String> {
+    if let Some(wid) = worker_id {
+        get_json(
+            &format!("/api/v1/workforce/workers/{}/clock-entries", wid),
+            true,
+        )
+        .await
+    } else {
+        get_json("/api/v1/workforce/clock-entries", true).await
+    }
+}
+
+pub async fn fetch_active_session(worker_id: uuid::Uuid) -> Result<Option<ClockEntryDto>, String> {
+    get_json(
+        &format!("/api/v1/workforce/workers/{}/clock-active", worker_id),
+        true,
+    )
+    .await
+}
+
+pub async fn clock_in(req: &CreateClockEntryRequest) -> Result<ClockEntryDto, String> {
+    let mut req = req.clone();
+    req.entry_type = "ClockIn".to_string();
+    post_json("/api/v1/workforce/clock-entries", &req, true).await
+}
+
+pub async fn clock_out(req: &CreateClockEntryRequest) -> Result<ClockEntryDto, String> {
+    let mut req = req.clone();
+    req.entry_type = "ClockOut".to_string();
+    post_json("/api/v1/workforce/clock-entries", &req, true).await
+}
+
+pub async fn delete_clock_entry(id: uuid::Uuid) -> Result<(), String> {
+    let req = Request::delete(&api_url(&format!("/api/v1/workforce/clock-entries/{}", id)));
+    let req = with_auth(req);
+    let resp = req.send().await.map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    Ok(())
+}
+
+pub async fn fetch_worker_sessions(
+    worker_id: uuid::Uuid,
+    from: Option<String>,
+    to: Option<String>,
+) -> Result<Vec<ClockSessionDto>, String> {
+    let mut query = String::new();
+    if let Some(f) = &from {
+        query.push_str(&format!("from={}&", js_sys::encode_uri_component(f)));
+    }
+    if let Some(t) = &to {
+        query.push_str(&format!("to={}&", js_sys::encode_uri_component(t)));
+    }
+    let path = if query.is_empty() {
+        format!("/api/v1/workforce/workers/{}/clock-sessions", worker_id)
+    } else {
+        format!(
+            "/api/v1/workforce/workers/{}/clock-sessions?{}",
+            worker_id,
+            query.trim_end_matches('&')
+        )
+    };
+    get_json(&path, true).await
+}
+
+pub async fn fetch_total_hours(
+    worker_id: uuid::Uuid,
+    from: Option<String>,
+    to: Option<String>,
+) -> Result<HoursWorkedResponse, String> {
+    let mut query = String::new();
+    if let Some(f) = &from {
+        query.push_str(&format!("from={}&", js_sys::encode_uri_component(f)));
+    }
+    if let Some(t) = &to {
+        query.push_str(&format!("to={}&", js_sys::encode_uri_component(t)));
+    }
+    let path = if query.is_empty() {
+        format!("/api/v1/workforce/workers/{}/hours-worked", worker_id)
+    } else {
+        format!(
+            "/api/v1/workforce/workers/{}/hours-worked?{}",
+            worker_id,
+            query.trim_end_matches('&')
+        )
+    };
+    get_json(&path, true).await
+}

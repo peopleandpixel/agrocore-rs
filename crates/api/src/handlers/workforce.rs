@@ -13,14 +13,21 @@ use agrocore_domain::entities::worker_task_status::{
     CreateWorkerTaskStatusDto as DomainCreateWorkerTaskStatusDto, WorkerTaskStatus,
 };
 use agrocore_domain::entities::workforce::{
-    CreateWorkLogDto, CreateWorkerDto, CreateWorkerLocationDto, ReportLocationDto,
-    UpdateWorkLogDto, UpdateWorkerDto,
+    CreateClockEntryDto, CreateWorkLogDto, CreateWorkerDto, CreateWorkerLocationDto,
+    ReportLocationDto, UpdateClockEntryDto, UpdateWorkLogDto, UpdateWorkerDto,
 };
 use agrocore_messaging::{Event, GlobalEvent, SpatialPolygonEventKind, SpatialPresenceEvent};
 use agrocore_shared::{Pagination, SharedError};
 use chrono::Utc;
+use serde::Deserialize;
 use std::collections::HashSet;
 use uuid::Uuid;
+
+#[derive(Debug, Deserialize)]
+pub struct ClockSessionQuery {
+    pub from: Option<String>,
+    pub to: Option<String>,
+}
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -66,6 +73,33 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(
                 web::resource("/tasks/{id}/status/aggregate")
                     .route(web::get().to(get_aggregated_task_status)),
+            )
+            // Clock entry routes (Arbeitszeiterfassung)
+            .service(
+                web::resource("/clock-entries")
+                    .route(web::get().to(list_clock_entries))
+                    .route(web::post().to(create_clock_entry)),
+            )
+            .service(
+                web::resource("/clock-entries/{id}")
+                    .route(web::get().to(get_clock_entry))
+                    .route(web::put().to(update_clock_entry))
+                    .route(web::delete().to(delete_clock_entry)),
+            )
+            .service(
+                web::resource("/workers/{id}/clock-entries")
+                    .route(web::get().to(list_worker_clock_entries)),
+            )
+            .service(
+                web::resource("/workers/{id}/clock-active")
+                    .route(web::get().to(get_active_session)),
+            )
+            .service(
+                web::resource("/workers/{id}/clock-sessions")
+                    .route(web::get().to(get_worker_sessions)),
+            )
+            .service(
+                web::resource("/workers/{id}/hours-worked").route(web::get().to(get_total_hours)),
             ),
     );
 }
@@ -756,5 +790,247 @@ pub async fn get_aggregated_task_status(
             aggregated_status: aggregated_status.into(),
             worker_statuses: dto,
         }),
+    )
+}
+
+// ===========================================================================
+// Clock Entry Handlers (Arbeitszeiterfassung)
+// ===========================================================================
+
+pub async fn list_clock_entries(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    query: web::Query<Pagination>,
+) -> Result<HttpResponse, ApiError> {
+    let result = state
+        .db
+        .clock_entry_repo()
+        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
+        .await?;
+    let dto: Vec<crate::dto::ClockEntryDto> = result.data.into_iter().map(Into::into).collect();
+    Ok(
+        HttpResponse::Ok().json(crate::dto::PaginatedClockEntryResponse {
+            data: dto,
+            total: result.total,
+            page: result.page,
+            per_page: result.per_page,
+            total_pages: result.total_pages,
+        }),
+    )
+}
+
+pub async fn create_clock_entry(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    dto: web::Json<crate::dto::CreateClockEntryRequest>,
+) -> Result<HttpResponse, ApiError> {
+    let dto = dto.into_inner();
+    let timestamp = dto
+        .timestamp
+        .as_deref()
+        .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&chrono::Utc))
+        .unwrap_or_else(Utc::now);
+
+    let domain_dto = CreateClockEntryDto {
+        worker_id: dto.worker_id,
+        entry_type: dto.entry_type.into(),
+        timestamp,
+        lat: dto.lat,
+        lng: dto.lng,
+        task_id: dto.task_id,
+        notes: dto.notes,
+    };
+
+    let entry = state
+        .db
+        .clock_entry_repo()
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            domain_dto,
+            auth.0.user_id,
+        )
+        .await?;
+    Ok(HttpResponse::Created().json(crate::dto::ClockEntryDto::from(entry)))
+}
+
+pub async fn get_clock_entry(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let entry = state
+        .db
+        .clock_entry_repo()
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Clock entry not found".into()))?;
+    Ok(HttpResponse::Ok().json(crate::dto::ClockEntryDto::from(entry)))
+}
+
+pub async fn update_clock_entry(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+    dto: web::Json<crate::dto::UpdateClockEntryRequest>,
+) -> Result<HttpResponse, ApiError> {
+    let domain_dto = UpdateClockEntryDto {
+        lat: dto.lat,
+        lng: dto.lng,
+        task_id: dto.task_id,
+        notes: dto.notes.clone(),
+    };
+    let entry = state
+        .db
+        .clock_entry_repo()
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            domain_dto,
+            auth.0.user_id,
+        )
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Clock entry not found".into()))?;
+    Ok(HttpResponse::Ok().json(crate::dto::ClockEntryDto::from(entry)))
+}
+
+pub async fn delete_clock_entry(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let success = state
+        .db
+        .clock_entry_repo()
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
+        .await?;
+    if success {
+        Ok(HttpResponse::NoContent().finish())
+    } else {
+        Err(SharedError::NotFound("Clock entry not found".into()).into())
+    }
+}
+
+pub async fn list_worker_clock_entries(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<Uuid>,
+    query: web::Query<Pagination>,
+) -> Result<HttpResponse, ApiError> {
+    let worker_id = *path;
+    let result = state
+        .db
+        .clock_entry_repo()
+        .find_by_worker(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            worker_id,
+            query.0,
+        )
+        .await?;
+    let dto: Vec<crate::dto::ClockEntryDto> = result.data.into_iter().map(Into::into).collect();
+    Ok(
+        HttpResponse::Ok().json(crate::dto::PaginatedClockEntryResponse {
+            data: dto,
+            total: result.total,
+            page: result.page,
+            per_page: result.per_page,
+            total_pages: result.total_pages,
+        }),
+    )
+}
+
+pub async fn get_active_session(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let worker_id = *path;
+    let entry = state
+        .db
+        .clock_entry_repo()
+        .find_active_session(agrocore_domain::TenantId(auth.0.tenant_id), worker_id)
+        .await?;
+    Ok(HttpResponse::Ok().json(entry.map(crate::dto::ClockEntryDto::from)))
+}
+
+pub async fn get_worker_sessions(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<Uuid>,
+    query: web::Query<ClockSessionQuery>,
+) -> Result<HttpResponse, ApiError> {
+    let worker_id = *path;
+    let from = query
+        .from
+        .as_deref()
+        .and_then(|s| {
+            chrono::DateTime::parse_from_rfc3339(s)
+                .ok()
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+        })
+        .unwrap_or_else(|| Utc::now() - chrono::Duration::days(7));
+    let to = query
+        .to
+        .as_deref()
+        .and_then(|s| {
+            chrono::DateTime::parse_from_rfc3339(s)
+                .ok()
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+        })
+        .unwrap_or_else(Utc::now);
+
+    let sessions = state
+        .db
+        .clock_entry_repo()
+        .find_sessions(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            worker_id,
+            from,
+            to,
+        )
+        .await?;
+    let dto: Vec<crate::dto::ClockSessionDto> = sessions.into_iter().map(Into::into).collect();
+    Ok(HttpResponse::Ok().json(dto))
+}
+
+pub async fn get_total_hours(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<Uuid>,
+    query: web::Query<ClockSessionQuery>,
+) -> Result<HttpResponse, ApiError> {
+    let worker_id = *path;
+    let from = query
+        .from
+        .as_deref()
+        .and_then(|s| {
+            chrono::DateTime::parse_from_rfc3339(s)
+                .ok()
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+        })
+        .unwrap_or_else(|| Utc::now() - chrono::Duration::days(7));
+    let to = query
+        .to
+        .as_deref()
+        .and_then(|s| {
+            chrono::DateTime::parse_from_rfc3339(s)
+                .ok()
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+        })
+        .unwrap_or_else(Utc::now);
+
+    let hours = state
+        .db
+        .clock_entry_repo()
+        .total_hours_worked(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            worker_id,
+            from,
+            to,
+        )
+        .await?;
+    Ok(
+        HttpResponse::Ok()
+            .json(serde_json::json!({ "worker_id": worker_id, "total_hours": hours })),
     )
 }
