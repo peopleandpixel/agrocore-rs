@@ -1,9 +1,10 @@
 -- PostgreSQL Schema für agrocore-rs mit PostGIS Unterstützung
 -- Ersetzt 001_initial_schema.sql und 20240101_init.sql
 
--- Aktiviere PostGIS Erweiterung
+-- Aktiviere PostGIS und pgtrgm Erweiterungen
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- Gemeinsame Funktionen
 CREATE OR REPLACE FUNCTION set_updated_at()
