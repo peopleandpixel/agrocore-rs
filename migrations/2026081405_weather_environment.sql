@@ -140,3 +140,8 @@ CREATE INDEX IF NOT EXISTS idx_customers_active ON customers(is_active);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_customers_number_tenant ON customers(customer_number, tenant_id);
 CREATE INDEX IF NOT EXISTS idx_customers_name ON customers USING gin(name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_customers_email ON customers USING gin(email gin_trgm_ops);
+
+-- Add customer_id to orders for sales order linkage (Verkaufsverbindung)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_id UUID REFERENCES customers(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_orders_type_customer ON orders(order_type, customer_id) WHERE order_type = 'SalesOrder';

@@ -54,6 +54,7 @@ fn test_api_order_dto_validation() {
         deadline_date: None,
         recurrence: None,
         execution_policy: None,
+        customer_id: None,
     };
     assert!(dto.validate().is_err());
 

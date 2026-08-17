@@ -123,14 +123,15 @@ impl OrderRepository for PgOrderRepo {
         Box::pin(async move {
             let id = Uuid::new_v4();
             let order = sqlx::query_as::<_, Order>(
-                r#"INSERT INTO orders (id, tenant_id, label, order_type, status, created_at, updated_at, is_active)
-                   VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), true)
+                r#"INSERT INTO orders (id, tenant_id, label, order_type, status, created_at, updated_at, is_active, customer_id)
+                   VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), true, $6)
                    RETURNING *"#)
             .bind(id)
             .bind(tid)
             .bind(&dto.label)
             .bind(serde_json::to_value(&dto.order_type).unwrap())
             .bind(serde_json::to_value(agrocore_domain::entities::OrderStatus::Planned).unwrap())
+            .bind(dto.customer_id)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
@@ -176,12 +177,15 @@ impl OrderRepository for PgOrderRepo {
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let order = sqlx::query_as::<_, Order>(
-                r#"UPDATE orders SET label = COALESCE($1, label), updated_at = NOW()
+                r#"UPDATE orders SET label = COALESCE($1, label),
+                   customer_id = COALESCE($4, customer_id),
+                   updated_at = NOW()
                    WHERE id = $2 AND tenant_id = $3 RETURNING *"#,
             )
             .bind(&dto.label)
             .bind(id)
             .bind(tid)
+            .bind(dto.customer_id)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
@@ -255,7 +259,7 @@ impl OrderRepository for PgOrderRepo {
 
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM orders WHERE tenant_id = $1 AND assigned_to = $2",
+                "SELECT COUNT(*) FROM orders WHERE tenant_id = $1 AND customer_id = $2",
             )
             .bind(tid)
             .bind(customer_id)
@@ -264,7 +268,7 @@ impl OrderRepository for PgOrderRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Order> = sqlx::query_as(
-                "SELECT * FROM orders WHERE tenant_id = $1 AND assigned_to = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
+                "SELECT * FROM orders WHERE tenant_id = $1 AND customer_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
             )
             .bind(tid)
             .bind(customer_id)

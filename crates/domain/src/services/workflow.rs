@@ -49,6 +49,7 @@ impl WorkflowService {
             recurrence: None,
             execution_policy: None,
             cost_center_id: order.cost_center_id,
+            customer_id: order.customer_id,
         };
 
         if let Some(delay) = config.delay_days {

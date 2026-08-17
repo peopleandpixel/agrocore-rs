@@ -35,6 +35,7 @@ pub struct OrderDto {
     pub recurrence: Option<RecurrenceRule>,
     pub execution_policy: Option<TaskExecutionPolicy>,
     pub is_active: bool,
+    pub customer_id: Option<Uuid>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -57,6 +58,7 @@ impl From<Order> for OrderDto {
             recurrence: o.recurrence,
             execution_policy: o.execution_policy,
             is_active: o.is_active,
+            customer_id: o.customer_id,
             created_at: o.created_at.to_rfc3339(),
             updated_at: o.updated_at.to_rfc3339(),
         }
@@ -75,6 +77,7 @@ pub struct CreateOrderDto {
     pub deadline_date: Option<chrono::DateTime<chrono::Utc>>,
     pub recurrence: Option<RecurrenceRule>,
     pub execution_policy: Option<TaskExecutionPolicy>,
+    pub customer_id: Option<Uuid>,
 }
 
 impl From<CreateOrderDto> for agrocore_domain::entities::order::CreateOrderDto {
@@ -94,6 +97,7 @@ impl From<CreateOrderDto> for agrocore_domain::entities::order::CreateOrderDto {
             recurrence: dto.recurrence,
             execution_policy: dto.execution_policy,
             cost_center_id: None,
+            customer_id: dto.customer_id,
         }
     }
 }
@@ -111,6 +115,7 @@ pub struct UpdateOrderDto {
     pub recurrence: Option<RecurrenceRule>,
     pub execution_policy: Option<TaskExecutionPolicy>,
     pub is_active: Option<bool>,
+    pub customer_id: Option<Uuid>,
 }
 
 impl From<UpdateOrderDto> for agrocore_domain::entities::order::UpdateOrderDto {
@@ -125,6 +130,7 @@ impl From<UpdateOrderDto> for agrocore_domain::entities::order::UpdateOrderDto {
             recurrence: dto.recurrence,
             execution_policy: dto.execution_policy,
             is_active: dto.is_active,
+            customer_id: dto.customer_id,
             ..Default::default()
         }
     }

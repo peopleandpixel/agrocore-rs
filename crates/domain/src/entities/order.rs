@@ -166,6 +166,7 @@ pub struct Order {
     #[sqlx(json)]
     pub workflow_config: Option<WorkflowConfig>,
     pub cost_center_id: Option<Uuid>,
+    pub customer_id: Option<Uuid>,
     pub is_active: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -397,6 +398,7 @@ pub struct CreateOrderDto {
     pub recurrence: Option<RecurrenceRule>,
     pub execution_policy: Option<TaskExecutionPolicy>,
     pub cost_center_id: Option<Uuid>,
+    pub customer_id: Option<Uuid>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, Default)]
@@ -415,6 +417,7 @@ pub struct UpdateOrderDto {
     pub parent_order_id: Option<Uuid>,
     pub workflow_config: Option<WorkflowConfig>,
     pub cost_center_id: Option<Uuid>,
+    pub customer_id: Option<Uuid>,
     pub started_at: Option<DateTime<Utc>>,
     pub completed_at: Option<DateTime<Utc>>,
     pub last_completed_at: Option<DateTime<Utc>>,
@@ -466,6 +469,7 @@ mod tests {
             parent_order_id: None,
             workflow_config: None,
             cost_center_id: None,
+            customer_id: None,
             is_active: true,
             created_at: Utc::now(),
             updated_at: Utc::now(),
