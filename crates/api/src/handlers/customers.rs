@@ -23,6 +23,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     .service(web::resource("/customers/search/{query}").route(web::get().to(search_customers)))
     .service(
         web::resource("/customers/number/{number}").route(web::get().to(get_customer_by_number)),
+    )
+    .service(
+        web::resource("/customers/{id}/orders").route(web::get().to(list_customer_sales_orders)),
     );
 }
 
@@ -315,4 +318,52 @@ impl From<UpdateCustomerDto> for agrocore_domain::entities::customer::UpdateCust
             is_active: dto.is_active,
         }
     }
+}
+
+// =============================================================================
+// Customer Sales Orders — list sales orders (order_type = SalesOrder) for a customer
+// =============================================================================
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/customers/{id}/orders",
+    params(
+        ("id" = Uuid, Path, description = "Customer ID"),
+        ("page" = Option<u64>, Query, description = "Page number"),
+        ("per_page" = Option<u64>, Query, description = "Items per page")
+    ),
+    responses(
+        (status = 200, description = "List sales orders for customer", body = PaginatedResponseDto<crate::dto::OrderDto>),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "customers",
+    security(("bearer_auth" = []))
+)]
+pub async fn list_customer_sales_orders(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+    query: web::Query<agrocore_shared::Pagination>,
+) -> Result<HttpResponse, ApiError> {
+    let customer_id = *path;
+    let result = state
+        .db
+        .order_repo()
+        .find_by_customer(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            customer_id,
+            query.0,
+        )
+        .await?;
+    Ok(HttpResponse::Ok().json(PaginatedResponseDto {
+        data: result
+            .data
+            .into_iter()
+            .map(crate::dto::OrderDto::from)
+            .collect(),
+        total: result.total,
+        page: result.page,
+        per_page: result.per_page,
+        total_pages: result.total_pages,
+    }))
 }
