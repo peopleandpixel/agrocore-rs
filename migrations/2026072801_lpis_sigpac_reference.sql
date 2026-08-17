@@ -260,12 +260,12 @@ CREATE TRIGGER trigger_update_site_area
 
 -- Grant permissions
 GRANT SELECT ON sigpac_parcels TO agrocore_app;
-GRANT EXECUTE ON FUNCTION validate_parcel_against_lpis TO agrocore_app;
+GRANT EXECUTE ON FUNCTION validate_parcel_against_lpis(SMALLINT, SMALLINT, SMALLINT, SMALLINT, SMALLINT, SMALLINT, SMALLINT, GEOMETRY, NUMERIC) TO agrocore_app;
 GRANT EXECUTE ON FUNCTION find_duplicate_parcel TO agrocore_app;
 GRANT EXECUTE ON FUNCTION calculate_area_hectares TO agrocore_app;
 
 -- Comments
 COMMENT ON TABLE sigpac_parcels IS 'Official SIGPAC parcel reference data for LPIS validation';
-COMMENT ON FUNCTION validate_parcel_against_lpis IS 'Validates a declared parcel against official SIGPAC reference';
+COMMENT ON FUNCTION validate_parcel_against_lpis(SMALLINT, SMALLINT, SMALLINT, SMALLINT, SMALLINT, SMALLINT, SMALLINT, GEOMETRY, NUMERIC) IS 'Validates a declared parcel against official SIGPAC reference';
 COMMENT ON FUNCTION find_duplicate_parcel IS 'Finds existing parcels by SIGPAC, REGEPAC, or boundary similarity';
 COMMENT ON FUNCTION calculate_area_hectares IS 'Calculates area in hectares from geometry using geography';
