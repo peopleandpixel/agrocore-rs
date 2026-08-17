@@ -1,6 +1,6 @@
 use actix_web::{App, HttpResponse, HttpServer, Responder, web};
 use agrocore_infrastructure::Database;
-
+pub mod providers;
 pub mod worker;
 
 async fn health() -> impl Responder {

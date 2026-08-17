@@ -93,7 +93,7 @@ Erledigte Arbeit ist weggelassen; ein Modul ohne offene Punkte ist als erledigt 
 - [ ] Eingangs-Kosten-Tracking (Saatgut, Dünger, Chemikalien, Kraftstoff, QR-Code-Scans)
 
 #### Wetter & Umwelt
-- [ ] Anbindung diverser Wetterdienste kostenlos und kostenpflichtig (z.B. OpenWeather, Weather Underground)
+- [x] Anbindung diverser Wetterdienste kostenlos und kostenpflichtig (z.B. OpenWeather, Weather Underground)
 - [ ] Hyperlokaler Wetterstation-Integration (Davis, Campbell Scientific)
 - [ ] Bodenfeuchtigkeits-Monitoring (IoT-Sensor-Integration mit Bewässerungssteuerung)
 - [x] Wachstumsgradtag-Tracking (Kartoffelernte-Prognose)

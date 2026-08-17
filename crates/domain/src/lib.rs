@@ -2,6 +2,9 @@ pub mod entities;
 pub mod repositories;
 pub mod services;
 
+// Re-export weather service provider trait and types
+pub use services::weather::{WeatherDataProvider, WeatherFetchResult, WeatherServiceType};
+
 #[cfg(feature = "mocks")]
 pub mod mocks {
     pub use super::repositories::*;
