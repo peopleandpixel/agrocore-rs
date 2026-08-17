@@ -4,6 +4,7 @@ mod clock_entry;
 mod cold_chain_log;
 mod compliance;
 mod cost_center;
+mod customer;
 mod database;
 mod equipment;
 mod error_mapper;

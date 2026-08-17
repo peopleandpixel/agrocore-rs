@@ -80,6 +80,7 @@ impl std::fmt::Display for crate::entities::OrderType {
             crate::entities::OrderType::EggCollection => "Eier holen",
             crate::entities::OrderType::Shearing => "Scheren",
             crate::entities::OrderType::Milking => "Melken",
+            crate::entities::OrderType::SalesOrder => "Verkaufsauftrag",
             crate::entities::OrderType::Other(s) => return f.write_str(s),
         };
 

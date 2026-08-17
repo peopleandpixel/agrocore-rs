@@ -83,6 +83,27 @@ struct SitesApiDoc;
 )]
 struct OrdersApiDoc;
 
+/// Customer management endpoints (Kunden & Verkauf).
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        crate::handlers::customers::list_customers,
+        crate::handlers::customers::get_customer,
+        crate::handlers::customers::create_customer,
+        crate::handlers::customers::update_customer,
+        crate::handlers::customers::delete_customer,
+        crate::handlers::customers::search_customers,
+        crate::handlers::customers::get_customer_by_number,
+    ),
+    components(schemas(
+        crate::dto::customer::CustomerDto,
+        crate::dto::customer::CreateCustomerDto,
+        crate::dto::customer::UpdateCustomerDto,
+    )),
+    tags()
+)]
+struct CustomersApiDoc;
+
 /// User management endpoints.
 #[derive(OpenApi)]
 #[openapi(
@@ -302,6 +323,7 @@ impl ApiDoc {
         doc.merge(AuthApiDoc::openapi());
         doc.merge(SitesApiDoc::openapi());
         doc.merge(OrdersApiDoc::openapi());
+        doc.merge(CustomersApiDoc::openapi());
         doc.merge(UsersApiDoc::openapi());
         doc.merge(TasksApiDoc::openapi());
         doc.merge(WeatherApiDoc::openapi());

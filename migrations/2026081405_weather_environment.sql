@@ -115,3 +115,28 @@ CREATE INDEX IF NOT EXISTS idx_soil_alerts_tenant ON soil_moisture_alerts(tenant
 CREATE INDEX IF NOT EXISTS idx_soil_alerts_station ON soil_moisture_alerts(station_id);
 CREATE INDEX IF NOT EXISTS idx_soil_alerts_unresolved ON soil_moisture_alerts(is_resolved);
 CREATE INDEX IF NOT EXISTS idx_soil_alerts_triggered_at ON soil_moisture_alerts(triggered_at);
+
+-- Customers table (Kundenverwaltung für Kunden & Verkauf)
+CREATE TABLE IF NOT EXISTS customers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL,
+    name VARCHAR(200) NOT NULL,
+    email VARCHAR(255),
+    phone VARCHAR(50),
+    address TEXT,
+    company VARCHAR(200),
+    customer_number VARCHAR(50) NOT NULL,
+    vat_rate NUMERIC(5,2) NOT NULL DEFAULT 19.0,
+    payment_terms VARCHAR(100),
+    preferred_delivery_location TEXT,
+    preferences JSONB,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_customers_tenant ON customers(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_customers_active ON customers(is_active);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_customers_number_tenant ON customers(customer_number, tenant_id);
+CREATE INDEX IF NOT EXISTS idx_customers_name ON customers USING gin(name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_customers_email ON customers USING gin(email gin_trgm_ops);

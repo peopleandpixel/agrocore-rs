@@ -241,4 +241,52 @@ impl OrderRepository for PgOrderRepo {
             .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
+
+    fn find_by_customer(
+        &self,
+        tid: TenantId,
+        customer_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<Order>> {
+        let pool = self.pool.clone();
+        let page = p.page.unwrap_or(0);
+        let per_page = p.per_page.unwrap_or(20);
+        let offset = page * per_page;
+
+        Box::pin(async move {
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM orders WHERE tenant_id = $1 AND assigned_to = $2",
+            )
+            .bind(tid)
+            .bind(customer_id)
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            let data: Vec<Order> = sqlx::query_as(
+                "SELECT * FROM orders WHERE tenant_id = $1 AND assigned_to = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
+            )
+            .bind(tid)
+            .bind(customer_id)
+            .bind(per_page as i32)
+            .bind(offset as i32)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            let total_pages = if total == 0 {
+                0
+            } else {
+                (total as f64 / per_page as f64).ceil() as u64
+            };
+
+            Ok(PaginatedResponse {
+                data,
+                total: total as u64,
+                page,
+                per_page,
+                total_pages,
+            })
+        })
+    }
 }

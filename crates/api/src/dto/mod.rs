@@ -3,6 +3,7 @@
 pub mod calculations;
 pub mod common;
 pub mod compliance;
+pub mod customer;
 pub mod equipment;
 pub mod finance;
 pub mod harvest;

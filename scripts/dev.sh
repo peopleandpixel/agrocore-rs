@@ -193,8 +193,13 @@ echo "  ✅ Migrations applied"
 
 # ── Start services ─────────────────────────────────────────────────────────
 
-echo ""
 echo "Starting microservices..."
+
+# Pre-compile all services so cargo run startup is fast
+echo "Pre-compiling services (this may take a while on first run)..."
+export DATABASE_URL="postgres://postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}"
+cargo build -p agrocore-api -p agrocore-weather-service -p agrocore-reporting-service -p agrocore-geometry-service -p agrocore-asset-registry 2>&1 | tail -3
+echo "  ✅ Pre-compilation done"
 
 start_service \
     "API" \
@@ -203,7 +208,7 @@ start_service \
     LISTEN_ADDR="0.0.0.0:${API_PORT}" \
     NATS_URL="nats://127.0.0.1:${NATS_PORT}" \
     JWT_SECRET="$JWT_SECRET" \
-    cargo run -p agrocore-api
+    cargo run -p agrocore-api --offline 2>>"$ROOT_DIR/target/api.stderr.log"
 
 wait_for_http "http://127.0.0.1:${API_PORT}/api/v1/health" "API" 120
 

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 pub mod compliance;
+pub mod customer;
 pub mod equipment;
 pub mod fertilizer;
 pub mod finance;
@@ -42,6 +43,7 @@ pub use compliance::{
     CreateAuditLogDto, CreateComplianceChecklistDto, CreateFertilizerRecordDto, FertilizerRecord,
     UpdateComplianceChecklistDto, UpdateFertilizerRecordDto,
 };
+pub use customer::{CreateCustomerDto, Customer, UpdateCustomerDto};
 pub use olive::{
     CreateOliveGroveDto, CreateOliveOilRecordDto, OilGrade, OliveGrove, OliveOilRecord,
     UpdateOliveGroveDto, UpdateOliveOilRecordDto,
@@ -224,6 +226,8 @@ pub enum OrderType {
     Shearing,
     #[serde(rename = "milking")]
     Milking,
+    #[serde(rename = "sales_order")]
+    SalesOrder,
     #[serde(rename = "other")]
     Other(String),
 }

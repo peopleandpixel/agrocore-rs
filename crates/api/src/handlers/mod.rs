@@ -3,6 +3,7 @@ use actix_web::web;
 pub mod agriculture;
 pub mod auth;
 pub mod compliance;
+pub mod customers;
 pub mod equipment;
 pub mod finance;
 pub mod harvest;
@@ -173,6 +174,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             )
             .configure(settings::configure)
             .configure(compliance::configure)
+            .configure(customers::configure)
             .configure(specialized::configure)
             .configure(water::configure)
             .configure(workforce::configure)

@@ -1,7 +1,7 @@
 use crate::postgres::{
     animal::PgAnimalRepo, audit_log::PgAuditLogRepo, clock_entry::PgClockEntryRepo,
     cold_chain_log::PgColdChainLogRepo, compliance::PgComplianceChecklistRepo,
-    cost_center::PgCostCenterRepo, equipment::PgEquipmentRepo,
+    cost_center::PgCostCenterRepo, customer::PgCustomerRepo, equipment::PgEquipmentRepo,
     fertilizer_record::PgFertilizerRecordRepo, financial_record::PgFinancialRecordRepo,
     frost_warning::PgFrostWarningRepo, growing_degree_day::PgGrowingDegreeDayRepo,
     harvest_delivery::PgHarvestDeliveryRepo, harvest_lot::PgHarvestLotRepo,
@@ -19,14 +19,15 @@ use crate::postgres::{
 };
 use agrocore_domain::repositories::{
     AnimalRepository, AuditLogRepo, ClockEntryRepo, ColdChainLogRepo, ComplianceChecklistRepo,
-    CostCenterRepo, EquipmentRepository, FertilizerRecordRepo, FinancialRecordRepo,
-    FrostWarningRepo, GrowingDegreeDayRepo, HarvestDeliveryRepo, HarvestLotRepo, HarvestSeasonRepo,
-    InventoryItemRepository, InventoryLocationRepo, InventoryTransactionRepo, KelterDeliveryRepo,
-    OliveGroveRepo, OliveOilRecordRepo, OrderRepository, PACApplicationRepo, PestRiskRepo,
-    PhenologyRecordRepo, PlantProtectionRecordRepo, SiteRepository, SoilMoistureConfigRepo,
-    SpatialObjectRepository, TaskDataRepository, TenantRepository, UserRepository, VineyardRepo,
-    WaterQuotaRepo, WaterSourceRepo, WaterUsageRepo, WeatherDataRepo, WeatherStationRepo,
-    WorkLogRepo, WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
+    CostCenterRepo, CustomerRepository, EquipmentRepository, FertilizerRecordRepo,
+    FinancialRecordRepo, FrostWarningRepo, GrowingDegreeDayRepo, HarvestDeliveryRepo,
+    HarvestLotRepo, HarvestSeasonRepo, InventoryItemRepository, InventoryLocationRepo,
+    InventoryTransactionRepo, KelterDeliveryRepo, OliveGroveRepo, OliveOilRecordRepo,
+    OrderRepository, PACApplicationRepo, PestRiskRepo, PhenologyRecordRepo,
+    PlantProtectionRecordRepo, SiteRepository, SoilMoistureConfigRepo, SpatialObjectRepository,
+    TaskDataRepository, TenantRepository, UserRepository, VineyardRepo, WaterQuotaRepo,
+    WaterSourceRepo, WaterUsageRepo, WeatherDataRepo, WeatherStationRepo, WorkLogRepo,
+    WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
 };
 use sqlx::PgPool;
 use std::sync::Arc;
@@ -77,6 +78,7 @@ pub struct MockDatabase {
     pub compliance_checklist_repo:
         Option<Arc<agrocore_domain::repositories::MockComplianceChecklistRepo>>,
     pub cost_center_repo: Option<Arc<agrocore_domain::repositories::MockCostCenterRepo>>,
+    pub customer_repo: Option<Arc<agrocore_domain::repositories::MockCustomerRepository>>,
     pub financial_record_repo: Option<Arc<agrocore_domain::repositories::MockFinancialRecordRepo>>,
     pub kelter_delivery_repo: Option<Arc<agrocore_domain::repositories::MockKelterDeliveryRepo>>,
     pub inventory_item_repo:
@@ -461,6 +463,15 @@ impl Database {
         }
     }
 
+    pub fn customer_repo(&self) -> Arc<dyn CustomerRepository> {
+        match self {
+            Self::Postgres(db) => db.customer_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => m.customer_repo.clone().expect("customer_repo mock not set")
+                as Arc<dyn CustomerRepository>,
+        }
+    }
+
     pub fn financial_record_repo(&self) -> Arc<dyn FinancialRecordRepo> {
         match self {
             Self::Postgres(db) => db.financial_record_repo(),
@@ -624,6 +635,7 @@ pub struct PostgresDb {
     pub audit_log_repo: Arc<dyn AuditLogRepo>,
     pub compliance_checklist_repo: Arc<dyn ComplianceChecklistRepo>,
     pub cost_center_repo: Arc<dyn CostCenterRepo>,
+    pub customer_repo: Arc<dyn CustomerRepository>,
     pub financial_record_repo: Arc<dyn FinancialRecordRepo>,
     pub kelter_delivery_repo: Arc<dyn KelterDeliveryRepo>,
     pub inventory_item_repo: Arc<dyn InventoryItemRepository>,
@@ -702,6 +714,7 @@ impl PostgresDb {
             cold_chain_log_repo: Arc::new(PgColdChainLogRepo::new(pool.clone())),
             audit_log_repo: Arc::new(PgAuditLogRepo::new(pool.clone())),
             cost_center_repo: Arc::new(PgCostCenterRepo::new(pool.clone())),
+            customer_repo: Arc::new(PgCustomerRepo::new(pool.clone())),
             financial_record_repo: Arc::new(PgFinancialRecordRepo::new(pool.clone())),
             compliance_checklist_repo: Arc::new(PgComplianceChecklistRepo::new(pool.clone())),
             kelter_delivery_repo: Arc::new(PgKelterDeliveryRepo::new(pool.clone())),
@@ -767,6 +780,7 @@ impl PostgresDb {
             cold_chain_log_repo: Arc::new(PgColdChainLogRepo::new(pool.clone())),
             audit_log_repo: Arc::new(PgAuditLogRepo::new(pool.clone())),
             cost_center_repo: Arc::new(PgCostCenterRepo::new(pool.clone())),
+            customer_repo: Arc::new(PgCustomerRepo::new(pool.clone())),
             financial_record_repo: Arc::new(PgFinancialRecordRepo::new(pool.clone())),
             compliance_checklist_repo: Arc::new(PgComplianceChecklistRepo::new(pool.clone())),
             kelter_delivery_repo: Arc::new(PgKelterDeliveryRepo::new(pool.clone())),
@@ -917,6 +931,10 @@ impl PostgresDb {
 
     pub fn cost_center_repo(&self) -> Arc<dyn CostCenterRepo> {
         self.cost_center_repo.clone()
+    }
+
+    pub fn customer_repo(&self) -> Arc<dyn CustomerRepository> {
+        self.customer_repo.clone()
     }
 
     pub fn financial_record_repo(&self) -> Arc<dyn FinancialRecordRepo> {

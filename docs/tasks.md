@@ -58,7 +58,7 @@ Erledigte Arbeit ist weggelassen; ein Modul ohne offene Punkte ist als erledigt 
 - [x] Bestandsbewertung (FIFO, Durchschnittskosten, Act-Cost)
 
 #### Kunden & Verkauf
-- [ ] Kunden-CRM (Kontakte, Bestellhistorie, Vorlieben)
+- [x] Kunden-CRM (Kontakte, Bestellhistorie, Vorliebe) — Customer entity + CustomerRepository + PgCustomerRepo + API routes + migration table
 - [ ] CSA-Verwaltung (Abonnement-Boxen, Lieferplanung)
 - [ ] Großhandelsaufträge (Staffelpreise, Lieferplanung)
 - [ ] Direktverkauf (Onlineshop, Zahlungsabwicklung)

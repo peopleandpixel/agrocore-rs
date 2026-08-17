@@ -219,6 +219,61 @@ pub trait OrderRepository: Send + Sync {
         worker_id: Uuid,
     ) -> RepositoryFuture<Vec<Order>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+    /// Find all sales orders for a specific customer
+    fn find_by_customer(
+        &self,
+        tid: TenantId,
+        customer_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<Order>>;
+}
+
+// --- Customer Repository ---
+use crate::entities::customer::{CreateCustomerDto, Customer, UpdateCustomerDto};
+
+#[cfg_attr(feature = "mocks", automock)]
+pub trait CustomerRepository: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Customer>>;
+    fn find_by_id_visible(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        user_id: Uuid,
+        roles: &[crate::entities::user::UserRole],
+    ) -> RepositoryFuture<Option<Customer>>;
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<Customer>>;
+    fn find_all_visible(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+        user_id: Uuid,
+        roles: &[crate::entities::user::UserRole],
+    ) -> RepositoryFuture<PaginatedResponse<Customer>>;
+    fn find_by_customer_number(
+        &self,
+        tid: TenantId,
+        number: &str,
+    ) -> RepositoryFuture<Option<Customer>>;
+    fn create(&self, tid: TenantId, dto: CreateCustomerDto, by: Uuid)
+    -> RepositoryFuture<Customer>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateCustomerDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<Customer>>;
+    fn search(
+        &self,
+        tid: TenantId,
+        query: &str,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<Customer>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
 // --- Tenant Repository ---
