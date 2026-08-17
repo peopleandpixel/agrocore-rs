@@ -66,7 +66,7 @@ FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 ALTER TABLE lpis_reference_parcels ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY lpis_tenant_isolation ON lpis_reference_parcels
-    FOR ALL TO application_role
+    FOR ALL TO PUBLIC
     USING (tenant_id = current_setting('app.current_tenant_id')::UUID);
 
 -- Function to validate a parcel against LPIS reference data
