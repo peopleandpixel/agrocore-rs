@@ -199,33 +199,33 @@ CREATE POLICY olive_oil_records_select ON olive_oil_records
     FOR SELECT USING (
         is_superadmin() OR
         tenant_id = get_current_tenant_id() OR
-        grove_id IN (SELECT id FROM olive_groves WHERE tenant_id = get_current_tenant_id())
+        olive_grove_id IN (SELECT id FROM olive_groves WHERE tenant_id = get_current_tenant_id())
     );
 
 CREATE POLICY olive_oil_records_insert ON olive_oil_records
     FOR INSERT WITH CHECK (
         is_superadmin() OR
         tenant_id = get_current_tenant_id() OR
-        grove_id IN (SELECT id FROM olive_groves WHERE tenant_id = get_current_tenant_id())
+        olive_grove_id IN (SELECT id FROM olive_groves WHERE tenant_id = get_current_tenant_id())
     );
 
 CREATE POLICY olive_oil_records_update ON olive_oil_records
     FOR UPDATE USING (
         is_superadmin() OR
         tenant_id = get_current_tenant_id() OR
-        grove_id IN (SELECT id FROM olive_groves WHERE tenant_id = get_current_tenant_id())
+        olive_grove_id IN (SELECT id FROM olive_groves WHERE tenant_id = get_current_tenant_id())
     )
     WITH CHECK (
         is_superadmin() OR
         tenant_id = get_current_tenant_id() OR
-        grove_id IN (SELECT id FROM olive_groves WHERE tenant_id = get_current_tenant_id())
+        olive_grove_id IN (SELECT id FROM olive_groves WHERE tenant_id = get_current_tenant_id())
     );
 
 CREATE POLICY olive_oil_records_delete ON olive_oil_records
     FOR DELETE USING (
         is_superadmin() OR
         tenant_id = get_current_tenant_id() OR
-        grove_id IN (SELECT id FROM olive_groves WHERE tenant_id = get_current_tenant_id())
+        olive_grove_id IN (SELECT id FROM olive_groves WHERE tenant_id = get_current_tenant_id())
     );
 
 -- ============================================================
