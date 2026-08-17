@@ -1,6 +1,55 @@
 -- Migration: Row-Level Security (RLS) Policies for Harvest, Water, Olive, Vineyard, Compliance, Finance tables
 -- This adds RLS policies for all tables created after the core tables
 
+-- Ensure workforce tables exist (referenced by Rust repositories but not created in earlier migrations)
+CREATE TABLE IF NOT EXISTS workers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    contract_type TEXT NOT NULL DEFAULT 'full_time',
+    language TEXT,
+    skills TEXT[],
+    hourly_rate NUMERIC(10,2),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_workers_tenant ON workers(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_workers_user ON workers(user_id);
+CREATE INDEX IF NOT EXISTS idx_workers_contract ON workers(contract_type);
+
+CREATE TABLE IF NOT EXISTS worker_locations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    worker_id UUID NOT NULL REFERENCES workers(id) ON DELETE CASCADE,
+    location GEOGRAPHY(Point, 4326) NOT NULL,
+    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_worker_locations_tenant ON worker_locations(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_worker_locations_worker ON worker_locations(worker_id);
+CREATE INDEX IF NOT EXISTS idx_worker_locations_ts ON worker_locations(timestamp);
+
+CREATE TABLE IF NOT EXISTS work_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    worker_id UUID NOT NULL REFERENCES workers(id) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    hours_worked DOUBLE PRECISION NOT NULL DEFAULT 0,
+    overtime_hours DOUBLE PRECISION NOT NULL DEFAULT 0,
+    rest_period_hours DOUBLE PRECISION NOT NULL DEFAULT 0,
+    task_description TEXT,
+    site_id UUID REFERENCES sites(id) ON DELETE SET NULL,
+    is_night_shift BOOLEAN NOT NULL DEFAULT false,
+    breaks_taken INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_work_logs_tenant ON work_logs(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_work_logs_worker ON work_logs(worker_id);
+CREATE INDEX IF NOT EXISTS idx_work_logs_date ON work_logs(date);
+CREATE INDEX IF NOT EXISTS idx_work_logs_site ON work_logs(site_id);
+
+-- Also add hourly_rate to workers if not exists (for 2026081404_workforce_clock_entries.sql compatibility)
+ALTER TABLE workers ADD COLUMN IF NOT EXISTS hourly_rate NUMERIC(10,2);
+
 -- ============================================================
 -- HARVEST TABLES
 -- ============================================================
