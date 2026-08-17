@@ -374,9 +374,10 @@ pub trait AuditLogRepo: Send + Sync {
 
 // --- Weather Repository ---
 use crate::entities::weather::{
-    CreatePhenologyRecordDto, CreateWeatherDataDto, CreateWeatherStationDto, PhenologyRecord,
-    UpdatePhenologyRecordDto, UpdateWeatherDataDto, UpdateWeatherStationDto, WeatherData,
-    WeatherStation,
+    CreateFrostWarningDto, CreateGrowingDegreeDayDto, CreatePestRiskDto, CreatePhenologyRecordDto,
+    CreateWeatherDataDto, CreateWeatherStationDto, FrostWarning, GrowingDegreeDay, PestRisk,
+    PhenologyRecord, UpdateFrostWarningDto, UpdatePhenologyRecordDto, UpdateWeatherDataDto,
+    UpdateWeatherStationDto, WeatherData, WeatherStation,
 };
 
 #[cfg_attr(feature = "mocks", automock)]
@@ -457,7 +458,75 @@ pub trait PhenologyRecordRepo: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-// --- Harvest Repository ---
+#[cfg_attr(feature = "mocks", automock)]
+pub trait FrostWarningRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<FrostWarning>>;
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<FrostWarning>>;
+    fn find_by_station(
+        &self,
+        tid: TenantId,
+        station_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<FrostWarning>>;
+    fn find_active(&self, tid: TenantId) -> RepositoryFuture<Vec<FrostWarning>>;
+    fn create(
+        &self,
+        tid: TenantId,
+        dto: CreateFrostWarningDto,
+        by: Uuid,
+    ) -> RepositoryFuture<FrostWarning>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateFrostWarningDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<FrostWarning>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+#[cfg_attr(feature = "mocks", automock)]
+pub trait GrowingDegreeDayRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<GrowingDegreeDay>>;
+    fn find_by_site(
+        &self,
+        tid: TenantId,
+        site_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<GrowingDegreeDay>>;
+    fn create(
+        &self,
+        tid: TenantId,
+        dto: CreateGrowingDegreeDayDto,
+    ) -> RepositoryFuture<GrowingDegreeDay>;
+    fn accumulated_gdd(
+        &self,
+        tid: TenantId,
+        site_id: Uuid,
+        from: DateTime<Utc>,
+        to: DateTime<Utc>,
+        crop_type: String,
+    ) -> RepositoryFuture<f64>;
+}
+
+#[cfg_attr(feature = "mocks", automock)]
+pub trait PestRiskRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<PestRisk>>;
+    fn find_by_site(
+        &self,
+        tid: TenantId,
+        site_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<PestRisk>>;
+    fn create(&self, tid: TenantId, dto: CreatePestRiskDto) -> RepositoryFuture<PestRisk>;
+}
+
+use chrono::{DateTime, Utc};
+
 use crate::entities::harvest::{
     ColdChainLog, CreateColdChainLogDto, CreateHarvestDeliveryDto, CreateHarvestLotDto,
     CreateHarvestSeasonDto, HarvestDelivery, HarvestLot, HarvestSeason, UpdateColdChainLogDto,

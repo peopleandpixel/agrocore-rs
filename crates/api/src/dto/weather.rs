@@ -337,3 +337,240 @@ impl From<UpdatePhenologyRecordDto> for DomainUpdatePhenologyRecordDto {
         }
     }
 }
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PaginatedFrostWarningResponse {
+    pub data: Vec<FrostWarningDto>,
+    pub total: u64,
+    pub page: u64,
+    pub per_page: u64,
+    pub total_pages: u64,
+}
+
+#[derive(Debug, Serialize, ToSchema, validator::Validate)]
+pub struct FrostWarningDto {
+    pub id: Uuid,
+    pub tenant_id: Uuid,
+    pub station_id: Uuid,
+    pub threshold_temp_c: f64,
+    pub is_active: bool,
+    pub notify_email: bool,
+    pub notify_sms: bool,
+    pub last_triggered_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+impl From<agrocore_domain::entities::weather::FrostWarning> for FrostWarningDto {
+    fn from(f: agrocore_domain::entities::weather::FrostWarning) -> Self {
+        Self {
+            id: f.id,
+            tenant_id: f.tenant_id.into(),
+            station_id: f.station_id,
+            threshold_temp_c: f.threshold_temp_c,
+            is_active: f.is_active,
+            notify_email: f.notify_email,
+            notify_sms: f.notify_sms,
+            last_triggered_at: f.last_triggered_at.map(|t| t.to_rfc3339()),
+            created_at: f.created_at.to_rfc3339(),
+            updated_at: f.updated_at.to_rfc3339(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
+pub struct CreateFrostWarningDto {
+    pub station_id: Uuid,
+    pub threshold_temp_c: f64,
+    pub is_active: bool,
+    pub notify_email: bool,
+    pub notify_sms: bool,
+}
+
+impl From<CreateFrostWarningDto> for agrocore_domain::entities::weather::CreateFrostWarningDto {
+    fn from(dto: CreateFrostWarningDto) -> Self {
+        Self {
+            station_id: dto.station_id,
+            threshold_temp_c: dto.threshold_temp_c,
+            is_active: dto.is_active,
+            notify_email: dto.notify_email,
+            notify_sms: dto.notify_sms,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
+pub struct UpdateFrostWarningDto {
+    pub threshold_temp_c: Option<f64>,
+    pub is_active: Option<bool>,
+    pub notify_email: Option<bool>,
+    pub notify_sms: Option<bool>,
+}
+
+impl From<UpdateFrostWarningDto> for agrocore_domain::entities::weather::UpdateFrostWarningDto {
+    fn from(dto: UpdateFrostWarningDto) -> Self {
+        Self {
+            threshold_temp_c: dto.threshold_temp_c,
+            is_active: dto.is_active,
+            notify_email: dto.notify_email,
+            notify_sms: dto.notify_sms,
+            last_triggered_at: None,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PaginatedGrowingDegreeDayResponse {
+    pub data: Vec<GrowingDegreeDayDto>,
+    pub total: u64,
+    pub page: u64,
+    pub per_page: u64,
+    pub total_pages: u64,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct GrowingDegreeDayDto {
+    pub id: Uuid,
+    pub tenant_id: Uuid,
+    pub site_id: Uuid,
+    pub date: String,
+    pub base_temp_c: f64,
+    pub actual_mean_temp_c: f64,
+    pub gdd: f64,
+    pub accumulated_gdd: f64,
+    pub crop_type: String,
+}
+
+impl From<agrocore_domain::entities::weather::GrowingDegreeDay> for GrowingDegreeDayDto {
+    fn from(g: agrocore_domain::entities::weather::GrowingDegreeDay) -> Self {
+        Self {
+            id: g.id,
+            tenant_id: g.tenant_id.into(),
+            site_id: g.site_id,
+            date: g.date.to_rfc3339(),
+            base_temp_c: g.base_temp_c,
+            actual_mean_temp_c: g.actual_mean_temp_c,
+            gdd: g.gdd,
+            accumulated_gdd: g.accumulated_gdd,
+            crop_type: g.crop_type,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
+pub struct CreateGrowingDegreeDayDto {
+    pub site_id: Uuid,
+    pub date: String,
+    pub base_temp_c: f64,
+    pub actual_mean_temp_c: f64,
+    pub crop_type: String,
+}
+
+impl From<CreateGrowingDegreeDayDto>
+    for agrocore_domain::entities::weather::CreateGrowingDegreeDayDto
+{
+    fn from(dto: CreateGrowingDegreeDayDto) -> Self {
+        Self {
+            site_id: dto.site_id,
+            date: chrono::DateTime::parse_from_rfc3339(&dto.date)
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+                .unwrap_or_else(|_| chrono::Utc::now()),
+            base_temp_c: dto.base_temp_c,
+            actual_mean_temp_c: dto.actual_mean_temp_c,
+            crop_type: dto.crop_type,
+        }
+    }
+}
+
+/// Response for accumulated GDD query
+#[derive(Debug, Serialize, ToSchema)]
+pub struct AccumulatedGddResponse {
+    pub site_id: Uuid,
+    pub crop_type: String,
+    pub accumulated_gdd: f64,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PaginatedPestRiskResponse {
+    pub data: Vec<PestRiskDto>,
+    pub total: u64,
+    pub page: u64,
+    pub per_page: u64,
+    pub total_pages: u64,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PestRiskDto {
+    pub id: Uuid,
+    pub tenant_id: Uuid,
+    pub site_id: Uuid,
+    pub assessment_date: String,
+    pub risk_level: String,
+    pub pest_type: String,
+    pub confidence: f64,
+    pub recommended_action: String,
+    pub model_version: String,
+}
+
+impl From<agrocore_domain::entities::weather::PestRisk> for PestRiskDto {
+    fn from(p: agrocore_domain::entities::weather::PestRisk) -> Self {
+        Self {
+            id: p.id,
+            tenant_id: p.tenant_id.into(),
+            site_id: p.site_id,
+            assessment_date: p.assessment_date.to_rfc3339(),
+            risk_level: p.risk_level.to_string(),
+            pest_type: p.pest_type,
+            confidence: p.confidence,
+            recommended_action: p.recommended_action,
+            model_version: p.model_version,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
+pub struct CreatePestRiskDto {
+    pub site_id: Uuid,
+    pub assessment_date: String,
+    pub risk_level: String,
+    pub pest_type: String,
+    pub confidence: f64,
+    pub recommended_action: String,
+    pub model_version: String,
+}
+
+impl From<CreatePestRiskDto> for agrocore_domain::entities::weather::CreatePestRiskDto {
+    fn from(dto: CreatePestRiskDto) -> Self {
+        Self {
+            site_id: dto.site_id,
+            assessment_date: chrono::DateTime::parse_from_rfc3339(&dto.assessment_date)
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+                .unwrap_or_else(|_| chrono::Utc::now()),
+            risk_level: dto
+                .risk_level
+                .parse()
+                .unwrap_or(agrocore_domain::entities::weather::RiskLevel::Low),
+            pest_type: dto.pest_type,
+            confidence: dto.confidence,
+            recommended_action: dto.recommended_action,
+            model_version: dto.model_version,
+        }
+    }
+}
+
+/// Query parameters for accumulated GDD lookup
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct GddQuery {
+    pub site_id: Uuid,
+    pub from: chrono::DateTime<chrono::Utc>,
+    pub to: chrono::DateTime<chrono::Utc>,
+    pub crop_type: String,
+}
+
+/// Pagination with a site_id filter
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct SitePagination {
+    pub site_id: Uuid,
+    #[serde(flatten)]
+    pub pagination: agrocore_shared::Pagination,
+}

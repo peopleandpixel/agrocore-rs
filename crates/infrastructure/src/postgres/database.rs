@@ -17,13 +17,13 @@ use crate::postgres::{
 use agrocore_domain::repositories::{
     AnimalRepository, AuditLogRepo, ClockEntryRepo, ColdChainLogRepo, ComplianceChecklistRepo,
     CostCenterRepo, EquipmentRepository, FertilizerRecordRepo, FinancialRecordRepo,
-    HarvestDeliveryRepo, HarvestLotRepo, HarvestSeasonRepo, InventoryItemRepository,
-    InventoryLocationRepo, InventoryTransactionRepo, KelterDeliveryRepo, OliveGroveRepo,
-    OliveOilRecordRepo, OrderRepository, PACApplicationRepo, PhenologyRecordRepo,
-    PlantProtectionRecordRepo, SiteRepository, SpatialObjectRepository, TaskDataRepository,
-    TenantRepository, UserRepository, VineyardRepo, WaterQuotaRepo, WaterSourceRepo,
-    WaterUsageRepo, WeatherDataRepo, WeatherStationRepo, WorkLogRepo, WorkerLocationRepo,
-    WorkerRepo, WorkerTaskStatusRepository,
+    FrostWarningRepo, GrowingDegreeDayRepo, HarvestDeliveryRepo, HarvestLotRepo, HarvestSeasonRepo,
+    InventoryItemRepository, InventoryLocationRepo, InventoryTransactionRepo, KelterDeliveryRepo,
+    OliveGroveRepo, OliveOilRecordRepo, OrderRepository, PACApplicationRepo, PestRiskRepo,
+    PhenologyRecordRepo, PlantProtectionRecordRepo, SiteRepository, SpatialObjectRepository,
+    TaskDataRepository, TenantRepository, UserRepository, VineyardRepo, WaterQuotaRepo,
+    WaterSourceRepo, WaterUsageRepo, WeatherDataRepo, WeatherStationRepo, WorkLogRepo,
+    WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
 };
 use sqlx::PgPool;
 use std::sync::Arc;
@@ -83,6 +83,10 @@ pub struct MockDatabase {
     pub inventory_location_repo:
         Option<Arc<agrocore_domain::repositories::MockInventoryLocationRepo>>,
     pub clock_entry_repo: Option<Arc<agrocore_domain::repositories::MockClockEntryRepo>>,
+    pub frost_warning_repo: Option<Arc<agrocore_domain::repositories::MockFrostWarningRepo>>,
+    pub growing_degree_day_repo:
+        Option<Arc<agrocore_domain::repositories::MockGrowingDegreeDayRepo>>,
+    pub pest_risk_repo: Option<Arc<agrocore_domain::repositories::MockPestRiskRepo>>,
 }
 
 impl Database {
@@ -523,6 +527,42 @@ impl Database {
                 as Arc<dyn ClockEntryRepo>,
         }
     }
+
+    pub fn frost_warning_repo(&self) -> Arc<dyn FrostWarningRepo> {
+        match self {
+            Self::Postgres(db) => db.frost_warning_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => m
+                .frost_warning_repo
+                .clone()
+                .expect("frost_warning_repo mock not set")
+                as Arc<dyn FrostWarningRepo>,
+        }
+    }
+
+    pub fn growing_degree_day_repo(&self) -> Arc<dyn GrowingDegreeDayRepo> {
+        match self {
+            Self::Postgres(db) => db.growing_degree_day_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => m
+                .growing_degree_day_repo
+                .clone()
+                .expect("growing_degree_day_repo mock not set")
+                as Arc<dyn GrowingDegreeDayRepo>,
+        }
+    }
+
+    pub fn pest_risk_repo(&self) -> Arc<dyn PestRiskRepo> {
+        match self {
+            Self::Postgres(db) => db.pest_risk_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => {
+                m.pest_risk_repo
+                    .clone()
+                    .expect("pest_risk_repo mock not set") as Arc<dyn PestRiskRepo>
+            }
+        }
+    }
 }
 
 /// PostgreSQL Database Wrapper
@@ -573,6 +613,9 @@ pub struct PostgresDb {
     pub inventory_transaction_repo: Arc<dyn InventoryTransactionRepo>,
     pub inventory_location_repo: Arc<dyn InventoryLocationRepo>,
     pub clock_entry_repo: Arc<dyn ClockEntryRepo>,
+    pub frost_warning_repo: Arc<dyn FrostWarningRepo>,
+    pub growing_degree_day_repo: Arc<dyn GrowingDegreeDayRepo>,
+    pub pest_risk_repo: Arc<dyn PestRiskRepo>,
 }
 
 impl PostgresDb {
@@ -648,6 +691,15 @@ impl PostgresDb {
             inventory_transaction_repo: Arc::new(PgInventoryTransactionRepo::new(pool.clone())),
             inventory_location_repo: Arc::new(PgInventoryLocationRepo::new(pool.clone())),
             clock_entry_repo: Arc::new(PgClockEntryRepo::new(pool.clone())),
+            frost_warning_repo: Arc::new(crate::postgres::frost_warning::PgFrostWarningRepo::new(
+                pool.clone(),
+            )),
+            growing_degree_day_repo: Arc::new(
+                crate::postgres::growing_degree_day::PgGrowingDegreeDayRepo::new(pool.clone()),
+            ),
+            pest_risk_repo: Arc::new(crate::postgres::pest_risk::PgPestRiskRepo::new(
+                pool.clone(),
+            )),
             pool,
         })
     }
@@ -701,6 +753,15 @@ impl PostgresDb {
             inventory_transaction_repo: Arc::new(PgInventoryTransactionRepo::new(pool.clone())),
             inventory_location_repo: Arc::new(PgInventoryLocationRepo::new(pool.clone())),
             clock_entry_repo: Arc::new(PgClockEntryRepo::new(pool.clone())),
+            frost_warning_repo: Arc::new(crate::postgres::frost_warning::PgFrostWarningRepo::new(
+                pool.clone(),
+            )),
+            growing_degree_day_repo: Arc::new(
+                crate::postgres::growing_degree_day::PgGrowingDegreeDayRepo::new(pool.clone()),
+            ),
+            pest_risk_repo: Arc::new(crate::postgres::pest_risk::PgPestRiskRepo::new(
+                pool.clone(),
+            )),
             pool,
         }
     }
@@ -860,5 +921,17 @@ impl PostgresDb {
 
     pub fn clock_entry_repo(&self) -> Arc<dyn ClockEntryRepo> {
         self.clock_entry_repo.clone()
+    }
+
+    pub fn frost_warning_repo(&self) -> Arc<dyn FrostWarningRepo> {
+        self.frost_warning_repo.clone()
+    }
+
+    pub fn growing_degree_day_repo(&self) -> Arc<dyn GrowingDegreeDayRepo> {
+        self.growing_degree_day_repo.clone()
+    }
+
+    pub fn pest_risk_repo(&self) -> Arc<dyn PestRiskRepo> {
+        self.pest_risk_repo.clone()
     }
 }

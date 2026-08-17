@@ -69,7 +69,7 @@ pub struct WeatherData {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema, sqlx::FromRow)]
 pub struct FrostWarning {
     pub id: Uuid,
     #[schema(value_type = String)]
@@ -80,6 +80,78 @@ pub struct FrostWarning {
     pub notify_email: bool,
     pub notify_sms: bool,
     pub last_triggered_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+/// Growing Degree Day tracking for crop maturity prediction
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema, sqlx::FromRow)]
+pub struct GrowingDegreeDay {
+    pub id: Uuid,
+    #[schema(value_type = String)]
+    pub tenant_id: TenantId,
+    pub site_id: Uuid,
+    pub date: DateTime<Utc>,
+    pub base_temp_c: f64,
+    pub actual_mean_temp_c: f64,
+    pub gdd: f64,
+    pub accumulated_gdd: f64,
+    pub crop_type: String,
+    pub created_at: DateTime<Utc>,
+}
+
+/// Disease and pest risk assessment
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema, sqlx::FromRow)]
+pub struct PestRisk {
+    pub id: Uuid,
+    #[schema(value_type = String)]
+    pub tenant_id: TenantId,
+    pub site_id: Uuid,
+    pub assessment_date: DateTime<Utc>,
+    #[sqlx(json)]
+    pub risk_level: RiskLevel,
+    pub pest_type: String,
+    pub confidence: f64,
+    pub recommended_action: String,
+    pub model_version: String,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, Default)]
+pub enum RiskLevel {
+    #[serde(rename = "low")]
+    #[default]
+    Low,
+    #[serde(rename = "medium")]
+    Medium,
+    #[serde(rename = "high")]
+    High,
+    #[serde(rename = "critical")]
+    Critical,
+}
+
+impl std::fmt::Display for RiskLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Low => write!(f, "low"),
+            Self::Medium => write!(f, "medium"),
+            Self::High => write!(f, "high"),
+            Self::Critical => write!(f, "critical"),
+        }
+    }
+}
+
+impl std::str::FromStr for RiskLevel {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "low" => Ok(Self::Low),
+            "medium" => Ok(Self::Medium),
+            "high" => Ok(Self::High),
+            "critical" => Ok(Self::Critical),
+            _ => Err(format!("Unknown risk level: {}", s)),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema, sqlx::FromRow)]
@@ -124,6 +196,44 @@ pub struct CreateWeatherDataDto {
     pub soil_temperature_c: Option<f64>,
     pub soil_moisture_percent: Option<f64>,
     pub leaf_wetness: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+pub struct CreateFrostWarningDto {
+    pub station_id: Uuid,
+    pub threshold_temp_c: f64,
+    pub is_active: bool,
+    pub notify_email: bool,
+    pub notify_sms: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+pub struct UpdateFrostWarningDto {
+    pub threshold_temp_c: Option<f64>,
+    pub is_active: Option<bool>,
+    pub notify_email: Option<bool>,
+    pub notify_sms: Option<bool>,
+    pub last_triggered_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+pub struct CreateGrowingDegreeDayDto {
+    pub site_id: Uuid,
+    pub date: DateTime<Utc>,
+    pub base_temp_c: f64,
+    pub actual_mean_temp_c: f64,
+    pub crop_type: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+pub struct CreatePestRiskDto {
+    pub site_id: Uuid,
+    pub assessment_date: DateTime<Utc>,
+    pub risk_level: RiskLevel,
+    pub pest_type: String,
+    pub confidence: f64,
+    pub recommended_action: String,
+    pub model_version: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]

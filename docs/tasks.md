@@ -96,9 +96,9 @@ Erledigte Arbeit ist weggelassen; ein Modul ohne offene Punkte ist als erledigt 
 - [ ] Anbindung diverser Wetterdienste kostenlos und kostenpflichtig (z.B. OpenWeather, Weather Underground)
 - [ ] Hyperlokaler Wetterstation-Integration (Davis, Campbell Scientific)
 - [ ] Bodenfeuchtigkeits-Monitoring (IoT-Sensor-Integration mit Bewässerungssteuerung)
-- [ ] Wachstumsgradtag-Tracking (Kartoffelernte-Prognose)
-- [ ] Fröst-/Einfrierwarnungen
-- [ ] Krankheits-/Schädlings-Risiko-Modell
+- [x] Wachstumsgradtag-Tracking (Kartoffelernte-Prognose)
+- [x] Fröst-/Einfrierwarnungen
+- [x] Krankheits-/Schädlings-Risiko-Modell
 
 ### Mittel- / Langfristig
 

@@ -48,6 +48,32 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route(web::get().to(get_phenology))
                     .route(web::put().to(update_phenology))
                     .route(web::delete().to(delete_phenology)),
+            )
+            .service(
+                web::resource("/frost-warnings")
+                    .route(web::get().to(list_frost_warnings))
+                    .route(web::post().to(create_frost_warning)),
+            )
+            .service(
+                web::resource("/frost-warnings/{id}")
+                    .route(web::get().to(get_frost_warning))
+                    .route(web::put().to(update_frost_warning))
+                    .route(web::delete().to(delete_frost_warning)),
+            )
+            .service(
+                web::resource("/frost-warnings/active")
+                    .route(web::get().to(get_active_frost_warnings)),
+            )
+            .service(
+                web::resource("/gdd")
+                    .route(web::get().to(list_gdd))
+                    .route(web::post().to(create_gdd)),
+            )
+            .service(web::resource("/gdd/accumulated").route(web::get().to(get_accumulated_gdd)))
+            .service(
+                web::resource("/pest-risks")
+                    .route(web::get().to(list_pest_risks))
+                    .route(web::post().to(create_pest_risk)),
             ),
     );
 }
@@ -386,4 +412,227 @@ pub async fn delete_phenology(
     } else {
         Err(SharedError::NotFound("Phenology record not found".into()).into())
     }
+}
+
+// --- Frost Warning Handlers ---
+
+pub async fn list_frost_warnings(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    query: web::Query<agrocore_shared::Pagination>,
+) -> Result<HttpResponse, ApiError> {
+    let result = state
+        .db
+        .frost_warning_repo()
+        .find_all(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
+        .await?;
+    Ok(HttpResponse::Ok().json(crate::dto::PaginatedResponseDto {
+        data: result
+            .data
+            .into_iter()
+            .map(crate::dto::FrostWarningDto::from)
+            .collect(),
+        total: result.total,
+        page: result.page,
+        per_page: result.per_page,
+        total_pages: result.total_pages,
+    }))
+}
+
+pub async fn create_frost_warning(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    dto: web::Json<crate::dto::CreateFrostWarningDto>,
+) -> Result<HttpResponse, ApiError> {
+    let fw = state
+        .db
+        .frost_warning_repo()
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner().into(),
+            auth.0.user_id,
+        )
+        .await?;
+    Ok(HttpResponse::Created().json(crate::dto::FrostWarningDto::from(fw)))
+}
+
+pub async fn get_frost_warning(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let fw = state
+        .db
+        .frost_warning_repo()
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), *id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Frost warning not found".into()))?;
+    Ok(HttpResponse::Ok().json(crate::dto::FrostWarningDto::from(fw)))
+}
+
+pub async fn update_frost_warning(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+    dto: web::Json<crate::dto::UpdateFrostWarningDto>,
+) -> Result<HttpResponse, ApiError> {
+    let fw = state
+        .db
+        .frost_warning_repo()
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            *id,
+            dto.into_inner().into(),
+            auth.0.user_id,
+        )
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Frost warning not found".into()))?;
+    Ok(HttpResponse::Ok().json(crate::dto::FrostWarningDto::from(fw)))
+}
+
+pub async fn delete_frost_warning(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let success = state
+        .db
+        .frost_warning_repo()
+        .delete(agrocore_domain::TenantId(auth.0.tenant_id), *id)
+        .await?;
+    if success {
+        Ok(HttpResponse::NoContent().finish())
+    } else {
+        Err(SharedError::NotFound("Frost warning not found".into()).into())
+    }
+}
+
+pub async fn get_active_frost_warnings(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+) -> Result<HttpResponse, ApiError> {
+    let result = state
+        .db
+        .frost_warning_repo()
+        .find_active(agrocore_domain::TenantId(auth.0.tenant_id))
+        .await?;
+    Ok(HttpResponse::Ok().json(
+        result
+            .into_iter()
+            .map(crate::dto::FrostWarningDto::from)
+            .collect::<Vec<_>>(),
+    ))
+}
+
+// --- Growing Degree Day Handlers ---
+
+pub async fn list_gdd(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    query: web::Query<crate::dto::SitePagination>,
+) -> Result<HttpResponse, ApiError> {
+    let result = state
+        .db
+        .growing_degree_day_repo()
+        .find_by_site(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            query.site_id,
+            query.pagination.clone(),
+        )
+        .await?;
+    Ok(HttpResponse::Ok().json(crate::dto::PaginatedResponseDto {
+        data: result
+            .data
+            .into_iter()
+            .map(crate::dto::GrowingDegreeDayDto::from)
+            .collect(),
+        total: result.total,
+        page: result.page,
+        per_page: result.per_page,
+        total_pages: result.total_pages,
+    }))
+}
+
+pub async fn create_gdd(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    dto: web::Json<crate::dto::CreateGrowingDegreeDayDto>,
+) -> Result<HttpResponse, ApiError> {
+    let gdd = state
+        .db
+        .growing_degree_day_repo()
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner().into(),
+        )
+        .await?;
+    Ok(HttpResponse::Created().json(crate::dto::GrowingDegreeDayDto::from(gdd)))
+}
+
+pub async fn get_accumulated_gdd(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    query: web::Query<crate::dto::GddQuery>,
+) -> Result<HttpResponse, ApiError> {
+    let result = state
+        .db
+        .growing_degree_day_repo()
+        .accumulated_gdd(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            query.site_id,
+            query.from,
+            query.to,
+            query.crop_type.clone(),
+        )
+        .await?;
+    Ok(HttpResponse::Ok().json(crate::dto::AccumulatedGddResponse {
+        site_id: query.site_id,
+        crop_type: query.crop_type.clone(),
+        accumulated_gdd: result,
+    }))
+}
+
+// --- Pest Risk Handlers ---
+
+pub async fn list_pest_risks(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    query: web::Query<crate::dto::SitePagination>,
+) -> Result<HttpResponse, ApiError> {
+    let result = state
+        .db
+        .pest_risk_repo()
+        .find_by_site(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            query.site_id,
+            query.pagination.clone(),
+        )
+        .await?;
+    Ok(HttpResponse::Ok().json(crate::dto::PaginatedResponseDto {
+        data: result
+            .data
+            .into_iter()
+            .map(crate::dto::PestRiskDto::from)
+            .collect(),
+        total: result.total,
+        page: result.page,
+        per_page: result.per_page,
+        total_pages: result.total_pages,
+    }))
+}
+
+pub async fn create_pest_risk(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    dto: web::Json<crate::dto::CreatePestRiskDto>,
+) -> Result<HttpResponse, ApiError> {
+    let pr = state
+        .db
+        .pest_risk_repo()
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner().into(),
+        )
+        .await?;
+    Ok(HttpResponse::Created().json(crate::dto::PestRiskDto::from(pr)))
 }
