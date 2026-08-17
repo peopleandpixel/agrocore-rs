@@ -208,10 +208,15 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to automatically calculate area from boundary
+-- Return type NUMERIC(10,4) — consistent with 2026072801_lpis_sigpac_reference.sql
 CREATE OR REPLACE FUNCTION calculate_area_hectares(p_geometry GEOMETRY)
-RETURNS DOUBLE PRECISION AS $$
+RETURNS NUMERIC(10,4) AS $$
 BEGIN
-    RETURN ST_Area(p_geometry::geography) / 10000.0;
+    IF p_geometry IS NULL THEN
+        RETURN NULL;
+    END IF;
+    -- Use geography for accurate area calculation on WGS84
+    RETURN ROUND(ST_Area(p_geometry::GEOGRAPHY) / 10000.0, 4);
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
