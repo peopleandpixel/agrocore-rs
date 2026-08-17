@@ -7,8 +7,15 @@
 -- Rename old columns first, then add any new ones that don't exist
 -- ============================================================
 -- Rename old_data/new_data to old_value/new_value if they still exist (from 2026072501)
-ALTER TABLE audit_logs RENAME COLUMN IF EXISTS old_data TO old_value;
-ALTER TABLE audit_logs RENAME COLUMN IF EXISTS new_data TO new_value;
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'audit_logs' AND column_name = 'old_data') THEN
+        ALTER TABLE audit_logs RENAME COLUMN old_data TO old_value;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'audit_logs' AND column_name = 'new_data') THEN
+        ALTER TABLE audit_logs RENAME COLUMN new_data TO new_value;
+    END IF;
+END $$;
 -- Add columns that don't exist (after rename, if applicable)
 ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS old_value JSONB;
 ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS new_value JSONB;
@@ -320,7 +327,15 @@ ORDER BY tenant_id, entity_type, action;
 
 -- ============================================================
 -- 10. Grant permissions
+-- Create role if it doesn't exist (for compatibility with older PostgreSQL)
 -- ============================================================
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agrocore_app') THEN
+        CREATE ROLE agrocore_app;
+    END IF;
+END $$;
+
 GRANT SELECT ON audit_logs TO agrocore_app;
 GRANT SELECT ON audit_log_export TO agrocore_app;
 GRANT SELECT ON audit_summary TO agrocore_app;
