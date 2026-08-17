@@ -46,6 +46,9 @@ pub enum GlobalEvent {
     AuditLogCreated(AuditLog),
     WeatherStationCreated(WeatherStation),
     WeatherDataCollected(WeatherData),
+    WeatherStationDataReceived(IoTTelemetryEvent),
+    SoilMoistureAlert(SoilMoistureAlertEvent),
+    IrrigationTriggered(IrrigationCommandEvent),
     PhenologyRecordCreated(PhenologyRecord),
     HealthCheckRequested,
     SiteCreated(Site),
@@ -374,6 +377,47 @@ pub enum DeviceStatus {
     Maintenance,
     Updating,
 }
+
+/// Event published when soil moisture drops below a configured threshold.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct SoilMoistureAlertEvent {
+    pub device_id: String,
+    pub tenant_id: Uuid,
+    pub site_id: Option<Uuid>,
+    pub station_id: Option<Uuid>,
+    pub moisture_percent: f64,
+    pub threshold_percent: f64,
+    pub timestamp: DateTime<Utc>,
+    pub recommended_action: String,
+}
+
+/// Event published when an irrigation command is triggered.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct IrrigationCommandEvent {
+    pub device_id: String,
+    pub tenant_id: Uuid,
+    pub site_id: Option<Uuid>,
+    pub station_id: Option<Uuid>,
+    pub moisture_percent: f64,
+    pub threshold_percent: f64,
+    pub command: IrrigationCommand,
+    pub triggered_at: DateTime<Utc>,
+}
+
+/// The type of irrigation action to take.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq)]
+pub enum IrrigationCommand {
+    Start,
+    Stop,
+    SetDuration { minutes: u32 },
+    SetMoistureThreshold { threshold_percent: f64 },
+}
+
+/// NATS subjects for IoT telemetry and alerts
+pub const NATS_SUBJECT_TELEMETRY_WEATHER: &str = "telemetry.weather";
+pub const NATS_SUBJECT_TELEMETRY_SOIL: &str = "telemetry.soil";
+pub const NATS_SUBJECT_ALERTS_SOIL: &str = "alerts.soil_moisture";
+pub const NATS_SUBJECT_COMMANDS_IRRIGATION: &str = "commands.irrigation";
 
 // ============================================================
 // Home Assistant MQTT Auto-Discovery

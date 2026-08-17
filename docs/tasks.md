@@ -94,8 +94,8 @@ Erledigte Arbeit ist weggelassen; ein Modul ohne offene Punkte ist als erledigt 
 
 #### Wetter & Umwelt
 - [x] Anbindung diverser Wetterdienste kostenlos und kostenpflichtig (z.B. OpenWeather, Weather Underground)
-- [ ] Hyperlokaler Wetterstation-Integration (Davis, Campbell Scientific)
-- [ ] Bodenfeuchtigkeits-Monitoring (IoT-Sensor-Integration mit Bewässerungssteuerung)
+- [x] Hyperlokaler Wetterstation-Integration (Davis, Campbell Scientific)
+- [x] Bodenfeuchtigkeits-Monitoring (IoT-Sensor-Integration mit Bewässerungssteuerung)
 - [x] Wachstumsgradtag-Tracking (Kartoffelernte-Prognose)
 - [x] Fröst-/Einfrierwarnungen
 - [x] Krankheits-/Schädlings-Risiko-Modell

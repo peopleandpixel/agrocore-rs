@@ -55,3 +55,63 @@ CREATE TABLE IF NOT EXISTS pest_risks (
 CREATE INDEX IF NOT EXISTS idx_pest_risks_tenant ON pest_risks(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_pest_risks_site ON pest_risks(site_id);
 CREATE INDEX IF NOT EXISTS idx_pest_risks_date ON pest_risks(assessment_date);
+
+-- Soil moisture monitoring configuration
+CREATE TABLE IF NOT EXISTS soil_moisture_configs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL,
+    station_id UUID NOT NULL,
+    site_id UUID,
+    moisture_threshold_percent NUMERIC(5,2) NOT NULL DEFAULT 30.0,
+    min_interval_minutes INTEGER NOT NULL DEFAULT 120,
+    irrigation_duration_minutes INTEGER NOT NULL DEFAULT 15,
+    notify_email BOOLEAN NOT NULL DEFAULT true,
+    notify_sms BOOLEAN NOT NULL DEFAULT false,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_soil_configs_tenant ON soil_moisture_configs(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_soil_configs_station ON soil_moisture_configs(station_id);
+CREATE INDEX IF NOT EXISTS idx_soil_configs_active ON soil_moisture_configs(is_active);
+
+-- Soil moisture sensor readings
+CREATE TABLE IF NOT EXISTS soil_moisture_readings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL,
+    station_id UUID NOT NULL,
+    site_id UUID,
+    device_id VARCHAR(100),
+    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    moisture_percent NUMERIC(5,2) NOT NULL,
+    soil_temperature_c NUMERIC(5,2),
+    soil_depth_cm NUMERIC(4,1),
+    battery_level NUMERIC(5,2),
+    signal_strength INTEGER,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_soil_readings_tenant ON soil_moisture_readings(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_soil_readings_station ON soil_moisture_readings(station_id);
+CREATE INDEX IF NOT EXISTS idx_soil_readings_timestamp ON soil_moisture_readings(timestamp);
+
+-- Soil moisture alerts (when moisture drops below threshold)
+CREATE TABLE IF NOT EXISTS soil_moisture_alerts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL,
+    station_id UUID NOT NULL,
+    site_id UUID,
+    moisture_percent NUMERIC(5,2) NOT NULL,
+    threshold_percent NUMERIC(5,2) NOT NULL,
+    is_resolved BOOLEAN NOT NULL DEFAULT false,
+    irrigation_commanded BOOLEAN NOT NULL DEFAULT false,
+    triggered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    resolved_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_soil_alerts_tenant ON soil_moisture_alerts(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_soil_alerts_station ON soil_moisture_alerts(station_id);
+CREATE INDEX IF NOT EXISTS idx_soil_alerts_unresolved ON soil_moisture_alerts(is_resolved);
+CREATE INDEX IF NOT EXISTS idx_soil_alerts_triggered_at ON soil_moisture_alerts(triggered_at);

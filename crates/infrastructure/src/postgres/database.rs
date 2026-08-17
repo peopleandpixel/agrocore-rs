@@ -3,16 +3,19 @@ use crate::postgres::{
     cold_chain_log::PgColdChainLogRepo, compliance::PgComplianceChecklistRepo,
     cost_center::PgCostCenterRepo, equipment::PgEquipmentRepo,
     fertilizer_record::PgFertilizerRecordRepo, financial_record::PgFinancialRecordRepo,
+    frost_warning::PgFrostWarningRepo, growing_degree_day::PgGrowingDegreeDayRepo,
     harvest_delivery::PgHarvestDeliveryRepo, harvest_lot::PgHarvestLotRepo,
     harvest_season::PgHarvestSeasonRepo, inventory_item::PgInventoryItemRepo,
     inventory_location::PgInventoryLocationRepo, inventory_transaction::PgInventoryTransactionRepo,
     kelter_delivery::PgKelterDeliveryRepo, olive_grove::PgOliveGroveRepo,
     olive_oil_record::PgOliveOilRecordRepo, order::PgOrderRepo,
+    pac_application::PgPACApplicationRepo, pest_risk::PgPestRiskRepo,
     phenology_record::PgPhenologyRecordRepo, plant_protection_record::PgPlantProtectionRecordRepo,
-    site::PgSiteRepo, task_data::PgTaskDataRepo, tenant::PgTenantRepo, user::PgUserRepo,
-    vineyard::PgVineyardRepo, weather_data::PgWeatherDataRepo,
-    weather_station::PgWeatherStationRepo, work_log::PgWorkLogRepo, worker::PgWorkerRepo,
-    worker_location::PgWorkerLocationRepo, worker_task_status::PgWorkerTaskStatusRepo,
+    site::PgSiteRepo, soil_moisture_config::PgSoilMoistureConfigRepo, task_data::PgTaskDataRepo,
+    tenant::PgTenantRepo, user::PgUserRepo, vineyard::PgVineyardRepo,
+    weather_data::PgWeatherDataRepo, weather_station::PgWeatherStationRepo,
+    work_log::PgWorkLogRepo, worker::PgWorkerRepo, worker_location::PgWorkerLocationRepo,
+    worker_task_status::PgWorkerTaskStatusRepo,
 };
 use agrocore_domain::repositories::{
     AnimalRepository, AuditLogRepo, ClockEntryRepo, ColdChainLogRepo, ComplianceChecklistRepo,
@@ -20,10 +23,10 @@ use agrocore_domain::repositories::{
     FrostWarningRepo, GrowingDegreeDayRepo, HarvestDeliveryRepo, HarvestLotRepo, HarvestSeasonRepo,
     InventoryItemRepository, InventoryLocationRepo, InventoryTransactionRepo, KelterDeliveryRepo,
     OliveGroveRepo, OliveOilRecordRepo, OrderRepository, PACApplicationRepo, PestRiskRepo,
-    PhenologyRecordRepo, PlantProtectionRecordRepo, SiteRepository, SpatialObjectRepository,
-    TaskDataRepository, TenantRepository, UserRepository, VineyardRepo, WaterQuotaRepo,
-    WaterSourceRepo, WaterUsageRepo, WeatherDataRepo, WeatherStationRepo, WorkLogRepo,
-    WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
+    PhenologyRecordRepo, PlantProtectionRecordRepo, SiteRepository, SoilMoistureConfigRepo,
+    SpatialObjectRepository, TaskDataRepository, TenantRepository, UserRepository, VineyardRepo,
+    WaterQuotaRepo, WaterSourceRepo, WaterUsageRepo, WeatherDataRepo, WeatherStationRepo,
+    WorkLogRepo, WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
 };
 use sqlx::PgPool;
 use std::sync::Arc;
@@ -87,6 +90,8 @@ pub struct MockDatabase {
     pub growing_degree_day_repo:
         Option<Arc<agrocore_domain::repositories::MockGrowingDegreeDayRepo>>,
     pub pest_risk_repo: Option<Arc<agrocore_domain::repositories::MockPestRiskRepo>>,
+    pub soil_moisture_config_repo:
+        Option<Arc<agrocore_domain::repositories::MockSoilMoistureConfigRepo>>,
 }
 
 impl Database {
@@ -563,6 +568,18 @@ impl Database {
             }
         }
     }
+
+    pub fn soil_moisture_config_repo(&self) -> Arc<dyn SoilMoistureConfigRepo> {
+        match self {
+            Self::Postgres(db) => db.soil_moisture_config_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => m
+                .soil_moisture_config_repo
+                .clone()
+                .expect("soil_moisture_config_repo mock not set")
+                as Arc<dyn SoilMoistureConfigRepo>,
+        }
+    }
 }
 
 /// PostgreSQL Database Wrapper
@@ -616,6 +633,7 @@ pub struct PostgresDb {
     pub frost_warning_repo: Arc<dyn FrostWarningRepo>,
     pub growing_degree_day_repo: Arc<dyn GrowingDegreeDayRepo>,
     pub pest_risk_repo: Arc<dyn PestRiskRepo>,
+    pub soil_moisture_config_repo: Arc<dyn SoilMoistureConfigRepo>,
 }
 
 impl PostgresDb {
@@ -700,6 +718,9 @@ impl PostgresDb {
             pest_risk_repo: Arc::new(crate::postgres::pest_risk::PgPestRiskRepo::new(
                 pool.clone(),
             )),
+            soil_moisture_config_repo: Arc::new(
+                crate::postgres::soil_moisture_config::PgSoilMoistureConfigRepo::new(pool.clone()),
+            ),
             pool,
         })
     }
@@ -762,6 +783,9 @@ impl PostgresDb {
             pest_risk_repo: Arc::new(crate::postgres::pest_risk::PgPestRiskRepo::new(
                 pool.clone(),
             )),
+            soil_moisture_config_repo: Arc::new(
+                crate::postgres::soil_moisture_config::PgSoilMoistureConfigRepo::new(pool.clone()),
+            ),
             pool,
         }
     }
@@ -933,5 +957,9 @@ impl PostgresDb {
 
     pub fn pest_risk_repo(&self) -> Arc<dyn PestRiskRepo> {
         self.pest_risk_repo.clone()
+    }
+
+    pub fn soil_moisture_config_repo(&self) -> Arc<dyn SoilMoistureConfigRepo> {
+        self.soil_moisture_config_repo.clone()
     }
 }

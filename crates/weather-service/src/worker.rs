@@ -7,7 +7,11 @@ use agrocore_domain::services::weather::{
 };
 use agrocore_domain::{TenantId, entities::tenant::Tenant};
 use agrocore_infrastructure::Database;
-use agrocore_messaging::{Event, GlobalEvent, MessagingClient};
+use agrocore_messaging::{
+    Event, GlobalEvent, IrrigationCommand, IrrigationCommandEvent, MessagingClient,
+    NATS_SUBJECT_COMMANDS_IRRIGATION, NATS_SUBJECT_TELEMETRY_SOIL, NATS_SUBJECT_TELEMETRY_WEATHER,
+    SoilMoistureAlertEvent,
+};
 use agrocore_shared::Pagination;
 use futures::StreamExt;
 use serde::Deserialize;
@@ -35,6 +39,12 @@ impl Default for ProviderRegistry {
                 ),
             ],
         }
+    }
+}
+
+impl Clone for ProviderRegistry {
+    fn clone(&self) -> Self {
+        Self::default()
     }
 }
 
@@ -90,89 +100,153 @@ struct GeocodingResult {
 pub async fn start(db: Database, nats_url: String) -> anyhow::Result<()> {
     let messaging = MessagingClient::connect(&nats_url).await?;
     let mut subscriber = messaging.subscribe(">").await?;
+    // Also subscribe to specific telemetry subjects forwarded by the MQTT bridge
+    let weather_telemetry_sub = messaging.subscribe(NATS_SUBJECT_TELEMETRY_WEATHER).await?;
+    let soil_telemetry_sub = messaging.subscribe(NATS_SUBJECT_TELEMETRY_SOIL).await?;
 
     let registry = ProviderRegistry::default();
 
     info!(
-        "Weather Service worker started, listening on all subjects (>), providers registered: OpenMeteo, OpenWeather, WeatherUnderground"
+        "Weather Service worker started, listening on all subjects (>), \
+         providers registered: OpenMeteo (free), OpenWeather (paid), Weather Underground (paid). \
+         Also subscribed to MQTT-bridged telemetry: {}, {}",
+        NATS_SUBJECT_TELEMETRY_WEATHER, NATS_SUBJECT_TELEMETRY_SOIL
     );
 
     let db_clone = db.clone();
     let registry_clone = registry.clone();
+    let messaging_clone = messaging.clone();
     tokio::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_secs(1800)); // Every 30 minutes
         loop {
             interval.tick().await;
-            if let Err(e) = fetch_weather_for_tenants(&db_clone, &registry_clone).await {
+            if let Err(e) =
+                fetch_weather_for_tenants(&db_clone, &registry_clone, &messaging_clone).await
+            {
                 error!("Error fetching weather for tenants: {}", e);
             }
         }
     });
 
-    while let Some(message) = subscriber.next().await {
-        let subject = message.subject.clone();
+    tokio::pin!(weather_telemetry_sub, soil_telemetry_sub);
 
-        if subject.as_str() == "system.tenant.created" {
-            let event: Event<GlobalEvent> = match serde_json::from_slice(&message.payload) {
-                Ok(e) => e,
-                Err(e) => {
-                    error!("Failed to deserialize tenant created event: {}", e);
+    loop {
+        tokio::select! {
+            // Handle general NATS messages (health, tenant created, etc.)
+            message = subscriber.next() => {
+                let Some(message) = message else { break; };
+                let subject = message.subject.clone();
+
+                if subject.as_str() == "system.tenant.created" {
+                    let event: Event<GlobalEvent> = match serde_json::from_slice(&message.payload) {
+                        Ok(e) => e,
+                        Err(e) => {
+                            error!("Failed to deserialize tenant created event: {}", e);
+                            continue;
+                        }
+                    };
+                    if let GlobalEvent::TenantCreated(tenant) = event.payload {
+                        info!("Received TenantCreated event for tenant {}", tenant.id);
+                        let db_clone = db.clone();
+                        let registry_clone = registry.clone();
+                        let messaging_clone = messaging.clone();
+                        let client = reqwest::Client::new();
+                        tokio::spawn(async move {
+                            if let Err(e) = process_tenant_weather(
+                                &db_clone, &tenant, &registry_clone, &client, &messaging_clone,
+                            )
+                            .await
+                            {
+                                error!(
+                                    "Error processing weather for new tenant {}: {}",
+                                    tenant.id, e
+                                );
+                            }
+                        });
+                    }
                     continue;
                 }
-            };
-            if let GlobalEvent::TenantCreated(tenant) = event.payload {
-                info!("Received TenantCreated event for tenant {}", tenant.id);
-                let db_clone = db.clone();
-                let registry_clone = registry.clone();
-                let client = reqwest::Client::new();
-                tokio::spawn(async move {
-                    if let Err(e) =
-                        process_tenant_weather(&db_clone, &tenant, &registry_clone, &client).await
-                    {
+
+                if subject.as_str() == "weather.health" {
+                    if let Some(reply_to) = message.reply {
+                        let response = serde_json::json!({"status": "ok", "service": "weather"});
+                        let _ = messaging
+                            .publish_raw(reply_to.as_str(), serde_json::to_vec(&response)?)
+                            .await;
+                    }
+                    continue;
+                }
+
+                let event: Event<GlobalEvent> = match serde_json::from_slice(&message.payload) {
+                    Ok(e) => e,
+                    Err(e) => {
                         error!(
-                            "Error processing weather for new tenant {}: {}",
-                            tenant.id, e
+                            "Failed to deserialize weather event on subject {}: {}",
+                            subject, e
+                        );
+                        continue;
+                    }
+                };
+
+                info!("Received message on subject: {}", subject);
+
+                match event.payload {
+                    GlobalEvent::HealthCheckRequested => {
+                        if let Some(reply_to) = message.reply {
+                            let response = serde_json::json!({"status": "ok", "service": "weather"});
+                            let _ = messaging
+                                .publish_raw(reply_to.as_str(), serde_json::to_vec(&response)?)
+                                .await;
+                        }
+                    }
+                    GlobalEvent::WeatherDataCollected(data) => {
+                        info!(
+                            "Received WeatherDataCollected event for station {} (tenant {})",
+                            data.station_id, data.tenant_id
                         );
                     }
-                });
-            }
-            continue;
-        }
-
-        if subject.as_str() == "weather.health" {
-            if let Some(reply_to) = message.reply {
-                let response = serde_json::json!({"status": "ok", "service": "weather"});
-                let _ = messaging
-                    .publish_raw(reply_to.as_str(), serde_json::to_vec(&response)?)
-                    .await;
-            }
-            continue;
-        }
-
-        let event: Event<GlobalEvent> = match serde_json::from_slice(&message.payload) {
-            Ok(e) => e,
-            Err(e) => {
-                error!(
-                    "Failed to deserialize weather event on subject {}: {}",
-                    subject, e
-                );
-                continue;
-            }
-        };
-
-        info!("Received message on subject: {}", subject);
-
-        match event.payload {
-            GlobalEvent::HealthCheckRequested => {
-                if let Some(reply_to) = message.reply {
-                    let response = serde_json::json!({"status": "ok", "service": "weather"});
-                    let _ = messaging
-                        .publish_raw(reply_to.as_str(), serde_json::to_vec(&response)?)
-                        .await;
+                    GlobalEvent::SoilMoistureAlert(_) => {
+                        info!("Received soil moisture alert event");
+                    }
+                    GlobalEvent::IrrigationTriggered(_) => {
+                        info!("Received irrigation command event");
+                    }
+                    _ => {}
                 }
             }
-            _ => {
-                // Handle other weather events
+
+            // Handle weather telemetry forwarded from MQTT by the bridge
+            weather_msg = weather_telemetry_sub.next() => {
+                let Some(message) = weather_msg else { break; };
+                if let Ok(event) = serde_json::from_slice::<Event<GlobalEvent>>(&message.payload)
+                    && let GlobalEvent::WeatherDataCollected(data) = event.payload
+                {
+                    info!(
+                        "Received IoT weather telemetry from NATS (bridge from MQTT) for station {}",
+                        data.station_id
+                    );
+                }
+            }
+
+            // Handle soil moisture telemetry forwarded from MQTT by the bridge
+            soil_msg = soil_telemetry_sub.next() => {
+                let Some(message) = soil_msg else { break; };
+                if let Ok(event) = serde_json::from_slice::<Event<GlobalEvent>>(&message.payload) {
+                    match event.payload {
+                        GlobalEvent::WeatherDataCollected(data) => {
+                            if let Some(moisture) = data.soil_moisture_percent {
+                                process_soil_moisture_alerts(&db, data.tenant_id, data.station_id, moisture, &messaging).await;
+                            }
+                        }
+                        GlobalEvent::SoilMoistureAlert(alert) => {
+                            info!(
+                                "Received soil alert via MQTT bridge: {}% below {}%",
+                                alert.moisture_percent, alert.threshold_percent
+                            );
+                        }
+                        _ => {}
+                    }
+                }
             }
         }
     }
@@ -223,12 +297,13 @@ pub async fn register_external_provider_station(
 async fn fetch_weather_for_tenants(
     db: &Database,
     registry: &ProviderRegistry,
+    messaging: &MessagingClient,
 ) -> anyhow::Result<()> {
     let tenants = db.tenant_repo().find_all(Pagination::default()).await?;
     let client = reqwest::Client::new();
 
     for tenant in tenants.data {
-        if let Err(e) = process_tenant_weather(db, &tenant, registry, &client).await {
+        if let Err(e) = process_tenant_weather(db, &tenant, registry, &client, messaging).await {
             error!("Error processing weather for tenant {}: {}", tenant.id, e);
         }
     }
@@ -241,13 +316,13 @@ async fn process_tenant_weather(
     tenant: &Tenant,
     registry: &ProviderRegistry,
     client: &reqwest::Client,
+    messaging: &MessagingClient,
 ) -> anyhow::Result<()> {
     let stations = db
         .weather_station_repo()
         .find_all(TenantId(tenant.id), Pagination::default())
         .await?;
 
-    // Process external API stations via provider trait
     for station in &stations.data {
         if !station.is_active {
             continue;
@@ -264,7 +339,6 @@ async fn process_tenant_weather(
             None => continue,
         };
 
-        // For ExternalApi stations, extract lat/lon from api_key_config
         let (lat, lon) = if station.station_type == WeatherStationType::ExternalApi {
             let config = station
                 .api_key_config
@@ -282,14 +356,14 @@ async fn process_tenant_weather(
                 }
             }
         } else {
-            // Virtual stations — geocode from tenant address
-            (0.0, 0.0) // will be handled below
+            (0.0, 0.0)
         };
 
         if station.station_type == WeatherStationType::ExternalApi {
             match provider.fetch_current(lat, lon, api_key.as_deref()).await {
                 Ok(result) => {
-                    store_weather_data(db, TenantId(tenant.id), station.id, result).await?;
+                    store_weather_data(db, TenantId(tenant.id), station.id, result, messaging)
+                        .await?;
                 }
                 Err(e) => {
                     warn!("Provider fetch failed for station {}: {}", station.id, e);
@@ -298,7 +372,6 @@ async fn process_tenant_weather(
             continue;
         }
 
-        // Virtual stations — geocode address and use provider
         let address = match tenant
             .config
             .custom_field_schemas
@@ -308,10 +381,7 @@ async fn process_tenant_weather(
             .and_then(|v| v.as_str())
         {
             Some(a) if !a.trim().is_empty() => a,
-            _ => {
-                // Check if we already have data from external providers — skip geocoding
-                continue;
-            }
+            _ => continue,
         };
 
         let geocoding_url = format!(
@@ -332,13 +402,12 @@ async fn process_tenant_weather(
             }
         };
 
-        // Fetch current weather via the provider
         match provider
             .fetch_current(location.latitude, location.longitude, None)
             .await
         {
             Ok(result) => {
-                store_weather_data(db, TenantId(tenant.id), station.id, result).await?;
+                store_weather_data(db, TenantId(tenant.id), station.id, result, messaging).await?;
                 info!("Stored weather data for tenant {}", tenant.id);
             }
             Err(e) => {
@@ -353,14 +422,18 @@ async fn process_tenant_weather(
     Ok(())
 }
 
-/// Store weather fetch results into the database via the weather_data repository.
+/// Store weather fetch results into the database via the weather_data repository,
+/// then publish the event via NATS (the MqttBridge forwards it to MQTT for
+/// Home Assistant and other MQTT consumers).
 async fn store_weather_data(
     db: &Database,
     tid: TenantId,
     station_id: Uuid,
     result: WeatherFetchResult,
+    messaging: &MessagingClient,
 ) -> anyhow::Result<()> {
-    db.weather_data_repo()
+    let weather_data = db
+        .weather_data_repo()
         .create(
             tid,
             CreateWeatherDataDto {
@@ -379,26 +452,114 @@ async fn store_weather_data(
             },
         )
         .await?;
+
+    // Publish the WeatherDataCollected event via NATS.
+    // The MqttBridge (in agrocore-messaging) forwards this to MQTT topics
+    // for Home Assistant auto-discovery and other MQTT consumers.
+    let event = Event::new(
+        format!("weather.station.{}", station_id),
+        GlobalEvent::WeatherDataCollected(weather_data.clone()),
+    );
+    let payload = serde_json::to_vec(&event)?;
+    let _ = messaging
+        .publish_raw(NATS_SUBJECT_TELEMETRY_WEATHER, payload)
+        .await;
+
+    // If soil moisture data is present, check thresholds and publish alerts
+    if let Some(moisture) = result.soil_moisture_percent {
+        process_soil_moisture_alerts(db, tid, station_id, moisture, messaging).await;
+    }
+
     Ok(())
 }
 
-// Implement Clone for ProviderRegistry since it only holds a Vec of trait objects
-// We need a manual Clone because Box<dyn Trait> doesn't implement Clone.
-// Since all providers are stateless, we can just recreate the registry.
-impl Clone for ProviderRegistry {
-    fn clone(&self) -> Self {
-        Self {
-            providers: vec![
-                (WeatherServiceType::OpenMeteo, Box::new(OpenMeteoProvider)),
-                (
-                    WeatherServiceType::OpenWeather,
-                    Box::new(OpenWeatherProvider),
+/// Check soil moisture configurations and publish alerts + irrigation commands if thresholds are breached.
+async fn process_soil_moisture_alerts(
+    db: &Database,
+    tid: TenantId,
+    station_id: Uuid,
+    moisture_percent: f64,
+    messaging: &MessagingClient,
+) {
+    let configs = match db
+        .soil_moisture_config_repo()
+        .find_by_station(tid, station_id)
+        .await
+    {
+        Ok(configs) => configs,
+        Err(e) => {
+            warn!(
+                "Failed to load soil moisture configs for station {}: {}",
+                station_id, e
+            );
+            return;
+        }
+    };
+
+    for config in configs {
+        if !config.is_active {
+            continue;
+        }
+
+        if moisture_percent < config.moisture_threshold_percent {
+            let alert = SoilMoistureAlertEvent {
+                device_id: format!("station:{}", station_id),
+                tenant_id: tid.0,
+                site_id: config.site_id,
+                station_id: Some(station_id),
+                moisture_percent,
+                threshold_percent: config.moisture_threshold_percent,
+                timestamp: chrono::Utc::now(),
+                recommended_action: format!(
+                    "Soil moisture {:.1}% below threshold {:.1}%. \
+                     Irrigation recommended for {} minutes.",
+                    moisture_percent,
+                    config.moisture_threshold_percent,
+                    config.irrigation_duration_minutes
                 ),
-                (
-                    WeatherServiceType::WeatherUnderground,
-                    Box::new(WeatherUndergroundProvider),
-                ),
-            ],
+            };
+
+            // Publish alert via NATS (MqttBridge forwards to MQTT)
+            let event = Event::new(
+                format!("soil.moisture.alert.station.{}", station_id),
+                GlobalEvent::SoilMoistureAlert(alert.clone()),
+            );
+            let payload = serde_json::to_vec(&event).unwrap_or_default();
+            let _ = messaging
+                .publish_raw(NATS_SUBJECT_TELEMETRY_SOIL, payload)
+                .await;
+
+            // Publish irrigation command via NATS
+            let irrigation_cmd = IrrigationCommandEvent {
+                device_id: format!("station:{}", station_id),
+                tenant_id: tid.0,
+                site_id: config.site_id,
+                station_id: Some(station_id),
+                moisture_percent,
+                threshold_percent: config.moisture_threshold_percent,
+                command: IrrigationCommand::SetDuration {
+                    minutes: config.irrigation_duration_minutes as u32,
+                },
+                triggered_at: chrono::Utc::now(),
+            };
+
+            let cmd_event = Event::new(
+                format!("irrigation.command.station.{}", station_id),
+                GlobalEvent::IrrigationTriggered(irrigation_cmd.clone()),
+            );
+            let cmd_payload = serde_json::to_vec(&cmd_event).unwrap_or_default();
+            let _ = messaging
+                .publish_raw(NATS_SUBJECT_COMMANDS_IRRIGATION, cmd_payload)
+                .await;
+
+            info!(
+                "Soil moisture alert: {:.1}% < threshold {:.1}% for station {} — \
+                 irrigation commanded for {} minutes",
+                moisture_percent,
+                config.moisture_threshold_percent,
+                station_id,
+                config.irrigation_duration_minutes
+            );
         }
     }
 }

@@ -375,8 +375,9 @@ pub trait AuditLogRepo: Send + Sync {
 // --- Weather Repository ---
 use crate::entities::weather::{
     CreateFrostWarningDto, CreateGrowingDegreeDayDto, CreatePestRiskDto, CreatePhenologyRecordDto,
-    CreateWeatherDataDto, CreateWeatherStationDto, FrostWarning, GrowingDegreeDay, PestRisk,
-    PhenologyRecord, UpdateFrostWarningDto, UpdatePhenologyRecordDto, UpdateWeatherDataDto,
+    CreateSoilMoistureConfigDto, CreateWeatherDataDto, CreateWeatherStationDto, FrostWarning,
+    GrowingDegreeDay, PestRisk, PhenologyRecord, SoilMoistureAlert, SoilMoistureConfig,
+    SoilMoistureReading, UpdateFrostWarningDto, UpdatePhenologyRecordDto, UpdateWeatherDataDto,
     UpdateWeatherStationDto, WeatherData, WeatherStation,
 };
 
@@ -523,6 +524,72 @@ pub trait PestRiskRepo: Send + Sync {
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<PestRisk>>;
     fn create(&self, tid: TenantId, dto: CreatePestRiskDto) -> RepositoryFuture<PestRisk>;
+}
+
+#[cfg_attr(feature = "mocks", automock)]
+pub trait SoilMoistureReadingRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<SoilMoistureReading>>;
+    fn find_by_station(
+        &self,
+        tid: TenantId,
+        station_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<SoilMoistureReading>>;
+    fn find_recent(
+        &self,
+        tid: TenantId,
+        station_id: Uuid,
+        limit: u32,
+    ) -> RepositoryFuture<Vec<SoilMoistureReading>>;
+    fn create(
+        &self,
+        tid: TenantId,
+        reading: SoilMoistureReading,
+    ) -> RepositoryFuture<SoilMoistureReading>;
+}
+
+#[cfg_attr(feature = "mocks", automock)]
+pub trait SoilMoistureConfigRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<SoilMoistureConfig>>;
+    fn find_by_station(
+        &self,
+        tid: TenantId,
+        station_id: Uuid,
+    ) -> RepositoryFuture<Vec<SoilMoistureConfig>>;
+    fn find_by_site(
+        &self,
+        tid: TenantId,
+        site_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<SoilMoistureConfig>>;
+    fn create(
+        &self,
+        tid: TenantId,
+        dto: CreateSoilMoistureConfigDto,
+    ) -> RepositoryFuture<SoilMoistureConfig>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: CreateSoilMoistureConfigDto,
+    ) -> RepositoryFuture<Option<SoilMoistureConfig>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+#[cfg_attr(feature = "mocks", automock)]
+pub trait SoilMoistureAlertRepo: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<SoilMoistureAlert>>;
+    fn find_unresolved(
+        &self,
+        tid: TenantId,
+        station_id: Uuid,
+    ) -> RepositoryFuture<Vec<SoilMoistureAlert>>;
+    fn create(
+        &self,
+        tid: TenantId,
+        alert: SoilMoistureAlert,
+    ) -> RepositoryFuture<SoilMoistureAlert>;
+    fn mark_resolved(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
 use chrono::{DateTime, Utc};

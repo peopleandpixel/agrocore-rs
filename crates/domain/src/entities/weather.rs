@@ -170,6 +170,94 @@ pub struct PhenologyRecord {
     pub created_at: DateTime<Utc>,
 }
 
+/// IoT soil moisture sensor reading from a field sensor.
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema, sqlx::FromRow)]
+pub struct SoilMoistureReading {
+    pub id: Uuid,
+    #[schema(value_type = String)]
+    pub tenant_id: TenantId,
+    pub station_id: Uuid,
+    pub site_id: Option<Uuid>,
+    pub device_id: Option<String>,
+    pub timestamp: DateTime<Utc>,
+    pub moisture_percent: f64,
+    pub soil_temperature_c: Option<f64>,
+    pub soil_depth_cm: Option<f64>,
+    pub battery_level: Option<f64>,
+    pub signal_strength: Option<i32>,
+    pub created_at: DateTime<Utc>,
+}
+
+/// Soil moisture alert — generated when moisture drops below threshold.
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema, sqlx::FromRow)]
+pub struct SoilMoistureAlert {
+    pub id: Uuid,
+    #[schema(value_type = String)]
+    pub tenant_id: TenantId,
+    pub station_id: Uuid,
+    pub site_id: Option<Uuid>,
+    pub moisture_percent: f64,
+    pub threshold_percent: f64,
+    pub is_resolved: bool,
+    pub irrigation_commanded: bool,
+    pub triggered_at: DateTime<Utc>,
+    pub resolved_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+}
+
+/// IoT device type for weather/soil monitoring stations.
+#[derive(
+    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, strum::Display, strum::EnumString,
+)]
+#[strum(serialize_all = "snake_case")]
+pub enum IoTDeviceType {
+    #[serde(rename = "weather_station")]
+    WeatherStation,
+    #[serde(rename = "soil_sensor")]
+    SoilSensor,
+    #[serde(rename = "soil_moisture_probe")]
+    SoilMoistureProbe,
+    #[serde(rename = "irrigation_valve")]
+    IrrigationValve,
+    #[serde(rename = "generic")]
+    Generic,
+}
+
+/// Configuration for soil moisture thresholds and irrigation triggers.
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema, sqlx::FromRow)]
+pub struct SoilMoistureConfig {
+    pub id: Uuid,
+    #[schema(value_type = String)]
+    pub tenant_id: TenantId,
+    pub station_id: Uuid,
+    pub site_id: Option<Uuid>,
+    /// Soil moisture percentage below which to trigger irrigation
+    pub moisture_threshold_percent: f64,
+    /// Minimum time between irrigation triggers (minutes)
+    pub min_interval_minutes: i32,
+    /// How long to keep irrigation on (minutes)
+    pub irrigation_duration_minutes: i32,
+    /// Whether to send notifications on alert
+    pub notify_email: bool,
+    pub notify_sms: bool,
+    pub is_active: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+/// DTO for creating soil moisture configuration
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+pub struct CreateSoilMoistureConfigDto {
+    pub station_id: Uuid,
+    pub site_id: Option<Uuid>,
+    pub moisture_threshold_percent: f64,
+    pub min_interval_minutes: i32,
+    pub irrigation_duration_minutes: i32,
+    pub notify_email: bool,
+    pub notify_sms: bool,
+    pub is_active: bool,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct CreateWeatherStationDto {
     #[validate(length(min = 1, max = 100))]
