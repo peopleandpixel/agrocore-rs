@@ -3,23 +3,18 @@
 
 -- ============================================================
 -- 1. Enhanced audit_logs table
+-- Columns added to existing audit_logs table (created in 2026072501)
+-- Rename old columns first, then add any new ones that don't exist
 -- ============================================================
-CREATE TABLE IF NOT EXISTS audit_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    action TEXT NOT NULL,
-    entity_type TEXT NOT NULL,
-    entity_id UUID NOT NULL,
-    old_value JSONB,
-    new_value JSONB,
-    changed_fields TEXT[],
-    ip_address INET,
-    user_agent TEXT,
-    request_id UUID,
-    session_id UUID,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+-- Rename old_data/new_data to old_value/new_value if they still exist (from 2026072501)
+ALTER TABLE audit_logs RENAME COLUMN IF EXISTS old_data TO old_value;
+ALTER TABLE audit_logs RENAME COLUMN IF EXISTS new_data TO new_value;
+-- Add columns that don't exist (after rename, if applicable)
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS old_value JSONB;
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS new_value JSONB;
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS changed_fields TEXT[];
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS session_id UUID;
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS request_id UUID;
 
 -- Indexes for efficient querying
 CREATE INDEX IF NOT EXISTS idx_audit_logs_tenant_id ON audit_logs(tenant_id);
@@ -287,7 +282,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = NOW();
+    NEW.updated_at := NOW();
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
