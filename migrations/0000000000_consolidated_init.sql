@@ -10,11 +10,12 @@ DROP TABLE IF EXISTS
     cold_chain_logs, olive_groves, olive_oil_records, vineyards, kelter_deliveries,
     water_sources, water_usage, water_quotas, fertilizer_records, compliance_items,
     compliance_checklists, audit_logs, financial_records, pac_applications,
-    plant_protection_records, applicant_licenses, worker_task_statuses,
+    plant_protection_records, applicator_licenses, worker_task_statuses,
     lpis_reference_parcels, sigpac_parcels, iot_devices, inventory_transactions,
     inventory_items, inventory_locations, clock_entries, workers,
     worker_locations, work_logs, frost_warnings, growing_degree_days, pest_risks,
-    soil_moisture_configs, soil_moisture_readings, soil_moisture_alerts
+    soil_moisture_configs, soil_moisture_readings, soil_moisture_alerts,
+    phenology_records
 CASCADE;
 
 DROP TYPE IF EXISTS license_type CASCADE;
@@ -1102,6 +1103,93 @@ CREATE TABLE IF NOT EXISTS soil_moisture_alerts (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+-- ============================================================
+-- 11. Phenology Records
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS phenology_records (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    site_id UUID NOT NULL REFERENCES sites(id),
+    observation_date TIMESTAMPTZ NOT NULL,
+    observer_id UUID REFERENCES users(id),
+    stage TEXT,
+    description TEXT,
+    notes TEXT,
+    photo_url TEXT,
+    forecast_next_stage_date TIMESTAMPTZ,
+    bbch_stage INTEGER,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_phenology_tenant ON phenology_records(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_phenology_site ON phenology_records(site_id);
+CREATE INDEX IF NOT EXISTS idx_phenology_date ON phenology_records(observation_date);
+
+-- ============================================================
+-- 12. Sites History (for audit trail)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS sites_history (
+    id UUID NOT NULL,
+    tenant_id UUID NOT NULL,
+    label TEXT,
+    code TEXT,
+    area NUMERIC(15,2),
+    crop_type JSONB,
+    updated_at TIMESTAMPTZ NOT NULL,
+    updated_by UUID,
+    PRIMARY KEY (id, updated_at)
+);
+
+CREATE INDEX IF NOT EXISTS idx_sites_history_tenant ON sites_history(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_sites_history_site ON sites_history(id);
+
+-- ============================================================
+-- 13. Export function for audit logs
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION export_audit_logs(
+    p_tenant_id UUID DEFAULT NULL,
+    p_start_date TIMESTAMPTZ DEFAULT NULL,
+    p_end_date TIMESTAMPTZ DEFAULT NULL,
+    p_entity_type TEXT DEFAULT NULL,
+    p_action TEXT DEFAULT NULL,
+    p_format TEXT DEFAULT 'json'
+)
+RETURNS TABLE (export_data TEXT) AS $$
+DECLARE
+    v_query TEXT;
+    v_where_conditions TEXT[] := ARRAY[];
+BEGIN
+    IF p_tenant_id IS NOT NULL THEN
+        v_where_conditions := v_where_conditions || format('al.tenant_id = %L', p_tenant_id);
+    END IF;
+    IF p_start_date IS NOT NULL THEN
+        v_where_conditions := v_where_conditions || format('al.created_at >= %L', p_start_date);
+    END IF;
+    IF p_end_date IS NOT NULL THEN
+        v_where_conditions := v_where_conditions || format('al.created_at <= %L', p_end_date);
+    END IF;
+    IF p_entity_type IS NOT NULL THEN
+        v_where_conditions := v_where_conditions || format('al.entity_type = %L', p_entity_type);
+    END IF;
+    IF p_action IS NOT NULL THEN
+        v_where_conditions := v_where_conditions || format('al.action = %L', p_action);
+    END IF;
+    v_query := 'SELECT ' ||
+        'json_agg(json_build_object(''id'', al.id, ''created_at'', al.created_at, ''tenant'', t.name, ''user'', u.email, ''action'', al.action, ''entity_type'', al.entity_type, ''entity_id'', al.entity_id, ''changed_fields'', al.changed_fields, ''old_value'', al.old_value, ''new_value'', al.new_value))' ||
+    ' FROM audit_logs al LEFT JOIN tenants t ON al.tenant_id = t.id LEFT JOIN users u ON al.user_id = u.id';
+    IF array_length(v_where_conditions, 1) > 0 THEN
+        v_query := v_query || ' WHERE ' || array_to_string(v_where_conditions, ' AND ');
+    END IF;
+    v_query := v_query || ' ORDER BY al.created_at DESC';
+    RETURN QUERY EXECUTE v_query;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- GRANT for export_audit_logs is deferred to section 9 (after agrocore_app role creation)
 
 -- ============================================================
 -- 3. Indexes
@@ -1364,7 +1452,8 @@ BEGIN
             'iot_devices', 'inventory_locations', 'inventory_items',
             'customers', 'clock_entries', 'frost_warnings', 'growing_degree_days',
             'pest_risks', 'soil_moisture_configs', 'soil_moisture_readings',
-            'soil_moisture_alerts', 'workers', 'worker_locations', 'work_logs'
+            'soil_moisture_alerts', 'workers', 'worker_locations', 'work_logs',
+            'phenology_records'
           )
           AND EXISTS (
             SELECT 1 FROM information_schema.columns
@@ -1437,6 +1526,7 @@ ALTER TABLE soil_moisture_alerts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE worker_locations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE work_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE phenology_records ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================
 -- 6. Audit Triggers
@@ -1641,8 +1731,8 @@ CREATE POLICY worker_task_statuses_delete ON worker_task_statuses FOR DELETE USI
 
 CREATE POLICY lpis_tenant_isolation ON lpis_reference_parcels
     FOR ALL TO PUBLIC
-    USING (tenant_id = current_setting('app.current_tenant_id')::UUID)
-    WITH CHECK (tenant_id = current_setting('app.current_tenant_id')::UUID);
+    USING (tenant_id = get_current_tenant_id())
+    WITH CHECK (tenant_id = get_current_tenant_id());
 
 CREATE POLICY iot_devices_select ON iot_devices FOR SELECT USING (is_superadmin() OR tenant_id = get_current_tenant_id());
 CREATE POLICY iot_devices_insert ON iot_devices FOR INSERT WITH CHECK (is_superadmin() OR tenant_id = get_current_tenant_id());
@@ -1719,6 +1809,11 @@ CREATE POLICY work_logs_insert ON work_logs FOR INSERT WITH CHECK (is_superadmin
 CREATE POLICY work_logs_update ON work_logs FOR UPDATE USING (is_superadmin() OR tenant_id = get_current_tenant_id()) WITH CHECK (is_superadmin() OR tenant_id = get_current_tenant_id());
 CREATE POLICY work_logs_delete ON work_logs FOR DELETE USING (is_superadmin() OR tenant_id = get_current_tenant_id());
 
+CREATE POLICY phenology_records_select ON phenology_records FOR SELECT USING (is_superadmin() OR tenant_id = get_current_tenant_id());
+CREATE POLICY phenology_records_insert ON phenology_records FOR INSERT WITH CHECK (is_superadmin() OR tenant_id = get_current_tenant_id());
+CREATE POLICY phenology_records_update ON phenology_records FOR UPDATE USING (is_superadmin() OR tenant_id = get_current_tenant_id()) WITH CHECK (is_superadmin() OR tenant_id = get_current_tenant_id());
+CREATE POLICY phenology_records_delete ON phenology_records FOR DELETE USING (is_superadmin() OR tenant_id = get_current_tenant_id());
+
 -- ============================================================
 -- 8. Views
 -- ============================================================
@@ -1761,7 +1856,6 @@ GRANT SELECT ON sigpac_parcels TO agrocore_app;
 GRANT EXECUTE ON FUNCTION validate_parcel_against_lpis(SMALLINT, SMALLINT, SMALLINT, SMALLINT, SMALLINT, SMALLINT, SMALLINT, GEOMETRY, NUMERIC) TO agrocore_app;
 GRANT EXECUTE ON FUNCTION find_duplicate_parcel TO agrocore_app;
 GRANT EXECUTE ON FUNCTION calculate_area_hectares TO agrocore_app;
-GRANT EXECUTE ON FUNCTION export_audit_logs(UUID, TIMESTAMPTZ, TIMESTAMPTZ, TEXT, TEXT, TEXT) TO agrocore_app;
 
 COMMENT ON FUNCTION validate_parcel_against_lpis(SMALLINT, SMALLINT, SMALLINT, SMALLINT, SMALLINT, SMALLINT, SMALLINT, GEOMETRY, NUMERIC) IS 'Validates a declared parcel against official SIGPAC reference';
 COMMENT ON FUNCTION find_duplicate_parcel IS 'Finds existing parcels by SIGPAC, REGEPAC, or boundary similarity';
@@ -1776,86 +1870,3 @@ DROP TRIGGER IF EXISTS trigger_update_site_area ON sites;
 CREATE TRIGGER trigger_update_site_area
     BEFORE INSERT OR UPDATE ON sites
     FOR EACH ROW EXECUTE FUNCTION update_site_area_trigger();
-
--- ============================================================
--- 11. Phenology Records
--- ============================================================
-
-CREATE TABLE IF NOT EXISTS phenology_records (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    site_id UUID NOT NULL REFERENCES sites(id),
-    observation_date TIMESTAMPTZ NOT NULL,
-    observer_id UUID REFERENCES users(id),
-    bbch_stage INTEGER,
-    description TEXT,
-    notes TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_phenology_tenant ON phenology_records(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_phenology_site ON phenology_records(site_id);
-CREATE INDEX IF NOT EXISTS idx_phenology_date ON phenology_records(observation_date);
-
--- ============================================================
--- 12. Sites History (for audit trail)
--- ============================================================
-
-CREATE TABLE IF NOT EXISTS sites_history (
-    id UUID NOT NULL,
-    tenant_id UUID NOT NULL,
-    label TEXT,
-    code TEXT,
-    area NUMERIC(15,2),
-    crop_type JSONB,
-    updated_at TIMESTAMPTZ NOT NULL,
-    updated_by UUID,
-    PRIMARY KEY (id, updated_at)
-);
-
-CREATE INDEX IF NOT EXISTS idx_sites_history_tenant ON sites_history(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_sites_history_site ON sites_history(id);
-
--- ============================================================
--- 13. Export function for audit logs
--- ============================================================
-
-CREATE OR REPLACE FUNCTION export_audit_logs(
-    p_tenant_id UUID DEFAULT NULL,
-    p_start_date TIMESTAMPTZ DEFAULT NULL,
-    p_end_date TIMESTAMPTZ DEFAULT NULL,
-    p_entity_type TEXT DEFAULT NULL,
-    p_action TEXT DEFAULT NULL,
-    p_format TEXT DEFAULT 'json'
-)
-RETURNS TABLE (export_data TEXT) AS $$
-DECLARE
-    v_query TEXT;
-    v_where_conditions TEXT[] := ARRAY[];
-BEGIN
-    IF p_tenant_id IS NOT NULL THEN
-        v_where_conditions := v_where_conditions || format('al.tenant_id = %L', p_tenant_id);
-    END IF;
-    IF p_start_date IS NOT NULL THEN
-        v_where_conditions := v_where_conditions || format('al.created_at >= %L', p_start_date);
-    END IF;
-    IF p_end_date IS NOT NULL THEN
-        v_where_conditions := v_where_conditions || format('al.created_at <= %L', p_end_date);
-    END IF;
-    IF p_entity_type IS NOT NULL THEN
-        v_where_conditions := v_where_conditions || format('al.entity_type = %L', p_entity_type);
-    END IF;
-    IF p_action IS NOT NULL THEN
-        v_where_conditions := v_where_conditions || format('al.action = %L', p_action);
-    END IF;
-    v_query := 'SELECT ' ||
-        'json_agg(json_build_object(''id'', al.id, ''created_at'', al.created_at, ''tenant'', t.name, ''user'', u.email, ''action'', al.action, ''entity_type'', al.entity_type, ''entity_id'', al.entity_id, ''changed_fields'', al.changed_fields, ''old_value'', al.old_value, ''new_value'', al.new_value))' ||
-    ' FROM audit_logs al LEFT JOIN tenants t ON al.tenant_id = t.id LEFT JOIN users u ON al.user_id = u.id';
-    IF array_length(v_where_conditions, 1) > 0 THEN
-        v_query := v_query || ' WHERE ' || array_to_string(v_where_conditions, ' AND ');
-    END IF;
-    v_query := v_query || ' ORDER BY al.created_at DESC';
-    RETURN QUERY EXECUTE v_query;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;

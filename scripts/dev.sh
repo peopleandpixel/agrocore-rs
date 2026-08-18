@@ -182,11 +182,10 @@ echo ""
 echo "Running database migrations..."
 
 export DATABASE_URL="postgres://postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}"
-# The API auto-runs sqlx::migrate!() on startup, so explicit migration
-# here is optional. If sqlx-cli is available, run it first for faster startup.
+# The API auto-runs sqlx::migrate!() on startup, so we skip sqlx-cli here
+# to avoid checksum mismatch between CLI and embedded migrations
 if command -v sqlx &> /dev/null; then
-    sqlx migrate info
-    sqlx migrate run --source "$ROOT_DIR/migrations"
+    sqlx migrate info 2>/dev/null || true
 else
     echo "  (sqlx-cli not found — API will auto-migrate on startup)"
 fi
