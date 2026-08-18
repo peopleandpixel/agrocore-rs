@@ -181,7 +181,7 @@ echo "  ✅ NATS ready"
 echo ""
 echo "Running database migrations..."
 
-export DATABASE_URL="postgres://postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}"
+export DATABASE_URL="postgres://postgres:postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}"
 # Apply migrations BEFORE cargo build so sqlx::query! macros can verify against the schema
 if command -v sqlx &> /dev/null; then
     sqlx migrate run 2>&1 | tail -1
@@ -200,14 +200,14 @@ echo "Starting microservices..."
 
 # Pre-compile all services so cargo run startup is fast
 echo "Pre-compiling services (this may take a while on first run)..."
-export DATABASE_URL="postgres://postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}"
+export DATABASE_URL="postgres://postgres:postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}"
 cargo build -p agrocore-api -p agrocore-weather-service -p agrocore-reporting-service -p agrocore-geometry-service -p agrocore-asset-registry 2>&1 | tail -3
 echo "  ✅ Pre-compilation done"
 
 start_service \
     "API" \
     "$ROOT_DIR" \
-    DATABASE_URL="postgres://postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}" \
+    DATABASE_URL="postgres://postgres:postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}" \
     LISTEN_ADDR="0.0.0.0:${API_PORT}" \
     NATS_URL="nats://127.0.0.1:${NATS_PORT}" \
     JWT_SECRET="$JWT_SECRET" \
@@ -218,7 +218,7 @@ wait_for_http "http://127.0.0.1:${API_PORT}/api/v1/health" "API" 120
 start_service \
     "Reporting Service" \
     "$ROOT_DIR" \
-    DATABASE_URL="postgres://postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}" \
+    DATABASE_URL="postgres://postgres:postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}" \
     NATS_URL="nats://127.0.0.1:${NATS_PORT}" \
     LISTEN_ADDR="0.0.0.0:${REPORTING_PORT}" \
     JWT_SECRET="$JWT_SECRET" \
@@ -229,7 +229,7 @@ wait_for_http "http://127.0.0.1:${REPORTING_PORT}/health" "Reporting Service" 12
 start_service \
     "Weather Service" \
     "$ROOT_DIR" \
-    DATABASE_URL="postgres://postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}" \
+    DATABASE_URL="postgres://postgres:postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}" \
     NATS_URL="nats://127.0.0.1:${NATS_PORT}" \
     LISTEN_ADDR="0.0.0.0:${WEATHER_PORT}" \
     JWT_SECRET="$JWT_SECRET" \
@@ -240,7 +240,7 @@ wait_for_http "http://127.0.0.1:${WEATHER_PORT}/health" "Weather Service" 120
 start_service \
     "Geometry Service" \
     "$ROOT_DIR" \
-    DATABASE_URL="postgres://postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}" \
+    DATABASE_URL="postgres://postgres:postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}" \
     NATS_URL="nats://127.0.0.1:${NATS_PORT}" \
     LISTEN_ADDR="0.0.0.0:${GEOMETRY_PORT}" \
     JWT_SECRET="$JWT_SECRET" \
@@ -251,7 +251,7 @@ wait_for_http "http://127.0.0.1:${GEOMETRY_PORT}/health" "Geometry Service" 60
 start_service \
     "Asset Registry" \
     "$ROOT_DIR" \
-    DATABASE_URL="postgres://postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}" \
+    DATABASE_URL="postgres://postgres:postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}" \
     NATS_URL="nats://127.0.0.1:${NATS_PORT}" \
     LISTEN_ADDR="0.0.0.0:${ASSET_REGISTRY_PORT}" \
     JWT_SECRET="$JWT_SECRET" \
