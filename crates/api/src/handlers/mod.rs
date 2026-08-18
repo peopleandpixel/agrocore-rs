@@ -51,14 +51,14 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route(web::post().to(auth::logout)),
             )
             .service(
-                web::resource("/auth/impersonate/{user_id}")
-                    .wrap(actix_governor::Governor::new(&auth_gov_conf))
-                    .route(web::post().to(auth::impersonate)),
-            )
-            .service(
                 web::resource("/auth/impersonate/stop")
                     .wrap(actix_governor::Governor::new(&auth_gov_conf))
                     .route(web::post().to(auth::stop_impersonation)),
+            )
+            .service(
+                web::resource("/auth/impersonate/{user_id}")
+                    .wrap(actix_governor::Governor::new(&auth_gov_conf))
+                    .route(web::post().to(auth::impersonate)),
             )
             .service(
                 web::resource("/sites")
