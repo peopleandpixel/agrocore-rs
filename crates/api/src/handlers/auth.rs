@@ -164,3 +164,51 @@ pub async fn logout(
     tracing::info!("User {} logged out, token revoked", auth.0.user_id);
     Ok(HttpResponse::NoContent().finish())
 }
+
+pub async fn impersonate(
+    state: web::Data<AppState>,
+    auth: crate::middleware::AuthExtractor,
+    path: web::Path<uuid::Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let target_user_id = *path;
+    // Only admins can impersonate
+    if !auth
+        .0
+        .roles
+        .iter()
+        .any(|r| r == "admin" || r == "superadmin")
+    {
+        return Err(SharedError::Unauthorized("Not authorized to impersonate".into()).into());
+    }
+    // Fetch the target user from the DB
+    let user = state
+        .db
+        .user_repo()
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), target_user_id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("User not found".into()))?;
+    // Generate a new JWT for the target user
+    let token = generate_jwt(&user)
+        .map_err(|e| SharedError::Internal(format!("Failed to generate token: {}", e)))?;
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "token": token,
+        "user_id": user.id,
+        "roles": user.roles
+    })))
+}
+
+pub async fn stop_impersonation(
+    state: web::Data<AppState>,
+    auth: crate::middleware::AuthExtractor,
+) -> Result<HttpResponse, ApiError> {
+    // Fetch the original admin user from the DB
+    let user = state
+        .db
+        .user_repo()
+        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), auth.0.user_id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("User not found".into()))?;
+    let token = generate_jwt(&user)
+        .map_err(|e| SharedError::Internal(format!("Failed to generate token: {}", e)))?;
+    Ok(HttpResponse::Ok().json(serde_json::json!({ "token": token })))
+}

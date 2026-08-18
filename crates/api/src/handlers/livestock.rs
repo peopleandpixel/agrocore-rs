@@ -203,13 +203,13 @@ pub async fn add_grazing(
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
-        web::scope("/animals")
-            .route("", web::get().to(list_animals))
-            .route("", web::post().to(create_animal))
-            .route("/{id}", web::get().to(get_animal))
-            .route("/{id}", web::put().to(update_animal))
-            .route("/{id}", web::delete().to(delete_animal))
-            .route("/{id}/treatments", web::post().to(add_treatment))
-            .route("/{id}/grazing", web::post().to(add_grazing)),
+        web::scope("/livestock")
+            .route("/animals", web::get().to(list_animals))
+            .route("/animals", web::post().to(create_animal))
+            .route("/animals/{id}", web::get().to(get_animal))
+            .route("/animals/{id}", web::put().to(update_animal))
+            .route("/animals/{id}", web::delete().to(delete_animal))
+            .route("/animals/{id}/treatments", web::post().to(add_treatment))
+            .route("/animals/{id}/grazing", web::post().to(add_grazing)),
     );
 }
