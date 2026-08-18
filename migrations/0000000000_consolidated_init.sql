@@ -90,82 +90,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION validate_parcel_against_lpis(
-    p_province SMALLINT,
-    p_municipality SMALLINT,
-    p_aggregate SMALLINT,
-    p_zone SMALLINT,
-    p_polygon SMALLINT,
-    p_parcel SMALLINT,
-    p_enclosure SMALLINT,
-    p_boundary GEOMETRY(POLYGON, 4326),
-    p_area_ha NUMERIC(10,4)
-) RETURNS JSONB AS $$
-DECLARE
-    v_ref sigpac_parcels%ROWTYPE;
-    v_area_diff NUMERIC(10,4);
-    v_boundary_diff NUMERIC(10,4);
-    v_warnings TEXT[];
-    v_is_valid BOOLEAN := FALSE;
-BEGIN
-    SELECT * INTO v_ref
-    FROM sigpac_parcels
-    WHERE province = p_province
-      AND municipality = p_municipality
-      AND aggregate = p_aggregate
-      AND zone = p_zone
-      AND polygon = p_polygon
-      AND parcel = p_parcel
-      AND enclosure = p_enclosure
-    LIMIT 1;
-
-    IF NOT FOUND THEN
-        v_warnings := array_append(v_warnings, 'SIGPAC reference not found in database');
-        RETURN jsonb_build_object(
-            'is_valid', false,
-            'sigpac_reference', LPAD(p_province::TEXT, 2, '0') || LPAD(p_municipality::TEXT, 3, '0') ||
-                                LPAD(p_aggregate::TEXT, 3, '0') || LPAD(p_zone::TEXT, 3, '0') ||
-                                LPAD(p_polygon::TEXT, 3, '0') || LPAD(p_parcel::TEXT, 3, '0') ||
-                                LPAD(p_enclosure::TEXT, 3, '0'),
-            'area_difference', NULL,
-            'boundary_difference', NULL,
-            'warnings', v_warnings
-        );
-    END IF;
-
-    IF p_area_ha IS NOT NULL AND v_ref.official_area_ha IS NOT NULL THEN
-        v_area_diff := ABS(p_area_ha - v_ref.official_area_ha);
-        IF v_area_diff > 0.5 THEN
-            v_warnings := array_append(v_warnings,
-                format('Area difference: %.2f ha (declared: %.2f, official: %.2f)',
-                       v_area_diff, p_area_ha, v_ref.official_area_ha));
-        END IF;
-    END IF;
-
-    IF p_boundary IS NOT NULL THEN
-        v_boundary_diff := ST_HausdorffDistance(p_boundary, v_ref.geometry);
-        IF v_boundary_diff > 10 THEN
-            v_warnings := array_append(v_warnings,
-                format('Boundary difference: %.2f meters', v_boundary_diff));
-        END IF;
-        IF ST_Area(ST_Intersection(p_boundary, v_ref.geometry)) /
-           ST_Area(ST_Union(p_boundary, v_ref.geometry)) < 0.9 THEN
-            v_warnings := array_append(v_warnings, 'Low geometry overlap with reference parcel');
-        END IF;
-    END IF;
-
-    v_is_valid := array_length(v_warnings, 1) IS NULL OR
-                  (SELECT COUNT(*) FROM unnest(v_warnings) w WHERE w LIKE '%difference: %') = 0;
-
-    RETURN jsonb_build_object(
-        'is_valid', v_is_valid,
-        'sigpac_reference', v_ref.sigpac_reference,
-        'area_difference', v_area_diff,
-        'boundary_difference', v_boundary_diff,
-        'warnings', COALESCE(v_warnings, '{}'::TEXT[])
-    );
-END;
-$$ LANGUAGE plpgsql;
+-- validate_parcel_against_lpis function is created below, after sigpac_parcels table exists
 
 CREATE OR REPLACE FUNCTION find_duplicate_parcel(
     p_tenant_id UUID,
@@ -1284,6 +1209,85 @@ CREATE INDEX IF NOT EXISTS idx_sigpac_parcels_geometry ON sigpac_parcels USING G
 CREATE INDEX IF NOT EXISTS idx_sigpac_parcels_tenant ON sigpac_parcels(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_sigpac_parcels_components ON sigpac_parcels(province, municipality, aggregate, zone, polygon, parcel, enclosure);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_sigpac_parcels_reference ON sigpac_parcels(sigpac_reference);
+
+-- Function: validate_parcel_against_lpis
+CREATE OR REPLACE FUNCTION validate_parcel_against_lpis(
+    p_province SMALLINT,
+    p_municipality SMALLINT,
+    p_aggregate SMALLINT,
+    p_zone SMALLINT,
+    p_polygon SMALLINT,
+    p_parcel SMALLINT,
+    p_enclosure SMALLINT,
+    p_boundary GEOMETRY(POLYGON, 4326),
+    p_area_ha NUMERIC(10,4)
+) RETURNS JSONB AS $$
+DECLARE
+    v_ref sigpac_parcels%ROWTYPE;
+    v_area_diff NUMERIC(10,4);
+    v_boundary_diff NUMERIC(10,4);
+    v_warnings TEXT[];
+    v_is_valid BOOLEAN := FALSE;
+BEGIN
+    SELECT * INTO v_ref
+    FROM sigpac_parcels
+    WHERE province = p_province
+      AND municipality = p_municipality
+      AND aggregate = p_aggregate
+      AND zone = p_zone
+      AND polygon = p_polygon
+      AND parcel = p_parcel
+      AND enclosure = p_enclosure
+    LIMIT 1;
+
+    IF NOT FOUND THEN
+        v_warnings := array_append(v_warnings, 'SIGPAC reference not found in database');
+        RETURN jsonb_build_object(
+            'is_valid', false,
+            'sigpac_reference', LPAD(p_province::TEXT, 2, '0') || LPAD(p_municipality::TEXT, 3, '0') ||
+                                LPAD(p_aggregate::TEXT, 3, '0') || LPAD(p_zone::TEXT, 3, '0') ||
+                                LPAD(p_polygon::TEXT, 3, '0') || LPAD(p_parcel::TEXT, 3, '0') ||
+                                LPAD(p_enclosure::TEXT, 3, '0'),
+            'area_difference', NULL,
+            'boundary_difference', NULL,
+            'warnings', v_warnings
+        );
+    END IF;
+
+    IF p_area_ha IS NOT NULL AND v_ref.official_area_ha IS NOT NULL THEN
+        v_area_diff := ABS(p_area_ha - v_ref.official_area_ha);
+        IF v_area_diff > 0.5 THEN
+            v_warnings := array_append(v_warnings,
+                format('Area difference: %.2f ha (declared: %.2f, official: %.2f)',
+                       v_area_diff, p_area_ha, v_ref.official_area_ha));
+        END IF;
+    END IF;
+
+    IF p_boundary IS NOT NULL THEN
+        v_boundary_diff := ST_HausdorffDistance(p_boundary, v_ref.geometry);
+        IF v_boundary_diff > 10 THEN
+            v_warnings := array_append(v_warnings,
+                format('Boundary difference: %.2f meters', v_boundary_diff));
+        END IF;
+        IF ST_Area(ST_Intersection(p_boundary, v_ref.geometry)) /
+           ST_Area(ST_Union(p_boundary, v_ref.geometry)) < 0.9 THEN
+            v_warnings := array_append(v_warnings, 'Low geometry overlap with reference parcel');
+        END IF;
+    END IF;
+
+    v_is_valid := array_length(v_warnings, 1) IS NULL OR
+                  (SELECT COUNT(*) FROM unnest(v_warnings) w WHERE w LIKE '%difference: %') = 0;
+
+    RETURN jsonb_build_object(
+        'is_valid', v_is_valid,
+        'sigpac_reference', v_ref.sigpac_reference,
+        'area_difference', v_area_diff,
+        'boundary_difference', v_boundary_diff,
+        'warnings', COALESCE(v_warnings, '{}'::TEXT[])
+    );
+END;
+$$ LANGUAGE plpgsql;
+
 
 CREATE INDEX IF NOT EXISTS idx_iot_devices_tenant ON iot_devices(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_iot_devices_site ON iot_devices(site_id);
