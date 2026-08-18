@@ -58,14 +58,14 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION get_current_tenant_id() TO PUBLIC;
 GRANT EXECUTE ON FUNCTION is_superadmin() TO PUBLIC;
 
-CREATE OR REPLACE FUNCTION has_column(table_name TEXT, column_name TEXT)
+CREATE OR REPLACE FUNCTION has_column(p_table_name TEXT, p_column_name TEXT)
 RETURNS BOOLEAN AS $$
 BEGIN
     RETURN EXISTS (
         SELECT 1 FROM information_schema.columns
         WHERE table_schema = 'public'
-        AND table_name = $1
-        AND column_name = $2
+        AND table_name = p_table_name
+        AND column_name = p_column_name
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
