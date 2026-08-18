@@ -182,12 +182,15 @@ echo ""
 echo "Running database migrations..."
 
 export DATABASE_URL="postgres://postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${DATABASE_NAME}"
-# The API auto-runs sqlx::migrate!() on startup, so we skip sqlx-cli here
-# to avoid checksum mismatch between CLI and embedded migrations
+# Apply migrations BEFORE cargo build so sqlx::query! macros can verify against the schema
 if command -v sqlx &> /dev/null; then
-    sqlx migrate info 2>/dev/null || true
+    sqlx migrate run 2>&1 | tail -1
 else
     echo "  (sqlx-cli not found — API will auto-migrate on startup)"
+    # API auto-migrates, but cargo build needs the schema compiled at compile time
+    # so we need sqlx-cli to set up the database first
+    echo "  ⚠ sqlx-cli required for compile-time query verification"
+    exit 1
 fi
 echo "  ✅ Migrations applied"
 
