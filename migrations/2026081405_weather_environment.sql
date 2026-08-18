@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS customers (
     vat_rate NUMERIC(5,2) NOT NULL DEFAULT 19.0,
     payment_terms VARCHAR(100),
     preferred_delivery_location TEXT,
-    preferences JSONB,
+    preferences JSONB DEFAULT '{}'::JSONB,
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

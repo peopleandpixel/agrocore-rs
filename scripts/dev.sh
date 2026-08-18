@@ -185,6 +185,7 @@ export DATABASE_URL="postgres://postgres:postgres@127.0.0.1:${POSTGRES_PORT}/${D
 # The API auto-runs sqlx::migrate!() on startup, so explicit migration
 # here is optional. If sqlx-cli is available, run it first for faster startup.
 if command -v sqlx &> /dev/null; then
+    sqlx migrate info
     sqlx migrate run --source "$ROOT_DIR/migrations"
 else
     echo "  (sqlx-cli not found — API will auto-migrate on startup)"

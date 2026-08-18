@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS phenology_records (
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     site_id UUID NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
     observation_date TIMESTAMPTZ NOT NULL,
-    stage JSONB NOT NULL,  -- BbchStage as JSONB
+    stage JSONB NOT NULL DEFAULT '{}'::JSONB,  -- BbchStage as JSONB
     forecast_next_stage_date TIMESTAMPTZ,
     notes TEXT,
     photo_url TEXT,
