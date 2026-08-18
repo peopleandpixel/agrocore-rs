@@ -2,12 +2,27 @@
 -- Single consolidated migration: ALL tables created directly with ALL columns.
 -- No ALTER TABLE statements. Fresh schema each time (dev.sh destroys Docker).
 
-DROP SCHEMA public CASCADE;
-CREATE SCHEMA public;
+-- Clean slate: drop all existing tables (for dev re-runs)
+DROP TABLE IF EXISTS
+    sites, user_sites, order_sites, users, tenants, equipment, orders, cost_centers,
+    customers, weather_data, weather_stations, animals, grazing_records,
+    treatment_records, harvest_seasons, harvest_lots, harvest_deliveries,
+    cold_chain_logs, olive_groves, olive_oil_records, vineyards, kelter_deliveries,
+    water_sources, water_usage, water_quotas, fertilizer_records, compliance_items,
+    compliance_checklists, audit_logs, financial_records, pac_applications,
+    plant_protection_records, applicant_licenses, worker_task_statuses,
+    lpis_reference_parcels, sigpac_parcels, iot_devices, inventory_transactions,
+    inventory_items, inventory_locations, clock_entries, workers,
+    worker_locations, work_logs, frost_warnings, growing_degree_days, pest_risks,
+    soil_moisture_configs, soil_moisture_readings, soil_moisture_alerts
+CASCADE;
+
+DROP TYPE IF EXISTS license_type CASCADE;
 
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ============================================================
 -- 1. Reusable Functions
@@ -1840,5 +1855,3 @@ BEGIN
     RETURN QUERY EXECUTE v_query;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-"""
-print(f"Script: {len(output)} chars, {output.count(chr(10))} lines")
