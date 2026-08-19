@@ -1,0 +1,31 @@
+# Agrocore development infrastructure — persistent, survives dev.sh restarts
+# Usage: docker compose -f .dev/docker-compose.yml up -d
+services:
+  postgres:
+    image: postgis/postgis:latest
+    container_name: agrocore-dev-postgres
+    volumes:
+      - agrocore_pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: agrocore
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  nats:
+    image: nats:latest
+    container_name: agrocore-dev-nats
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    restart: unless-stopped
+
+volumes:
+  agrocore_pg_data:
