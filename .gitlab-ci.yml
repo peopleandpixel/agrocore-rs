@@ -51,12 +51,25 @@ test:
     POSTGRES_DB: agrocore_test
     POSTGRES_USER: test
     POSTGRES_PASSWORD: test
-    DATABASE_URL: "postgresql://test:***@postgres:5432/agrocore_test"
-  script:
+    PGPASSWORD: test
+    DATABASE_URL: "postgresql://test:test@postgres:5432/agrocore_test"
+    # Override global -D warnings for tests — only non-blocking proc-macro-error2 warning
+    RUSTFLAGS: ""
+  before_script:
+    - rustup component add rustfmt clippy
+    - cargo --version
+    - rustc --version
     - apt-get update && apt-get install -y pkg-config libssl-dev libpq-dev
     - cargo install sqlx-cli --no-default-features --features postgres
-    - sqlx database create --database-url postgresql://test:***@postgres:5432/agrocore_test
-    - sqlx migrate run --source migrations --database-url postgresql://test:***@postgres:5432/agrocore_test
+    - |
+      # Wait for postgres to be ready
+      until pg_isready -h postgres -p 5432 -U test; do
+        echo "Waiting for PostgreSQL..."
+        sleep 2
+      done
+  script:
+    - sqlx database create --database-url postgresql://test:${PGPASSWORD}@postgres:5432/agrocore_test
+    - sqlx migrate run --source migrations --database-url postgresql://test:${PGPASSWORD}@postgres:5432/agrocore_test
     - cargo test --workspace --features=mocks
   allow_failure: false
   timeout: 45m
