@@ -80,6 +80,7 @@ build-wasm:
   script:
     - rustup target add wasm32-unknown-unknown
     - cargo install wasm-pack --version 0.13.1 --locked
+    - export PATH="$HOME/.cargo/bin:$PATH"
     - |
       cd crates/admin-ui
       wasm-pack build --target no-bundler --release --out-dir target/wasm32-unknown-unknown/release

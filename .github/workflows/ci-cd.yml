@@ -129,8 +129,9 @@ jobs:
       - name: Build Admin UI WASM
         run: |
           cd crates/admin-ui
-          # Use wasm-pack with isolated target dir to avoid recompiling server crates
-          wasm-pack build --target no-bundler --release --out-dir target/wasm32-unknown-unknown/release
+          # Use wasm-pack with --target no-bundler to build without a bundler
+          # The --out-dir ensures consistent artifact path
+          ~/.cargo/bin/wasm-pack build --target no-bundler --release --out-dir target/wasm32-unknown-unknown/release
           # Copy .wasm to expected artifact path
           cp target/wasm32-unknown-unknown/release/admin_ui_bg.wasm target/wasm32-unknown-unknown/release/admin-ui.wasm
 
