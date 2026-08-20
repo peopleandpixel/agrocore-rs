@@ -309,6 +309,7 @@ dependencies = [
  "jsonwebtoken",
  "once_cell",
  "password-hash",
+ "prometheus",
  "rand 0.8.7",
  "redis",
  "rust_xlsxwriter",
@@ -4721,6 +4722,7 @@ dependencies = [
  "lazy_static",
  "memchr",
  "parking_lot",
+ "protobuf",
  "thiserror 1.0.69",
 ]
 
@@ -4755,6 +4757,12 @@ checksum = "f94967dc7688f3054c7fac87473ffae4cc4c3904800e2d9f5b857246d8963b0a"
 dependencies = [
  "prost",
 ]
+
+[[package]]
+name = "protobuf"
+version = "2.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "106dd99e98437432fed6519dedecfade6a06a73bb7b2a1e019fdd2bee5778d94"
 
 [[package]]
 name = "quanta"

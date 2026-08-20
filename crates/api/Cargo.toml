@@ -50,6 +50,7 @@ tracing-actix-web = { workspace = true }
 utoipa = { workspace = true, features = ["uuid", "chrono"] }
 utoipa-swagger-ui = { workspace = true }
 actix-web-prometheus = { workspace = true }
+prometheus = "0.13"
 actix-governor = "0.10"
 dashmap = "6"
 redis = { workspace = true }

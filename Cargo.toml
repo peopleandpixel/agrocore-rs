@@ -29,6 +29,7 @@ tracing-actix-web = "0.7"
 utoipa = { version = "5", features = ["actix_extras", "uuid", "chrono"] }
 utoipa-swagger-ui = { version = "8", features = ["actix-web", "vendored"] }
 actix-web-prometheus = "0.1"
+prometheus = "0.13"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "v5", "serde"] }
 config = "0.15"

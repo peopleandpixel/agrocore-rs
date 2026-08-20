@@ -3,12 +3,14 @@ use actix_files as fs;
 use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_web::{App, HttpServer, web};
 use actix_web_prometheus::PrometheusMetricsBuilder;
+use prometheus::Registry;
 use tracing_actix_web::TracingLogger;
 use utoipa_swagger_ui::SwaggerUi;
 
 pub mod dto;
 pub mod error;
 pub mod handlers;
+pub mod metrics;
 pub mod middleware;
 pub mod openapi;
 pub mod services;
@@ -16,6 +18,7 @@ pub mod services;
 #[cfg(test)]
 mod dto_validation_tests;
 
+use crate::metrics::DbMetrics;
 use crate::middleware::TokenRevocationList;
 use agrocore_infrastructure::Database;
 use agrocore_lpis_providers::create_default_registry;
@@ -32,6 +35,8 @@ pub struct AppState {
     pub messaging: Arc<MessagingClient>,
     pub lpis_registry: Arc<LpisRegistry>,
     pub token_revocation: Arc<TokenRevocationList>,
+    pub db_metrics: DbMetrics,
+    pub metrics_registry: Arc<Registry>,
 }
 
 /// Builds a CORS configuration from the `CORS_ALLOWED_ORIGINS` environment variable.
@@ -93,11 +98,17 @@ pub async fn run_server(
     // Initialize LPIS Registry with all providers
     let lpis_registry = Arc::new(create_default_registry());
 
+    // Initialize DB metrics registry and metrics instance
+    let metrics_registry = Arc::new(Registry::new());
+    let db_metrics = DbMetrics::new(&metrics_registry);
+
     let state = web::Data::new(AppState {
         db: Arc::new(db),
         messaging: Arc::new(messaging),
         lpis_registry,
         token_revocation: Arc::new(init_token_revocation()),
+        db_metrics,
+        metrics_registry: metrics_registry.clone(),
     });
 
     let prometheus = PrometheusMetricsBuilder::new("agrocore")
@@ -136,6 +147,7 @@ pub async fn run_server(
                 openapi::ApiDoc::openapi_with_security(),
             ))
             .configure(handlers::configure)
+            .route("/metrics/db", actix_web::web::get().to(db_metrics_handler))
             .service(
                 fs::Files::new("/admin", "/var/lib/agrocore/admin-ui")
                     .index_file("index.html")
@@ -147,4 +159,17 @@ pub async fn run_server(
     .bind(bind_addr)?
     .run()
     .await
+}
+
+/// HTTP handler that exposes DB metrics in Prometheus text format at /metrics/db.
+async fn db_metrics_handler(state: web::Data<AppState>) -> actix_web::HttpResponse {
+    let encoder = prometheus::TextEncoder::new();
+    let mf = state.metrics_registry.gather();
+    match encoder.encode_to_string(&mf) {
+        Ok(output) => actix_web::HttpResponse::Ok().body(output),
+        Err(e) => {
+            tracing::error!("Failed to encode DB metrics: {}", e);
+            actix_web::HttpResponse::InternalServerError().body("metrics encode error")
+        }
+    }
 }
