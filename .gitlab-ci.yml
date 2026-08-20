@@ -82,8 +82,11 @@ build-wasm:
   script:
     - rustup target add wasm32-unknown-unknown
     - cargo install wasm-pack
-    - cd crates/admin-ui
-    - cargo build --target wasm32-unknown-unknown --release
+    - |
+      # Build ONLY the admin-ui crate for wasm32 — do NOT use --workspace,
+      # which would pull in server-side crates (tokio, mio) that don't compile for wasm
+      cd crates/admin-ui
+      cargo build --target wasm32-unknown-unknown --release --package agrocore-admin-ui
   artifacts:
     paths:
       - crates/admin-ui/target/wasm32-unknown-unknown/release/admin-ui.wasm
