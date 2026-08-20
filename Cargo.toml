@@ -52,5 +52,4 @@ moka = { version = "0.12", features = ["sync", "future"] }
 redis = { version = "0.24", features = ["tokio-comp", "connection-manager", "json"] }
 governor = { version = "0.6", features = ["jitter"] }
 retry = { version = "0.1" }
-jitter = { version = "0.1" }
 rumqttc = { version = "0.25", features = ["use-rustls-no-provider"] }

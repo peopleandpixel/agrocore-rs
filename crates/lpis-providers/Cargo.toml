@@ -38,7 +38,6 @@ governor = { workspace = true }
 
 # Retry logic
 retry = { version = "0.1" }
-jitter = { version = "0.1" }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util"] }
