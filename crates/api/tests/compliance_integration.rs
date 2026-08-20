@@ -76,11 +76,14 @@ async fn test_list_compliance_checklists() {
     let mut mock_db = MockDatabase::default();
     mock_db.compliance_checklist_repo = Some(Arc::new(checklist_repo));
 
+    let metrics_registry = prometheus::Registry::new();
     let state = AppState {
         db: Arc::new(Database::Mock(Box::new(mock_db))),
         messaging: Arc::new(agrocore_messaging::MessagingClient::new_mock()),
         lpis_registry: Arc::new(agrocore_lpis_providers::create_default_registry()),
         token_revocation: Arc::new(agrocore_api::middleware::TokenRevocationList::new()),
+        db_metrics: agrocore_api::metrics::DbMetrics::new(&metrics_registry),
+        metrics_registry: Arc::new(metrics_registry),
     };
 
     let app = test::init_service(
@@ -136,11 +139,14 @@ async fn test_list_audit_logs() {
     let mut mock_db = MockDatabase::default();
     mock_db.audit_log_repo = Some(Arc::new(audit_repo));
 
+    let metrics_registry = prometheus::Registry::new();
     let state = AppState {
         db: Arc::new(Database::Mock(Box::new(mock_db))),
         messaging: Arc::new(agrocore_messaging::MessagingClient::new_mock()),
         lpis_registry: Arc::new(agrocore_lpis_providers::create_default_registry()),
         token_revocation: Arc::new(agrocore_api::middleware::TokenRevocationList::new()),
+        db_metrics: agrocore_api::metrics::DbMetrics::new(&metrics_registry),
+        metrics_registry: Arc::new(metrics_registry),
     };
 
     let app = test::init_service(
@@ -186,11 +192,14 @@ async fn test_applicator_license_crud() {
     let mut mock_db = MockDatabase::default();
     mock_db.plant_protection_record_repo = Some(Arc::new(plant_repo));
 
+    let metrics_registry = prometheus::Registry::new();
     let state = AppState {
         db: Arc::new(Database::Mock(Box::new(mock_db))),
         messaging: Arc::new(agrocore_messaging::MessagingClient::new_mock()),
         lpis_registry: Arc::new(agrocore_lpis_providers::create_default_registry()),
         token_revocation: Arc::new(agrocore_api::middleware::TokenRevocationList::new()),
+        db_metrics: agrocore_api::metrics::DbMetrics::new(&metrics_registry),
+        metrics_registry: Arc::new(metrics_registry),
     };
 
     let app = test::init_service(
@@ -252,11 +261,14 @@ async fn test_plant_protection_record_list() {
     let mut mock_db = MockDatabase::default();
     mock_db.plant_protection_record_repo = Some(Arc::new(plant_repo));
 
+    let metrics_registry = prometheus::Registry::new();
     let state = AppState {
         db: Arc::new(Database::Mock(Box::new(mock_db))),
         messaging: Arc::new(agrocore_messaging::MessagingClient::new_mock()),
         lpis_registry: Arc::new(agrocore_lpis_providers::create_default_registry()),
         token_revocation: Arc::new(agrocore_api::middleware::TokenRevocationList::new()),
+        db_metrics: agrocore_api::metrics::DbMetrics::new(&metrics_registry),
+        metrics_registry: Arc::new(metrics_registry),
     };
 
     let app = test::init_service(
@@ -315,11 +327,14 @@ async fn test_fertilizer_record_list() {
     let mut mock_db = MockDatabase::default();
     mock_db.fertilizer_record_repo = Some(Arc::new(fert_repo));
 
+    let metrics_registry = prometheus::Registry::new();
     let state = AppState {
         db: Arc::new(Database::Mock(Box::new(mock_db))),
         messaging: Arc::new(agrocore_messaging::MessagingClient::new_mock()),
         lpis_registry: Arc::new(agrocore_lpis_providers::create_default_registry()),
         token_revocation: Arc::new(agrocore_api::middleware::TokenRevocationList::new()),
+        db_metrics: agrocore_api::metrics::DbMetrics::new(&metrics_registry),
+        metrics_registry: Arc::new(metrics_registry),
     };
 
     let app = test::init_service(
