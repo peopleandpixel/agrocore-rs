@@ -85,7 +85,7 @@ jobs:
           sudo apt-get install -y pkg-config libssl-dev libpq-dev
 
       - name: Install sqlx-cli
-        run: cargo install sqlx-cli --no-default-features --features postgres
+        run: cargo install sqlx-cli --no-default-features --features postgres --version 0.8.2 --locked
 
       - name: Setup database
         run: |
@@ -95,15 +95,16 @@ jobs:
           DATABASE_URL: postgresql://test:test@localhost:5432/agrocore_test
 
       - name: Run cargo test
-        run: cargo test --workspace --features=mocks
+        run: cargo test --workspace --features=mocks --no-fail-fast
         env:
           RUST_LOG: debug
-          DATABASE_URL: postgresql://test:test@localhost:5432/agrocore_test
+          DATABASE_URL: postgresql://test:***@localhost:5432/agrocore_test
 
   # Build Admin UI WASM
   build-wasm:
     name: Build Admin UI WASM
     runs-on: ubuntu-latest
+    # Runs in parallel with test job — only needs quality-gates
     needs: quality-gates
     steps:
       - name: Checkout repository
@@ -123,18 +124,15 @@ jobs:
           key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+        run: cargo install wasm-pack --version 0.13.1 --locked
 
       - name: Build Admin UI WASM
         run: |
           cd crates/admin-ui
-          # Use wasm-pack to isolate the build to ONLY admin-ui crate
-          # This avoids workspace-wide compilation of server-side crates (tokio, mio)
-          # that do not compile for wasm32
-          wasm-pack build --target no-bundler --release
+          # Use wasm-pack with isolated target dir to avoid recompiling server crates
+          wasm-pack build --target no-bundler --release --out-dir target/wasm32-unknown-unknown/release
           # Copy .wasm to expected artifact path
-          mkdir -p target/wasm32-unknown-unknown/release
-          cp pkg/admin_ui_bg.wasm target/wasm32-unknown-unknown/release/admin-ui.wasm
+          cp target/wasm32-unknown-unknown/release/admin_ui_bg.wasm target/wasm32-unknown-unknown/release/admin-ui.wasm
 
       - name: Upload WASM artifact
         uses: actions/upload-artifact@v4
