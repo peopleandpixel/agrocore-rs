@@ -128,7 +128,13 @@ jobs:
       - name: Build Admin UI WASM
         run: |
           cd crates/admin-ui
-          cargo build --target wasm32-unknown-unknown --release
+          # Use wasm-pack to isolate the build to ONLY admin-ui crate
+          # This avoids workspace-wide compilation of server-side crates (tokio, mio)
+          # that do not compile for wasm32
+          wasm-pack build --target no-bundler --release
+          # Copy .wasm to expected artifact path
+          mkdir -p target/wasm32-unknown-unknown/release
+          cp pkg/admin_ui_bg.wasm target/wasm32-unknown-unknown/release/admin-ui.wasm
 
       - name: Upload WASM artifact
         uses: actions/upload-artifact@v4
