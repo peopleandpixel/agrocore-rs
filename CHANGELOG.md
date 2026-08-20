@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-08-21
+
+### Changed
+- **Admin UI Stub Replacement — Full Documentation Stub Removal**
+  - Replaced all 33 placeholder stubs (`"−"` and `placeholder` attributes) across 9 Admin UI components with functional, data-driven content:
+    - `analytics.rs`: Profitability chart now displays real revenue/cost/net/margin from `financial_records` API; forecast reference derived from `weather_data`; site select populated from `fetch_sites()`
+    - `compliance.rs`: Compliance Score computed from checklist items; Next Audit Date from audit endpoint
+    - `dashboard.rs`: Active tasks count from API instead of empty placeholder
+    - `finance.rs`: Balance display from financial records API
+    - `livestock.rs`: Treatment and Grazing counts from animal API
+    - `resources.rs`: Hours Today from time entries API
+    - `weather.rs`: Temperature, humidity, wind, precipitation, and phenology observation data from weather API
+    - `sigpac.rs`: All input placeholders replaced with meaningful example values
+    - `setup.rs`: Input placeholders replaced with descriptive hints
+  - Added helper functions `sum_revenue()` and `sum_cost()` for profitability calculations
+  - Added i18n keys: `no_records`, `profit_margin_percent`, `revenue`, `cost`, `net_profit`, `element_n/p/k/mg`, `forecast_confidence_label`, `no_weather_data`
+  - Added `required-features = ["mocks"]` to 11 integration test targets in `Cargo.toml` for proper test compilation
+
 ## [Unreleased]
 
 ### Added

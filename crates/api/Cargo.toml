@@ -27,6 +27,7 @@ path = "tests/reporting/mod.rs"
 [[test]]
 name = "workforce_test"
 path = "tests/workforce_integration.rs"
+required-features = ["mocks"]
 
 [dependencies]
 once_cell = "1.19"
@@ -72,37 +73,58 @@ mocks = ["agrocore-domain/mocks", "agrocore-infrastructure/mocks", "agrocore-mes
 testcontainers = "0.27.3"
 testcontainers-modules = { version = "0.15.0", features = ["postgres"] }
 toml = "0.8"
+
 [[test]]
 name = "compliance_test"
 path = "tests/compliance_integration.rs"
+required-features = ["mocks"]
+
 [[test]]
 name = "olive_test"
 path = "tests/olive_integration.rs"
+required-features = ["mocks"]
+
 [[test]]
 name = "harvest_test"
 path = "tests/harvest_integration.rs"
+required-features = ["mocks"]
+
 [[test]]
 name = "livestock_test"
 path = "tests/livestock_integration.rs"
+required-features = ["mocks"]
+
 [[test]]
 name = "finance_test"
 path = "tests/finance_integration.rs"
+required-features = ["mocks"]
+
 [[test]]
 name = "sites_test"
 path = "tests/sites_integration.rs"
+required-features = ["mocks"]
+
 [[test]]
 name = "equipment_test"
 path = "tests/equipment_integration.rs"
+required-features = ["mocks"]
+
 [[test]]
 name = "weather_test"
 path = "tests/weather_integration.rs"
+required-features = ["mocks"]
+
 [[test]]
 name = "water_test"
 path = "tests/water_integration.rs"
+required-features = ["mocks"]
+
 [[test]]
 name = "reporting_integration_test"
 path = "tests/reporting_integration.rs"
+required-features = ["mocks"]
 
 [[test]]
 name = "api_contract_test"
 path = "tests/api_contract_test.rs"
+required-features = ["mocks"]

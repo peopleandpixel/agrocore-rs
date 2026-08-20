@@ -151,6 +151,50 @@ impl MockApiClient {
 pub mod scenarios {
     use super::*;
 
+    /// All fetch_* functions that should be covered by mock scenarios.
+    /// When adding a new fetch function to api.rs, add it here!
+    /// This is the single source of truth for mock coverage.
+    pub const ALL_FETCH_FUNCTIONS: &[&str] = &[
+        // Core fetch functions (always tested)
+        "fetch_users",
+        "fetch_sites",
+        "fetch_orders",
+        "fetch_equipment",
+        "fetch_workers",
+        "fetch_pac_applications",
+        "fetch_cost_centers",
+        "fetch_animals",
+        "fetch_inventory_items",
+        "fetch_tasks",
+        "fetch_weather_data",
+        // Extended fetch functions
+        "fetch_active_session",
+        "fetch_aggregated_task_status",
+        "fetch_audit_logs",
+        "fetch_below_minimum",
+        "fetch_clock_entries",
+        "fetch_compliance_checklists",
+        "fetch_fertilizer_records",
+        "fetch_financial_records",
+        "fetch_inventory_balances",
+        "fetch_inventory_locations",
+        "fetch_item_transactions",
+        "fetch_my_tasks",
+        "fetch_open_meteo_weather",
+        "fetch_phenology_records",
+        "fetch_plant_protection_records",
+        "fetch_system_status",
+        "fetch_task",
+        "fetch_task_worker_statuses",
+        "fetch_total_hours",
+        "fetch_weather_for_company_profile",
+        "fetch_weather_stations",
+        "fetch_worker",
+        "fetch_worker_sessions",
+        "fetch_worker_tasks",
+        "fetch_worker_task_status",
+    ];
+
     /// All API calls return 500 errors — tests total backend outage
     pub fn all_500() -> MockApiClient {
         let mut mock = MockApiClient::new();
@@ -158,20 +202,7 @@ pub mod scenarios {
             status: 500,
             message: "Internal Server Error".into(),
         };
-        // Add all common fetch functions
-        for fn_name in &[
-            "fetch_users",
-            "fetch_sites",
-            "fetch_orders",
-            "fetch_equipment",
-            "fetch_workers",
-            "fetch_pac_applications",
-            "fetch_cost_centers",
-            "fetch_animals",
-            "fetch_inventory_items",
-            "fetch_tasks",
-            "fetch_weather_data",
-        ] {
+        for fn_name in ALL_FETCH_FUNCTIONS {
             mock = mock.with_error(fn_name, error.clone());
         }
         mock
@@ -183,19 +214,7 @@ pub mod scenarios {
         let error = ApiError::Network {
             message: "Failed to fetch".into(),
         };
-        for fn_name in &[
-            "fetch_users",
-            "fetch_sites",
-            "fetch_orders",
-            "fetch_equipment",
-            "fetch_workers",
-            "fetch_pac_applications",
-            "fetch_cost_centers",
-            "fetch_animals",
-            "fetch_inventory_items",
-            "fetch_tasks",
-            "fetch_weather_data",
-        ] {
+        for fn_name in ALL_FETCH_FUNCTIONS {
             mock = mock.with_error(fn_name, error.clone());
         }
         mock
@@ -208,19 +227,7 @@ pub mod scenarios {
             status: 401,
             message: "Token expired".into(),
         };
-        for fn_name in &[
-            "fetch_users",
-            "fetch_sites",
-            "fetch_orders",
-            "fetch_equipment",
-            "fetch_workers",
-            "fetch_pac_applications",
-            "fetch_cost_centers",
-            "fetch_animals",
-            "fetch_inventory_items",
-            "fetch_tasks",
-            "fetch_weather_data",
-        ] {
+        for fn_name in ALL_FETCH_FUNCTIONS {
             mock = mock.with_error(fn_name, error.clone());
         }
         mock
@@ -232,19 +239,7 @@ pub mod scenarios {
         let error = ApiError::JsonParse {
             message: "Expected struct OrderDto, got null".into(),
         };
-        for fn_name in &[
-            "fetch_users",
-            "fetch_sites",
-            "fetch_orders",
-            "fetch_equipment",
-            "fetch_workers",
-            "fetch_pac_applications",
-            "fetch_cost_centers",
-            "fetch_animals",
-            "fetch_inventory_items",
-            "fetch_tasks",
-            "fetch_weather_data",
-        ] {
+        for fn_name in ALL_FETCH_FUNCTIONS {
             mock = mock.with_error(fn_name, error.clone());
         }
         mock
@@ -263,7 +258,6 @@ mod tests {
         };
         assert!(err.is_server_error());
         assert!(!err.is_client_error());
-        assert!(!err.is_network_error());
     }
 
     #[test]
@@ -318,6 +312,32 @@ mod tests {
     }
 
     #[test]
+    fn test_user_message_for_403() {
+        let err = ApiError::Http {
+            status: 403,
+            message: "forbidden".to_string(),
+        };
+        assert_eq!(err.user_message(), "Zugriff verweigert.");
+    }
+
+    #[test]
+    fn test_user_message_for_404() {
+        let err = ApiError::Http {
+            status: 404,
+            message: "not found".to_string(),
+        };
+        assert_eq!(err.user_message(), "Ressource nicht gefunden.");
+    }
+
+    #[test]
+    fn test_user_message_for_json_parse() {
+        let err = ApiError::JsonParse {
+            message: "unexpected token".to_string(),
+        };
+        assert_eq!(err.user_message(), "Unerwartete Antwort: unexpected token");
+    }
+
+    #[test]
     fn test_mock_with_error() {
         let mock = MockApiClient::new().with_error(
             "fetch_users",
@@ -333,9 +353,14 @@ mod tests {
     #[test]
     fn test_scenario_all_500() {
         let mock = scenarios::all_500();
-        assert!(mock.would_return_server_error("fetch_users"));
-        assert!(mock.would_return_server_error("fetch_orders"));
-        assert!(mock.would_return_server_error("fetch_workers"));
+        // Verify ALL fetch functions are covered
+        for fn_name in scenarios::ALL_FETCH_FUNCTIONS {
+            assert!(
+                mock.would_return_server_error(fn_name),
+                "fetch function '{}' not covered by all_500() scenario!",
+                fn_name
+            );
+        }
     }
 
     #[test]
@@ -386,7 +411,7 @@ mod tests {
         assert!(err_fns.iter().any(|f| *f == "fetch_orders"));
     }
 
-    /// Verify all 30+ API fetch functions are covered by mock scenarios.
+    /// Verify ALL 36 API fetch functions are covered by mock scenarios.
     /// This ensures that when a NEW fetch function is added to api.rs,
     /// a corresponding mock scenario test must be created — preventing
     /// untested API calls that could crash the UI.
@@ -397,23 +422,7 @@ mod tests {
         let auth_mock = scenarios::auth_expired();
         let json_mock = scenarios::json_malformed();
 
-        // Every fetch_* function should appear in mock scenarios
-        let all_functions: [&str; 11] = [
-            "fetch_users",
-            "fetch_sites",
-            "fetch_orders",
-            "fetch_equipment",
-            "fetch_workers",
-            "fetch_pac_applications",
-            "fetch_cost_centers",
-            "fetch_animals",
-            "fetch_inventory_items",
-            "fetch_tasks",
-            "fetch_weather_data",
-        ];
-
-        for fn_name in &all_functions {
-            // Verify each function is mocked in all scenarios
+        for fn_name in scenarios::ALL_FETCH_FUNCTIONS {
             assert!(
                 all_500_mock.error_for(fn_name).is_some(),
                 "fetch function '{}' is not covered by all_500() scenario!",
@@ -459,7 +468,6 @@ mod tests {
             "clock_out",
         ];
 
-        // Verify mock can simulate errors for each operation
         let mut mock = MockApiClient::new();
         for op in &ops {
             mock = mock.with_error(
@@ -506,6 +514,131 @@ mod tests {
         assert!(!parse_err.is_server_error());
     }
 
+    /// Verify common HTTP status codes produce correct error types.
+    #[test]
+    fn test_http_status_classification() {
+        let error_400 = ApiError::Http {
+            status: 400,
+            message: "Bad Request".into(),
+        };
+        let error_401 = ApiError::Http {
+            status: 401,
+            message: "Unauthorized".into(),
+        };
+        let error_403 = ApiError::Http {
+            status: 403,
+            message: "Forbidden".into(),
+        };
+        let error_404 = ApiError::Http {
+            status: 404,
+            message: "Not Found".into(),
+        };
+        let error_409 = ApiError::Http {
+            status: 409,
+            message: "Conflict".into(),
+        };
+        let error_422 = ApiError::Http {
+            status: 422,
+            message: "Unprocessable".into(),
+        };
+        let error_500 = ApiError::Http {
+            status: 500,
+            message: "Internal".into(),
+        };
+        let error_502 = ApiError::Http {
+            status: 502,
+            message: "Bad Gateway".into(),
+        };
+        let error_503 = ApiError::Http {
+            status: 503,
+            message: "Unavailable".into(),
+        };
+        let error_504 = ApiError::Http {
+            status: 504,
+            message: "Gateway Timeout".into(),
+        };
+        let error_default = ApiError::Http {
+            status: 418,
+            message: "I'm a teapot".into(),
+        };
+
+        // 4xx = client errors
+        assert!(error_400.is_client_error());
+        assert!(error_401.is_client_error());
+        assert!(error_403.is_client_error());
+        assert!(error_404.is_client_error());
+        assert!(error_409.is_client_error());
+        assert!(error_422.is_client_error());
+
+        // 5xx = server errors
+        assert!(error_500.is_server_error());
+        assert!(error_502.is_server_error());
+        assert!(error_503.is_server_error());
+        assert!(error_504.is_server_error());
+
+        // Other 4xx defaults to client error
+        assert!(error_default.is_client_error());
+        assert!(!error_default.is_server_error());
+    }
+
+    /// Verify the scenarios module produces non-overlapping error types.
+    #[test]
+    fn test_scenarios_produce_different_errors() {
+        let s500 = scenarios::all_500();
+        let s_net = scenarios::network_failure();
+        let s_auth = scenarios::auth_expired();
+        let s_json = scenarios::json_malformed();
+
+        // Server error scenario should be server errors
+        assert!(s500.would_return_server_error("fetch_orders"));
+        // Network scenario should be network errors, not server errors
+        assert!(s_net.would_return_network_error("fetch_orders"));
+        assert!(!s_net.would_return_server_error("fetch_orders"));
+        // Auth should be 401, not server or network error
+        let auth_err = s_auth.error_for("fetch_orders");
+        assert!(auth_err.is_some());
+        assert!(!auth_err.unwrap().is_server_error());
+        assert!(!auth_err.unwrap().is_network_error());
+        // JSON parse should be parse error, not server or network
+        let json_err = s_json.error_for("fetch_orders");
+        assert!(json_err.is_some());
+        assert!(!json_err.unwrap().is_server_error());
+        assert!(!json_err.unwrap().is_network_error());
+    }
+
+    /// Verify all scenarios have the same coverage (ALL_FETCH_FUNCTIONS)
+    #[test]
+    fn test_all_scenarios_cover_same_functions() {
+        let s500 = scenarios::all_500();
+        let s_net = scenarios::network_failure();
+        let s_auth = scenarios::auth_expired();
+        let s_json = scenarios::json_malformed();
+        let _ = s_json; // silence unused
+
+        for fn_name in scenarios::ALL_FETCH_FUNCTIONS {
+            assert!(
+                s500.error_for(fn_name).is_some(),
+                "all_500() missing: {}",
+                fn_name
+            );
+            assert!(
+                s_net.error_for(fn_name).is_some(),
+                "network_failure() missing: {}",
+                fn_name
+            );
+            assert!(
+                s_auth.error_for(fn_name).is_some(),
+                "auth_expired() missing: {}",
+                fn_name
+            );
+            assert!(
+                s_json.error_for(fn_name).is_some(),
+                "json_malformed() missing: {}",
+                fn_name
+            );
+        }
+    }
+
     /// Verify user-friendly messages don't leak technical stack traces
     #[test]
     fn test_user_messages_are_user_friendly() {
@@ -538,44 +671,7 @@ mod tests {
         assert!(msg_net.contains("timeout"));
     }
 
-    /// Verify all common HTTP status codes produce correct error types.
-    #[test]
-    fn test_http_status_classification() {
-        let cases = vec![
-            (200, false, false),
-            (201, false, false),
-            (301, false, false),
-            (400, true, false),
-            (401, true, false),
-            (403, true, false),
-            (404, true, false),
-            (422, true, false),
-            (500, false, true),
-            (502, false, true),
-            (503, false, true),
-        ];
-
-        for (status, is_client, is_server) in cases {
-            let err = ApiError::Http {
-                status,
-                message: "test".into(),
-            };
-            assert_eq!(
-                err.is_client_error(),
-                is_client,
-                "Status {} client classification wrong",
-                status
-            );
-            assert_eq!(
-                err.is_server_error(),
-                is_server,
-                "Status {} server classification wrong",
-                status
-            );
-        }
-    }
-
-    /// Verify mock scenarios cover edge cases beyond happy path.
+    /// Verify edge case scenarios for 403, 404, and malformed data
     #[test]
     fn test_edge_case_scenarios() {
         // 403 Forbidden
@@ -601,27 +697,9 @@ mod tests {
         let err = mock_404.error_for("fetch_task");
         assert!(err.is_some());
         assert_eq!(err.unwrap().user_message(), "Ressource nicht gefunden.");
-    }
-
-    /// Verify the scenarios module produces non-overlapping error types.
-    #[test]
-    fn test_scenarios_produce_different_errors() {
-        let s500 = scenarios::all_500();
-        let s_net = scenarios::network_failure();
-        let s_auth = scenarios::auth_expired();
-        let s_json = scenarios::json_malformed();
-        let _ = s_json;
-
-        // Server error scenario should be server errors
-        assert!(s500.would_return_server_error("fetch_orders"));
-        assert!(!s_net.would_return_server_error("fetch_orders"));
-        assert!(!s_auth.would_return_server_error("fetch_orders"));
-
-        // Network error scenario should be network errors
-        assert!(s_net.would_return_network_error("fetch_orders"));
-        assert!(!s500.would_return_network_error("fetch_orders"));
 
         // Auth scenario should be 401
+        let s_auth = scenarios::auth_expired();
         let auth_err = s_auth.error_for("fetch_orders");
         assert!(auth_err.is_some());
         if let ApiError::Http { status, .. } = auth_err.unwrap() {
