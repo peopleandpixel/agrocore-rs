@@ -31,6 +31,7 @@ fn sample_order(status: OrderStatus) -> Order {
         parent_order_id: None,
         workflow_config: None,
         cost_center_id: None,
+        customer_id: None,
         is_active: true,
         created_at: Utc::now(),
         updated_at: Utc::now(),

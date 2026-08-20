@@ -105,6 +105,7 @@ fn test_order_validation() {
         parent_order_id: None,
         workflow_config: None,
         cost_center_id: None,
+        customer_id: None,
     };
     assert!(dto.validate().is_err());
 

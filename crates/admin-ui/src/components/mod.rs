@@ -3,6 +3,7 @@ pub mod audit;
 pub mod compliance;
 pub mod dashboard;
 pub mod equipment;
+pub mod error_boundary;
 pub mod finance;
 pub mod form;
 pub mod import;

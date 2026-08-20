@@ -2,6 +2,9 @@ mod api;
 mod components;
 mod i18n;
 
+#[cfg(test)]
+mod tests;
+
 use crate::components::analytics::AnalyticsPage;
 use crate::components::audit::AuditLogPage;
 use crate::components::compliance::CompliancePage;

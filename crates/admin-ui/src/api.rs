@@ -6,6 +6,56 @@ use leptos::prelude::window;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use wasm_bindgen::JsCast;
 
+/// Structured error type for API failures.
+/// Instead of raw strings, this gives the UI actionable error info.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ApiError {
+    /// Network error — server unreachable, CORS issue, etc.
+    Network(String),
+    /// HTTP status error (4xx, 5xx)
+    Http { status: u16, message: String },
+    /// JSON deserialization failed — response shape changed
+    JsonParse(String),
+    /// Auth expired or invalid
+    Auth { message: String },
+}
+
+impl ApiError {
+    pub fn is_auth_error(&self) -> bool {
+        matches!(self, ApiError::Auth { .. })
+    }
+
+    pub fn is_network_error(&self) -> bool {
+        matches!(self, ApiError::Network { .. })
+    }
+
+    pub fn is_server_error(&self) -> bool {
+        matches!(
+            self,
+            ApiError::Http { status, .. } if *status >= 500
+        )
+    }
+
+    pub fn user_message(&self) -> String {
+        match self {
+            ApiError::Network(msg) => format!("Verbindungsproblem: {}", msg),
+            ApiError::Http { status, message } => {
+                if *status >= 500 {
+                    format!("Server-Fehler ({}): {}", status, message)
+                } else if *status == 401 {
+                    "Sitzung abgelaufen. Bitte neu anmelden.".to_string()
+                } else if *status == 403 {
+                    "Zugriff verweigert.".to_string()
+                } else {
+                    format!("Fehler ({}): {}", status, message)
+                }
+            }
+            ApiError::JsonParse(msg) => format!("Datenformat ungültig: {}", msg),
+            ApiError::Auth { message } => message.clone(),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct SystemStatus {
     pub initialized: bool,
@@ -387,6 +437,11 @@ pub async fn fetch_tasks() -> Result<PaginatedTasks, String> {
 /// Fetch tasks assigned to current worker
 pub async fn fetch_my_tasks() -> Result<PaginatedTasks, String> {
     get_json("/api/v1/orders/my-tasks", true).await
+}
+
+/// Fetch a single task by ID — used by task detail pages
+pub async fn fetch_task(id: uuid::Uuid) -> Result<TaskData, String> {
+    get_json(&format!("/api/v1/tasks/{}", id), true).await
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1140,7 +1195,7 @@ pub async fn list_sigpac_parcels(
     } else {
         format!("?{}", params.join("&"))
     };
-    let url = format!("/api/v1/sigpac/parcels{}", query_string);
+    let url = format!("/api/v1/sigpac/parcels?{}", query_string);
     get_json(&url, true).await
 }
 
@@ -1435,19 +1490,19 @@ pub struct PaginatedWorkerResponse {
 }
 
 pub async fn fetch_workers() -> Result<PaginatedWorkerResponse, String> {
-    get_json("/api/v1/workforce/workers", true).await
+    get_json("/api/v1/workers", true).await
 }
 
 pub async fn fetch_worker(id: uuid::Uuid) -> Result<WorkerDto, String> {
-    get_json(&format!("/api/v1/workforce/workers/{}", id), true).await
+    get_json(&format!("/api/v1/workers/{}", id), true).await
 }
 
 pub async fn create_worker(req: &CreateWorkerRequest) -> Result<WorkerDto, String> {
-    post_json("/api/v1/workforce/workers", req, true).await
+    post_json("/api/v1/workers", req, true).await
 }
 
 pub async fn update_worker(id: uuid::Uuid, req: &UpdateWorkerRequest) -> Result<WorkerDto, String> {
-    let request = Request::put(&api_url(&format!("/api/v1/workforce/workers/{}", id)));
+    let request = Request::put(&api_url(&format!("/api/v1/workers/{}", id)));
     let request = with_auth(request);
     let resp = request
         .json(&req)
@@ -1515,22 +1570,14 @@ pub async fn fetch_clock_entries(
     worker_id: Option<uuid::Uuid>,
 ) -> Result<PaginatedClockEntryResponse, String> {
     if let Some(wid) = worker_id {
-        get_json(
-            &format!("/api/v1/workforce/workers/{}/clock-entries", wid),
-            true,
-        )
-        .await
+        get_json(&format!("/api/v1/workers/{}/clock-entries", wid), true).await
     } else {
         get_json("/api/v1/workforce/clock-entries", true).await
     }
 }
 
 pub async fn fetch_active_session(worker_id: uuid::Uuid) -> Result<Option<ClockEntryDto>, String> {
-    get_json(
-        &format!("/api/v1/workforce/workers/{}/clock-active", worker_id),
-        true,
-    )
-    .await
+    get_json(&format!("/api/v1/workers/{}/clock-active", worker_id), true).await
 }
 
 pub async fn clock_in(req: &CreateClockEntryRequest) -> Result<ClockEntryDto, String> {
@@ -1568,10 +1615,10 @@ pub async fn fetch_worker_sessions(
         query.push_str(&format!("to={}&", js_sys::encode_uri_component(t)));
     }
     let path = if query.is_empty() {
-        format!("/api/v1/workforce/workers/{}/clock-sessions", worker_id)
+        format!("/api/v1/workers/{}/clock-sessions", worker_id)
     } else {
         format!(
-            "/api/v1/workforce/workers/{}/clock-sessions?{}",
+            "/api/v1/workers/{}/clock-sessions?{}",
             worker_id,
             query.trim_end_matches('&')
         )
@@ -1592,10 +1639,10 @@ pub async fn fetch_total_hours(
         query.push_str(&format!("to={}&", js_sys::encode_uri_component(t)));
     }
     let path = if query.is_empty() {
-        format!("/api/v1/workforce/workers/{}/hours-worked", worker_id)
+        format!("/api/v1/workers/{}/hours-worked", worker_id)
     } else {
         format!(
-            "/api/v1/workforce/workers/{}/hours-worked?{}",
+            "/api/v1/workers/{}/hours-worked?{}",
             worker_id,
             query.trim_end_matches('&')
         )

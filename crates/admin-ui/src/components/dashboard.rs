@@ -1,5 +1,6 @@
 use crate::ViewMode;
 use crate::api;
+use crate::components::error_boundary::user_friendly_error;
 use icondata::*;
 use leptos::prelude::*;
 use leptos_icons::Icon;
@@ -16,12 +17,16 @@ pub fn DashboardView() -> impl IntoView {
         .unwrap_or_else(|| String::from("AgroCore"));
 
     let tasks_resource = LocalResource::new(move || async move {
-        api::fetch_tasks()
-            .await
-            .unwrap_or_else(|_| api::PaginatedTasks {
+        api::fetch_tasks().await.unwrap_or_else(|err| {
+            // Log user-friendly error for debugging
+            web_sys::console::log_1(
+                &format!("Dashboard tasks error: {}", user_friendly_error(&err)).into(),
+            );
+            api::PaginatedTasks {
                 data: vec![],
                 total: 0,
-            })
+            }
+        })
     });
     let sites_resource = LocalResource::new(|| async move {
         api::fetch_sites()

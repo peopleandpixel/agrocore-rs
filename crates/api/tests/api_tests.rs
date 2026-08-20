@@ -98,7 +98,7 @@ async fn test_remaining_module_routes_are_registered() {
         "/api/v1/finance/financial-records",
         "/api/v1/finance/pac-applications",
         "/api/v1/harvest/seasons",
-        "/api/v1/animals",
+        "/api/v1/livestock/animals",
         "/api/v1/specialized/olive-groves",
     ] {
         let req = TestRequest::get().uri(uri).to_request();

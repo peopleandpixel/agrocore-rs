@@ -95,7 +95,7 @@ async fn test_list_animals() {
         vec!["Manager"],
     );
     let req = test::TestRequest::get()
-        .uri("/api/v1/animals")
+        .uri("/api/v1/livestock/animals")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
@@ -150,7 +150,10 @@ async fn test_add_treatment() {
         vec!["Manager"],
     );
     let req = test::TestRequest::post()
-        .uri(&format!("/api/v1/animals/{}/treatments", animal_id))
+        .uri(&format!(
+            "/api/v1/livestock/animals/{}/treatments",
+            animal_id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(&treatment)
         .to_request();

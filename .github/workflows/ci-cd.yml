@@ -41,6 +41,9 @@ jobs:
       - name: Run cargo clippy
         run: cargo clippy --workspace -- -D warnings
 
+      - name: Run API contract validation (prevents UI 500 errors)
+        run: cargo test --test api_contract_test -- --nocapture
+
   # Unit & Integration Tests
   test:
     name: Tests

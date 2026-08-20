@@ -154,9 +154,9 @@ Siehe [optimizations.md](docs/optimizations.md) §3.2 — bereits erledigt (0.8.
 
 ---
 
-## Phase 4: Monitoring & Observability
+|
 
-### Detailliertere Database Metrics
+## Phase 4: Monitoring & Observability
 - [ ] Query-Dauer-Monitoring (sqlx-Middleware oder `sqlx-metrics`)
 - [ ] Pool-Auslastung (aktive/idle Verbindungen)
 - [ ] Slow-Query-Erkennung + Logging

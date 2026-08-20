@@ -102,3 +102,7 @@ path = "tests/water_integration.rs"
 [[test]]
 name = "reporting_integration_test"
 path = "tests/reporting_integration.rs"
+
+[[test]]
+name = "api_contract_test"
+path = "tests/api_contract_test.rs"

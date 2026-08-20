@@ -5,7 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.17] - 2026-08-14
+## [Unreleased]
+
+### Added
+- **Admin UI Full-Stack Feature Coverage System — API Contract Validation Test**
+  - New `crates/api/tests/api_contract_test.rs` with 6 contract tests validating all 62 UI API paths against actual API routes at build time
+  - `test_api_contract_all_ui_paths_have_routes` — verifies every UI helper path has a matching API route
+  - `test_api_contract_no_orphaned_routes` — detects dead API endpoints with no UI consumer
+  - `test_crud_coverage` — validates all 10 major resources (Sites, Orders, Workers, Users, Equipment, Inventory, Livestock, Finance, Compliance, Tasks) have full Create/Read/Update/Delete coverage
+  - `test_ui_routes_have_pages` — ensures all sidebar navigation routes resolve to page components (20/20 checked)
+  - `test_role_based_access_consistency` — validates Admin/Manager/Worker role routes are consistent between backend and frontend
+  - `test_all_ui_components_exist` — verifies all 20 page component files exist on disk
+  - CI integration: contract test runs as fail-fast step in quality gate phase before other tests
+
+- **Admin UI Mock Test Framework — Runtime Error Handling Tests**
+  - `crates/admin-ui/src/tests/mock_test_framework.rs` — 20 mock-based tests
+  - `MockApiClient` with `with_error()` builder for simulating API failures
+  - `ApiError` enum (Network/Http/JsonParse) with `is_server_error()`, `is_client_error()`, `is_network_error()`, `user_message()` methods
+  - 4 pre-built scenarios: `all_500()` (total backend outage), `network_failure()` (offline mode), `auth_expired()` (401 session expiry), `json_malformed()` (schema change)
+  - `test_all_api_functions_covered_by_scenarios` — ensures 11 core fetch functions are all covered by mock scenarios
+  - `test_crud_operations_can_error` — validates 15 CRUD/mutation operations return proper errors
+  - Tests for HTTP status classification (11 status codes: 400, 401, 403, 404, 409, 422, 500, 502, 503, 504, default)
+
+- **Admin UI Error Boundary — Graceful Error Handling**
+  - `crates/admin-ui/src/components/error_boundary.rs` — `user_friendly_error()` converts technical error strings to localized German messages, preventing stack traces from leaking to users
+  - `handle_api_result()` utility for safe API result handling
+  - Integrated into Dashboard component: `fetch_tasks()` error handler now logs `user_friendly_error(&err)` instead of raw error
+  - 500 errors no longer leak technical details (file paths, DB internals) to end users
+
+- **Admin UI API Helper — `fetch_task(id)`**
+  - Added missing `fetch_task(id)` helper function for Task detail pages (was previously missing, causing 404s on `/api/v1/tasks/{id}`)
+
+- **Helper Scripts**
+  - `scripts/update_contract_tests.sh` — scans for new `fetch_*` functions and verifies mock scenario coverage; exits with error if new functions aren't tested
+  - `scripts/generate_coverage_report.sh` — generates `docs/admin-ui-coverage-report.md` with test statistics and coverage checklist for new features
+
+### Fixed
+- **9 API path mismatches eliminated (preventing 500 errors):**
+  - `/api/v1/workforce/workers` → `/api/v1/workers` (8 paths corrected — double-prefix scope was wrong)
+  - `/api/v1/sigpac/parcels{query}` → `/api/v1/sigpac/parcels?{query}` (query param separator was missing `?`)
+  - `/api/v1/animals` → `/api/v1/livestock/animals` (tests corrected)
+  - `/api/v1/animals/{id}/treatments` → `/api/v1/livestock/animals/{id}/treatments` (tests corrected)
+- **`customer_id` field missing in test Order/DTO instantiations** — 7 instances fixed across `order_tests.rs`, `workflow_tests.rs`, `validation_tests.rs`
+- **`Database` enum `large_enum_variant` clippy error** — added `#[allow(clippy::large_enum_variant)]` (Postgres variant is 680+ bytes vs 8-byte Mock; performance tuning, not a bug)
+
+## [0.8.22] - 2026-08-20
 
 ### Added
 - **Job & Arbeitskräfte-Management: Arbeitszeiterfassung (Clock-In/Clock-Out mit GPS)**

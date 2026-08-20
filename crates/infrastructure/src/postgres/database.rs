@@ -33,6 +33,7 @@ use sqlx::PgPool;
 use std::sync::Arc;
 
 #[derive(Clone)]
+#[allow(clippy::large_enum_variant)]
 pub enum Database {
     Postgres(PostgresDb),
     #[cfg(feature = "mocks")]
