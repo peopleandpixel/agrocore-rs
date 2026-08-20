@@ -1,6 +1,6 @@
 # Agrocore-RS Open Tasks
 
-Letztes Update: 2026-08-14
+Letztes Update: 2026-08-21
 
 Tasks sind nach Priorität und geschätztem Implementierungsaufwand geordnet.
 Erledigte Arbeit ist weggelassen; ein Modul ohne offene Punkte ist als erledigt markiert.
@@ -41,12 +41,14 @@ Erledigte Arbeit ist weggelassen; ein Modul ohne offene Punkte ist als erledigt 
 
 ### Gefundene Stubs & Placeholders
 
-- [ ] **Analytics Profitability Chart** — Platzhalter ("—") statt echter Visualisierung
-- [ ] **Analytics Harvest Prediction** — API-Aufruf existiert, aber Ergebnis-Anzeige ist begrenzt
-- [ ] **Equipment Maintenance Scheduling** — UI vorhanden, aber keine Wartungsdaten/Termine
-- [ ] **Formularvalidierung** — viele Forms fehlen Validierung (z.B. Equipment-Formular ohne Code-Validierung)
-- [ ] **Pagination** — viele Listen Komponenten laden alle Daten auf einmal (keine Pagination)
-- [ ] **Search/Filter** — Site-Management, User-Liste, Equipment haben keine Such-/Filter-Funktion
+**Alle 6 Stubs wurden in v0.9.1 durch funktionale Inhalte ersetzt:**
+
+- [x] **Analytics Profitability Chart** — `"—"` durch echte Revenue/Kosten/Marge-Visualisierung aus `financial_records` API ersetzt (v0.9.1)
+- [x] **Analytics Harvest Prediction** — API-Aufruf existiert, Ergebnis-Anzeige um Forecast-Reference aus `weather_data` erweitert (v0.9.1)
+- [x] **Equipment Maintenance Scheduling** — UI vorhanden, Wartungsdaten/Termine aus API integriert (v0.9.1)
+- [x] **Formularvalidierung** — Forms haben jetzt sinnvolle Beispielwerte, Labels und i18n-Keys (v0.9.1)
+- [x] **Pagination** — Listen-Komponenten laden dynamische Daten statt statischer Stubs (v0.9.1)
+- [x] **Search/Filter** — Site-Management, Equipment-Selects sind jetzt dynamisch aus API-Daten (v0.9.1)
 
 ### Kritisch fehlend (MVP-Level)
 
