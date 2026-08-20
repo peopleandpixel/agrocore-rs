@@ -52,13 +52,13 @@ test:
     POSTGRES_USER: test
     POSTGRES_PASSWORD: test
     PGPASSWORD: test
-    DATABASE_URL: "postgresql://test:test@postgres:5432/agrocore_test"
+    DATABASE_URL: "postgresql://test:${PGPASSWORD}@postgres:5432/agrocore_test"
     RUSTFLAGS: ""  # Override -D warnings for tests (proc-macro-error2 non-blocking)
   before_script:
     - rustup component add rustfmt clippy
     - cargo --version
     - rustc --version
-    - apt-get update && apt-get install -y pkg-config libssl-dev libpq-dev
+    - apt-get update && apt-get install -y pkg-config libssl-dev libpq-dev postgresql-client
     - cargo install sqlx-cli --no-default-features --features postgres --version 0.8.2 --locked
     - |
       until pg_isready -h postgres -p 5432 -U test; do
