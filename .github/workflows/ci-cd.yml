@@ -136,12 +136,11 @@ jobs:
           key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install wasm-pack
-        run: cargo install wasm-pack --version 0.13.1 --locked
+        run: sudo curl -sSf --compressed -o /usr/local/bin/wasm-pack https://github.com/rustwasm/wasm-pack/releases/download/v0.13.1/wasm-pack-v0.13.1-x86_64-unknown-linux-musl.tar.gz && chmod +x /usr/local/bin/wasm-pack
 
       - name: Build Admin UI WASM
         run: |
           cd crates/admin-ui
-          export PATH="$CARGO_HOME/bin:$PATH"
           wasm-pack build --target no-bundler --release --out-dir target/wasm32-unknown-unknown/release
           cp target/wasm32-unknown-unknown/release/admin_ui_bg.wasm target/wasm32-unknown-unknown/release/admin-ui.wasm
 
