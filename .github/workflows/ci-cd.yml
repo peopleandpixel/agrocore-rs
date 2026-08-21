@@ -115,6 +115,9 @@ jobs:
     runs-on: ubuntu-latest
     # Runs in parallel with test job — only needs quality-gates
     needs: quality-gates
+    env:
+      # sqlx::query! offline mode — .sqlx/ cache is committed to repo
+      SQLX_OFFLINE: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
