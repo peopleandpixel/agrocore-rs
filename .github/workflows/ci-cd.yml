@@ -136,7 +136,7 @@ jobs:
           key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install wasm-pack
-        run: sudo curl -sSf --compressed -o /usr/local/bin/wasm-pack https://github.com/rustwasm/wasm-pack/releases/download/v0.13.1/wasm-pack-v0.13.1-x86_64-unknown-linux-musl.tar.gz && chmod +x /usr/local/bin/wasm-pack
+        run: sudo curl -sSf --compressed -o /usr/local/bin/wasm-pack https://github.com/rustwasm/wasm-pack/releases/download/v0.13.1/wasm-pack-v0.13.1-x86_64-unknown-linux-musl.tar.gz && sudo chmod +x /usr/local/bin/wasm-pack
 
       - name: Build Admin UI WASM
         run: |
