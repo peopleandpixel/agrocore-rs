@@ -34,8 +34,8 @@ quality-gates:
   image: rust:latest
   script:
     - cargo fmt --all -- --check
-    - cargo check --workspace
-    - cargo clippy --workspace -- -D warnings
+    - SQLX_OFFLINE=true cargo check --workspace
+    - SQLX_OFFLINE=true cargo clippy --workspace -- -D warnings
   allow_failure: false
   timeout: 30m
 

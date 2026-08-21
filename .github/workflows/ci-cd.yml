@@ -37,12 +37,19 @@ jobs:
 
       - name: Run cargo check
         run: cargo check --workspace
+        env:
+          # sqlx::query! offline mode — uses .sqlx/ cache instead of DB connection
+          SQLX_OFFLINE: true
 
       - name: Run cargo clippy
         run: cargo clippy --workspace -- -D warnings
+        env:
+          SQLX_OFFLINE: true
 
       - name: Run API contract validation (prevents UI 500 errors)
         run: cargo test --test api_contract_test --features=mocks -- --nocapture
+        env:
+          SQLX_OFFLINE: true
 
   # Unit & Integration Tests
   test:
