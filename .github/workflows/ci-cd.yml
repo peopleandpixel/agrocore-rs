@@ -96,16 +96,18 @@ jobs:
 
       - name: Setup database
         run: |
-          sqlx database create --database-url postgresql://test:test@localhost:5432/agrocore_test
-          sqlx migrate run --source migrations --database-url postgresql://test:test@localhost:5432/agrocore_test
+          sqlx database create --database-url postgresql://test:${PGPASSWORD}@localhost:5432/agrocore_test
+          sqlx migrate run --source migrations --database-url postgresql://test:${PGPASSWORD}@localhost:5432/agrocore_test
         env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/agrocore_test
+          DATABASE_URL: postgresql://test:${PGPASSWORD}@localhost:5432/agrocore_test
+          PGPASSWORD: test
 
       - name: Run cargo test
         run: cargo test --workspace --features=mocks --no-fail-fast
         env:
           RUST_LOG: debug
-          DATABASE_URL: postgresql://test:***@localhost:5432/agrocore_test
+          DATABASE_URL: postgresql://test:${PGPASSWORD}@localhost:5432/agrocore_test
+          PGPASSWORD: test
 
   # Build Admin UI WASM
   build-wasm:
@@ -136,10 +138,8 @@ jobs:
       - name: Build Admin UI WASM
         run: |
           cd crates/admin-ui
-          # Use wasm-pack with --target no-bundler to build without a bundler
-          # The --out-dir ensures consistent artifact path
-          ~/.cargo/bin/wasm-pack build --target no-bundler --release --out-dir target/wasm32-unknown-unknown/release
-          # Copy .wasm to expected artifact path
+          export PATH="$CARGO_HOME/bin:$PATH"
+          wasm-pack build --target no-bundler --release --out-dir target/wasm32-unknown-unknown/release
           cp target/wasm32-unknown-unknown/release/admin_ui_bg.wasm target/wasm32-unknown-unknown/release/admin-ui.wasm
 
       - name: Upload WASM artifact
