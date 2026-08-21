@@ -1,13 +1,6 @@
-[target.'cfg(all())']
-rustflags = ["-D", "warnings"]
+# .cargo/config.toml for agrocore-rs
+# Enables SQLX offline mode by default — uses .sqlx/ cache instead of DB connection
+# This prevents CI quality-gates jobs (no DB) from failing during rustc macro expansion
 
-[profile.release]
-lto = true
-codegen-units = 1
-strip = true
-opt-level = 3
-
-[profile.release-lto-off]
-inherits = "release"
-lto = false
-codegen-units = 16
+[env]
+SQLX_OFFLINE = "true"

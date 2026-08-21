@@ -318,6 +318,7 @@ dependencies = [
  "sqlx",
  "testcontainers",
  "testcontainers-modules",
+ "tokio",
  "toml 0.8.23",
  "tracing",
  "tracing-actix-web",
@@ -6082,6 +6083,7 @@ dependencies = [
  "memchr",
  "once_cell",
  "percent-encoding",
+ "rustls",
  "serde",
  "serde_json",
  "sha2 0.10.9",
@@ -6092,6 +6094,7 @@ dependencies = [
  "tracing",
  "url",
  "uuid",
+ "webpki-roots 0.26.11",
 ]
 
 [[package]]

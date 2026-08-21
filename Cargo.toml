@@ -10,7 +10,7 @@ edition = "2024"
 
 
 [workspace.dependencies]
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1", default-features = false, features = ["rt", "macros", "sync", "time", "fs", "io-util", "io-std", "test-util", "rt-multi-thread"] }
 actix-web = "4"
 actix-cors = "0.7"
 reqwest = { version = "0.13", features = ["json", "rustls"], default-features = false }
@@ -42,7 +42,7 @@ actix-governor = "0.10"
 futures = "0.3"
 async-nats = "0.50"
 mockall = "0.13"
-sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono", "ipnetwork", "bigdecimal", "json"] }
+sqlx = { version = "0.8", default-features = false, features = ["postgres", "macros", "uuid", "chrono", "ipnetwork", "bigdecimal", "json", "runtime-tokio-rustls", "tls-rustls"] }
 geozero = { version = "0.15", features = ["with-postgis-sqlx", "with-geo", "with-shp", "with-geojson"] }
 strum = { version = "0.26", features = ["derive"] }
 quick-xml = { version = "0.41", features = ["serialize"] }
