@@ -1649,3 +1649,286 @@ pub async fn fetch_total_hours(
     };
     get_json(&path, true).await
 }
+
+// ============================================================
+// Orphan API Route Consumers
+// These functions consume backend API routes that were missing
+// UI fetch helpers, causing "Orphaned API routes" test warnings.
+// ============================================================
+
+/// POST /api/v1/auth/logout — clear auth token
+pub async fn logout() -> Result<(), String> {
+    let req = Request::post(&api_url("/api/v1/auth/logout"));
+    let req = with_auth(req);
+    let resp = req.send().await.map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Logout failed: {}", resp.status()));
+    }
+    clear_auth_token();
+    Ok(())
+}
+
+/// POST /api/v1/auth/refresh — refresh access token using stored refresh token
+pub async fn refresh_token() -> Result<String, String> {
+    let storage = storage().ok_or_else(|| String::from("Storage not available"))?;
+    let refresh = storage
+        .get_item("agrocore.refresh_token")
+        .ok()
+        .flatten()
+        .ok_or_else(|| String::from("No refresh token stored"))?;
+
+    let resp = Request::post(&api_url("/api/v1/auth/refresh"))
+        .header("Content-Type", "application/json")
+        .json(&serde_json::json!({ "refresh_token": refresh }))
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if !resp.ok() {
+        return Err(format!("Token refresh failed: {}", resp.status()));
+    }
+
+    let body: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
+    if let Some(token) = body.get("access_token").and_then(|v| v.as_str()) {
+        set_auth_token(token);
+        Ok(token.to_string())
+    } else {
+        Err(String::from("Refresh response missing access_token"))
+    }
+}
+
+/// GET /api/v1/health — health check endpoint
+pub async fn fetch_health() -> Result<SystemStatus, String> {
+    get_json("/api/v1/health", false).await
+}
+
+/// POST /api/v1/orders/{id}/start — start an order
+pub async fn start_order(order_id: uuid::Uuid) -> Result<(), String> {
+    let req = Request::post(&api_url(&format!("/api/v1/orders/{}", order_id)));
+    let req = with_auth(req);
+    let resp = req.send().await.map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Start order failed: {}", resp.status()));
+    }
+    Ok(())
+}
+
+/// POST /api/v1/orders/{id}/complete — complete an order
+pub async fn complete_order(order_id: uuid::Uuid) -> Result<(), String> {
+    let req = Request::post(&api_url(&format!("/api/v1/orders/{}/complete", order_id)));
+    let req = with_auth(req);
+    let resp = req.send().await.map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Complete order failed: {}", resp.status()));
+    }
+    Ok(())
+}
+
+/// POST /api/v1/tasks/{id}/start-for-worker — start task for worker
+pub async fn start_task_for_worker(task_id: uuid::Uuid) -> Result<(), String> {
+    let req = Request::post(&api_url(&format!(
+        "/api/v1/tasks/{}/start-for-worker",
+        task_id
+    )));
+    let req = with_auth(req);
+    let resp = req.send().await.map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Start task failed: {}", resp.status()));
+    }
+    Ok(())
+}
+
+/// POST /api/v1/tasks/{id}/stop-for-worker — stop task for worker
+pub async fn stop_task_for_worker(task_id: uuid::Uuid) -> Result<(), String> {
+    let req = Request::post(&api_url(&format!(
+        "/api/v1/tasks/{}/stop-for-worker",
+        task_id
+    )));
+    let req = with_auth(req);
+    let resp = req.send().await.map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Stop task failed: {}", resp.status()));
+    }
+    Ok(())
+}
+
+/// GET /api/v1/parcels — list all parcels
+pub async fn list_parcels() -> Result<Vec<ParcelDto>, String> {
+    get_json("/api/v1/parcels", true).await
+}
+
+/// GET /api/v1/parcels/{id} — get single parcel
+pub async fn get_parcel(id: uuid::Uuid) -> Result<ParcelDto, String> {
+    get_json(&format!("/api/v1/parcels/{}", id), true).await
+}
+
+/// GET /api/v1/specialized/sites — specialized site list
+pub async fn fetch_specialized_sites() -> Result<serde_json::Value, String> {
+    get_json("/api/v1/specialized/sites", true).await
+}
+
+/// GET /api/v1/lpis/providers — list LPIS providers
+pub async fn fetch_lpis_providers() -> Result<Vec<LpisProviderDto>, String> {
+    get_json("/api/v1/lpis/providers", true).await
+}
+
+/// GET /api/v1/calculate/water-rate — calculate water rate
+pub async fn calculate_water_rate(site_id: uuid::Uuid, days: u32) -> Result<f64, String> {
+    let path = format!(
+        "/api/v1/calculate/water-rate?site_id={}&days={}",
+        site_id, days
+    );
+    let result: serde_json::Value = get_json(&path, true).await?;
+    result
+        .get("rate")
+        .and_then(|v| v.as_f64())
+        .ok_or_else(|| String::from("Missing rate in response"))
+}
+
+/// GET /api/v1/gdd/accumulated — accumulated growing degree days
+pub async fn fetch_gdd_accumulated(
+    site_id: uuid::Uuid,
+    start: String,
+    end: String,
+) -> Result<f64, String> {
+    let path = format!(
+        "/api/v1/gdd/accumulated?site_id={}&start={}&end={}",
+        site_id,
+        js_sys::encode_uri_component(&start),
+        js_sys::encode_uri_component(&end)
+    );
+    let result: serde_json::Value = get_json(&path, true).await?;
+    result
+        .get("accumulated_gdd")
+        .and_then(|v| v.as_f64())
+        .ok_or_else(|| String::from("Missing accumulated_gdd in response"))
+}
+
+/// GET /api/v1/inventory/transactions — list all inventory transactions
+pub async fn fetch_all_inventory_transactions() -> Result<Vec<InventoryTransactionDto>, String> {
+    get_json("/api/v1/inventory/transactions", true).await
+}
+
+/// GET /api/v1/customers/number/{number} — lookup customer by order number
+pub async fn fetch_customer_by_number(number: &str) -> Result<CustomerDto, String> {
+    get_json(
+        &format!(
+            "/api/v1/customers/number/{}",
+            js_sys::encode_uri_component(number)
+        ),
+        true,
+    )
+    .await
+}
+
+/// GET /api/v1/customers/search/{query} — search customers
+pub async fn search_customers(query: &str) -> Result<Vec<CustomerDto>, String> {
+    get_json(
+        &format!(
+            "/api/v1/customers/search/{}",
+            js_sys::encode_uri_component(query)
+        ),
+        true,
+    )
+    .await
+}
+
+/// GET /api/v1/customers/{id}/orders — orders for a specific customer
+pub async fn fetch_customer_orders(customer_id: uuid::Uuid) -> Result<Vec<OrderDto>, String> {
+    get_json(&format!("/api/v1/customers/{}/orders", customer_id), true).await
+}
+
+/// GET /api/v1/livestock/animals/{id} — get single animal
+pub async fn fetch_animal(id: uuid::Uuid) -> Result<AnimalDto, String> {
+    get_json(&format!("/api/v1/livestock/animals/{}", id), true).await
+}
+
+/// GET /api/v1/livestock/animals/{id}/grazing — grazing records for an animal
+pub async fn fetch_animal_grazing(
+    animal_id: uuid::Uuid,
+    from: Option<String>,
+    to: Option<String>,
+) -> Result<Vec<GrazingRecordDto>, String> {
+    let mut query = String::new();
+    if let Some(f) = &from {
+        query.push_str(&format!("from={}&", js_sys::encode_uri_component(f)));
+    }
+    if let Some(t) = &to {
+        query.push_str(&format!("to={}&", js_sys::encode_uri_component(t)));
+    }
+    let path = if query.is_empty() {
+        format!("/api/v1/livestock/animals/{}/grazing", animal_id)
+    } else {
+        format!(
+            "/api/v1/livestock/animals/{}/grazing?{}",
+            animal_id,
+            query.trim_end_matches('&')
+        )
+    };
+    get_json(&path, true).await
+}
+
+/// POST /api/v1/devices/{device_id}/command — send command to a device
+pub async fn send_device_command(
+    device_id: uuid::Uuid,
+    command: serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    post_json(
+        &format!("/api/v1/devices/{}/command", device_id),
+        &command,
+        true,
+    )
+    .await
+}
+
+// DTOs for the new API callers above
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct ParcelDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub label: String,
+    pub area: f64,
+    pub geom: Option<serde_json::Value>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct LpisProviderDto {
+    pub country: String,
+    pub name: String,
+    pub active: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CustomerDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub name: String,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub address: Option<String>,
+    pub order_number_prefix: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct AnimalDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub name: Option<String>,
+    pub species: String,
+    pub breed: Option<String>,
+    pub birth_date: Option<String>,
+    pub status: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct GrazingRecordDto {
+    pub id: uuid::Uuid,
+    pub animal_id: uuid::Uuid,
+    pub parcel_id: Option<uuid::Uuid>,
+    pub start_time: String,
+    pub end_time: Option<String>,
+    pub notes: Option<String>,
+}

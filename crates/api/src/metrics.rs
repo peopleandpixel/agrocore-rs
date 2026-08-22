@@ -1,4 +1,6 @@
-use prometheus::{HistogramOpts, HistogramVec, IntCounterVec, IntGauge, Opts, Registry};
+use prometheus::{
+    HistogramOpts, HistogramVec, IntCounter, IntCounterVec, IntGauge, Opts, Registry,
+};
 
 /// Metrics registry for database query monitoring — integrates with Prometheus.
 ///
@@ -101,6 +103,69 @@ impl DbMetrics {
 
 /// Slow-query detection threshold in milliseconds.
 pub const SLOW_QUERY_THRESHOLD_MS: u128 = 1000;
+
+/// Business-level metrics for device telemetry, inventory imports, and active device count.
+#[derive(Clone)]
+pub struct BusinessMetrics {
+    pub active_devices: IntGauge,
+    pub telemetry_messages_total: IntCounterVec,
+    pub import_files_processed: IntCounter,
+}
+
+impl BusinessMetrics {
+    pub fn new(registry: &Registry) -> Self {
+        let active_devices = IntGauge::with_opts(Opts::new(
+            "agrocore_business_active_devices",
+            "Number of currently active devices (connected/sending telemetry)",
+        ))
+        .unwrap();
+        registry.register(Box::new(active_devices.clone())).unwrap();
+
+        let telemetry_messages_total = IntCounterVec::new(
+            Opts::new(
+                "agrocore_business_telemetry_messages_total",
+                "Total telemetry messages received per device-type",
+            ),
+            &["device_type"],
+        )
+        .unwrap();
+        registry
+            .register(Box::new(telemetry_messages_total.clone()))
+            .unwrap();
+
+        let import_files_processed = IntCounter::with_opts(Opts::new(
+            "agrocore_business_import_files_processed_total",
+            "Total number of import files processed (SIGPAC, GeoJSON, Shapefile)",
+        ))
+        .unwrap();
+        registry
+            .register(Box::new(import_files_processed.clone()))
+            .unwrap();
+
+        Self {
+            active_devices,
+            telemetry_messages_total,
+            import_files_processed,
+        }
+    }
+
+    /// Increment the active-device gauge by `delta` (+1 on connect, -1 on disconnect).
+    pub fn update_active_devices(&self, delta: i64) {
+        self.active_devices.add(delta);
+    }
+
+    /// Increment the telemetry message counter for a given device type.
+    pub fn record_telemetry(&self, device_type: &str) {
+        self.telemetry_messages_total
+            .with_label_values(&[device_type])
+            .inc();
+    }
+
+    /// Increment the import-file processed counter.
+    pub fn record_import_file(&self) {
+        self.import_files_processed.inc();
+    }
+}
 
 /// Helper to extract a table name from a SQL query string (best-effort).
 /// Looks for common patterns like "FROM table", "INTO table", "UPDATE table", "DELETE FROM table".

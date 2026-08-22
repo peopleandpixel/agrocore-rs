@@ -18,7 +18,7 @@ pub mod services;
 #[cfg(test)]
 mod dto_validation_tests;
 
-use crate::metrics::DbMetrics;
+pub use crate::metrics::{BusinessMetrics, DbMetrics};
 use crate::middleware::TokenRevocationList;
 use agrocore_infrastructure::Database;
 use agrocore_lpis_providers::create_default_registry;
@@ -36,6 +36,7 @@ pub struct AppState {
     pub lpis_registry: Arc<LpisRegistry>,
     pub token_revocation: Arc<TokenRevocationList>,
     pub db_metrics: DbMetrics,
+    pub business_metrics: BusinessMetrics,
     pub metrics_registry: Arc<Registry>,
 }
 
@@ -101,6 +102,7 @@ pub async fn run_server(
     // Initialize DB metrics registry and metrics instance
     let metrics_registry = Arc::new(Registry::new());
     let db_metrics = DbMetrics::new(&metrics_registry);
+    let business_metrics = BusinessMetrics::new(&metrics_registry);
 
     let state = web::Data::new(AppState {
         db: Arc::new(db),
@@ -108,6 +110,7 @@ pub async fn run_server(
         lpis_registry,
         token_revocation: Arc::new(init_token_revocation()),
         db_metrics,
+        business_metrics,
         metrics_registry: metrics_registry.clone(),
     });
 
@@ -148,6 +151,10 @@ pub async fn run_server(
             ))
             .configure(handlers::configure)
             .route("/metrics/db", actix_web::web::get().to(db_metrics_handler))
+            .route(
+                "/metrics/business",
+                actix_web::web::get().to(business_metrics_handler),
+            )
             .service(
                 fs::Files::new("/admin", "/var/lib/agrocore/admin-ui")
                     .index_file("index.html")
@@ -169,6 +176,19 @@ async fn db_metrics_handler(state: web::Data<AppState>) -> actix_web::HttpRespon
         Ok(output) => actix_web::HttpResponse::Ok().body(output),
         Err(e) => {
             tracing::error!("Failed to encode DB metrics: {}", e);
+            actix_web::HttpResponse::InternalServerError().body("metrics encode error")
+        }
+    }
+}
+
+/// HTTP handler that exposes ALL metrics (DB + business) at /metrics/business.
+async fn business_metrics_handler(state: web::Data<AppState>) -> actix_web::HttpResponse {
+    let encoder = prometheus::TextEncoder::new();
+    let mf = state.metrics_registry.gather();
+    match encoder.encode_to_string(&mf) {
+        Ok(output) => actix_web::HttpResponse::Ok().body(output),
+        Err(e) => {
+            tracing::error!("Failed to encode business metrics: {}", e);
             actix_web::HttpResponse::InternalServerError().body("metrics encode error")
         }
     }

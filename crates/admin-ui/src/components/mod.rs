@@ -1,6 +1,7 @@
 pub mod analytics;
 pub mod audit;
 pub mod compliance;
+pub mod customers;
 pub mod dashboard;
 pub mod equipment;
 pub mod error_boundary;

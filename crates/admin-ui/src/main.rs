@@ -204,6 +204,8 @@ fn AuthenticatedShell(
                             <Route path=path!("/sigpac") view=|| view! { <components::sigpac::SigpacParcels /> } />
                             <Route path=path!("/map") view=|| view! { <MapView /> } />
                             <Route path=path!("/tasks") view=|| view! { <OrderList /> } />
+                            <Route path=path!("/tasks/:id") view=|| view! { <OrderList /> } />
+                            <Route path=path!("/customers") view=|| view! { <components::customers::CustomersPage /> } />
                             <Route path=path!("/livestock") view=|| view! { <LivestockManagement /> } />
                             <Route path=path!("/weather") view=|| view! { <WeatherManagement /> } />
                             <Route path=path!("/finance") view=|| view! { <FinanceManagement /> } />

@@ -140,8 +140,8 @@ jobs:
 
       - name: Build Admin UI WASM
         run: |
-          cd crates/admin-ui
-          wasm-pack build --target no-bundler --release --out-dir target/wasm32-unknown-unknown/release
+          wasm-pack build --target no-bundler --release --package admin-ui --out-dir target/wasm32-unknown-unknown/release
+          # Copy .wasm to expected artifact path
           cp target/wasm32-unknown-unknown/release/admin_ui_bg.wasm target/wasm32-unknown-unknown/release/admin-ui.wasm
 
       - name: Upload WASM artifact

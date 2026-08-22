@@ -28,6 +28,8 @@ tracing = "0.1"
 wasm-bindgen-futures = "0.4"
 base64 = "0.23"
 rust-i18n = "4"
+# tokio — wasm-compatible features only (no io-std/net/fs/rt-multi-thread for wasm)
+tokio = { version = "1", default-features = false, features = ["sync", "time", "macros", "io-util", "rt"] }
 
 [package.metadata.i18n]
 load-path = "locales"

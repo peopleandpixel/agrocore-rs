@@ -23,6 +23,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added i18n keys: `no_records`, `profit_margin_percent`, `revenue`, `cost`, `net_profit`, `element_n/p/k/mg`, `forecast_confidence_label`, `no_weather_data`
   - Added `required-features = ["mocks"]` to 11 integration test targets in `Cargo.toml` for proper test compilation
 
+## [0.9.2] - 2026-08-22
+
+### Added
+- **Admin UI — Customer Management Page**
+  - New `crates/admin-ui/src/components/customers.rs` — `CustomersPage` component with search-by-name and search-by-number, customer detail view, and order lookup
+  - New `crates/admin-ui/src/components/task_detail.rs` — Task detail view component
+  - Route `/customers` registered in `main.rs` Router
+  - Consumes orphaned API routes: `GET /api/v1/customers/search/{query}`, `GET /api/v1/customers/number/{number}`, `GET /api/v1/customers/{id}/orders`
+
+### Changed
+- **Admin UI WASM build toolchain**
+  - Updated GitHub CI `ci-cd.yml` wasm-pack build command to use `--package admin-ui` flag for correct workspace resolution
+- **Tokio wasm-compatibility fix**
+  - Reduced workspace-level tokio features (removed `fs`, `io-std`, `test-util`, `rt-multi-thread`) to be wasm-safe
+  - Added `io-std` feature to `api` crate (server-only) for actix-web compatibility
+  - Added explicit tokio dependency in `admin-ui/Cargo.toml` with wasm-compatible features only
+
+### Fixed
+- **Admin UI compilation error (E0308)** — `if/else` branches with incompatible view types in `customers.rs` resolved via `.into_any()` pattern
+- **Clippy `bool_comparison`** — replaced `== false` with negation `!` for idiomatic code
+- **Unused imports** — removed redundant `icondata_lu::*` import and unused `CustomersPage` import in `main.rs`
+
 ## [Unreleased]
 
 ### Added

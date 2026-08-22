@@ -65,9 +65,7 @@ rand = { workspace = true }
 base64 = "0.22"
 geo = { workspace = true }
 # tokio with net for server targets — not pulled in for wasm builds
-tokio = { workspace = true, features = ["net", "rt-multi-thread"] }
-
-
+tokio = { workspace = true, features = ["net", "rt-multi-thread", "io-std"] }
 [features]
 default = ["sqlx"]
 sqlx = ["dep:sqlx"]
