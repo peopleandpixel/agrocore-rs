@@ -416,12 +416,28 @@ pub async fn delete_tenant() -> Result<(), String> {
     Ok(())
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct TaskData {
     pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub worker_id: uuid::Uuid,
+    pub order_id: uuid::Uuid,
+    pub site_id: uuid::Uuid,
     pub description: String,
-    pub started_at: String,
+    pub label: String,
+    pub order_type: String,
+    pub status: String,
+    pub planned_date: Option<String>,
+    pub deadline_date: Option<String>,
+    pub started_at: Option<String>,
     pub ended_at: Option<String>,
+    pub paused_at: Option<String>,
+    pub duration_minutes: Option<i32>,
+    pub area_covered: Option<f64>,
+    pub observations: Option<String>,
+    pub is_active: bool,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -18,6 +18,7 @@ pub mod settings;
 pub mod setup;
 pub mod sigpac;
 pub mod sites;
+pub mod task_detail;
 pub mod toast;
 pub mod users;
 pub mod weather;

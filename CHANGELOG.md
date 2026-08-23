@@ -23,6 +23,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added i18n keys: `no_records`, `profit_margin_percent`, `revenue`, `cost`, `net_profit`, `element_n/p/k/mg`, `forecast_confidence_label`, `no_weather_data`
   - Added `required-features = ["mocks"]` to 11 integration test targets in `Cargo.toml` for proper test compilation
 
+## [0.9.3] - 2026-08-22
+
+### Added
+- **Admin UI — TaskDetailPage Component**
+  - New `crates/admin-ui/src/components/task_detail.rs` — `TaskDetailPage` component for viewing task details with start/stop/order actions
+  - Route `/tasks/:id` now renders `TaskDetailPage` instead of `OrderList`
+  - Task detail shows: label, description, order type, status, planned/deadline dates
+  - Action buttons: Start Task (for worker), Stop Task, Start Order, Complete Order
+  - Consumes orphaned API routes: `POST /api/v1/tasks/{id}/start-for-worker`, `POST /api/v1/tasks/{id}/stop-for-worker`, `POST /api/v1/orders/{id}/start`, `POST /api/v1/orders/{id}/complete`
+  - Uses `window().location().set_href()` navigation (avoiding `use_navigate()` handle ownership issues in reactive closures)
+  - `TaskData` extended with order-related fields (label, order_type, status, planned_date, deadline_date)
+
+- **API — `fetch_task(id)` & Action Endpoints**
+  - `fetch_task(id)` helper function for task detail pages (was previously missing)
+  - API routes already registered: `POST /api/v1/tasks/{id}/start-for-worker`, `POST /api/v1/tasks/{id}/stop-for-worker`, `POST /api/v1/orders/{id}/start`, `POST /api/v1/orders/{id}/complete`
+
+### Changed
+- Registered `TaskDetailPage` in sidebar navigation under `/workers` section
+
+### Fixed
+- **`task_detail.rs` compilation**: `FnOnce` vs `FnMut` closure issues in Leptos 0.8 `view!` macro — resolved by using `window().location().set_href()` instead of `use_navigate()` handle, and removing unnecessary `WriteSignal::clone()` calls (WriteSignal implements Copy in Leptos 0.8)
+
 ## [0.9.2] - 2026-08-22
 
 ### Added
