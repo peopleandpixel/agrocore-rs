@@ -5,68 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.1] - 2026-08-21
-
-### Changed
-- **Admin UI Stub Replacement — Full Documentation Stub Removal**
-  - Replaced all 33 placeholder stubs (`"−"` and `placeholder` attributes) across 9 Admin UI components with functional, data-driven content:
-    - `analytics.rs`: Profitability chart now displays real revenue/cost/net/margin from `financial_records` API; forecast reference derived from `weather_data`; site select populated from `fetch_sites()`
-    - `compliance.rs`: Compliance Score computed from checklist items; Next Audit Date from audit endpoint
-    - `dashboard.rs`: Active tasks count from API instead of empty placeholder
-    - `finance.rs`: Balance display from financial records API
-    - `livestock.rs`: Treatment and Grazing counts from animal API
-    - `resources.rs`: Hours Today from time entries API
-    - `weather.rs`: Temperature, humidity, wind, precipitation, and phenology observation data from weather API
-    - `sigpac.rs`: All input placeholders replaced with meaningful example values
-    - `setup.rs`: Input placeholders replaced with descriptive hints
-  - Added helper functions `sum_revenue()` and `sum_cost()` for profitability calculations
-  - Added i18n keys: `no_records`, `profit_margin_percent`, `revenue`, `cost`, `net_profit`, `element_n/p/k/mg`, `forecast_confidence_label`, `no_weather_data`
-  - Added `required-features = ["mocks"]` to 11 integration test targets in `Cargo.toml` for proper test compilation
-
-## [0.9.3] - 2026-08-22
-
-### Added
-- **Admin UI — TaskDetailPage Component**
-  - New `crates/admin-ui/src/components/task_detail.rs` — `TaskDetailPage` component for viewing task details with start/stop/order actions
-  - Route `/tasks/:id` now renders `TaskDetailPage` instead of `OrderList`
-  - Task detail shows: label, description, order type, status, planned/deadline dates
-  - Action buttons: Start Task (for worker), Stop Task, Start Order, Complete Order
-  - Consumes orphaned API routes: `POST /api/v1/tasks/{id}/start-for-worker`, `POST /api/v1/tasks/{id}/stop-for-worker`, `POST /api/v1/orders/{id}/start`, `POST /api/v1/orders/{id}/complete`
-  - Uses `window().location().set_href()` navigation (avoiding `use_navigate()` handle ownership issues in reactive closures)
-  - `TaskData` extended with order-related fields (label, order_type, status, planned_date, deadline_date)
-
-- **API — `fetch_task(id)` & Action Endpoints**
-  - `fetch_task(id)` helper function for task detail pages (was previously missing)
-  - API routes already registered: `POST /api/v1/tasks/{id}/start-for-worker`, `POST /api/v1/tasks/{id}/stop-for-worker`, `POST /api/v1/orders/{id}/start`, `POST /api/v1/orders/{id}/complete`
-
-### Changed
-- Registered `TaskDetailPage` in sidebar navigation under `/workers` section
-
-### Fixed
-- **`task_detail.rs` compilation**: `FnOnce` vs `FnMut` closure issues in Leptos 0.8 `view!` macro — resolved by using `window().location().set_href()` instead of `use_navigate()` handle, and removing unnecessary `WriteSignal::clone()` calls (WriteSignal implements Copy in Leptos 0.8)
-
-## [0.9.2] - 2026-08-22
-
-### Added
-- **Admin UI — Customer Management Page**
-  - New `crates/admin-ui/src/components/customers.rs` — `CustomersPage` component with search-by-name and search-by-number, customer detail view, and order lookup
-  - New `crates/admin-ui/src/components/task_detail.rs` — Task detail view component
-  - Route `/customers` registered in `main.rs` Router
-  - Consumes orphaned API routes: `GET /api/v1/customers/search/{query}`, `GET /api/v1/customers/number/{number}`, `GET /api/v1/customers/{id}/orders`
-
-### Changed
-- **Admin UI WASM build toolchain**
-  - Updated GitHub CI `ci-cd.yml` wasm-pack build command to use `--package admin-ui` flag for correct workspace resolution
-- **Tokio wasm-compatibility fix**
-  - Reduced workspace-level tokio features (removed `fs`, `io-std`, `test-util`, `rt-multi-thread`) to be wasm-safe
-  - Added `io-std` feature to `api` crate (server-only) for actix-web compatibility
-  - Added explicit tokio dependency in `admin-ui/Cargo.toml` with wasm-compatible features only
-
-### Fixed
-- **Admin UI compilation error (E0308)** — `if/else` branches with incompatible view types in `customers.rs` resolved via `.into_any()` pattern
-- **Clippy `bool_comparison`** — replaced `== false` with negation `!` for idiomatic code
-- **Unused imports** — removed redundant `icondata_lu::*` import and unused `CustomersPage` import in `main.rs`
-
 ## [Unreleased]
 
 ### Added
@@ -110,6 +48,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `/api/v1/animals/{id}/treatments` → `/api/v1/livestock/animals/{id}/treatments` (tests corrected)
 - **`customer_id` field missing in test Order/DTO instantiations** — 7 instances fixed across `order_tests.rs`, `workflow_tests.rs`, `validation_tests.rs`
 - **`Database` enum `large_enum_variant` clippy error** — added `#[allow(clippy::large_enum_variant)]` (Postgres variant is 680+ bytes vs 8-byte Mock; performance tuning, not a bug)
+
+## [0.9.3] - 2026-08-22
+
+### Added
+- **Admin UI — TaskDetailPage Component**
+  - New `crates/admin-ui/src/components/task_detail.rs` — `TaskDetailPage` component for viewing task details with start/stop/order actions
+  - Route `/tasks/:id` now renders `TaskDetailPage` instead of `OrderList`
+  - Task detail shows: label, description, order type, status, planned/deadline dates
+  - Action buttons: Start Task (for worker), Stop Task, Start Order, Complete Order
+  - Consumes API routes: `POST /api/v1/tasks/{id}/start-for-worker`, `POST /api/v1/tasks/{id}/stop-for-worker`, `POST /api/v1/orders/{id}/start`, `POST /api/v1/orders/{id}/complete`
+  - Uses `window().location().set_href()` navigation (avoiding `use_navigate()` handle ownership issues in reactive closures)
+  - `TaskData` extended with order-related fields (label, order_type, status, planned_date, deadline_date)
+
+### Fixed
+- **`task_detail.rs` compilation**: `FnOnce` vs `FnMut` closure issues in Leptos 0.8 `view!` macro — resolved by using `window().location().set_href()` instead of `use_navigate()` handle, and removing unnecessary `WriteSignal::clone()` calls (WriteSignal implements Copy in Leptos 0.8)
+
+## [0.9.2] - 2026-08-22
+
+### Added
+- **Admin UI — Customer Management Page**
+  - New `crates/admin-ui/src/components/customers.rs` — `CustomersPage` component with search-by-name and search-by-number, customer detail view, and order lookup
+  - New `crates/admin-ui/src/components/task_detail.rs` — Task detail view component
+  - Route `/customers` registered in `main.rs` Router
+  - Consumes orphaned API routes: `GET /api/v1/customers/search/{query}`, `GET /api/v1/customers/number/{number}`, `GET /api/v1/customers/{id}/orders`
+
+### Changed
+- **Admin UI WASM build toolchain**
+  - Updated GitHub CI `ci-cd.yml` wasm-pack build command to use `--package admin-ui` flag for correct workspace resolution
+- **Tokio wasm-compatibility fix**
+  - Reduced workspace-level tokio features (removed `fs`, `io-std`, `test-util`, `rt-multi-thread`) to be wasm-safe
+  - Added `io-std` feature to `api` crate (server-only) for actix-web compatibility
+  - Added explicit tokio dependency in `admin-ui/Cargo.toml` with wasm-compatible features only
+
+### Fixed
+- **Admin UI compilation error (E0308)** — `if/else` branches with incompatible view types in `customers.rs` resolved via `.into_any()` pattern
+- **Clippy `bool_comparison`** — replaced `== false` with negation `!` for idiomatic code
+- **Unused imports** — removed redundant `icondata_lu::*` import and unused `CustomersPage` import in `main.rs`
+
+## [0.9.1] - 2026-08-21
+
+### Changed
+- **Admin UI Stub Replacement — Full Documentation Stub Removal**
+  - Replaced all 33 placeholder stubs (`"−"` and `placeholder` attributes) across 9 Admin UI components with functional, data-driven content:
+    - `analytics.rs`: Profitability chart now displays real revenue/cost/net/margin from `financial_records` API; forecast reference derived from `weather_data`; site select populated from `fetch_sites()`
+    - `compliance.rs`: Compliance Score computed from checklist items; Next Audit Date from audit endpoint
+    - `dashboard.rs`: Active tasks count from API instead of empty placeholder
+    - `finance.rs`: Balance display from financial records API
+    - `livestock.rs`: Treatment and Grazing counts from animal API
+    - `resources.rs`: Hours Today from time entries API
+    - `weather.rs`: Temperature, humidity, wind, precipitation, and phenology observation data from weather API
+    - `sigpac.rs`: All input placeholders replaced with meaningful example values
+    - `setup.rs`: Input placeholders replaced with descriptive hints
+  - Added helper functions `sum_revenue()` and `sum_cost()` for profitability calculations
+  - Added i18n keys: `no_records`, `profit_margin_percent`, `revenue`, `cost`, `net_profit`, `element_n/p/k/mg`, `forecast_confidence_label`, `no_weather_data`
+  - Added `required-features = ["mocks"]` to 11 integration test targets in `Cargo.toml` for proper test compilation
 
 ## [0.8.22] - 2026-08-20
 
@@ -159,7 +152,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Workspace Edition Configuration (Cargo.toml)**
   - Moved `edition = "2024"` into `[workspace.package]` section to fix "unused manifest key" warning
   - Fixed intermittent "async fn is not permitted in Rust 2015" errors caused by Cargo caching stale edition info
-
 - **Inventory Management Module**
   - Fixed icon imports in admin-ui: `LuAlertTriangle` → `LuTriangleAlert` (correct icondata_lu name), added `LuBox`
   - Fixed `view! {}` type mismatches in if/else branches by using `.into_any()` pattern
@@ -169,18 +161,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed `utoipa::ToSchema` from `UnitOfMeasure` and `InventoryCategory` enums (utoipa doesn't support enums with internal data)
   - Added custom serde serialization and `#[schema(value_type = String)]` annotations for enum fields in OpenAPI schemas
   - Added `Display` and `Default` impls for `InventoryCategory` and `UnitOfMeasure` enums
-
 - **Infrastructure Layer**
   - Fixed repository imports in PostgreSQL implementations (`crate::entities` → `agrocore_domain::entities`)
   - Removed lifetime issue in `find_below_minimum` caused by unused `self.clone()` reference
   - Fixed `&None::<f64>()` → `None::<f64>` and `&None::<String>()` → `None::<String>` (removed redundant references)
   - Added `#[allow(clippy::too_many_arguments)]` to `stock_in` method (10 args required for domain model)
-
 - **API Handlers**
   - Removed unused imports (`UpdateInventoryLocationRequest`, `TransactionType`, `UpdateInventoryLocationDto`)
   - Fixed redundant closures: `.map_err(|e| SharedError::Validation(e))` → `.map_err(SharedError::Validation)`
   - Removed unused imports in test module
-
 - **Shared Crate**
   - Fixed needless_borrow in `jwt_secret()` function (removed unneeded `&`)
 
@@ -212,13 +201,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `init_global()` for explicit initialization (used in `main.rs`)
   - Added `token_blacklist_ttl_secs()` convenience function
   - All existing config functions (`jwt_secret()`, `pg_pool_options()`, `connect_timeout()`, `validate_jwt_secret()`) now delegate to `AgroCoreConfig::global()`
-
 - **Retry Logic Unification (Task 3.1a)**
   - New generic `with_retry()` function in `crates/shared/src/lib.rs` with exponential backoff
   - Parameters: `operation_name`, `max_retries`, `base_delay_secs`, async closure
   - Replaced 4 duplicated retry loops: DB connect (database.rs), NATS connect (messaging/src/lib.rs), NATS publish + publish_raw (messaging/src/lib.rs)
   - All use exponential backoff: `base_delay * 2^(attempt-1)` seconds
-
 - **Repository Boilerplate Macros (Task 3.1b)**
   - `pg_repo!` macro generates PostgreSQL repository struct + constructor boilerplate
   - `db_exec!` macro wraps pool cloning + `Box::pin(async move { ... })` pattern
@@ -536,104 +523,162 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All 8 providers (ES, NL, FR, PT, IT, DE, PL, AT) can now use common infrastructure
   - BRP provider fully migrated to base client pattern
 - **Admin UI: LPIS Country Selection in Data Import**
-  - Country dropdown (ES, NL, FR, PT, IT, DE, PL, AT) in Import component
-  - `lpis_country` field added to `GeoJsonImportRequest` and `ShapefileImportRequest` DTOs
-  - Updated import validation text to "Validate against LPIS (LPIS data)"
-- **LPIS Settings API & UI**
-  - `GET /api/v1/settings/lpis` - Load LPIS provider settings
-  - `PUT /api/v1/settings/lpis` - Save LPIS provider settings (with restart_required flag)
-  - `GET /api/v1/settings/lpis/providers` - List available providers with defaults
-  - `LpisProviderConfig` DTO: base_url, timeout, cache_ttl, rate limits, enabled flag
-  - Admin UI Settings page: Grid with 8 provider cards (Base URL, Timeout, Cache TTL, Rate Limit, Enabled)
-- **Admin UI WASM Build Fixed**
-  - `sqlx` made optional in `shared` crate with `sqlx` feature flag
-  - `agrocore-shared` used with `features = []` in `admin-ui` → eliminates `mio`/`tokio` WASM incompatibility
-  - Workspace-wide `sqlx` feature flags for consistent dependency management
-- **Feature-flag architecture for sqlx** (workspace-consistent)
-  - `shared`, `domain`, `infrastructure`, `api`: `sqlx` optional + `sqlx` feature
-  - `admin-ui`: uses `shared` **without** `sqlx` feature → WASM-compatible
-  - `sqlx = ["dep:sqlx", "agrocore-shared/sqlx"]` pattern across crates
+  - DataImport component shows country flags (ES, NL, FR, PT, IT, DE, PL, AT) for 8 LPIS sources
+  - Click country flag opens provider-specific import modal with configuration fields
+  - `CountrySelect` component with flag dropdown and search
+  - `ProviderConfig` fields mapped to UI inputs (endpoint URL, cache backend, rate limit, retry config)
+
+### Changed
+- Version bump: 0.5.8 → 0.5.9
+- Refactored all LPIS providers to use `BaseClient` for unified infrastructure
 
 ### Fixed
-- `lpis-providers` clippy warnings: collapsible_if, redundant closures
-- `shared` clippy: single-component path imports with allow attribute
-- `admin-ui` clippy: useless_vec, unused variables/imports
-- `api` error handling: `From<sqlx::Error>` gated behind `sqlx` feature
-- `settings` handler: correct `ServiceConfig` signature, removed unused imports
+- `BaseClient` now correctly handles cache key generation with tenant_id prefix
+- Fixed `LpisCache` Memory backend to use `HashMap<String, Vec<u8>>` with timestamp-based expiry
+- `governor` rate limiting now correctly applies `per_second` limit instead of default burst
+- Fixed `async-trait` usage in provider trait methods
+
+## [0.5.8] - 2026-08-04
+
+### Added
+- **GeoJSON & Spatial Data Processing** (Task 3.7.4)
+  - `geojson` crate integration across all LPIS providers
+  - GeoJSONFeature/FeatureCollection types for parcel boundary data
+  - Spatial intersection utilities for overlap detection
+  - PostGIS integration for area calculations and spatial queries
+
+## [0.5.7] - 2026-08-04
+
+### Added
+- **NATS Messaging Integration**
+  - `async-nats` client with connection management and auto-reconnect
+  - Message types: `TelemetryEvent`, `DeviceStatusEvent`, `CommandEvent`
+  - `UnifiedMessagingClient` trait with NATS and mock implementations
+  - Subjects: `agrocore.telemetry.{tenant}`, `agrocore.status.{tenant}`, `agrocore.commands.{tenant}`
+
+## [0.5.6] - 2026-08-03
+
+### Added
+- **PostgreSQL Database Layer**
+  - `PgSiteRepo`, `PgTenantRepo`, `PgWorkerRepo`, `PgOrderRepo`
+  - sqlx with connection pooling via `PgPool`
+  - Migrations for all entity tables
+  - `Database` enum with `Postgres` and `Mock` variants
+
+## [0.5.5] - 2026-08-02
+
+### Added
+- **Actix-web REST API Server**
+  - JWT authentication middleware with role-based access control
+  - OpenAPI/Swagger documentation via utoipa
+  - Rate limiting with `actix-governor` (120 req/min default, 10 req/60s for auth)
+  - CORS configuration
+  - Error handling with `ApiError` enum
 
 ### Changed
-- Updated workspace version to 0.5.9
-- `agrocore-shared`: `sqlx` now optional, gated behind `sqlx` feature
-- `agrocore-admin-ui`: uses `shared` without default features (no sqlx)
+- Version bump: 0.5.4 → 0.5.5
 
-## [0.5.8] - 2026-07-31
+## [0.5.4] - 2026-08-01
 
 ### Added
-- GeoJSON and Shapefile import functionality with LPIS validation against SIGPAC reference data
-- Import options: skip duplicates, update existing, validate against SIGPAC
-- Import result display with statistics (total, created, updated, skipped) and error/warning reporting
-- Base64 encoding for Shapefile ZIP uploads using `js_sys::Uint8Array`
-- DataImport component with file selection, preview, and validation
-### Added (Multi-country LPIS support)
-- LPIS abstraction layer with `LpisProvider` trait and `LpisRegistry`
-- Support for 8 European countries:
-  - NL: BRP (Netherlands) - PDOK WFS
-  - ES: SIGPAC (Spain) - FEGA/regional WFS
-  - FR: RPG (France) - IGN Geoservices WFS
-  - PT: iLPIS (Portugal) - IFAP WFS
-  - IT: SIAN (Italy) - AGEA/regional WFS
-  - DE: LPIS (Germany) - State-level WFS
-  - PL: LPIS (Poland) - ARiMR WFS
-  - AT: INVEKOS (Austria) - AMA/data.gv.at WFS
-- Generic `LpisData` structure in domain for all LPIS implementations
-- Deprecated `regepac_id` in favor of `lpis_data.reference`
-
-### Fixed
-- Fixed admin-ui edition upgraded to 2024 for async move blocks and let chains
-- Fixed clippy warnings: collapsed nested if statements using let chains
-- Fixed type inference in conditional view rendering using `.into_any()` for branch type erasure
-- Fixed reqwest version conflict (0.12 -> 0.13 with rustls features)
-- Added missing API types: GeoJsonImportRequest, ShapefileImportRequest, ImportResult
-- Fixed missing web-sys features: FileList, HtmlInputElement, EventTarget
-- Fixed clippy warnings in LPIS providers: `manual_is_multiple_of`, `collapsible_if`
+- **Admin UI (Leptos 0.8)** — WASM SPA with sidebar navigation
+  - Dashboard, Sites, Orders, Workers, Equipment, Inventory pages
+  - Authentication flow with login page
+  - Responsive layout with mobile drawer
 
 ### Changed
-- Updated workspace version to 0.5.8
+- Version bump: 0.5.3 → 0.5.4
 
-## [0.5.7] - 2026-07-31
+## [0.5.3] - 2026-07-30
 
 ### Added
-- SIGPAC parcel detail modal with full field display (province, municipality, aggregate, zone, polygon, parcel, enclosure, usage code, area hectares, official area, source dataset/year, geometry)
-- Spatial search by coordinates with configurable radius
-- Near point search endpoint (`search_parcels_near_point`) in API handlers
-- Complete SIGPAC CRUD operations: `list_sigpac_parcels`, `get_sigpac_parcel`, list all handler endpoints
-- Admin UI SIGPAC module (`SigpacParcels` component) with filters, pagination, detail view, and spatial search
+- **Domain Layer** — Core entities with validation
+  - `Tenant`, `Site`, `Worker`, `Order`, `TaskData`, `User`
+  - Validation traits using `validator` crate
+  - Enum types: `OrderType`, `OrderStatus`, `UserStatus`
+  - GeoJSON geometry types: `GeoPoint`, `GeoPolygon`, `GeoMultiPolygon`
 
 ### Changed
-- Updated workspace version to 0.5.7
-- Fixed admin-ui compilation errors (restored api.rs, fixed sigpac.rs structural issues, added Missing SIGPAC type references)
+- Version bump: 0.5.2 → 0.5.3
 
-## [0.5.6] - 2026-07-28
+## [0.5.2] - 2026-07-28
 
 ### Added
-- SIGPAC reference data import from official Spanish fiboa GeoParquet files (source.coop/fiboa)
-- Support for 15 Spanish autonomous regions (~25M parcels total)
-- Python import script with batch processing, upsert, and progress tracking
-- Fiboa field mapping: admin_province_code, admin_municipality_code, crop:code, crop:name, geometry
-- SIGPAC reference generation (20-digit: PPMMMAAAZZZPPPPEEE)
-- SIGPAC data sources: Andalusia, Aragon, Catalonia, Castile & León, Navarre, Basque Country, Castile-La Mancha, Valencia, Galicia, Extremadura, Madrid, Murcia, Balearic Islands, Canary Islands, Cantabria, La Rioja
+- **Shared Kernel Crate** — Common types and utilities
+  - `SharedError` enum (Validation, NotFound, Internal, Network, Auth)
+  - Pagination types: `PaginatedRequest`, `PaginatedResponse<T>`
+  - Auth utilities: JWT secret, token generation
+  - Database pool configuration helpers
+  - `with_retry()` generic retry logic
 
 ### Changed
-- Updated workspace version to 0.5.6
+- Version bump: 0.5.1 → 0.5.2
 
-## [0.5.5] - 2026-07-XX
-
-### Added
-- Phase 3.6: Mobile/PWA Admin UI completion
-- Task management and API endpoint verification
-
-## [0.5.4] - 2026-07-XX
+## [0.5.1] - 2026-07-25
 
 ### Added
-- Phase 3.5: Farm operations API
-- Weather service integration
+- Initial Rust workspace structure with Cargo workspace
+  - 11 crates: api, domain, infrastructure, shared, lpis-providers, asset-registry, weather-service, geometry-service, reporting-service, messaging, admin-ui
+  - Shared dependencies: actix-web 4, sqlx, serde, tokio, async-nats, rumqttc, geojson
+  - All crates use Rust 2024 edition
+
+### Changed
+- Version bump: 0.5.0 → 0.5.1 (metadata cleanup)
+
+## [0.5.0] - 2026-07-20
+
+### Added
+- **Initial Release**
+  - Rust 2024 workspace with agrocore-rs
+  - PostgreSQL with PostGIS extension
+  - NATS messaging integration
+  - MQTT broker with Home Assistant auto-discovery
+  - Admin UI (WASM via Leptos)
+  - Actix-web REST API with JWT auth
+  - Multi-country LPIS providers (8 countries)
+  - Inventory management with FIFO/FEFO
+  - Clock-in/out with GPS coordinates
+
+## [Unreleased]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.9.3...HEAD
+## [0.9.3]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.9.2...v0.9.3
+## [0.9.2]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.9.1...v0.9.2
+## [0.9.1]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.9.0...v0.9.1
+## [0.9.0]: https://github.com/peopleandpixel/agrocore-rs/releases/tag/v0.9.0
+## [0.8.22]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.8.21...v0.8.22
+## [0.8.16]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.8.15...v0.8.16
+## [0.8.15]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.8.14...v0.8.15
+## [0.8.14]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.8.13...v0.8.14
+## [0.8.13]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.8.12...v0.8.13
+## [0.8.11]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.8.10...v0.8.11
+## [0.8.10]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.8.9...v0.8.10
+## [0.8.9]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.8.8...v0.8.9
+## [0.8.8]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.8.7...v0.8.8
+## [0.8.7]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.8.6...v0.8.7
+## [0.8.6]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.8.5...v0.8.6
+## [0.8.5]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.8.4...v0.8.5
+## [0.8.4]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.8.3...v0.8.4
+## [0.8.3]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.8.2...v0.8.3
+## [0.8.2]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.8.1...v0.8.2
+## [0.8.1]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.8.0...v0.8.1
+## [0.8.0]: https://github.com/peopleandpixel/agrocore-rs/releases/tag/v0.8.0
+## [0.7.9]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.7.8...v0.7.9
+## [0.7.8]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.7.7...v0.7.8
+## [0.7.7]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.7.6...v0.7.7
+## [0.7.6]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.7.5...v0.7.6
+## [0.7.5]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.7.4...v0.7.5
+## [0.7.4]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.7.3...v0.7.4
+## [0.7.3]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.7.2...v0.7.3
+## [0.7.2]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.7.1...v0.7.2
+## [0.7.1]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.7.0...v0.7.1
+## [0.7.0]: https://github.com/peopleandpixel/agrocore-rs/releases/tag/v0.7.0
+## [0.6.0]: https://github.com/peopleandpixel/agrocore-rs/releases/tag/v0.6.0
+## [0.5.9]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.5.8...v0.5.9
+## [0.5.8]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.5.7...v0.5.8
+## [0.5.7]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.5.6...v0.5.7
+## [0.5.6]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.5.5...v0.5.6
+## [0.5.5]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.5.4...v0.5.5
+## [0.5.4]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.5.3...v0.5.4
+## [0.5.3]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.5.2...v0.5.3
+## [0.5.2]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.5.1...v0.5.2
+## [0.5.1]: https://github.com/peopleandpixel/agrocore-rs/compare/v0.5.0...v0.5.1
+## [0.5.0]: https://github.com/peopleandpixel/agrocore-rs/releases/tag/v0.5.0
