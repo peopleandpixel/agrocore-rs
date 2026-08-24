@@ -744,6 +744,69 @@ pub async fn record_fuel_consumption(
     .await
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UsageLogDto {
+    pub id: uuid::Uuid,
+    pub equipment_id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub worker_id: Option<uuid::Uuid>,
+    pub task_id: Option<uuid::Uuid>,
+    pub operation_type: Option<String>,
+    pub started_at: String,
+    pub ended_at: Option<String>,
+    pub hours_operated: f64,
+    pub note: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UsageSummaryDto {
+    pub equipment_id: uuid::Uuid,
+    pub total_hours: f64,
+    pub total_sessions: i64,
+    pub avg_hours_per_session: f64,
+    pub first_used: Option<String>,
+    pub last_used: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateUsageLogRequest {
+    pub worker_id: Option<uuid::Uuid>,
+    pub task_id: Option<uuid::Uuid>,
+    pub operation_type: Option<String>,
+    pub started_at: Option<String>,
+    pub ended_at: Option<String>,
+    pub hours_operated: Option<f64>,
+    pub note: Option<String>,
+}
+
+pub async fn fetch_usage_log(equipment_id: uuid::Uuid) -> Result<Vec<UsageLogDto>, String> {
+    get_json(&format!("/api/v1/equipments/{}/usage", equipment_id), true).await
+}
+
+pub async fn fetch_usage_summary(
+    equipment_id: uuid::Uuid,
+) -> Result<Option<UsageSummaryDto>, String> {
+    get_json(
+        &format!("/api/v1/equipments/{}/usage-summary", equipment_id),
+        true,
+    )
+    .await
+}
+
+pub async fn record_usage(
+    equipment_id: uuid::Uuid,
+    req: &CreateUsageLogRequest,
+) -> Result<UsageLogDto, String> {
+    post_json(
+        &format!("/api/v1/equipments/{}/usage", equipment_id),
+        req,
+        true,
+    )
+    .await
+}
+
 pub async fn fetch_orders() -> Result<PaginatedResponse<OrderDto>, String> {
     get_json("/api/v1/orders", true).await
 }

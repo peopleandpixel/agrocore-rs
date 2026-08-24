@@ -71,10 +71,10 @@ Erledigte Arbeit ist weggelassen; ein Modul ohne offene Punkte ist als erledigt 
 - [x] Arbeitskräfte-Zuteilung zu Aufträgen
 
 #### Equipment Management
-- [ ] Wartungsplanung (basierend auf Betriebsstunden, Kalender, Nutzungsschwellen)
-- [ ] Wartungskosten-Tracking (Teile, Arbeitszeit, Ausfallkosten)
-- [ ] Kraftstoffverbrauch (Liter/Stunde, pro Operation, pro Feld)
-- [ ] Nutzung-Logging (wer hat was, wann, wie lange)
+- [x] Wartungsplanung (basierend auf Betriebsstunden, Kalender, Nutzungsschwellen)
+- [x] Wartungskosten-Tracking (Teile, Arbeitszeit, Ausfallkosten)
+- [x] Kraftstoffverbrauch (Liter/Stunde, pro Operation, pro Feld)
+- [x] Nutzung-Logging (wer hat was, wann, wie lange)
 - [ ] Abschreibung (automatische Amortisation für Finanzberichte)
 - [ ] Equipment-Suche und Filterung
 

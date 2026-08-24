@@ -1,8 +1,9 @@
 use crate::AppState;
 use crate::dto::{
-    CreateEquipmentDto, CreateFuelConsumptionRequest, EquipmentDto, EquipmentFilterDto,
-    ErrorResponse, FuelConsumptionDto, MaintenanceCostSummaryDto, MaintenanceLogDto,
-    MaintenanceRecordDto, PaginatedEquipmentResponse, PaginatedResponseDto, UpdateEquipmentDto,
+    CreateEquipmentDto, CreateFuelConsumptionRequest, CreateUsageLogRequest, EquipmentDto,
+    EquipmentFilterDto, ErrorResponse, FuelConsumptionDto, MaintenanceCostSummaryDto,
+    MaintenanceLogDto, MaintenanceRecordDto, PaginatedEquipmentResponse, PaginatedResponseDto,
+    UpdateEquipmentDto, UsageLogDto, UsageSummaryDto,
 };
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
@@ -10,6 +11,7 @@ use actix_web::{HttpResponse, web};
 #[allow(unused_imports)]
 use agrocore_domain::repositories::EquipmentRepository;
 use agrocore_shared::{Pagination, SharedError};
+use chrono::Utc;
 use validator::Validate;
 
 #[utoipa::path(
@@ -439,6 +441,116 @@ pub async fn record_fuel_consumption(
             dto.0.field_id,
             dto.0.hours_operated,
             dto.0.notes.as_deref(),
+        )
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Equipment not found".into()))?;
+    Ok(HttpResponse::Created().json(record))
+}
+
+/// Get usage log history for a specific equipment.
+#[utoipa::path(
+    get,
+    path = "/api/v1/equipments/{id}/usage",
+    responses(
+        (status = 200, description = "Usage log history", body = Vec<UsageLogDto>),
+        (status = 404, description = "Equipment not found", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "equipment",
+    security(("bearer_auth" = []))
+)]
+pub async fn get_usage_log(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let equipment_id = *path;
+    tracing::info!(
+        "Getting usage log for equipment {} in tenant: {}",
+        equipment_id,
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
+    let records = state
+        .db
+        .equipment_repo()
+        .get_usage_log(agrocore_domain::TenantId(auth.0.tenant_id), equipment_id)
+        .await?;
+    Ok(HttpResponse::Ok().json(records))
+}
+
+/// Get usage summary for a specific equipment.
+#[utoipa::path(
+    get,
+    path = "/api/v1/equipments/{id}/usage-summary",
+    responses(
+        (status = 200, description = "Usage summary", body = UsageSummaryDto),
+        (status = 404, description = "Equipment not found", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "equipment",
+    security(("bearer_auth" = []))
+)]
+pub async fn get_usage_summary(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let equipment_id = *path;
+    let summary = state
+        .db
+        .equipment_repo()
+        .get_usage_summary(agrocore_domain::TenantId(auth.0.tenant_id), equipment_id)
+        .await?;
+    Ok(HttpResponse::Ok().json(summary))
+}
+
+/// Record a usage log entry for equipment.
+#[utoipa::path(
+    post,
+    path = "/api/v1/equipments/{id}/usage",
+    request_body = CreateUsageLogRequest,
+    responses(
+        (status = 201, description = "Usage log recorded", body = UsageLogDto),
+        (status = 404, description = "Equipment not found", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "equipment",
+    security(("bearer_auth" = []))
+)]
+pub async fn record_usage(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+    dto: web::Json<CreateUsageLogRequest>,
+) -> Result<HttpResponse, ApiError> {
+    let equipment_id = *path;
+    tracing::info!(
+        "Recording usage for equipment {} in tenant: {}",
+        equipment_id,
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
+    let record = state
+        .db
+        .equipment_repo()
+        .record_usage(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            equipment_id,
+            dto.0.worker_id,
+            dto.0.task_id,
+            dto.0.operation_type.as_deref(),
+            dto.0.started_at.unwrap_or_else(|| {
+                chrono::DateTime::parse_from_rfc3339(&Utc::now().to_rfc3339())
+                    .unwrap()
+                    .with_timezone(&Utc)
+            }),
+            dto.0
+                .ended_at
+                .map(|s| s.to_rfc3339().parse().unwrap_or(Utc::now())),
+            dto.0.hours_operated.unwrap_or(0.0),
+            dto.0.note.as_deref(),
         )
         .await?
         .ok_or_else(|| SharedError::NotFound("Equipment not found".into()))?;

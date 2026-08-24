@@ -29,7 +29,8 @@ where
 }
 
 use crate::entities::equipment::{
-    CreateEquipmentDto, Equipment, FuelConsumptionDto, UpdateEquipmentDto,
+    CreateEquipmentDto, Equipment, FuelConsumptionDto, UpdateEquipmentDto, UsageLogDto,
+    UsageSummaryDto,
 };
 use crate::entities::site::{CreateSiteDto, Site, UpdateSiteDto};
 use crate::entities::spatial::SpatialObject;
@@ -133,6 +134,28 @@ pub trait EquipmentRepository: Send + Sync {
         hours_operated: Option<f64>,
         notes: Option<&str>,
     ) -> RepositoryFuture<Option<FuelConsumptionDto>>;
+    /// Get usage log history for an equipment, newest first.
+    fn get_usage_log(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Vec<UsageLogDto>>;
+    /// Get aggregated usage summary for an equipment.
+    fn get_usage_summary(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+    ) -> RepositoryFuture<Option<UsageSummaryDto>>;
+    /// Record a usage log entry for an equipment.
+    #[allow(clippy::too_many_arguments)]
+    fn record_usage(
+        &self,
+        tid: TenantId,
+        equipment_id: Uuid,
+        worker_id: Option<Uuid>,
+        task_id: Option<Uuid>,
+        operation_type: Option<&str>,
+        started_at: DateTime<Utc>,
+        ended_at: Option<DateTime<Utc>>,
+        hours_operated: f64,
+        note: Option<&str>,
+    ) -> RepositoryFuture<Option<UsageLogDto>>;
 }
 
 #[cfg_attr(feature = "mocks", automock)]

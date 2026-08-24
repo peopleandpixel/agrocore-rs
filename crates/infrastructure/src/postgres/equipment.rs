@@ -1,6 +1,6 @@
 use agrocore_domain::entities::equipment::{
     CreateEquipmentDto, Equipment, FuelConsumptionDto, MaintenanceCostSummaryDto,
-    MaintenanceLogDto, UpdateEquipmentDto,
+    MaintenanceLogDto, UpdateEquipmentDto, UsageLogDto, UsageSummaryDto,
 };
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::UserRole;
@@ -8,7 +8,7 @@ use agrocore_domain::repositories::{
     EquipmentRepository, PaginatedResponse, Pagination, RepositoryFuture,
 };
 use agrocore_shared::SharedError;
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use std::future::Future;
 use std::pin::Pin;
@@ -724,6 +724,108 @@ impl EquipmentRepository for PgEquipmentRepo {
             .bind(hours_operated)
             .bind(now)
             .bind(notes_owned)
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            Ok(Some(record))
+        })
+    }
+    /// Get usage log history for an equipment, newest first.
+    fn get_usage_log(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Vec<UsageLogDto>> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            let records: Vec<UsageLogDto> = sqlx::query_as::<_, UsageLogDto>(
+                r#"SELECT * FROM equipment_usage_log
+                   WHERE equipment_id = $1 AND tenant_id = $2
+                   ORDER BY started_at DESC"#,
+            )
+            .bind(id)
+            .bind(tid)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            Ok(records)
+        })
+    }
+    /// Get aggregated usage summary for an equipment.
+    fn get_usage_summary(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+    ) -> RepositoryFuture<Option<UsageSummaryDto>> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            let summary: Option<UsageSummaryDto> = sqlx::query_as::<_, UsageSummaryDto>(
+                r#"SELECT
+                    $1 as equipment_id,
+                    COALESCE(SUM(hours_operated), 0.0) as total_hours,
+                    COUNT(*) as total_sessions,
+                    CASE WHEN COUNT(*) > 0 THEN COALESCE(SUM(hours_operated), 0.0) / COUNT(*)::f64 ELSE 0.0 END as avg_hours_per_session,
+                    MIN(started_at) as first_used,
+                    MAX(started_at) as last_used
+                   FROM equipment_usage_log
+                   WHERE equipment_id = $2 AND tenant_id = $3"#,
+            )
+            .bind(id)
+            .bind(id)
+            .bind(tid)
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            Ok(summary)
+        })
+    }
+
+    fn record_usage(
+        &self,
+        tid: TenantId,
+        equipment_id: Uuid,
+        worker_id: Option<Uuid>,
+        task_id: Option<Uuid>,
+        operation_type: Option<&str>,
+        started_at: chrono::DateTime<chrono::Utc>,
+        ended_at: Option<chrono::DateTime<chrono::Utc>>,
+        hours_operated: f64,
+        note: Option<&str>,
+    ) -> RepositoryFuture<Option<UsageLogDto>> {
+        let pool = self.pool.clone();
+        let op_type_owned = operation_type.map(|s| s.to_string());
+        let note_owned = note.map(|s| s.to_string());
+        Box::pin(async move {
+            let now = Utc::now();
+            let started = started_at;
+            let ended = ended_at.unwrap_or(started);
+            let hours_operated_val = if hours_operated > 0.0 {
+                hours_operated
+            } else if ended > started {
+                (ended - started).num_seconds() as f64 / 3600.0
+            } else {
+                0.0
+            };
+
+            let record: UsageLogDto = sqlx::query_as::<_, UsageLogDto>(
+                r#"INSERT INTO equipment_usage_log
+                    (id, equipment_id, tenant_id, worker_id, task_id, operation_type,
+                     started_at, ended_at, hours_operated, note, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                RETURNING id, equipment_id, tenant_id, worker_id, task_id, operation_type,
+                          started_at, ended_at, hours_operated, note, created_at, updated_at"#,
+            )
+            .bind(Uuid::new_v4())
+            .bind(equipment_id)
+            .bind(tid)
+            .bind(worker_id)
+            .bind(task_id)
+            .bind(op_type_owned)
+            .bind(started)
+            .bind(ended)
+            .bind(hours_operated_val)
+            .bind(note_owned)
+            .bind(now)
+            .bind(now)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;

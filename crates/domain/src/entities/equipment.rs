@@ -115,3 +115,31 @@ pub struct FuelConsumptionDto {
     pub notes: Option<String>,
     pub created_at: DateTime<Utc>,
 }
+
+/// Equipment usage log entry — tracks who used equipment, when, and for how long.
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct UsageLogDto {
+    pub id: Uuid,
+    pub equipment_id: Uuid,
+    pub tenant_id: TenantId,
+    pub worker_id: Option<Uuid>,
+    pub task_id: Option<Uuid>,
+    pub operation_type: Option<String>,
+    pub started_at: DateTime<Utc>,
+    pub ended_at: Option<DateTime<Utc>>,
+    pub hours_operated: f64,
+    pub note: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+/// Aggregated usage summary for an equipment.
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct UsageSummaryDto {
+    pub equipment_id: Uuid,
+    pub total_hours: f64,
+    pub total_sessions: i64,
+    pub avg_hours_per_session: f64,
+    pub first_used: Option<DateTime<Utc>>,
+    pub last_used: Option<DateTime<Utc>>,
+}

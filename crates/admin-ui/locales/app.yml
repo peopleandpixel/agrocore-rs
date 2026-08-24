@@ -5038,5 +5038,181 @@ cost_summary_loading:
   ro: Încărcare rezumat costuri...
   uk: Завантаження підсумку витрат...
   nl: Kostenoverzicht laden...
+usage_logging:
+  en: Usage Logging
+  de: Nutzung-Logging
+  es: Registro de Uso
+  fr: Journal d'utilisation
+  pt: Registro de Uso
+  it: Registro Utilizzo
+  pl: Rejestr Użytkowania
+  ro: Înregistrare Utilizare
+  uk: Журнал використання
+  nl: Gebruikslogboek
+usage_worker:
+  en: Worker
+  de: Arbeiter
+  es: Trabajador
+  fr: Travailleur
+  pt: Trabalhador
+  it: Operatore
+  pl: Pracownik
+  ro: Muncitor
+  uk: Працівник
+  nl: Werker
+usage_task:
+  en: Task
+  de: Aufgabe
+  es: Tarea
+  fr: Tâche
+  pt: Tarefa
+  it: Attività
+  pl: Zadanie
+  ro: Sarcină
+  uk: Задача
+  nl: Taak
+usage_operation:
+  en: Operation
+  de: Operation
+  es: Operación
+  fr: Opération
+  pt: Operação
+  it: Operazione
+  pl: Operacja
+  ro: Operațiune
+  uk: Операція
+  nl: Operatie
+usage_started_at:
+  en: Start Time
+  de: Startzeit
+  es: Hora de inicio
+  fr: Heure de début
+  pt: Hora de início
+  it: Ora di inizio
+  pl: Czas rozpoczęcia
+  ro: Ora de început
+  uk: Час початку
+  nl: Begin tijd
+usage_ended_at:
+  en: End Time
+  de: Endzeit
+  es: Hora de fin
+  fr: Heure de fin
+  pt: Hora de término
+  it: Ora di fine
+  pl: Czas zakończenia
+  ro: Ora de sfârșit
+  uk: Час закінчення
+  nl: Eind tijd
+usage_hours_operated:
+  en: Hours Operated
+  de: Betriebsstunden
+  es: Horas operadas
+  fr: Heures de fonctionnement
+  pt: Horas operacionais
+  it: Ore di funzionamento
+  pl: Godziny pracy
+  ro: Ore funcționate
+  uk: Години роботи
+  nl: Bestuurde uren
+usage_recorded_at:
+  en: Recorded At
+  de: Eingetragen am
+  es: Registrado el
+  fr: Enregistré le
+  pt: Registrado em
+  it: Registrato il
+  pl: Zapisano w
+  ro: Înregistrat la
+  uk: Записано
+  nl: Geregistreerd op
+record_usage:
+  en: Record Usage
+  de: Nutzung erfassen
+  es: Registrar uso
+  fr: Enregistrer l'utilisation
+  pt: Registrar uso
+  it: Registra utilizzo
+  pl: Zarejestruj użycie
+  ro: Înregistrează utilizare
+  uk: Записати використання
+  nl: Registreer gebruik
+usage_total_hours:
+  en: Total Hours
+  de: Gesamtstunden
+  es: Horas totales
+  fr: Heures totales
+  pt: Horas totais
+  it: Ore totali
+  pl: Łączna liczba godzin
+  ro: Ore totale
+  uk: Всього годин
+  nl: Totale uren
+usage_total_sessions:
+  en: Total Sessions
+  de: Gesamte Sitzungen
+  es: Sesiones totales
+  fr: Sessions totales
+  pt: Total de sessões
+  it: Sessioni totali
+  pl: Łączna liczba sesji
+  ro: Sesțiuni totale
+  uk: Всього сесій
+  nl: Totale sessies
+usage_avg_hours:
+  en: Avg Hours/Session
+  de: Ø Stunden/Sitzung
+  es: Horas pro sesión
+  fr: Heures moyennes par session
+  pt: Horas médias por sessão
+  it: Ore medie per sessione
+  pl: Średnie godziny na sesję
+  ro: Ore medii pe sesiune
+  uk: Середні години на сесію
+  nl: Gemiddelde uren per sessie
+usage_first_used:
+  en: First Used
+  de: Erste Nutzung
+  es: Primera vez
+  fr: Première utilisation
+  pt: Primeiro uso
+  it: Primo utilizzo
+  pl: Pierwsze użycie
+  ro: Primul utilizat
+  uk: Перше використання
+  nl: Eerste gebruik
+usage_last_used:
+  en: Last Used
+  de: Letzte Nutzung
+  es: Último uso
+  fr: Dernière utilisation
+  pt: Último uso
+  it: Ultimo utilizzo
+  pl: Ostatnie użycie
+  ro: Ultimele utilizat
+  uk: Останнє використання
+  nl: Laatste gebruik
+no_usage_records:
+  en: No usage records found.
+  de: Keine Nutzungsdatensätze gefunden.
+  es: No se encontraron registros de uso.
+  fr: Aucun enregistrement d'utilisation trouvé.
+  pt: Nenhum registro de uso encontrado.
+  it: Nessun registro di utilizzo trovato.
+  pl: Nie znaleziono rejestrów użytkowania.
+  ro: Nu s-au găsit înregistrări de utilizare.
+  uk: Записи використання не знайдено.
+  nl: Geen gebruiksrecords gevonden.
+usage_summary_loading:
+  en: Loading usage summary...
+  de: Lade Nutzungsübersicht...
+  es: Cargando resumen de uso...
+  fr: Chargement du résumé d'utilisation...
+  pt: Carregando resumo de uso...
+  it: Caricamento riepilogo utilizzo...
+  pl: Ładowanie podsumowania użytkowania...
+  ro: Încărcare rezumat utilizare...
+  uk: Завантаження підсумку використання...
+  nl: Gebruiksamenvatting laden...
 
 

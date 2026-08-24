@@ -168,6 +168,48 @@ pub struct CreateFuelConsumptionRequest {
     pub notes: Option<String>,
 }
 
+/// Equipment usage log entry — tracks who used equipment, when, and for how long.
+#[derive(Debug, Serialize, Deserialize, ToSchema, sqlx::FromRow)]
+pub struct UsageLogDto {
+    pub id: Uuid,
+    pub equipment_id: Uuid,
+    pub tenant_id: Uuid,
+    pub worker_id: Option<Uuid>,
+    pub task_id: Option<Uuid>,
+    pub operation_type: Option<String>,
+    pub started_at: DateTime<Utc>,
+    pub ended_at: Option<DateTime<Utc>>,
+    pub hours_operated: f64,
+    pub note: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+/// Aggregated usage summary for an equipment.
+#[derive(Debug, Serialize, Deserialize, ToSchema, sqlx::FromRow)]
+pub struct UsageSummaryDto {
+    pub equipment_id: Uuid,
+    pub total_hours: f64,
+    pub total_sessions: i64,
+    pub avg_hours_per_session: f64,
+    pub first_used: Option<DateTime<Utc>>,
+    pub last_used: Option<DateTime<Utc>>,
+}
+
+/// Request to record a usage log entry.
+#[derive(Debug, Deserialize, ToSchema, Validate)]
+pub struct CreateUsageLogRequest {
+    pub worker_id: Option<Uuid>,
+    pub task_id: Option<Uuid>,
+    #[validate(length(max = 100))]
+    pub operation_type: Option<String>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub ended_at: Option<DateTime<Utc>>,
+    #[validate(range(min = 0.0))]
+    pub hours_operated: Option<f64>,
+    pub note: Option<String>,
+}
+
 /// Query parameters for filtering equipment list.
 #[derive(Debug, Deserialize, ToSchema, Default)]
 pub struct EquipmentFilterDto {

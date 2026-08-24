@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.10] - 2026-08-24
+
+### Added
+- **Equipment Usage Logging (Backend + Admin UI)**
+  - Migration `20260824_003_add_equipment_usage_log.sql`: creates `equipment_usage_log` table (id, equipment_id, tenant_id, worker_id, task_id, operation_type, started_at, ended_at, hours_operated, note, created_at, updated_at) with indexes on equipment_id, tenant_id, worker_id, started_at
+  - `UsageLogDto` and `UsageSummaryDto` domain entities in `crates/domain/src/entities/equipment.rs`
+  - `EquipmentRepository::get_usage_log()` — retrieves usage log history per equipment, newest first
+  - `EquipmentRepository::get_usage_summary()` — aggregates usage stats (total_hours, total_sessions, avg_hours/session, first/last used)
+  - `EquipmentRepository::record_usage()` — inserts usage log entry with auto-calculated hours_operated from start/end time
+  - `GET /api/v1/equipments/{id}/usage` endpoint — returns usage log history
+  - `POST /api/v1/equipments/{id}/usage` endpoint — records a usage log entry
+  - `GET /api/v1/equipments/{id}/usage-summary` endpoint — returns aggregated usage summary
+  - API DTOs: `UsageLogDto`, `UsageSummaryDto`, `CreateUsageLogRequest` in `crates/api/src/dto/equipment.rs`
+  - Admin UI: `fetch_usage_log()`, `fetch_usage_summary()`, `record_usage()` API client functions + DTOs in `api.rs`
+  - Admin UI: Usage Logging card in `EquipmentDetailPage` with summary grid, history table, and record form
+  - New i18n keys: `usage_logging`, `usage_worker`, `usage_task`, `usage_operation`, `usage_started_at`, `usage_ended_at`, `usage_hours_operated`, `usage_recorded_at`, `usage_total_hours`, `usage_total_sessions`, `usage_avg_hours`, `usage_first_used`, `usage_last_used`, `no_usage_records`, `usage_summary_loading`, `record_usage`
+
+### Fixed
+- `duplicate import DateTime/Utc` in `crates/domain/src/repositories.rs` — removed redundant `use chrono::{DateTime, Utc}` (already imported at line 744)
+- `E0308/E0369` in `crates/infrastructure/src/postgres/equipment.rs` `record_usage` — fixed `ended_at: Option<DateTime<Utc>>` by adding `.unwrap_or(started)` for arithmetic comparison
+
+### Changed
+- Version bump: 0.9.9 → 0.9.10
+
 ## [0.9.9] - 2026-08-24
 
 ### Added

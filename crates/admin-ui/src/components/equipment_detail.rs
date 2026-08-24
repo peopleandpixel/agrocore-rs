@@ -26,6 +26,12 @@ pub fn EquipmentDetailPage() -> impl IntoView {
     let (cost_loading, set_cost_loading) = signal(true);
     let (hours_input, set_hours_input) = signal(String::new());
     let (note_input, set_note_input) = signal(String::new());
+    let (usage_log, set_usage_log) = signal(Vec::<api::UsageLogDto>::new());
+    let (usage_summary, set_usage_summary) = signal(None::<api::UsageSummaryDto>);
+    let (usage_loading, set_usage_loading) = signal(true);
+    let (usage_worker, set_usage_worker) = signal(String::new());
+    let (usage_operation, set_usage_operation) = signal(String::new());
+    let (usage_hours, set_usage_hours) = signal(String::new());
 
     // Load equipment
     Effect::new(move |_| {
@@ -68,6 +74,36 @@ pub fn EquipmentDetailPage() -> impl IntoView {
                 Err(e) => {
                     set_error.set(Some(format!("Failed to load cost summary: {}", e)));
                     set_cost_loading.set(false);
+                }
+            }
+        });
+    });
+
+    // Load usage log
+    Effect::new(move |_| {
+        let id = eid;
+        spawn_local(async move {
+            match api::fetch_usage_log(id).await {
+                Ok(log) => {
+                    set_usage_log.set(log);
+                    set_usage_loading.set(false);
+                }
+                Err(e) => {
+                    set_error.set(Some(format!("Failed to load usage log: {}", e)));
+                    set_usage_loading.set(false);
+                }
+            }
+        });
+    });
+
+    // Load usage summary
+    Effect::new(move |_| {
+        let id = eid;
+        spawn_local(async move {
+            match api::fetch_usage_summary(id).await {
+                Ok(summary) => set_usage_summary.set(summary),
+                Err(e) => {
+                    set_error.set(Some(format!("Failed to load usage summary: {}", e)));
                 }
             }
         });
@@ -266,6 +302,124 @@ pub fn EquipmentDetailPage() -> impl IntoView {
                                                 <Icon icon=LuSave width="16" height="16" />
                                                 {crate::t!(t, "save")}
                                             </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            // Usage Logging section
+                            <div class="mt-8">
+                                <h2 class="text-xl font-semibold mb-4">{crate::t!(t, "usage_logging")}</h2>
+
+                                // Usage summary card
+                                {move || {
+                                    match (usage_loading.get(), usage_summary.get()) {
+                                        (true, _) => view! {
+                                            <div class="card p-4 mb-4">
+                                                <h3 class="font-semibold mb-2">{crate::t!(t, "usage_logging")}</h3>
+                                                <p>{crate::t!(t, "usage_summary_loading")}</p>
+                                            </div>
+                                        }.into_any(),
+                                        (false, Some(summary)) => view! {
+                                            <div class="card p-4 mb-4">
+                                                <h3 class="font-semibold mb-2">{crate::t!(t, "usage_logging")}</h3>
+                                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                    <div>
+                                                        <span class="text-xl font-bold">{format!("{:.1}", summary.total_hours)}</span>
+                                                        <p class="text-sm text-gray-500">{crate::t!(t, "usage_total_hours")}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span class="text-xl font-bold">{summary.total_sessions}</span>
+                                                        <p class="text-sm text-gray-500">{crate::t!(t, "usage_total_sessions")}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span class="text-xl font-bold">{format!("{:.1}", summary.avg_hours_per_session)}</span>
+                                                        <p class="text-sm text-gray-500">{crate::t!(t, "usage_avg_hours")}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span class="text-xl font-bold">{summary.first_used.as_deref().unwrap_or("-")}</span>
+                                                        <p class="text-sm text-gray-500">{crate::t!(t, "usage_first_used")}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }.into_any(),
+                                        (false, None) => ().into_any(),
+                                    }
+                                }}
+
+                                // Usage log history table
+                                {move || {
+                                    let log = usage_log.get();
+                                    let log_clone = log.clone();
+                                    if log.is_empty() {
+                                        view! {
+                                            <p class="text-gray-500 mb-4">{crate::t!(t, "no_usage_records")}</p>
+                                        }.into_any()
+                                    } else {
+                                        view! {
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>{crate::t!(t, "usage_worker")}</th>
+                                                        <th>{crate::t!(t, "usage_operation")}</th>
+                                                        <th>{crate::t!(t, "usage_started_at")}</th>
+                                                        <th>{crate::t!(t, "usage_ended_at")}</th>
+                                                        <th>{crate::t!(t, "usage_hours_operated")}</th>
+                                                        <th>{crate::t!(t, "usage_recorded_at")}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {move || log_clone.iter().map(|entry| {
+                                                        let worker = entry.worker_id.map(|w| w.to_string()).unwrap_or_default();
+                                                        let op = entry.operation_type.clone().unwrap_or_default();
+                                                        let started = entry.started_at.clone();
+                                                        let ended = entry.ended_at.clone().unwrap_or_default();
+                                                        let hours = format!("{:.1}", entry.hours_operated);
+                                                        let recorded = entry.created_at.clone();
+                                                        view! {
+                                                            <tr>
+                                                                <td>{worker}</td>
+                                                                <td>{op}</td>
+                                                                <td>{started}</td>
+                                                                <td>{ended}</td>
+                                                                <td>{hours}</td>
+                                                                <td>{recorded}</td>
+                                                            </tr>
+                                                        }
+                                                    }).collect_view()}
+                                                </tbody>
+                                            </table>
+                                        }.into_any()
+                                    }
+                                }}
+
+                                // Record usage form
+                                <div class="card p-4 mt-4">
+                                    <h3 class="font-semibold mb-2">{crate::t!(t, "record_usage")}</h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label class="label">
+                                                <span class="label-text">{crate::t!(t, "usage_worker")}</span>
+                                            </label>
+                                            <input type="text" class="input input-bordered w-full"
+                                                   prop:value=move || usage_worker.get()
+                                                   on:input=move |ev| { set_usage_worker.set(event_target_value(&ev)); } />
+                                        </div>
+                                        <div>
+                                            <label class="label">
+                                                <span class="label-text">{crate::t!(t, "usage_operation")}</span>
+                                            </label>
+                                            <input type="text" class="input input-bordered w-full"
+                                                   prop:value=move || usage_operation.get()
+                                                   on:input=move |ev| { set_usage_operation.set(event_target_value(&ev)); } />
+                                        </div>
+                                        <div>
+                                            <label class="label">
+                                                <span class="label-text">{crate::t!(t, "usage_hours_operated")}</span>
+                                            </label>
+                                            <input type="number" step="0.1" class="input input-bordered w-full"
+                                                   prop:value=move || usage_hours.get()
+                                                   on:input=move |ev| { set_usage_hours.set(event_target_value(&ev)); } />
                                         </div>
                                     </div>
                                 </div>
