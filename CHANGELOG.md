@@ -5,10 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.9.5] - 2026-08-22
+
+### Added
+- **Equipment Search & Filtering (Backend + Admin UI)**
+  - `EquipmentRepository::find_all_filtered()` trait method with dynamic SQL WHERE clauses for searchable, filtered equipment listing
+  - `GET /api/v1/equipments/search` endpoint accepting query parameters: `search` (fulltext on label/code), `equipment_type`, `in_usage`, `needs_maintenance`, `page`, `per_page`
+  - `EquipmentFilterDto` and `MaintenanceIntervalDto` in API DTO layer
+  - Admin UI: `EquipmentFilter` struct + `fetch_equipment_filtered()` API client function
+  - EquipmentManagement component with search bar, type dropdown, in-usage checkbox, needs-maintenance checkbox, and clear-filters button
+  - New i18n keys: `search_filter`, `search`, `type`, `all_types`, `in_usage`, `needs_maintenance`, `clear_filters`, `maintenance_hours`, `next_maintenance`, `no_deadline`
+
+- **Maintenance Planning (Backend + Admin UI)**
+  - `GET /api/v1/equipments/maintenance` — lists equipment with due maintenance (`next_maintenance_date <= now`)
+  - `POST /api/v1/equipments/{id}/maintenance` — records a maintenance event transactionally: inserts log entry in `equipment_maintenance_log`, updates `last_maintenance_hours`, and recalculates `next_maintenance_date` based on the shortest maintenance interval
+  - `find_maintenance_due()` and `record_maintenance()` methods on `EquipmentRepository` trait
+  - `MaintenanceRecordDto` with `hours` (validated `range(min=0.0)`) and `note` fields
+  - `equipment_maintenance_log` database table migration (id, equipment_id, tenant_id, hours, note, performed_at)
+  - Admin UI: maintenance modal with operating-hours input + note field, per-equipment maintenance button (wrench icon), next-maintenance column with badge indicators
+  - New i18n keys: `maintenance_due`, `wrench`, `record_maintenance`, `hours`, `note`, `cancel`, `save`
+
+### Fixed
+- Clippy `unnecessary_unwrap` in `find_all_filtered` — replaced `.is_some()` + `.unwrap()` pattern with direct `if let Some(...)` bindings in both count and items query sections
+- Clippy `manual_map` in `record_maintenance` — replaced `if let Some(...) { Some(...) } else { None }` with `.map()`
+- `f64` not implementing `Ord` — replaced `Vec<f64>::min()` with `fold()` using `<=` comparison to avoid NaN issues
+
 ## [0.9.4] - 2026-08-24
 
 ### Added
 - **Admin UI Full-Stack Feature Coverage System — API Contract Validation Test**
+
   - New `crates/api/tests/api_contract_test.rs` with 6 contract tests validating all 62 UI API paths against actual API routes at build time
   - `test_api_contract_all_ui_paths_have_routes` — verifies every UI helper path has a matching API route
   - `test_api_contract_no_orphaned_routes` — detects dead API endpoints with no UI consumer
