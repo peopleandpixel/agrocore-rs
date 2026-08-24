@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.8] - 2026-08-24
+
+### Added
+- **i18n v2.0: Shared Translation Architecture (Backend + Frontend)**
+  - `crates/i18n-shared`: Shared `Locale` enum (10 locales: De, En, Es, Fr, Pt, It, Pl, Ro, Uk, Nl) with `FromStr`, `Display`, `Default` impls — usable by both backend and frontend
+  - `crates/i18n-codegen/build.rs`: Build-time code generation that reads `crates/admin-ui/locales/app.yml` and generates `Msg` enum (450 variants) with `Locale → &'static str` match-arms in `OUT_DIR/translation.rs`
+  - `Translatable` trait with `.tr(locale)` method for typsafe compile-time-translation lookups
+  - 5 unit tests verifying `Locale`, `Msg::YES.tr(Locale::De)` → "Ja", `Msg::YES.tr(Locale::En)` → "Yes"
+
+### Changed
+- Version bump: 0.9.7 → 0.9.8
+
 ## [0.9.7] - 2026-08-24
 
 ### Added

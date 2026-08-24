@@ -1,0 +1,12 @@
+[package]
+name = "agrocore-i18n-shared"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+build = "build.rs"
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+
+[build-dependencies]
+serde_yaml = "0.9"
