@@ -541,8 +541,27 @@ pub struct EquipmentDto {
     pub maintenance_intervals: Option<Vec<MaintenanceIntervalDto>>,
     pub next_maintenance_date: Option<String>,
     pub last_maintenance_hours: Option<f64>,
+    pub fuel_capacity_liters: Option<f64>,
+    pub fuel_type: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+}
+
+/// Fuel consumption entry — tracks liters, cost, operation context.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FuelConsumptionDto {
+    pub id: uuid::Uuid,
+    pub equipment_id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub liters: f64,
+    pub cost_per_liter: Option<f64>,
+    pub total_cost: Option<f64>,
+    pub operation_type: Option<String>,
+    pub field_id: Option<uuid::Uuid>,
+    pub hours_operated: Option<f64>,
+    pub consumed_at: String,
+    pub notes: Option<String>,
+    pub created_at: String,
 }
 
 /// Maintenance interval configuration from the backend.
@@ -616,7 +635,10 @@ pub async fn fetch_equipment_filtered(
         params.push(format!("search={}", js_sys::encode_uri_component(search)));
     }
     if let Some(ref eq_type) = filter.equipment_type {
-        params.push(format!("equipment_type={}", js_sys::encode_uri_component(eq_type)));
+        params.push(format!(
+            "equipment_type={}",
+            js_sys::encode_uri_component(eq_type)
+        ));
     }
     if let Some(in_usage) = filter.in_usage {
         params.push(format!("in_usage={}", in_usage));
@@ -629,8 +651,11 @@ pub async fn fetch_equipment_filtered(
     } else {
         format!("?{}", params.join("&"))
     };
-    get_json::<PaginatedResponse<EquipmentDto>>(&format!("/api/v1/equipments/search{}", query_string), true)
-        .await
+    get_json::<PaginatedResponse<EquipmentDto>>(
+        &format!("/api/v1/equipments/search{}", query_string),
+        true,
+    )
+    .await
 }
 
 /// Fetch equipment that needs maintenance (next_maintenance_date <= now).
@@ -667,14 +692,53 @@ pub async fn record_maintenance(
 pub async fn fetch_equipment_maintenance_log(
     equipment_id: uuid::Uuid,
 ) -> Result<Vec<MaintenanceLogDto>, String> {
-    get_json(&format!("/api/v1/equipments/{}/maintenance", equipment_id), true).await
+    get_json(
+        &format!("/api/v1/equipments/{}/maintenance", equipment_id),
+        true,
+    )
+    .await
 }
 
 pub async fn fetch_maintenance_cost_summary(
     equipment_id: uuid::Uuid,
 ) -> Result<MaintenanceCostSummaryDto, String> {
     get_json(
-        &format!("/api/v1/equipments/{}/maintenance-cost-summary", equipment_id),
+        &format!(
+            "/api/v1/equipments/{}/maintenance-cost-summary",
+            equipment_id
+        ),
+        true,
+    )
+    .await
+}
+
+pub async fn fetch_fuel_consumption(
+    equipment_id: uuid::Uuid,
+) -> Result<Vec<FuelConsumptionDto>, String> {
+    get_json(
+        &format!("/api/v1/equipments/{}/fuel-consumption", equipment_id),
+        true,
+    )
+    .await
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateFuelConsumptionRequest {
+    pub liters: f64,
+    pub cost_per_liter: Option<f64>,
+    pub operation_type: Option<String>,
+    pub field_id: Option<uuid::Uuid>,
+    pub hours_operated: Option<f64>,
+    pub notes: Option<String>,
+}
+
+pub async fn record_fuel_consumption(
+    equipment_id: uuid::Uuid,
+    req: &CreateFuelConsumptionRequest,
+) -> Result<FuelConsumptionDto, String> {
+    post_json(
+        &format!("/api/v1/equipments/{}/fuel-consumption", equipment_id),
+        req,
         true,
     )
     .await

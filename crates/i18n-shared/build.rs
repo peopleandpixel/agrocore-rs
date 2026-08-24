@@ -36,8 +36,12 @@ fn main() {
             let lang_map: Result<BTreeMap<String, String>, _> = map
                 .iter()
                 .map(|(k, v)| {
-                    let key_str = k.as_str().ok_or_else(|| format!("Non-string key in {}: {:?}", key, k));
-                    let val_str = v.as_str().ok_or_else(|| format!("Non-string value in {}: {:?}", key, v));
+                    let key_str = k
+                        .as_str()
+                        .ok_or_else(|| format!("Non-string key in {}: {:?}", key, k));
+                    let val_str = v
+                        .as_str()
+                        .ok_or_else(|| format!("Non-string value in {}: {:?}", key, v));
                     key_str.and_then(|k| val_str.map(|v| (k.to_string(), v.to_string())))
                 })
                 .collect();
@@ -53,7 +57,7 @@ fn main() {
     let mut match_arms: Vec<String> = Vec::new();
 
     for (raw_key, langs) in &entries {
-        let variant = to_screaming_snake(&raw_key);
+        let variant = to_screaming_snake(raw_key);
         if variant.is_empty() || variant.starts_with('_') {
             continue; // skip internal keys like _version
         }
@@ -90,6 +94,7 @@ pub enum Msg {{
 }}
 
 impl Translatable for Msg {{
+    #[allow(unreachable_patterns)]
     fn tr(&self, locale: Locale) -> &'static str {{
         match (self, locale) {{
 {match_body},
@@ -114,13 +119,12 @@ impl Msg {{
 }}
 "#,
         enum_body = enum_body,
-        match_body = match_arms.join(",\n"),
+        match_body = match_body,
         default_arms = default_arms,
         key_arms = key_arms,
     );
 
-    fs::write(out_dir.join("translation.rs"), &generated)
-        .expect("Failed to write translation.rs");
+    fs::write(out_dir.join("translation.rs"), generated).expect("Failed to write translation.rs");
 
     println!(
         "cargo:warning=[i18n-codegen] Generated Msg enum with {} variants",

@@ -148,6 +148,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route(web::get().to(equipment::get_maintenance_cost_summary)),
             )
             .service(
+                web::resource("/equipments/{id}/fuel-consumption")
+                    .route(web::get().to(equipment::get_fuel_consumption))
+                    .route(web::post().to(equipment::record_fuel_consumption)),
+            )
+            .service(
                 web::resource("/equipments/{id}/maintenance")
                     .route(web::post().to(equipment::record_maintenance))
                     .route(web::get().to(equipment::get_equipment_maintenance_log)),

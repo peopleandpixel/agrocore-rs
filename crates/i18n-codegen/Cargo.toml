@@ -1,7 +1,0 @@
-[package]
-name = "agrocore-i18n-codegen"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-# This crate is retained for backwards compatibility but is no longer used.
-# Build logic moved to crates/i18n-shared/build.rs.

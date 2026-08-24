@@ -1,8 +1,8 @@
 use crate::AppState;
 use crate::dto::{
-    CreateEquipmentDto, EquipmentDto, EquipmentFilterDto, MaintenanceCostSummaryDto, MaintenanceLogDto,
-    MaintenanceRecordDto, ErrorResponse, PaginatedEquipmentResponse, PaginatedResponseDto,
-    UpdateEquipmentDto,
+    CreateEquipmentDto, CreateFuelConsumptionRequest, EquipmentDto, EquipmentFilterDto,
+    ErrorResponse, FuelConsumptionDto, MaintenanceCostSummaryDto, MaintenanceLogDto,
+    MaintenanceRecordDto, PaginatedEquipmentResponse, PaginatedResponseDto, UpdateEquipmentDto,
 };
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
@@ -339,10 +339,7 @@ pub async fn get_equipment_maintenance_log(
     let log = state
         .db
         .equipment_repo()
-        .get_maintenance_log(
-            agrocore_domain::TenantId(auth.0.tenant_id),
-            equipment_id,
-        )
+        .get_maintenance_log(agrocore_domain::TenantId(auth.0.tenant_id), equipment_id)
         .await?;
     Ok(HttpResponse::Ok().json(log))
 }
@@ -368,11 +365,82 @@ pub async fn get_maintenance_cost_summary(
     let summary = state
         .db
         .equipment_repo()
-        .get_maintenance_cost_summary(
-            agrocore_domain::TenantId(auth.0.tenant_id),
-            equipment_id,
-        )
+        .get_maintenance_cost_summary(agrocore_domain::TenantId(auth.0.tenant_id), equipment_id)
         .await?
         .ok_or_else(|| SharedError::NotFound("Equipment not found".into()))?;
     Ok(HttpResponse::Ok().json(summary))
+}
+
+/// Get fuel consumption history for a specific equipment.
+#[utoipa::path(
+    get,
+    path = "/api/v1/equipments/{id}/fuel-consumption",
+    responses(
+        (status = 200, description = "Fuel consumption history", body = Vec<FuelConsumptionDto>),
+        (status = 404, description = "Equipment not found", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "equipment",
+    security(("bearer_auth" = []))
+)]
+pub async fn get_fuel_consumption(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let equipment_id = *path;
+    tracing::info!(
+        "Getting fuel consumption for equipment {} in tenant: {}",
+        equipment_id,
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
+    let records = state
+        .db
+        .equipment_repo()
+        .get_fuel_consumption(agrocore_domain::TenantId(auth.0.tenant_id), equipment_id)
+        .await?;
+    Ok(HttpResponse::Ok().json(records))
+}
+
+/// Record a fuel consumption entry for equipment.
+#[utoipa::path(
+    post,
+    path = "/api/v1/equipments/{id}/fuel-consumption",
+    request_body = CreateFuelConsumptionRequest,
+    responses(
+        (status = 201, description = "Fuel consumption recorded", body = FuelConsumptionDto),
+        (status = 404, description = "Equipment not found", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "equipment",
+    security(("bearer_auth" = []))
+)]
+pub async fn record_fuel_consumption(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+    dto: web::Json<CreateFuelConsumptionRequest>,
+) -> Result<HttpResponse, ApiError> {
+    let equipment_id = *path;
+    tracing::info!(
+        "Recording fuel consumption for equipment {} in tenant: {}",
+        equipment_id,
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
+    let record = state
+        .db
+        .equipment_repo()
+        .record_fuel_consumption(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            equipment_id,
+            dto.0.liters,
+            dto.0.cost_per_liter,
+            dto.0.operation_type.as_deref(),
+            dto.0.field_id,
+            dto.0.hours_operated,
+            dto.0.notes.as_deref(),
+        )
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Equipment not found".into()))?;
+    Ok(HttpResponse::Created().json(record))
 }

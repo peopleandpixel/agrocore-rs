@@ -34,6 +34,8 @@ pub struct EquipmentDto {
     pub maintenance_intervals: Option<Vec<MaintenanceIntervalDto>>,
     pub next_maintenance_date: Option<DateTime<Utc>>,
     pub last_maintenance_hours: Option<f64>,
+    pub fuel_capacity_liters: Option<f64>,
+    pub fuel_type: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -59,6 +61,8 @@ impl From<agrocore_domain::entities::equipment::Equipment> for EquipmentDto {
             }),
             next_maintenance_date: e.next_maintenance_date,
             last_maintenance_hours: e.last_maintenance_hours,
+            fuel_capacity_liters: e.fuel_capacity_liters,
+            fuel_type: e.fuel_type,
             created_at: e.created_at.to_rfc3339(),
             updated_at: e.updated_at.to_rfc3339(),
         }
@@ -131,6 +135,37 @@ pub struct MaintenanceCostSummaryDto {
     pub total_downtime_hours: f64,
     pub total_maintenance_count: i64,
     pub total_cost: f64,
+}
+
+/// Fuel consumption entry — tracks liters, cost, operation context.
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct FuelConsumptionDto {
+    pub id: Uuid,
+    pub equipment_id: Uuid,
+    pub tenant_id: Uuid,
+    pub liters: f64,
+    pub cost_per_liter: Option<f64>,
+    pub total_cost: Option<f64>,
+    pub operation_type: Option<String>,
+    pub field_id: Option<Uuid>,
+    pub hours_operated: Option<f64>,
+    pub consumed_at: DateTime<Utc>,
+    pub notes: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+/// Request to record a fuel consumption entry.
+#[derive(Debug, Deserialize, ToSchema, Validate)]
+pub struct CreateFuelConsumptionRequest {
+    #[validate(range(min = 0.0))]
+    pub liters: f64,
+    #[validate(range(min = 0.0))]
+    pub cost_per_liter: Option<f64>,
+    pub operation_type: Option<String>,
+    pub field_id: Option<Uuid>,
+    #[validate(range(min = 0.0))]
+    pub hours_operated: Option<f64>,
+    pub notes: Option<String>,
 }
 
 /// Query parameters for filtering equipment list.

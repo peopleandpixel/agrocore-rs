@@ -1,10 +1,10 @@
 use crate::api;
 use crate::i18n;
+use icondata::{LuArrowLeft, LuSave};
 use leptos::ev::MouseEvent;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use leptos_icons::Icon;
-use icondata::{LuArrowLeft, LuSave};
 
 /// EquipmentDetailPage - shows detailed equipment info, maintenance history,
 /// cost summary, and a form to record new maintenance.
@@ -82,9 +82,21 @@ pub fn EquipmentDetailPage() -> impl IntoView {
         set_error.set(None);
 
         spawn_local(async move {
-            match api::record_maintenance(id, hours, if note.is_empty() { None } else { Some(note.as_str()) }).await {
+            match api::record_maintenance(
+                id,
+                hours,
+                if note.is_empty() {
+                    None
+                } else {
+                    Some(note.as_str())
+                },
+            )
+            .await
+            {
                 Ok(_) => {
-                    set_success.set(Some((crate::t!(t, "maintenance_recorded_success"))().to_string()));
+                    set_success.set(Some(
+                        (crate::t!(t, "maintenance_recorded_success"))().to_string(),
+                    ));
                     match api::fetch_equipment_by_id(id).await {
                         Ok(data) => set_equipment.set(Some(data)),
                         Err(e) => set_error.set(Some(e)),
@@ -276,7 +288,10 @@ fn EquipmentDetailView(equipment: api::EquipmentDto) -> impl IntoView {
     let eq_basic = eq.clone();
     let eq_maint = eq.clone();
     let eq_intervals = eq.clone();
-    let intervals = eq_intervals.maintenance_intervals.clone().unwrap_or_default();
+    let intervals = eq_intervals
+        .maintenance_intervals
+        .clone()
+        .unwrap_or_default();
     let has_intervals = !intervals.is_empty();
 
     view! {

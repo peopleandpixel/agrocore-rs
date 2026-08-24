@@ -11,8 +11,11 @@ use serde::{Deserialize, Serialize};
 /// Supported application locales.
 ///
 /// Stored in order of preference — first is the default.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, PartialOrd, Ord)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, PartialOrd, Ord, Default,
+)]
 pub enum Locale {
+    #[default]
     De,
     En,
     Es,
@@ -23,12 +26,6 @@ pub enum Locale {
     Ro,
     Uk,
     Nl,
-}
-
-impl Default for Locale {
-    fn default() -> Self {
-        Locale::De
-    }
 }
 
 impl Locale {

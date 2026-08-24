@@ -27,6 +27,8 @@ pub struct Equipment {
     pub maintenance_intervals: Option<Vec<MaintenanceInterval>>,
     pub next_maintenance_date: Option<DateTime<Utc>>,
     pub last_maintenance_hours: Option<f64>,
+    pub fuel_capacity_liters: Option<f64>,
+    pub fuel_type: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -95,4 +97,21 @@ pub struct MaintenanceCostSummaryDto {
     pub total_downtime_hours: f64,
     pub total_maintenance_count: i64,
     pub total_cost: f64,
+}
+
+/// Fuel consumption entry — tracks liters, cost, operation context.
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow)]
+pub struct FuelConsumptionDto {
+    pub id: Uuid,
+    pub equipment_id: Uuid,
+    pub tenant_id: TenantId,
+    pub liters: f64,
+    pub cost_per_liter: Option<f64>,
+    pub total_cost: Option<f64>,
+    pub operation_type: Option<String>,
+    pub field_id: Option<Uuid>,
+    pub hours_operated: Option<f64>,
+    pub consumed_at: DateTime<Utc>,
+    pub notes: Option<String>,
+    pub created_at: DateTime<Utc>,
 }

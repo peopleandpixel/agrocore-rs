@@ -28,7 +28,9 @@ where
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-use crate::entities::equipment::{CreateEquipmentDto, Equipment, UpdateEquipmentDto};
+use crate::entities::equipment::{
+    CreateEquipmentDto, Equipment, FuelConsumptionDto, UpdateEquipmentDto,
+};
 use crate::entities::site::{CreateSiteDto, Site, UpdateSiteDto};
 use crate::entities::spatial::SpatialObject;
 
@@ -112,6 +114,25 @@ pub trait EquipmentRepository: Send + Sync {
         labor_hours: f64,
         downtime_hours: f64,
     ) -> RepositoryFuture<bool>;
+    /// Get fuel consumption history for an equipment, newest first.
+    fn get_fuel_consumption(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+    ) -> RepositoryFuture<Vec<FuelConsumptionDto>>;
+    /// Record a fuel consumption entry.
+    #[allow(clippy::too_many_arguments)]
+    fn record_fuel_consumption(
+        &self,
+        tid: TenantId,
+        equipment_id: Uuid,
+        liters: f64,
+        cost_per_liter: Option<f64>,
+        operation_type: Option<&str>,
+        field_id: Option<Uuid>,
+        hours_operated: Option<f64>,
+        notes: Option<&str>,
+    ) -> RepositoryFuture<Option<FuelConsumptionDto>>;
 }
 
 #[cfg_attr(feature = "mocks", automock)]

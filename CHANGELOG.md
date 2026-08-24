@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9] - 2026-08-24
+
+### Added
+- **Equipment Fuel Consumption Tracking (Backend + Admin UI)**
+  - Migration `20260824_002_add_equipment_fuel_consumption.sql`: adds `fuel_capacity_liters`, `fuel_type` columns to `equipment` table + new `equipment_fuel_consumption` table (id, equipment_id, tenant_id, liters, cost_per_liter, total_cost, operation_type, field_id, hours_operated, consumed_at, notes, created_at) with indexes
+  - `FuelConsumptionDto` domain entity in `crates/domain/src/entities/equipment.rs`
+  - `EquipmentRepository::get_fuel_consumption()` — retrieves fuel consumption history per equipment, newest first
+  - `EquipmentRepository::record_fuel_consumption()` — inserts fuel consumption entry with auto-calculated total_cost
+  - `Equipment` entity extended with `fuel_capacity_liters` and `fuel_type` fields
+  - `GET /api/v1/equipments/{id}/fuel-consumption` endpoint — returns fuel consumption history
+  - `POST /api/v1/equipments/{id}/fuel-consumption` endpoint — records a fuel consumption entry
+  - API DTOs: `FuelConsumptionDto` + `CreateFuelConsumptionRequest` in `crates/api/src/dto/equipment.rs`
+  - Admin UI: `fetch_fuel_consumption()` + `record_fuel_consumption()` API client functions in `api.rs`
+  - Admin UI: `EquipmentDto` extended with `fuel_capacity_liters` + `fuel_type` fields
+- **i18n v2.0 Architecture Improvements**
+  - Fixed `needless-borrow` clippy error in `build.rs` (`to_screaming_snake(raw_key)` — removed unnecessary `&`)
+  - Fixed `unreachable_patterns` in generated `tr()` method (`#[allow(unreachable_patterns)]` added to match the fallback `_ => default_text()` arm)
+  - Replaced manual `impl Default for Locale` with `#[derive(Default)]` + `#[default]` attribute on `Locale::De` (fixes `derivable_impls` clippy error)
+  - Fixed build.rs template escaping for `impl Translatable` block (`{{` for literal braces in `format!` template)
+
+### Fixed
+- Removed deprecated `crates/i18n-codegen` crate (build logic consolidated in `crates/i18n-shared/build.rs`)
+
+### Changed
+- Version bump: 0.9.8 → 0.9.9
+
 ## [0.9.8] - 2026-08-24
 
 ### Added

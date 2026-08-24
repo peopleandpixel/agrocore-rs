@@ -1,5 +1,6 @@
 use agrocore_domain::entities::equipment::{
-    CreateEquipmentDto, Equipment, MaintenanceCostSummaryDto, MaintenanceLogDto, UpdateEquipmentDto,
+    CreateEquipmentDto, Equipment, FuelConsumptionDto, MaintenanceCostSummaryDto,
+    MaintenanceLogDto, UpdateEquipmentDto,
 };
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::UserRole;
@@ -137,11 +138,13 @@ impl EquipmentRepository for PgEquipmentRepo {
             if let Some(ref search_term) = search_owned {
                 where_clauses.push(format!(
                     "(LOWER(label) LIKE ${} OR LOWER(code) LIKE ${})",
-                    bind_idx, bind_idx + 1
+                    bind_idx,
+                    bind_idx + 1
                 ));
                 count_clauses.push(format!(
                     "(LOWER(label) LIKE ${} OR LOWER(code) LIKE ${})",
-                    bind_idx, bind_idx + 1
+                    bind_idx,
+                    bind_idx + 1
                 ));
                 bind_idx += 2;
             }
@@ -174,7 +177,9 @@ impl EquipmentRepository for PgEquipmentRepo {
             let count_sql = format!("SELECT COUNT(*) FROM equipment {}", count_where);
             let items_sql = format!(
                 "SELECT * FROM equipment {} ORDER BY label LIMIT ${} OFFSET ${}",
-                where_clause, bind_idx, bind_idx + 1
+                where_clause,
+                bind_idx,
+                bind_idx + 1
             );
 
             // Execute count
@@ -460,7 +465,11 @@ impl EquipmentRepository for PgEquipmentRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
+            let total_pages = if total == 0 {
+                0
+            } else {
+                (total as f64 / per_page as f64).ceil() as u64
+            };
 
             Ok(PaginatedResponse {
                 data: items,
@@ -482,7 +491,10 @@ impl EquipmentRepository for PgEquipmentRepo {
         let pool = self.pool.clone();
 
         Box::pin(async move {
-            let mut tx = pool.begin().await.map_err(|e| SharedError::Database(e.to_string()))?;
+            let mut tx = pool
+                .begin()
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
 
             // Get current equipment to calculate next_maintenance_date
             let current: Option<Equipment> = sqlx::query_as::<_, Equipment>(
@@ -563,7 +575,9 @@ impl EquipmentRepository for PgEquipmentRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            tx.commit().await.map_err(|e| SharedError::Database(e.to_string()))?;
+            tx.commit()
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(Some(updated))
         })
@@ -648,6 +662,73 @@ impl EquipmentRepository for PgEquipmentRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(rows.rows_affected() > 0)
+        })
+    }
+    /// Get fuel consumption history for an equipment, newest first.
+    fn get_fuel_consumption(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+    ) -> RepositoryFuture<Vec<FuelConsumptionDto>> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            let records: Vec<FuelConsumptionDto> = sqlx::query_as::<_, FuelConsumptionDto>(
+                r#"SELECT * FROM equipment_fuel_consumption
+                   WHERE equipment_id = $1 AND tenant_id = $2
+                   ORDER BY consumed_at DESC"#,
+            )
+            .bind(id)
+            .bind(tid)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            Ok(records)
+        })
+    }
+    /// Record a fuel consumption entry.
+    fn record_fuel_consumption(
+        &self,
+        tid: TenantId,
+        equipment_id: Uuid,
+        liters: f64,
+        cost_per_liter: Option<f64>,
+        operation_type: Option<&str>,
+        field_id: Option<Uuid>,
+        hours_operated: Option<f64>,
+        notes: Option<&str>,
+    ) -> RepositoryFuture<Option<FuelConsumptionDto>> {
+        let pool = self.pool.clone();
+        let op_type_owned = operation_type.map(|s| s.to_string());
+        let notes_owned = notes.map(|s| s.to_string());
+        Box::pin(async move {
+            let now = Utc::now();
+            let new_id = Uuid::new_v4();
+            let total_cost = cost_per_liter.map(|c| liters * c);
+
+            let record = sqlx::query_as::<_, FuelConsumptionDto>(
+                r#"INSERT INTO equipment_fuel_consumption
+                   (id, equipment_id, tenant_id, liters, cost_per_liter, total_cost,
+                    operation_type, field_id, hours_operated, consumed_at, notes, created_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $10)
+                   RETURNING *"#,
+            )
+            .bind(new_id)
+            .bind(equipment_id)
+            .bind(tid)
+            .bind(liters)
+            .bind(cost_per_liter)
+            .bind(total_cost)
+            .bind(op_type_owned)
+            .bind(field_id)
+            .bind(hours_operated)
+            .bind(now)
+            .bind(notes_owned)
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            Ok(Some(record))
         })
     }
 }
