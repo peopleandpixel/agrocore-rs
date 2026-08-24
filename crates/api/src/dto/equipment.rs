@@ -1,9 +1,17 @@
 //! Equipment DTOs
 
-use agrocore_domain::entities::equipment::EquipmentType;
+use agrocore_domain::entities::equipment::{EquipmentType, MaintenanceInterval};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct MaintenanceIntervalDto {
+    pub label: String,
+    pub interval_hours: Option<f64>,
+    pub interval_days: Option<u32>,
+}
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct PaginatedEquipmentResponse {
@@ -22,6 +30,9 @@ pub struct EquipmentDto {
     pub code: Option<String>,
     pub equipment_type: EquipmentType,
     pub in_usage: bool,
+    pub maintenance_intervals: Option<Vec<MaintenanceIntervalDto>>,
+    pub next_maintenance_date: Option<DateTime<Utc>>,
+    pub last_maintenance_hours: Option<f64>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -35,6 +46,18 @@ impl From<agrocore_domain::entities::equipment::Equipment> for EquipmentDto {
             code: e.code,
             equipment_type: e.equipment_type,
             in_usage: e.in_usage,
+            maintenance_intervals: e.maintenance_intervals.map(|intervals| {
+                intervals
+                    .into_iter()
+                    .map(|i| MaintenanceIntervalDto {
+                        label: i.label,
+                        interval_hours: i.interval_hours,
+                        interval_days: i.interval_days,
+                    })
+                    .collect()
+            }),
+            next_maintenance_date: e.next_maintenance_date,
+            last_maintenance_hours: e.last_maintenance_hours,
             created_at: e.created_at.to_rfc3339(),
             updated_at: e.updated_at.to_rfc3339(),
         }
@@ -67,6 +90,23 @@ pub struct UpdateEquipmentDto {
     pub code: Option<String>,
     pub equipment_type: Option<EquipmentType>,
     pub in_usage: Option<bool>,
+}
+
+/// Query parameters for filtering equipment list.
+#[derive(Debug, Deserialize, ToSchema, Default)]
+pub struct EquipmentFilterDto {
+    /// Full-text search on label and code
+    #[schema(description = "Full-text search on label and code")]
+    pub search: Option<String>,
+    /// Filter by equipment type (e.g., "tractor", "pour")
+    #[schema(description = "Filter by equipment type")]
+    pub equipment_type: Option<String>,
+    /// Filter by in_usage status
+    #[schema(description = "Filter by in_usage status")]
+    pub in_usage: Option<bool>,
+    /// Only show equipment needing maintenance (next_maintenance_date <= now or NULL)
+    #[schema(description = "Only show equipment needing maintenance")]
+    pub needs_maintenance: Option<bool>,
 }
 
 impl From<UpdateEquipmentDto> for agrocore_domain::entities::equipment::UpdateEquipmentDto {
