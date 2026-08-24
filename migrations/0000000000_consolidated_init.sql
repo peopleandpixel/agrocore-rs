@@ -14,8 +14,8 @@ DROP TABLE IF EXISTS
     lpis_reference_parcels, sigpac_parcels, iot_devices, inventory_transactions,
     inventory_items, inventory_locations, clock_entries, workers,
     worker_locations, work_logs, frost_warnings, growing_degree_days, pest_risks,
-    soil_moisture_configs, soil_moisture_readings, soil_moisture_alerts,
-    phenology_records
+ soil_moisture_configs, soil_moisture_readings, soil_moisture_alerts,
+ phenology_records, equipment_maintenance_log
 CASCADE;
 
 DROP TYPE IF EXISTS license_type CASCADE;
@@ -313,6 +313,16 @@ CREATE TABLE IF NOT EXISTS equipment (
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS equipment_maintenance_log (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    equipment_id UUID NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    hours INTEGER NOT NULL,
+    note TEXT,
+    performed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS sites (

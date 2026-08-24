@@ -125,15 +125,27 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route("/tenant", web::delete().to(system::delete_tenant)),
             )
             .service(
+                web::resource("/equipments/search")
+                    .route(web::get().to(equipment::search_equipments)),
+            )
+            .service(
                 web::resource("/equipments")
                     .route(web::get().to(equipment::list_equipments))
                     .route(web::post().to(equipment::create_equipment)),
+            )
+            .service(
+                web::resource("/equipments/maintenance")
+                    .route(web::get().to(equipment::list_maintenance_due)),
             )
             .service(
                 web::resource("/equipments/{id}")
                     .route(web::get().to(equipment::get_equipment))
                     .route(web::put().to(equipment::update_equipment))
                     .route(web::delete().to(equipment::delete_equipment)),
+            )
+            .service(
+                web::resource("/equipments/{id}/maintenance")
+                    .route(web::post().to(equipment::record_maintenance)),
             )
             // Inventory routes
             .service(

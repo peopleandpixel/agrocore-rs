@@ -4661,4 +4661,186 @@ select_shapefile:
   pl: Wybierz Shapefile (ZIP)
   ro: Selectează Shapefile (ZIP)
   uk: Виберіть Shapefile (ZIP)
-  nl: Selecteer Shapefile (ZIP)
+  nl: Selecteer Shapefile bestand
+
+search_filter:
+  en: Search & Filter
+  de: Suche & Filter
+  es: Buscar y Filtrar
+  fr: Rechercher et Filtrer
+  pt: Pesquisar e Filtrar
+  it: Cerca e Filtra
+  pl: Wyszukaj i Filtruj
+  ro: Căutare și Filtrare
+  uk: Пошук та Фільтрація
+  nl: Zoeken en Filteren
+
+search:
+  en: Search
+  de: Suche
+  es: Buscar
+  fr: Rechercher
+  pt: Pesquisar
+  it: Cerca
+  pl: Wyszukaj
+  ro: Căutare
+  uk: Пошук
+  nl: Zoeken
+
+type:
+  en: Type
+  de: Typ
+  es: Tipo
+  fr: Type
+  pt: Tipo
+  it: Tipo
+  pl: Typ
+  ro: Tip
+  uk: Тип
+  nl: Type
+
+all_types:
+  en: All Types
+  de: Alle Typen
+  es: Todos los Tipos
+  fr: Tous les Types
+  pt: Todos os Tipos
+  it: Tutti i Tipi
+  pl: Wszystkie Typy
+  ro: Toate Tipurile
+  uk: Всі типи
+  nl: Alle Types
+
+in_usage:
+  en: In Usage
+  de: In Verwendung
+  es: En Uso
+  fr: En Utilisation
+  pt: Em Uso
+  it: In Uso
+  pl: W Użyciu
+  ro: În Uz
+  uk: Використовується
+  nl: In Gebruik
+
+needs_maintenance:
+  en: Needs Maintenance
+  de: Wartung nötig
+  es: Necesita Mantenimiento
+  fr: Besoin d'Entretien
+  pt: Precisa de Manutenção
+  it: Necessita Manutenzione
+  pl: Wymaga Konserwacji
+  ro: Necesită Întreținere
+  uk: Потрібен технічний догляд
+  nl: Onderhoud Nodig
+
+clear_filters:
+  en: Clear Filters
+  de: Filter Zurücksetzen
+  es: Limpiar Filtros
+  fr: Effacer les Filtres
+  pt: Limpar Filtros
+  it: Cancella Filtri
+  pl: Wyczyść Filtry
+  ro: Șterge Filtrele
+  uk: Очистити Фільтри
+  nl: Filters Opschonen
+
+maintenance_hours:
+  en: Operating Hours
+  de: Betriebsstunden
+  es: Horas de Operación
+  fr: Heures de Fonctionnement
+  pt: Horas de Operação
+  it: Ore di Funzionamento
+  pl: Godziny Pracy
+  ro: Ore de_funcționare
+  uk: Години роботи
+  nl: Operationele Uren
+
+next_maintenance:
+  en: Next Maintenance
+  de: Nächste Wartung
+  es: Próximo Mantenimiento
+  fr: Prochain Entretien
+  pt: Próxima Manutenção
+  it: Prossima Manutenzione
+  pl: Następny Serwis
+  ro: Întreținere Următoare
+  uk: Наступне Технічне Обслуговування
+  nl: Volgende Onderhoud
+
+maintenance_due:
+  en: Maintenance Due
+  de: Wartung fällig
+  es: Mantenimiento Pendiente
+  fr: Entretien dû
+  pt: Manutenção Pendente
+  it: Manutenzione Scaduta
+  pl: Konserwacja Przeterminowana
+  ro: Întreținere Întârziată
+  uk: Технічне Обслуговування Прострочене
+  nl: Onderhoud Afwikkelen
+
+no_deadline:
+  en: No deadline set
+  de: Kein Zeitpunkt
+  es: Sin fecha límite
+  fr: Pas d'échéance
+  pt: Sem prazo
+  it: Nessuna scadenza
+  pl: Brak terminu
+  ro: Fără termen limită
+  uk: Немає строку
+  nl: Geen deadline
+
+wrench:
+  en: Maintenance
+  de: Wartung
+  es: Mantenimiento
+  fr: Entretien
+  pt: Manutenção
+  it: Manutenzione
+  pl: Konserwacja
+  ro: Întreținere
+  uk: Технічний догляд
+  nl: Onderhoud
+
+record_maintenance:
+  en: Record Maintenance
+  de: Wartung durchführen
+  es: Registrar Mantenimiento
+  fr: Enregistrer l'Entretien
+  pt: Registrar Manutenção
+  it: Registra Manutenzione
+  pl: Zapisz Konserwację
+  ro: Înregistrează Întreținere
+  uk: Записати Технічний догляд
+  nl: Registreer Onderhoud
+
+hours:
+  en: Hours
+  de: Stunden
+  es: Horas
+  fr: Heures
+  pt: Horas
+  it: Ore
+  pl: Godziny
+  ro: Ore
+  uk: Години
+  nl: Uren
+
+note:
+  en: Note
+  de: Notiz
+  es: Nota
+  fr: Remarque
+  pt: Nota
+  it: Nota
+  pl: Notatka
+  ro: Notă
+  uk: Примітка
+  nl: Notitie
+
+

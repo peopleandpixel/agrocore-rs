@@ -108,6 +108,139 @@ impl EquipmentRepository for PgEquipmentRepo {
         })
     }
 
+    fn find_all_filtered(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+        search: Option<&str>,
+        equipment_type: Option<&str>,
+        in_usage: Option<bool>,
+        needs_maintenance: Option<bool>,
+    ) -> RepositoryFuture<PaginatedResponse<Equipment>> {
+        let pool = self.pool.clone();
+        let page = p.page.unwrap_or(0);
+        let per_page = p.per_page.unwrap_or(20);
+        let offset = page * per_page;
+        let search_owned = search.map(|s| s.to_lowercase());
+        let eq_type_owned = equipment_type.map(|s| s.to_lowercase());
+
+        Box::pin(async move {
+            // Build dynamic WHERE clauses
+            // Base condition: tenant_id + is_active
+            let mut where_clauses: Vec<String> = vec!["tenant_id = $1".to_string()];
+            let mut count_clauses: Vec<String> = vec!["tenant_id = $1".to_string()];
+            let mut bind_idx = 2i32;
+
+            // Search filter: matches label or code (case-insensitive LIKE)
+            if let Some(ref search_term) = search_owned {
+                where_clauses.push(format!(
+                    "(LOWER(label) LIKE ${} OR LOWER(code) LIKE ${})",
+                    bind_idx, bind_idx + 1
+                ));
+                count_clauses.push(format!(
+                    "(LOWER(label) LIKE ${} OR LOWER(code) LIKE ${})",
+                    bind_idx, bind_idx + 1
+                ));
+                bind_idx += 2;
+            }
+
+            // equipment_type filter (case-insensitive match against JSON enum)
+            if let Some(ref eq_type) = eq_type_owned {
+                where_clauses.push(format!("LOWER(equipment_type::text) LIKE ${}", bind_idx));
+                count_clauses.push(format!("LOWER(equipment_type::text) LIKE ${}", bind_idx));
+                bind_idx += 1;
+            }
+
+            // in_usage filter
+            if let Some(in_use_val) = in_usage {
+                where_clauses.push(format!("in_usage = ${}", bind_idx));
+                count_clauses.push(format!("in_usage = ${}", bind_idx));
+                bind_idx += 1;
+            }
+
+            // needs_maintenance filter: next_maintenance_date <= now or is NULL
+            if needs_maintenance.unwrap_or(false) {
+                where_clauses.push(format!("(is_active IS NULL OR is_active = true) AND (next_maintenance_date IS NULL OR next_maintenance_date <= ${})", bind_idx));
+                bind_idx += 1;
+            } else {
+                where_clauses.push("(is_active IS NULL OR is_active = true)".to_string());
+            }
+
+            let where_clause = format!("WHERE {}", where_clauses.join(" AND "));
+            let count_where = format!("WHERE {}", count_clauses.join(" AND "));
+
+            let count_sql = format!("SELECT COUNT(*) FROM equipment {}", count_where);
+            let items_sql = format!(
+                "SELECT * FROM equipment {} ORDER BY label LIMIT ${} OFFSET ${}",
+                where_clause, bind_idx, bind_idx + 1
+            );
+
+            // Execute count
+            let total: i64 = {
+                let mut q = sqlx::query_scalar::<_, i64>(&count_sql);
+                q = q.bind(tid);
+                if let Some(ref search_term) = search_owned {
+                    let pattern = format!("%{}%", search_term);
+                    q = q.bind(pattern.clone());
+                    q = q.bind(pattern);
+                }
+                if let Some(ref eq_type) = eq_type_owned {
+                    let pattern = format!("%{}%", eq_type);
+                    q = q.bind(pattern);
+                }
+                if let Some(in_use_val) = in_usage {
+                    q = q.bind(in_use_val);
+                }
+                if needs_maintenance.unwrap_or(false) {
+                    q = q.bind(chrono::Utc::now());
+                }
+                q.fetch_one(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?
+            };
+
+            // Execute items query
+            let items: Vec<Equipment> = {
+                let mut q = sqlx::query_as::<_, Equipment>(&items_sql);
+                q = q.bind(tid);
+                if let Some(ref search_term) = search_owned {
+                    let pattern = format!("%{}%", search_term);
+                    q = q.bind(pattern.clone());
+                    q = q.bind(pattern);
+                }
+                if let Some(ref eq_type) = eq_type_owned {
+                    let pattern = format!("%{}%", eq_type);
+                    q = q.bind(pattern);
+                }
+                if let Some(in_use_val) = in_usage {
+                    q = q.bind(in_use_val);
+                }
+                if needs_maintenance.unwrap_or(false) {
+                    q = q.bind(chrono::Utc::now());
+                }
+                q = q.bind(per_page as i32);
+                q = q.bind(offset as i32);
+                q.fetch_all(&pool)
+                    .await
+                    .map_err(|e| SharedError::Database(e.to_string()))?
+            };
+
+            let total_pages = if total == 0 {
+                0
+            } else {
+                (total as f64 / per_page as f64).ceil() as u64
+            };
+
+            Ok(PaginatedResponse {
+                data: items,
+                total: total as u64,
+                page,
+                per_page,
+                total_pages,
+            })
+        })
+    }
+
     fn find_all_visible(
         &self,
         tid: TenantId,
@@ -285,6 +418,152 @@ impl EquipmentRepository for PgEquipmentRepo {
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(result.rows_affected() > 0)
+        })
+    }
+
+    fn find_maintenance_due(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<Equipment>> {
+        let pool = self.pool.clone();
+        let page = p.page.unwrap_or(0);
+        let per_page = p.per_page.unwrap_or(20);
+        let offset = page * per_page;
+
+        Box::pin(async move {
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM equipment \
+                 WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) \
+                 AND (next_maintenance_date IS NULL OR next_maintenance_date <= $2)",
+            )
+            .bind(tid)
+            .bind(Utc::now())
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            let items: Vec<Equipment> = sqlx::query_as::<_, Equipment>(
+                "SELECT * FROM equipment \
+                 WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) \
+                 AND (next_maintenance_date IS NULL OR next_maintenance_date <= $2) \
+                 ORDER BY next_maintenance_date ASC NULLS LAST, label \
+                 LIMIT $3 OFFSET $4",
+            )
+            .bind(tid)
+            .bind(Utc::now())
+            .bind(per_page as i32)
+            .bind(offset as i32)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            let total_pages = if total == 0 { 0 } else { (total as f64 / per_page as f64).ceil() as u64 };
+
+            Ok(PaginatedResponse {
+                data: items,
+                total: total as u64,
+                page,
+                per_page,
+                total_pages,
+            })
+        })
+    }
+
+    fn record_maintenance(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        hours: f64,
+        note: Option<String>,
+    ) -> RepositoryFuture<Option<Equipment>> {
+        let pool = self.pool.clone();
+
+        Box::pin(async move {
+            let mut tx = pool.begin().await.map_err(|e| SharedError::Database(e.to_string()))?;
+
+            // Get current equipment to calculate next_maintenance_date
+            let current: Option<Equipment> = sqlx::query_as::<_, Equipment>(
+                "SELECT * FROM equipment WHERE id = $1 AND tenant_id = $2",
+            )
+            .bind(id)
+            .bind(tid)
+            .fetch_optional(&mut *tx)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            let eq = current.ok_or_else(|| SharedError::NotFound("Equipment not found".into()))?;
+
+            // Calculate next maintenance date based on intervals
+            let now = Utc::now();
+            let next_maintenance = if let Some(intervals) = &eq.maintenance_intervals {
+                // Use the shortest interval for next_maintenance_date
+                let min_interval_hours: Option<f64> = intervals
+                    .iter()
+                    .filter_map(|i| i.interval_hours)
+                    .fold(None, |min: Option<f64>, h| {
+                        Some(match min {
+                            Some(m) if m <= h => m,
+                            _ => h,
+                        })
+                    });
+
+                if let Some(min_hours) = min_interval_hours {
+                    let days_ahead = (min_hours / 24.0).ceil() as i64;
+                    if days_ahead > 0 {
+                        Some(now + chrono::Duration::days(days_ahead))
+                    } else {
+                        // Less than a day — set to 7 days
+                        Some(now + chrono::Duration::days(7))
+                    }
+                } else {
+                    // Check interval_days
+                    let min_interval_days: Option<i64> = intervals
+                        .iter()
+                        .filter_map(|i| i.interval_days.map(|d| d as i64))
+                        .min();
+                    min_interval_days.map(|min_days| now + chrono::Duration::days(min_days))
+                }
+            } else {
+                None
+            };
+
+            // Record the maintenance event
+            let _ = sqlx::query(
+                r#"INSERT INTO equipment_maintenance_log
+                   (equipment_id, tenant_id, hours, note, performed_at)
+                   VALUES ($1, $2, $3, $4, $5)"#,
+            )
+            .bind(id)
+            .bind(tid)
+            .bind(hours)
+            .bind(&note)
+            .bind(now)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            // Update equipment with new hours and next_maintenance_date
+            let updated: Equipment = sqlx::query_as::<_, Equipment>(
+                r#"UPDATE equipment SET
+                   last_maintenance_hours = $1,
+                   next_maintenance_date = $2,
+                   updated_at = $3
+                   WHERE id = $4 AND tenant_id = $5
+                   RETURNING *"#,
+            )
+            .bind(hours)
+            .bind(next_maintenance)
+            .bind(now)
+            .bind(id)
+            .bind(tid)
+            .fetch_one(&mut *tx)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            tx.commit().await.map_err(|e| SharedError::Database(e.to_string()))?;
+
+            Ok(Some(updated))
         })
     }
 }

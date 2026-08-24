@@ -1,10 +1,11 @@
 //! Equipment DTOs
 
-use agrocore_domain::entities::equipment::{EquipmentType, MaintenanceInterval};
+use agrocore_domain::entities::equipment::EquipmentType;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
+use validator::Validate;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct MaintenanceIntervalDto {
@@ -92,20 +93,24 @@ pub struct UpdateEquipmentDto {
     pub in_usage: Option<bool>,
 }
 
+/// Maintenance record for equipment.
+#[derive(Debug, Deserialize, ToSchema, Validate)]
+pub struct MaintenanceRecordDto {
+    #[validate(range(min = 0.0))]
+    pub hours: f64,
+    pub note: Option<String>,
+}
+
 /// Query parameters for filtering equipment list.
 #[derive(Debug, Deserialize, ToSchema, Default)]
 pub struct EquipmentFilterDto {
     /// Full-text search on label and code
-    #[schema(description = "Full-text search on label and code")]
     pub search: Option<String>,
-    /// Filter by equipment type (e.g., "tractor", "pour")
-    #[schema(description = "Filter by equipment type")]
+    /// Filter by equipment type (e.g., "tractor")
     pub equipment_type: Option<String>,
     /// Filter by in_usage status
-    #[schema(description = "Filter by in_usage status")]
     pub in_usage: Option<bool>,
-    /// Only show equipment needing maintenance (next_maintenance_date <= now or NULL)
-    #[schema(description = "Only show equipment needing maintenance")]
+    /// Only show equipment needing maintenance
     pub needs_maintenance: Option<bool>,
 }
 

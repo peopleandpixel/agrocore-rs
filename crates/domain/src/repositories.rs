@@ -46,6 +46,15 @@ pub trait EquipmentRepository: Send + Sync {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Equipment>>;
+    fn find_all_filtered(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+        search: Option<&str>,
+        equipment_type: Option<&str>,
+        in_usage: Option<bool>,
+        needs_maintenance: Option<bool>,
+    ) -> RepositoryFuture<PaginatedResponse<Equipment>>;
     fn find_all_visible(
         &self,
         tid: TenantId,
@@ -67,6 +76,20 @@ pub trait EquipmentRepository: Send + Sync {
         by: Uuid,
     ) -> RepositoryFuture<Option<Equipment>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+    /// Find all equipment that needs maintenance (next_maintenance_date <= now)
+    fn find_maintenance_due(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<Equipment>>;
+    /// Record a maintenance event and recalculate next_maintenance_date
+    fn record_maintenance(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        hours: f64,
+        note: Option<String>,
+    ) -> RepositoryFuture<Option<Equipment>>;
 }
 
 #[cfg_attr(feature = "mocks", automock)]

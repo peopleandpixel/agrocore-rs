@@ -1,14 +1,14 @@
 use crate::AppState;
 use crate::dto::{
-    CreateEquipmentDto, EquipmentDto, ErrorResponse, PaginatedEquipmentResponse,
-    PaginatedResponseDto, UpdateEquipmentDto,
+    CreateEquipmentDto, EquipmentDto, EquipmentFilterDto, MaintenanceRecordDto, ErrorResponse,
+    PaginatedEquipmentResponse, PaginatedResponseDto, UpdateEquipmentDto,
 };
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
 #[allow(unused_imports)]
 use agrocore_domain::repositories::EquipmentRepository;
-use agrocore_shared::SharedError;
+use agrocore_shared::{Pagination, SharedError};
 use validator::Validate;
 
 #[utoipa::path(
@@ -189,4 +189,130 @@ pub async fn delete_equipment(
     } else {
         Err(SharedError::NotFound("Equipment not found".into()).into())
     }
+}
+
+/// Search and filter equipment with query parameters.
+#[utoipa::path(
+    get,
+    path = "/api/v1/equipments/search",
+    params(
+        ("search" = Option<String>, Query, description = "Full-text search on label and code"),
+        ("equipment_type" = Option<String>, Query, description = "Filter by equipment type"),
+        ("in_usage" = Option<bool>, Query, description = "Filter by in_usage status"),
+        ("needs_maintenance" = Option<bool>, Query, description = "Only show equipment needing maintenance"),
+        ("page" = Option<u64>, Query, description = "Page number"),
+        ("per_page" = Option<u64>, Query, description = "Items per page")
+    ),
+    responses(
+        (status = 200, description = "Filtered equipment list", body = PaginatedEquipmentResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "equipment",
+    security(("bearer_auth" = []))
+)]
+pub async fn search_equipments(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    filter: web::Query<EquipmentFilterDto>,
+    query: web::Query<Pagination>,
+) -> Result<HttpResponse, ApiError> {
+    tracing::info!(
+        "Searching equipment for tenant: {} with filters",
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
+    let result = state
+        .db
+        .equipment_repo()
+        .find_all_filtered(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            query.0,
+            filter.search.as_deref(),
+            filter.equipment_type.as_deref(),
+            filter.in_usage,
+            filter.needs_maintenance,
+        )
+        .await?;
+
+    Ok(HttpResponse::Ok().json(PaginatedResponseDto {
+        data: result.data.into_iter().map(EquipmentDto::from).collect(),
+        total: result.total,
+        page: result.page,
+        per_page: result.per_page,
+        total_pages: result.total_pages,
+    }))
+}
+
+/// List equipment that needs maintenance (next_maintenance_date <= now).
+#[utoipa::path(
+    get,
+    path = "/api/v1/equipments/maintenance",
+    responses(
+        (status = 200, description = "Equipment needing maintenance", body = PaginatedEquipmentResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "equipment",
+    security(("bearer_auth" = []))
+)]
+pub async fn list_maintenance_due(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    query: web::Query<Pagination>,
+) -> Result<HttpResponse, ApiError> {
+    tracing::info!(
+        "Listing maintenance-due equipment for tenant: {}",
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
+    let result = state
+        .db
+        .equipment_repo()
+        .find_maintenance_due(agrocore_domain::TenantId(auth.0.tenant_id), query.0)
+        .await?;
+
+    Ok(HttpResponse::Ok().json(PaginatedResponseDto {
+        data: result.data.into_iter().map(EquipmentDto::from).collect(),
+        total: result.total,
+        page: result.page,
+        per_page: result.per_page,
+        total_pages: result.total_pages,
+    }))
+}
+
+/// Record a maintenance event for equipment.
+#[utoipa::path(
+    post,
+    path = "/api/v1/equipments/{id}/maintenance",
+    request_body = MaintenanceRecordDto,
+    responses(
+        (status = 200, description = "Maintenance recorded", body = EquipmentDto),
+        (status = 404, description = "Equipment not found", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "equipment",
+    security(("bearer_auth" = []))
+)]
+pub async fn record_maintenance(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+    dto: web::Json<MaintenanceRecordDto>,
+) -> Result<HttpResponse, ApiError> {
+    let equipment_id = *path;
+    tracing::info!(
+        "Recording maintenance for equipment {} in tenant: {}",
+        equipment_id,
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
+    let updated = state
+        .db
+        .equipment_repo()
+        .record_maintenance(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            equipment_id,
+            dto.0.hours,
+            dto.0.note,
+        )
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Equipment not found".into()))?;
+
+    Ok(HttpResponse::Ok().json(EquipmentDto::from(updated)))
 }

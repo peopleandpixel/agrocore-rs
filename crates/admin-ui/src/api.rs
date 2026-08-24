@@ -514,8 +514,29 @@ pub struct EquipmentDto {
     pub code: Option<String>,
     pub equipment_type: String,
     pub in_usage: bool,
+    pub is_active: bool,
+    pub maintenance_intervals: Option<Vec<MaintenanceIntervalDto>>,
+    pub next_maintenance_date: Option<String>,
+    pub last_maintenance_hours: Option<f64>,
     pub created_at: String,
     pub updated_at: String,
+}
+
+/// Maintenance interval configuration from the backend.
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct MaintenanceIntervalDto {
+    pub label: String,
+    pub interval_hours: Option<f64>,
+    pub interval_days: Option<u32>,
+}
+
+/// Equipment filter parameters for the search/filter endpoint.
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct EquipmentFilter {
+    pub search: Option<String>,
+    pub equipment_type: Option<String>,
+    pub in_usage: Option<bool>,
+    pub needs_maintenance: Option<bool>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -556,6 +577,62 @@ pub async fn fetch_sites() -> Result<PaginatedResponse<SiteDto>, String> {
 
 pub async fn fetch_equipment() -> Result<PaginatedResponse<EquipmentDto>, String> {
     get_json("/api/v1/equipments", true).await
+}
+
+/// Fetch equipment with search and filter query parameters.
+pub async fn fetch_equipment_filtered(
+    filter: &EquipmentFilter,
+) -> Result<PaginatedResponse<EquipmentDto>, String> {
+    let mut params: Vec<String> = Vec::new();
+    if let Some(ref search) = filter.search {
+        params.push(format!("search={}", js_sys::encode_uri_component(search)));
+    }
+    if let Some(ref eq_type) = filter.equipment_type {
+        params.push(format!("equipment_type={}", js_sys::encode_uri_component(eq_type)));
+    }
+    if let Some(in_usage) = filter.in_usage {
+        params.push(format!("in_usage={}", in_usage));
+    }
+    if let Some(needs_maint) = filter.needs_maintenance {
+        params.push(format!("needs_maintenance={}", needs_maint));
+    }
+    let query_string = if params.is_empty() {
+        String::new()
+    } else {
+        format!("?{}", params.join("&"))
+    };
+    get_json::<PaginatedResponse<EquipmentDto>>(&format!("/api/v1/equipments/search{}", query_string), true)
+        .await
+}
+
+/// Fetch equipment that needs maintenance (next_maintenance_date <= now).
+pub async fn fetch_maintenance_due() -> Result<PaginatedResponse<EquipmentDto>, String> {
+    get_json("/api/v1/equipments/maintenance", true).await
+}
+
+/// Record a maintenance event for equipment.
+pub async fn record_maintenance(
+    equipment_id: uuid::Uuid,
+    hours: f64,
+    note: Option<&str>,
+) -> Result<EquipmentDto, String> {
+    let body = serde_json::json!({
+        "hours": hours,
+        "note": note,
+    });
+    let url = api_url(&format!("/api/v1/equipments/{}/maintenance", equipment_id));
+    let req = Request::post(&url);
+    let req = with_auth(req);
+    let resp = req
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<EquipmentDto>().await.map_err(|e| e.to_string())
 }
 
 pub async fn fetch_orders() -> Result<PaginatedResponse<OrderDto>, String> {
