@@ -112,6 +112,14 @@ setup_step_company:
 site_created:
   en: Site created successfully
   de: Fläche erfolgreich erstellt
+  es: Recursos
+  fr: Ressources
+  pt: Recursos
+  it: Risorse
+  pl: Zasoby
+  ro: Resurse
+  uk: Ресурси
+  nl: Hulpbronnen
 site_deleted:
   en: Site deleted successfully
   de: Fläche erfolgreich gelöscht
@@ -156,17 +164,6 @@ order_deleted:
   ro: Comandă ștearsă cu succes
   uk: Замовлення успішно видалено
   nl: Order succesvol verwijderd
-site_created:
-  en: Resources
-  de: Ressourcen
-  es: Recursos
-  fr: Ressources
-  pt: Recursos
-  it: Risorse
-  pl: Zasoby
-  ro: Resurse
-  uk: Ресурси
-  nl: Hulpbronnen
 app_title:
   en: AgroCore Admin
   de: AgroCore Admin
@@ -4422,29 +4419,7 @@ import_button:
   uk: Імпорт
   nl: Importeren
 
-cancel:
-  en: Cancel
-  de: Abbrechen
-  es: Cancelar
-  fr: Annuler
-  pt: Cancelar
-  it: Annulla
-  pl: Anuluj
-  ro: Anulează
-  uk: Скасувати
-  nl: Annuleer
 
-close:
-  en: Close
-  de: Schließen
-  es: Cerrar
-  fr: Fermer
-  pt: Fechar
-  it: Chiudi
-  pl: Zamknij
-  ro: Închide
-  uk: Закрийте
-  nl: Sluiten
 
 import_in_progress:
   en: Import in progress...
@@ -4687,17 +4662,6 @@ search:
   uk: Пошук
   nl: Zoeken
 
-type:
-  en: Type
-  de: Typ
-  es: Tipo
-  fr: Type
-  pt: Tipo
-  it: Tipo
-  pl: Typ
-  ro: Tip
-  uk: Тип
-  nl: Type
 
 all_types:
   en: All Types
@@ -4842,6 +4806,61 @@ note:
   ro: Notă
   uk: Примітка
   nl: Notitie
+performed_at:
+  en: Performed At
+  de: Durchgeführt am
+  es: Fecha de realización
+  fr: Effectué le
+  pt: Realizado em
+  it: Eseguito il
+  pl: Wykonano
+  ro: Efectuat pe
+  uk: Виконано
+  nl: Uitgevoerd op
+total_cost:
+  en: Total Cost (EUR)
+  de: Gesamtkosten (EUR)
+  es: Costo Total (EUR)
+  fr: Coût Total (EUR)
+  pt: Custo Total (EUR)
+  it: Costo Totale (EUR)
+  pl: Całkowity Koszt (EUR)
+  ro: Cost Total (EUR)
+  uk: Всього Витрат (EUR)
+  nl: Totale Kosten (EUR)
+none:
+  en: None
+  de: Keine
+  es: Ninguno
+  fr: Aucun
+  pt: Nenhum
+  it: Nessuno
+  pl: Brak
+  ro: Niciunul
+  uk: Жодного
+  nl: Geen
+yes:
+  en: Yes
+  de: Ja
+  es: Sí
+  fr: Oui
+  pt: Sim
+  it: Sì
+  pl: Tak
+  ro: Da
+  uk: Так
+  nl: Ja
+no:
+  en: No
+  de: Nein
+  es: No
+  fr: Non
+  pt: Não
+  it: No
+  pl: Nie
+  ro: Nu
+  uk: Ні
+  nl: Nee
 
 equipment_detail:
   en: Equipment Detail
@@ -4953,5 +4972,71 @@ days:
   ro: Zile
   uk: Дні
   nl: Dagen
+cost_summary:
+  en: Maintenance Cost Summary
+  de: Wartungskosten-Übersicht
+  es: Resumen de Costos de Mantenimiento
+  fr: Résumé des Coûts de Maintenance
+  pt: Resumo de Custos de Manutenção
+  it: Riepilogo Costi Manutenzione
+  pl: Podsumowanie Kosztów Konserwacji
+  ro: Rezumat Costuri Întreținere
+  uk: Підсумок Витрат на Техобслуговування
+  nl: Onderhoudskostenoverzicht
+parts_cost:
+  en: Parts Cost (EUR)
+  de: Teilekosten (EUR)
+  es: Costo de Repuestos (EUR)
+  fr: Coût des Pièces (EUR)
+  pt: Custo de Peças (EUR)
+  it: Costo Pezzi (EUR)
+  pl: Koszt Części (EUR)
+  ro: Costul Piese (EUR)
+  uk: Витрати на Деталі (EUR)
+  nl: Onderdelijkosten (EUR)
+labor_hours:
+  en: Labor Hours
+  de: Arbeitsstunden
+  es: Horas de Trabajo
+  fr: Heures de Main-d'œuvre
+  pt: Horas de Trabalho
+  it: Ore di Lavoro
+  pl: Godziny Robocze
+  ro: Ore de Lucru
+  uk: Години Роботи
+  nl: Arbeidsuren
+downtime_hours:
+  en: Downtime (hours)
+  de: Ausfallzeit (Stunden)
+  es: Tiempo de Inactividad (horas)
+  fr: Temps d'Arrêt (heures)
+  pt: Tempo de Inatividade (horas)
+  it: Tempo di Inattività (ore)
+  pl: Czas Przestoju (godziny)
+  ro: Timp Indisponibilitate (ore)
+  uk: Час простою (години)
+  nl: Stillstandstijd (uren)
+total_maintenance_count:
+  en: Total Maintenance Actions
+  de: Wartungsaktionen gesamt
+  es: Acciones de Mantenimiento Totales
+  fr: Actions de Maintenance Totales
+  pt: Ações de Manutenção Total
+  it: Azioni di Manutenzione Totali
+  pl: Całkowita Liczba Konserwacji
+  ro: Acțiuni de Întreținere Totale
+  uk: Всього Дій Техобслуговування
+  nl: Totale Onderhoudsacties
+cost_summary_loading:
+  en: Loading cost summary...
+  de: Lade Kostenübersicht...
+  es: Cargando resumen de costos...
+  fr: Chargement du résumé des coûts...
+  pt: Carregando resumo de custos...
+  it: Caricamento riepilogo costi...
+  pl: Ładowanie podsumowania kosztów...
+  ro: Încărcare rezumat costuri...
+  uk: Завантаження підсумку витрат...
+  nl: Kostenoverzicht laden...
 
 

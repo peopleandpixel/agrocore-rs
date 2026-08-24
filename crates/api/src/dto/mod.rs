@@ -5,6 +5,7 @@ pub mod common;
 pub mod compliance;
 pub mod customer;
 pub mod equipment;
+pub use equipment::{MaintenanceCostSummaryDto, MaintenanceLogDto, MaintenanceRecordDto};
 pub mod finance;
 pub mod harvest;
 pub mod import;

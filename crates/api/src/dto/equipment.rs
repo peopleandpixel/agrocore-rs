@@ -99,6 +99,12 @@ pub struct MaintenanceRecordDto {
     #[validate(range(min = 0.0))]
     pub hours: f64,
     pub note: Option<String>,
+    #[validate(range(min = 0.0))]
+    pub parts_cost: Option<f64>,
+    #[validate(range(min = 0.0))]
+    pub labor_hours: Option<f64>,
+    #[validate(range(min = 0.0))]
+    pub downtime_hours: Option<f64>,
 }
 
 /// Maintenance log entry — one row per maintenance action.
@@ -111,6 +117,20 @@ pub struct MaintenanceLogDto {
     pub note: Option<String>,
     pub performed_at: DateTime<Utc>,
     pub created_at: DateTime<Utc>,
+    pub parts_cost: f64,
+    pub labor_hours: f64,
+    pub downtime_hours: f64,
+}
+
+/// Aggregated maintenance cost summary.
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct MaintenanceCostSummaryDto {
+    pub equipment_id: Uuid,
+    pub total_parts_cost: f64,
+    pub total_labor_hours: f64,
+    pub total_downtime_hours: f64,
+    pub total_maintenance_count: i64,
+    pub total_cost: f64,
 }
 
 /// Query parameters for filtering equipment list.

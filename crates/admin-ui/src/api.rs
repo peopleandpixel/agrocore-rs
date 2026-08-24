@@ -377,6 +377,29 @@ pub struct AuthResponse {
     pub roles: Vec<String>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct MaintenanceLogDto {
+    pub id: uuid::Uuid,
+    pub equipment_id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub hours: f64,
+    pub note: Option<String>,
+    pub performed_at: String,
+    pub parts_cost: f64,
+    pub labor_hours: f64,
+    pub downtime_hours: f64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct MaintenanceCostSummaryDto {
+    pub equipment_id: uuid::Uuid,
+    pub total_parts_cost: f64,
+    pub total_labor_hours: f64,
+    pub total_downtime_hours: f64,
+    pub total_maintenance_count: i64,
+    pub total_cost: f64,
+}
+
 pub async fn login(req: LoginRequest) -> Result<AuthResponse, String> {
     post_json("/api/v1/auth/login", &req, false).await
 }
@@ -640,22 +663,21 @@ pub async fn record_maintenance(
     resp.json::<EquipmentDto>().await.map_err(|e| e.to_string())
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct MaintenanceLogDto {
-    pub id: uuid::Uuid,
-    pub equipment_id: uuid::Uuid,
-    pub tenant_id: uuid::Uuid,
-    pub hours: f64,
-    pub note: Option<String>,
-    pub performed_at: String,
-    pub created_at: String,
-}
-
 /// Fetch maintenance history for a specific equipment.
 pub async fn fetch_equipment_maintenance_log(
     equipment_id: uuid::Uuid,
 ) -> Result<Vec<MaintenanceLogDto>, String> {
     get_json(&format!("/api/v1/equipments/{}/maintenance", equipment_id), true).await
+}
+
+pub async fn fetch_maintenance_cost_summary(
+    equipment_id: uuid::Uuid,
+) -> Result<MaintenanceCostSummaryDto, String> {
+    get_json(
+        &format!("/api/v1/equipments/{}/maintenance-cost-summary", equipment_id),
+        true,
+    )
+    .await
 }
 
 pub async fn fetch_orders() -> Result<PaginatedResponse<OrderDto>, String> {

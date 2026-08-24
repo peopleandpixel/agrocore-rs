@@ -1,4 +1,4 @@
-use crate::entities::equipment::MaintenanceLogDto;
+use crate::entities::equipment::{MaintenanceCostSummaryDto, MaintenanceLogDto};
 use crate::entities::tenant::TenantId;
 pub use agrocore_shared::{PaginatedResponse, Pagination, Result};
 use serde::Serialize;
@@ -97,6 +97,21 @@ pub trait EquipmentRepository: Send + Sync {
         hours: f64,
         note: Option<String>,
     ) -> RepositoryFuture<Option<Equipment>>;
+    /// Get aggregated maintenance cost summary for an equipment
+    fn get_maintenance_cost_summary(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+    ) -> RepositoryFuture<Option<MaintenanceCostSummaryDto>>;
+    /// Update a maintenance log entry with cost details
+    fn update_maintenance_costs(
+        &self,
+        tid: TenantId,
+        log_id: Uuid,
+        parts_cost: f64,
+        labor_hours: f64,
+        downtime_hours: f64,
+    ) -> RepositoryFuture<bool>;
 }
 
 #[cfg_attr(feature = "mocks", automock)]

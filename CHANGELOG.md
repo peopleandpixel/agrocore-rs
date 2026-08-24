@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.7] - 2026-08-24
+
+### Added
+- **Equipment Maintenance Cost Tracking (Backend + Admin UI)**
+  - Migration `20260824_001_add_equipment_maintenance_costs.sql`: adds `parts_cost`, `labor_hours`, `downtime_hours` columns to `equipment_maintenance_log` table (+ indexes for performance)
+  - `MaintenanceCostSummaryDto` domain entity — aggregated cost summary (total_parts_cost, total_labor_hours, total_downtime_hours, total_cost, total_maintenance_count)
+  - `EquipmentRepository::get_maintenance_cost_summary()` trait method — aggregates cost data via SQL SUM/COALESCE
+  - `EquipmentRepository::update_maintenance_costs()` trait method — updates parts_cost, labor_hours, downtime_hours on a specific log entry
+  - `MaintenanceLogDto` extended with cost fields (parts_cost, labor_hours, downtime_hours)
+  - `GET /api/v1/equipments/{id}/maintenance-cost-summary` endpoint — returns aggregated cost summary for an equipment
+  - `PUT /api/v1/equipment-maintenance/{log_id}/costs` endpoint — updates maintenance cost fields on a specific log entry
+  - Admin UI: Maintenance Cost Summary card in `EquipmentDetailPage` with 4-column grid (Parts Cost, Labor Hours, Downtime, Total Cost) + total maintenance count
+  - Admin UI: Maintenance log table now displays Parts Cost, Labor Hours, Downtime columns alongside Hours/Note
+  - `on_record` handler now refreshes cost summary alongside equipment + maintenance log
+  - New i18n keys: `cost_summary`, `parts_cost`, `labor_hours`, `downtime_hours`, `total_cost`, `cost_summary_loading`, `total_maintenance_count`, `performed_at`, `none`, `yes`, `no`
+
+### Changed
+- Version bump: 0.9.6 → 0.9.7
+
 ## [0.9.6] - 2026-08-24
 
 ### Added

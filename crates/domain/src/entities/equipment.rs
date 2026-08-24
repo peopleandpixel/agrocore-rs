@@ -77,8 +77,22 @@ pub struct MaintenanceLogDto {
     pub id: Uuid,
     pub equipment_id: Uuid,
     pub tenant_id: TenantId,
-    pub hours: Option<i32>,
+    pub hours: Option<f64>,
     pub note: Option<String>,
     pub performed_at: DateTime<Utc>,
     pub created_at: DateTime<Utc>,
+    pub parts_cost: Option<f64>,
+    pub labor_hours: Option<f64>,
+    pub downtime_hours: Option<f64>,
+}
+
+/// Aggregated maintenance cost summary for an equipment.
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct MaintenanceCostSummaryDto {
+    pub equipment_id: Uuid,
+    pub total_parts_cost: f64,
+    pub total_labor_hours: f64,
+    pub total_downtime_hours: f64,
+    pub total_maintenance_count: i64,
+    pub total_cost: f64,
 }

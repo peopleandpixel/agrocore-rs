@@ -6,8 +6,8 @@ use leptos::task::spawn_local;
 use leptos_icons::Icon;
 use icondata::{LuArrowLeft, LuSave};
 
-/// EquipmentDetailPage — shows detailed equipment info, maintenance history,
-/// and a form to record new maintenance.
+/// EquipmentDetailPage - shows detailed equipment info, maintenance history,
+/// cost summary, and a form to record new maintenance.
 #[component]
 pub fn EquipmentDetailPage() -> impl IntoView {
     let t = i18n::use_i18n();
@@ -22,6 +22,8 @@ pub fn EquipmentDetailPage() -> impl IntoView {
     let (error, set_error) = signal(None::<String>);
     let (success, set_success) = signal(None::<String>);
     let (maintenance_log, set_maintenance_log) = signal(Vec::<api::MaintenanceLogDto>::new());
+    let (cost_summary, set_cost_summary) = signal(None::<api::MaintenanceCostSummaryDto>);
+    let (cost_loading, set_cost_loading) = signal(true);
     let (hours_input, set_hours_input) = signal(String::new());
     let (note_input, set_note_input) = signal(String::new());
 
@@ -54,6 +56,23 @@ pub fn EquipmentDetailPage() -> impl IntoView {
         });
     });
 
+    // Load maintenance cost summary
+    Effect::new(move |_| {
+        let id = eid;
+        spawn_local(async move {
+            match api::fetch_maintenance_cost_summary(id).await {
+                Ok(summary) => {
+                    set_cost_summary.set(Some(summary));
+                    set_cost_loading.set(false);
+                }
+                Err(e) => {
+                    set_error.set(Some(format!("Failed to load cost summary: {}", e)));
+                    set_cost_loading.set(false);
+                }
+            }
+        });
+    });
+
     let on_record = move |_: MouseEvent| {
         let id = eid;
         let hours: f64 = hours_input.get().parse().unwrap_or(0.0);
@@ -72,6 +91,10 @@ pub fn EquipmentDetailPage() -> impl IntoView {
                     }
                     match api::fetch_equipment_maintenance_log(id).await {
                         Ok(log) => set_maintenance_log.set(log),
+                        Err(e) => set_error.set(Some(e)),
+                    }
+                    match api::fetch_maintenance_cost_summary(id).await {
+                        Ok(summary) => set_cost_summary.set(Some(summary)),
                         Err(e) => set_error.set(Some(e)),
                     }
                 }
@@ -113,6 +136,45 @@ pub fn EquipmentDetailPage() -> impl IntoView {
                     (false, false, None, Some(eq)) => {
                         view! {
                             <EquipmentDetailView equipment=eq />
+
+                            <Show when=move || cost_summary.get().is_some() || !cost_loading.get()>
+                                {move || {
+                                    match (cost_loading.get(), cost_summary.get()) {
+                                        (true, _) => view! {
+                                            <div class="card p-6 mt-6">
+                                                <h2 class="text-xl font-semibold mb-4">{crate::t!(t, "cost_summary")}</h2>
+                                                <p>{crate::t!(t, "cost_summary_loading")}</p>
+                                            </div>
+                                        }.into_any(),
+                                        (false, Some(summary)) => view! {
+                                            <div class="card p-6 mt-6">
+                                                <h2 class="text-xl font-semibold mb-4">{crate::t!(t, "cost_summary")}</h2>
+                                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                    <div>
+                                                        <span class="text-2xl font-bold">{"EUR "}{format!("{:.2}", summary.total_parts_cost)}</span>
+                                                        <p class="text-sm text-gray-500">{crate::t!(t, "parts_cost")}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span class="text-2xl font-bold">{format!("{:.1}", summary.total_labor_hours)}</span>
+                                                        <p class="text-sm text-gray-500">{crate::t!(t, "labor_hours")}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span class="text-2xl font-bold">{format!("{:.1}", summary.total_downtime_hours)}</span>
+                                                        <p class="text-sm text-gray-500">{crate::t!(t, "downtime_hours")}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span class="text-2xl font-bold">{"EUR "}{format!("{:.2}", summary.total_cost)}</span>
+                                                        <p class="text-sm text-gray-500">{crate::t!(t, "total_cost")}</p>
+                                                    </div>
+                                                </div>
+                                                <p class="text-sm text-gray-500 mt-2">{move || (crate::t!(t, "total_maintenance_count"))().to_string()}: {summary.total_maintenance_count}</p>
+                                            </div>
+                                        }.into_any(),
+                                        (false, None) => ().into_any(),
+                                    }
+                                }}
+                            </Show>
+
                             <div class="mt-8">
                                 <h2 class="text-xl font-semibold mb-4">{crate::t!(t, "maintenance_history")}</h2>
 
@@ -130,6 +192,9 @@ pub fn EquipmentDetailPage() -> impl IntoView {
                                                     <tr>
                                                         <th>{crate::t!(t, "performed_at")}</th>
                                                         <th>{crate::t!(t, "hours")}</th>
+                                                        <th>{crate::t!(t, "parts_cost")}</th>
+                                                        <th>{crate::t!(t, "labor_hours")}</th>
+                                                        <th>{crate::t!(t, "downtime_hours")}</th>
                                                         <th>{crate::t!(t, "note")}</th>
                                                     </tr>
                                                 </thead>
@@ -137,11 +202,17 @@ pub fn EquipmentDetailPage() -> impl IntoView {
                                                     {move || log_clone.iter().map(|entry| {
                                                         let performed_at = entry.performed_at.clone();
                                                         let hours_val = entry.hours;
+                                                        let parts = format!("{:.2}", entry.parts_cost);
+                                                        let labor = format!("{:.1}", entry.labor_hours);
+                                                        let downtime = format!("{:.1}", entry.downtime_hours);
                                                         let note_val = entry.note.clone().unwrap_or_default();
                                                         view! {
                                                             <tr>
                                                                 <td>{performed_at}</td>
                                                                 <td>{hours_val.to_string()}</td>
+                                                                <td>{parts}</td>
+                                                                <td>{labor}</td>
+                                                                <td>{downtime}</td>
                                                                 <td>{note_val}</td>
                                                             </tr>
                                                         }

@@ -4,3 +4,10 @@
 
 [env]
 SQLX_OFFLINE = "true"
+
+# Force edition 2024 for all rustc/clippy invocations on WASM targets.
+# This prevents false-positive "async move blocks are only allowed in Rust 2018 or later"
+# lint errors in cargo clippy for the admin-ui (WASM) crate, where clippy
+# incorrectly detects edition 2015 despite `edition = "2024"` in Cargo.toml.
+[target.wasm32-unknown-unknown]
+rustflags = ["--edition", "2024"]

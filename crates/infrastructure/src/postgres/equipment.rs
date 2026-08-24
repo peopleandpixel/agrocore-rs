@@ -1,5 +1,5 @@
 use agrocore_domain::entities::equipment::{
-    CreateEquipmentDto, Equipment, MaintenanceLogDto, UpdateEquipmentDto,
+    CreateEquipmentDto, Equipment, MaintenanceCostSummaryDto, MaintenanceLogDto, UpdateEquipmentDto,
 };
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::UserRole;
@@ -578,7 +578,8 @@ impl EquipmentRepository for PgEquipmentRepo {
         Box::pin(async move {
             sqlx::query_as::<_, MaintenanceLogDto>(
                 r#"
-                SELECT id, equipment_id, tenant_id, hours, note, performed_at, created_at
+                SELECT id, equipment_id, tenant_id, hours, note, performed_at, created_at,
+                       parts_cost, labor_hours, downtime_hours
                 FROM equipment_maintenance_log
                 WHERE equipment_id = $1 AND tenant_id = $2
                 ORDER BY performed_at DESC
@@ -589,6 +590,64 @@ impl EquipmentRepository for PgEquipmentRepo {
             .fetch_all(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
+        })
+    }
+
+    fn get_maintenance_cost_summary(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+    ) -> RepositoryFuture<Option<MaintenanceCostSummaryDto>> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query_as::<_, MaintenanceCostSummaryDto>(
+                r#"
+                SELECT
+                    $1::uuid as equipment_id,
+                    COALESCE(SUM(parts_cost), 0.0) as total_parts_cost,
+                    COALESCE(SUM(labor_hours), 0.0) as total_labor_hours,
+                    COALESCE(SUM(downtime_hours), 0.0) as total_downtime_hours,
+                    COUNT(*) as total_maintenance_count,
+                    COALESCE(SUM(parts_cost), 0.0) as total_cost
+                FROM equipment_maintenance_log
+                WHERE equipment_id = $1 AND tenant_id = $2
+                "#,
+            )
+            .bind(id)
+            .bind(tid)
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
+        })
+    }
+
+    fn update_maintenance_costs(
+        &self,
+        tid: TenantId,
+        log_id: Uuid,
+        parts_cost: f64,
+        labor_hours: f64,
+        downtime_hours: f64,
+    ) -> RepositoryFuture<bool> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            let rows = sqlx::query(
+                r#"
+                UPDATE equipment_maintenance_log
+                SET parts_cost = $3::numeric, labor_hours = $4::numeric, downtime_hours = $5::numeric
+                WHERE id = $1 AND tenant_id = $2
+                "#,
+            )
+            .bind(log_id)
+            .bind(tid)
+            .bind(parts_cost)
+            .bind(labor_hours)
+            .bind(downtime_hours)
+            .execute(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            Ok(rows.rows_affected() > 0)
         })
     }
 }

@@ -144,6 +144,10 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route(web::delete().to(equipment::delete_equipment)),
             )
             .service(
+                web::resource("/equipments/{id}/maintenance-cost-summary")
+                    .route(web::get().to(equipment::get_maintenance_cost_summary)),
+            )
+            .service(
                 web::resource("/equipments/{id}/maintenance")
                     .route(web::post().to(equipment::record_maintenance))
                     .route(web::get().to(equipment::get_equipment_maintenance_log)),

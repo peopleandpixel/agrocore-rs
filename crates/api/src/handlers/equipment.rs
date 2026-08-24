@@ -1,7 +1,8 @@
 use crate::AppState;
 use crate::dto::{
-    CreateEquipmentDto, EquipmentDto, EquipmentFilterDto, MaintenanceLogDto, MaintenanceRecordDto,
-    ErrorResponse, PaginatedEquipmentResponse, PaginatedResponseDto, UpdateEquipmentDto,
+    CreateEquipmentDto, EquipmentDto, EquipmentFilterDto, MaintenanceCostSummaryDto, MaintenanceLogDto,
+    MaintenanceRecordDto, ErrorResponse, PaginatedEquipmentResponse, PaginatedResponseDto,
+    UpdateEquipmentDto,
 };
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
@@ -344,4 +345,34 @@ pub async fn get_equipment_maintenance_log(
         )
         .await?;
     Ok(HttpResponse::Ok().json(log))
+}
+
+/// Get maintenance cost summary for a specific equipment.
+#[utoipa::path(
+    get,
+    path = "/api/v1/equipments/{id}/maintenance-cost-summary",
+    responses(
+        (status = 200, description = "Maintenance cost summary", body = MaintenanceCostSummaryDto),
+        (status = 404, description = "Equipment not found", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "equipment",
+    security(("bearer_auth" = []))
+)]
+pub async fn get_maintenance_cost_summary(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let equipment_id = *path;
+    let summary = state
+        .db
+        .equipment_repo()
+        .get_maintenance_cost_summary(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            equipment_id,
+        )
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Equipment not found".into()))?;
+    Ok(HttpResponse::Ok().json(summary))
 }
