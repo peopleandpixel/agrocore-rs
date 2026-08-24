@@ -1,3 +1,4 @@
+use crate::entities::equipment::MaintenanceLogDto;
 use crate::entities::tenant::TenantId;
 pub use agrocore_shared::{PaginatedResponse, Pagination, Result};
 use serde::Serialize;
@@ -76,6 +77,12 @@ pub trait EquipmentRepository: Send + Sync {
         by: Uuid,
     ) -> RepositoryFuture<Option<Equipment>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+    /// Get maintenance log entries for an equipment, newest first.
+    fn get_maintenance_log(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+    ) -> RepositoryFuture<Vec<MaintenanceLogDto>>;
     /// Find all equipment that needs maintenance (next_maintenance_date <= now)
     fn find_maintenance_due(
         &self,

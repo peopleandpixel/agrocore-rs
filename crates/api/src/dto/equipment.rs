@@ -101,6 +101,18 @@ pub struct MaintenanceRecordDto {
     pub note: Option<String>,
 }
 
+/// Maintenance log entry — one row per maintenance action.
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct MaintenanceLogDto {
+    pub id: Uuid,
+    pub equipment_id: Uuid,
+    pub tenant_id: Uuid,
+    pub hours: f64,
+    pub note: Option<String>,
+    pub performed_at: DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
+}
+
 /// Query parameters for filtering equipment list.
 #[derive(Debug, Deserialize, ToSchema, Default)]
 pub struct EquipmentFilterDto {

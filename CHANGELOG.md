@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.6] - 2026-08-24
+
+### Added
+- **Equipment Detail View (Backend + Admin UI)**
+  - `GET /api/v1/equipments/{id}/maintenance` — retrieves maintenance log history for a specific equipment
+  - `EquipmentRepository::get_maintenance_log()` trait method
+  - `MaintenanceLogDto` domain entity with id, equipment_id, tenant_id, hours, note, performed_at, created_at fields
+  - `MaintenanceLogDto` API DTO and `fetch_equipment_maintenance_log()` frontend API client
+  - `EquipmentDetailPage` component at route `/equipment/:id` — shows equipment details, maintenance history table, and record-maintenance form
+  - Navigation link from EquipmentManagement to EquipmentDetailPage
+  - New i18n keys: `equipment_detail`, `basic_info`, `maintenance_info`, `maintenance_history`, `no_maintenance_records`, `maintenance_recorded_success`, `invalid_equipment_id`, `equipment_not_found`, `maintenance_intervals`, `days`
+
+### Changed
+- Version bump: 0.9.5 → 0.9.6
+
 ## [0.9.5] - 2026-08-22
 
 ### Added

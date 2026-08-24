@@ -4,6 +4,7 @@ pub mod compliance;
 pub mod customers;
 pub mod dashboard;
 pub mod equipment;
+pub mod equipment_detail;
 pub mod error_boundary;
 pub mod finance;
 pub mod form;

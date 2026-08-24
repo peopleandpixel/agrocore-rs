@@ -1,4 +1,6 @@
-use agrocore_domain::entities::equipment::{CreateEquipmentDto, Equipment, UpdateEquipmentDto};
+use agrocore_domain::entities::equipment::{
+    CreateEquipmentDto, Equipment, MaintenanceLogDto, UpdateEquipmentDto,
+};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::UserRole;
 use agrocore_domain::repositories::{
@@ -564,6 +566,29 @@ impl EquipmentRepository for PgEquipmentRepo {
             tx.commit().await.map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(Some(updated))
+        })
+    }
+
+    fn get_maintenance_log(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+    ) -> RepositoryFuture<Vec<MaintenanceLogDto>> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query_as::<_, MaintenanceLogDto>(
+                r#"
+                SELECT id, equipment_id, tenant_id, hours, note, performed_at, created_at
+                FROM equipment_maintenance_log
+                WHERE equipment_id = $1 AND tenant_id = $2
+                ORDER BY performed_at DESC
+                "#,
+            )
+            .bind(id)
+            .bind(tid)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 }

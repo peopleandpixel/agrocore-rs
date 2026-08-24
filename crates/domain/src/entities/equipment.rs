@@ -70,3 +70,15 @@ impl Equipment {
 }
 
 impl VisibilityAwareEntity for Equipment {}
+
+/// Maintenance log entry — one row per maintenance action.
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct MaintenanceLogDto {
+    pub id: Uuid,
+    pub equipment_id: Uuid,
+    pub tenant_id: TenantId,
+    pub hours: Option<i32>,
+    pub note: Option<String>,
+    pub performed_at: DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
+}

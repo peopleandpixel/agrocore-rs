@@ -145,7 +145,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             )
             .service(
                 web::resource("/equipments/{id}/maintenance")
-                    .route(web::post().to(equipment::record_maintenance)),
+                    .route(web::post().to(equipment::record_maintenance))
+                    .route(web::get().to(equipment::get_equipment_maintenance_log)),
             )
             // Inventory routes
             .service(

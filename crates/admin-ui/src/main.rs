@@ -10,6 +10,7 @@ use crate::components::audit::AuditLogPage;
 use crate::components::compliance::CompliancePage;
 use crate::components::dashboard::DashboardView;
 use crate::components::equipment::EquipmentManagement;
+use crate::components::equipment_detail::EquipmentDetailPage;
 use crate::components::finance::FinanceManagement;
 use crate::components::import::DataImport;
 use crate::components::inventory::InventoryManagement;
@@ -211,6 +212,7 @@ fn AuthenticatedShell(
                             <Route path=path!("/weather") view=|| view! { <WeatherManagement /> } />
                             <Route path=path!("/finance") view=|| view! { <FinanceManagement /> } />
                             <Route path=path!("/equipment") view=|| view! { <EquipmentManagement /> } />
+                            <Route path=path!("/equipment/:id") view=|| view! { <EquipmentDetailPage /> } />
                             <Route path=path!("/inventory") view=|| view! { <InventoryManagement /> } />
                             <Route path=path!("/analytics") view=|| view! { <AnalyticsPage /> } />
                             <Route path=path!("/audit") view=|| view! { <AuditLogPage /> } />

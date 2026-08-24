@@ -4843,4 +4843,115 @@ note:
   uk: Примітка
   nl: Notitie
 
+equipment_detail:
+  en: Equipment Detail
+  de: Gerät-Details
+  es: Detalles del Equipo
+  fr: Détails de l'équipement
+  pt: Detalhes do Equipamento
+  it: Dettagli dell'Attrezzatura
+  pl: Szczegóły Sprzętu
+  ro: Detalii Echipament
+  uk: Деталі Обладнання
+  nl: Apparatuurdetails
+basic_info:
+  en: Basic Information
+  de: Grunddaten
+  es: Información Básica
+  fr: Informations de Base
+  pt: Informação Básica
+  it: Informazioni Base
+  pl: Informacje Podstawowe
+  ro: Informații de Bază
+  uk: Базова Інформація
+  nl: Basisinformatie
+maintenance_info:
+  en: Maintenance Information
+  de: Wartungsinformationen
+  es: Información de Mantenimiento
+  fr: Informations de Maintenance
+  pt: Informação de Manutenção
+  it: Informazioni Manutenzione
+  pl: Informacje o Konserwacji
+  ro: Informații de Întreținere
+  uk: Інформація про Технічне Обслуговування
+  nl: Onderhoudsinformatie
+maintenance_history:
+  en: Maintenance History
+  de: Wartungshistorie
+  es: Historial de Mantenimiento
+  fr: Historique de Maintenance
+  pt: Histórico de Manutenção
+  it: Cronologia Manutenzione
+  pl: Historia Konserwacji
+  ro: Istoric Întreținere
+  uk: Історія Технічного Обслуговування
+  nl: Onderhoudshistorie
+no_maintenance_records:
+  en: No maintenance records found
+  de: Keine Wartungseinträge gefunden
+  es: No se encontraron registros de mantenimiento
+  fr: Aucun enregistrement de maintenance trouvé
+  pt: Nenhum registro de manutenção encontrado
+  it: Nessun record di manutenzione trovato
+  pl: Nie znaleziono rekordów konserwacyjnych
+  ro: Nu au fost găsite înregistrări de întreținere
+  uk: Жодних записів про технічне обслуговування не знайдено
+  nl: Geen onderhoudsgegevens gevonden
+maintenance_recorded_success:
+  en: Maintenance recorded successfully
+  de: Wartung erfolgreich aufgezeichnet
+  es: Mantenimiento registrado con éxito
+  fr: Maintenance enregistrée avec succès
+  pt: Manutenção registrada com sucesso
+  it: Manutenzione registrata con successo
+  pl: Konserwacja została nastawiona pomyślnie
+  ro: Întreținere înregistrată cu succes
+  uk: Технічне обслуговування успішно записано
+  nl: Onderhoud succesvol vastgelegd
+invalid_equipment_id:
+  en: Invalid equipment ID
+  de: Ungültige Geräte-ID
+  es: ID de equipo inválido
+  fr: ID d'équipement invalide
+  pt: ID de equipamento inválido
+  it: ID equipaggiamento non valido
+  pl: Nieprawidłowy identyfikator sprzętu
+  ro: ID echipament invalid
+  uk: Невірний ідентифікатор обладнання
+  nl: Ongeldige apparatuur-ID
+equipment_not_found:
+  en: Equipment not found
+  de: Gerät nicht gefunden
+  es: Equipo no encontrado
+  fr: Équipement non trouvé
+  pt: Equipamento não encontrado
+  it: Attrezzatura non trovata
+  pl: Nie znaleziono sprzętu
+  ro: Echipament negasit
+  uk: Оборудування не знайдено
+  nl: Apparatuur niet gevonden
+maintenance_intervals:
+  en: Maintenance Intervals
+  de: Wartungsintervalle
+  es: Intervalos de Mantenimiento
+  fr: Intervalles de Maintenance
+  pt: Intervalos de Manutenção
+  it: Intervalli di Manutenzione
+  pl: Interwały Konserwacyjne
+  ro: Intervale de Întreținere
+  uk: інтервали технічного обслуговування
+  nl: Onderhoudsintervallen
+days:
+  en: Days
+  de: Tage
+  es: Días
+  fr: Jours
+  pt: Dias
+  it: Giorni
+  pl: Dni
+  ro: Zile
+  uk: Дні
+  nl: Dagen
+
 

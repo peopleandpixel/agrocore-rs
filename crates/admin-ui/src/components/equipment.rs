@@ -244,7 +244,7 @@ pub fn EquipmentManagement() -> impl IntoView {
 
                                     view! {
                                         <tr>
-                                            <td>{e_label.clone()}</td>
+                                            <td><a href=move || format!("/equipment/{}", e.id) class="link">{e_label.clone()}</a></td>
                                             <td>{move || t(&format!("equipment_type_{}", e_type))}</td>
                                             <td>{if is_active { t("active") } else { t("inactive") }}</td>
                                             <td>{format!("{:.1}", usage_hours)}</td>

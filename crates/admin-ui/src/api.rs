@@ -579,6 +579,11 @@ pub async fn fetch_equipment() -> Result<PaginatedResponse<EquipmentDto>, String
     get_json("/api/v1/equipments", true).await
 }
 
+/// Fetch a single equipment by ID — used by equipment detail pages
+pub async fn fetch_equipment_by_id(id: uuid::Uuid) -> Result<EquipmentDto, String> {
+    get_json(&format!("/api/v1/equipments/{}", id), true).await
+}
+
 /// Fetch equipment with search and filter query parameters.
 pub async fn fetch_equipment_filtered(
     filter: &EquipmentFilter,
@@ -633,6 +638,24 @@ pub async fn record_maintenance(
         return Err(format!("Error: {}", resp.status()));
     }
     resp.json::<EquipmentDto>().await.map_err(|e| e.to_string())
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct MaintenanceLogDto {
+    pub id: uuid::Uuid,
+    pub equipment_id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub hours: f64,
+    pub note: Option<String>,
+    pub performed_at: String,
+    pub created_at: String,
+}
+
+/// Fetch maintenance history for a specific equipment.
+pub async fn fetch_equipment_maintenance_log(
+    equipment_id: uuid::Uuid,
+) -> Result<Vec<MaintenanceLogDto>, String> {
+    get_json(&format!("/api/v1/equipments/{}/maintenance", equipment_id), true).await
 }
 
 pub async fn fetch_orders() -> Result<PaginatedResponse<OrderDto>, String> {
