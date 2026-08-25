@@ -28,6 +28,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ProcessManager` for managing dev services
   - Scripts: `scripts/dev.sh` and `scripts/server.sh`
 
+- **Dashboard Updates**
+  - Added sparkline graphs (Unicode block chars: ▁▂▃▄▅▆▇█) for CPU and memory history in System panel
+  - Added Service Control menu (press 's'): restart PostgreSQL (r), NATS (n), MQTT (m), Redis (i), restart all (a), stop all (x)
+  - Added 3 more service checks: Redis (6379), API (8080), Admin UI (80) to Services panel
+  - Color-coded service status: green (up), red (down)
+  - Fixed `restart_service` thread escape: `service: &str` cloned to `String` for `move` closure
+  - Added `docker-compose.dev.yml` with all 6 services (postgres, nats, mqtt, redis, api, admin-ui)
+  - Updated `dev.sh` to start all services + wait 5s for boot
+  - Updated `server.sh` to use dev compose and include Redis/MQTT
+  - Dockerfile.api: rust 1.82 → 1.85 for edition2024 support
+
 ### Fixed
 - `returning the result of a let binding` in `crates/infrastructure/src/postgres/equipment.rs` `get_depreciation_schedule` — replaced `let dep = ...; dep` with inline expression
 - Depreciation schedule table field names: corrected `annual_depreciation_amount` → `depreciation_amount` to match `DepreciationScheduleEntry` DTO
