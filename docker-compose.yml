@@ -32,7 +32,7 @@ services:
       - mqtt_data:/mosquitto/data
       - mqtt_logs:/mosquitto/log
     healthcheck:
-      test: ["CMD", "mosquitto_sub", "-t", "$SYS/broker/version", "-C", "1", "-i", "healthcheck", "-W", "5"]
+      test: ["CMD", "mosquitto_sub", "-h", "127.0.0.1", "-t", "$SYS/broker/version", "-C", "1", "-i", "healthcheck", "-W", "5"]
       interval: 30s
       timeout: 10s
       retries: 3

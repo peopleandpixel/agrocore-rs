@@ -20,14 +20,30 @@ echo -e "${YELLOW}Starting all services...${NC}"
 
 # Start all Docker services
 if command -v docker &>/dev/null && docker compose version &>/dev/null 2>&1; then
-    echo -e "${BLUE}  🐳 Starting PostgreSQL, NATS, MQTT, Redis, API, Admin UI via docker-compose...${NC}"
-    docker compose -f docker-compose.dev.yml up -d 2>/dev/null || true
+    echo -e "${YELLOW}  Stopping existing dev containers...${NC}"
+    docker compose -f docker-compose.dev.yml stop 2>/dev/null || true
+    docker compose -f docker-compose.dev.yml rm -f 2>/dev/null || true
+
+    echo -e "${BLUE}  🐳 Starting PostgreSQL, NATS, MQTT, Redis via docker-compose...${NC}"
+    docker compose -f docker-compose.dev.yml up -d postgres nats mqtt redis 2>/dev/null || true
+
+    echo -e "${YELLOW}  ⏳ Waiting for infra services (5s)...${NC}"
+    sleep 5
+
+    echo -e "${BLUE}  🐳 Starting API server...${NC}"
+    docker compose -f docker-compose.dev.yml up -d api 2>/dev/null || true
+
+    echo -e "${YELLOW}  ⏳ Waiting for API (5s)...${NC}"
+    sleep 5
+
+    echo -e "${BLUE}  🐳 Starting Admin UI...${NC}"
+    docker compose -f docker-compose.dev.yml up -d admin-ui 2>/dev/null || true
+
+    echo -e "${YELLOW}  ⏳ Waiting for Admin UI (5s)...${NC}"
+    sleep 5
 else
     echo -e "${YELLOW}  ⚠️  Docker not available — relying on local services${NC}"
 fi
-
-# Give services a moment to boot
-sleep 5
 
 # Build everything
 echo -e "${YELLOW}Building all crates...${NC}"

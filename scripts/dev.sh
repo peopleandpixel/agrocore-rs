@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # dev.sh — Start development environment with live dashboard
-# Starts PostgreSQL, NATS, MQTT, Redis, and Admin UI, then launches the Ratatui dashboard.
+# Starts PostgreSQL, NATS, MQTT, Redis, API, and Admin UI, then launches the Ratatui dashboard.
 # The dashboard polls services every 2s and shows build/git/system status.
 #
 # Usage: ./scripts/dev.sh
@@ -18,136 +18,41 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}🚀 AgroCore Dev Environment${NC}"
 echo -e "${YELLOW}Starting infrastructure...${NC}"
 
-# Create docker-compose.dev.yml if it doesn't exist
-if [ ! -f docker-compose.dev.yml ]; then
-    echo -e "${YELLOW}  Creating docker-compose.dev.yml...${NC}"
-    cat > docker-compose.dev.yml << 'DEVDC'
-services:
-  postgres:
-    image: postgis/postgis:16-3.4
-    container_name: agrocore-postgres
-    environment:
-      POSTGRES_DB: agrocore
-      POSTGRES_USER: agrocore
-      POSTGRES_PASSWORD: agrocore
-    ports:
-      - "5432:5432"
-    volumes:
-      - dev_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agrocore -d agrocore"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  nats:
-    image: nats:2.10-alpine
-    container_name: agrocore-nats
-    ports:
-      - "4222:4222"
-    command: ["-js"]
-
-  mqtt:
-    image: eclipse-mosquitto:2.0
-    container_name: agrocore-mqtt
-    ports:
-      - "1883:1883"
-      - "9001:9001"
-    volumes:
-      - ./config/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
-      - dev_mqtt_data:/mosquitto/data
-      - dev_mqtt_logs:/mosquitto/log
-    healthcheck:
-      test: ["CMD", "mosquitto_sub", "-t", "$SYS/broker/version", "-C", "1", "-i", "healthcheck", "-W", "5"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  redis:
-    image: redis:7-alpine
-    container_name: agrocore-redis
-    ports:
-      - "6379:6379"
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes:
-      - dev_redis_data:/data
-
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
-    container_name: agrocore-api
-    environment:
-      DATABASE_URL: postgresql://agrocore:agrocore@postgres:5432/agrocore
-      MQTT_BROKER_HOST: mqtt
-      MQTT_BROKER_PORT: "1883"
-      MQTT_CLIENT_ID: agrocore-api
-      MQTT_TOPIC_PREFIX: agrocore
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET: dev-secret-change-in-production
-      RUST_LOG: info
-    ports:
-      - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      nats:
-        condition: service_started
-      mqtt:
-        condition: service_started
-      redis:
-        condition: service_started
-    volumes:
-      - ./config:/app/config:ro
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-
-  admin-ui:
-    build:
-      context: .
-      dockerfile: Dockerfile.admin-ui
-    container_name: agrocore-admin-ui
-    ports:
-      - "80:80"
-    depends_on:
-      api:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 10s
-
-volumes:
-  dev_postgres_data:
-  dev_mqtt_data:
-  dev_mqtt_logs:
-  dev_redis_data:
-
-networks:
-  default:
-    name: agrocore-dev-network
-DEVDC
-    echo -e "${GREEN}  ✅ docker-compose.dev.yml created${NC}"
-fi
-
 # Check if docker compose is available
 if command -v docker &>/dev/null && docker compose version &>/dev/null 2>&1; then
-    echo -e "${BLUE}  🐳 Starting PostgreSQL, NATS, MQTT, Redis, API, Admin UI via docker-compose...${NC}"
-    docker compose -f docker-compose.dev.yml up -d postgres nats mqtt redis api admin-ui 2>/dev/null || true
+    # Ensure docker-compose.dev.yml exists
+    if [ ! -f docker-compose.dev.yml ]; then
+        echo -e "${YELLOW}  ⚠️  docker-compose.dev.yml not found!${NC}"
+        exit 1
+    fi
+
+    # Stop any existing dev containers to avoid port conflicts
+    echo -e "${YELLOW}  Stopping existing dev containers...${NC}"
+    docker compose -f docker-compose.dev.yml stop 2>/dev/null || true
+    docker compose -f docker-compose.dev.yml rm -f 2>/dev/null || true
+
+    # Start services in dependency order
+    echo -e "${BLUE}  🐳 Starting PostgreSQL, NATS, MQTT, Redis via docker-compose...${NC}"
+    docker compose -f docker-compose.dev.yml up -d postgres nats mqtt redis 2>/dev/null || true
+
+    echo -e "${YELLOW}  ⏳ Waiting for infra services (5s)...${NC}"
+    sleep 5
+
+    echo -e "${BLUE}  🐳 Starting API server...${NC}"
+    docker compose -f docker-compose.dev.yml up -d api 2>/dev/null || true
+
+    echo -e "${YELLOW}  ⏳ Waiting for API (5s)...${NC}"
+    sleep 5
+
+    echo -e "${BLUE}  🐳 Starting Admin UI...${NC}"
+    docker compose -f docker-compose.dev.yml up -d admin-ui 2>/dev/null || true
+
+    echo -e "${YELLOW}  ⏳ Waiting for Admin UI (5s)...${NC}"
+    sleep 5
 else
     echo -e "${YELLOW}  ⚠️  Docker not available — relying on local services${NC}"
 fi
 
-# Wait for services to be ready
-echo -e "${YELLOW}  ⏳ Waiting for services to start...${NC}"
-sleep 5
 
 # Build dashboard binary (non-blocking if already built)
 echo -e "${YELLOW}Building dashboard...${NC}"
