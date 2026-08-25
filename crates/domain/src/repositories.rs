@@ -29,8 +29,8 @@ where
 }
 
 use crate::entities::equipment::{
-    CreateEquipmentDto, Equipment, FuelConsumptionDto, UpdateEquipmentDto, UsageLogDto,
-    UsageSummaryDto,
+    CreateEquipmentDto, DepreciationScheduleEntry, Equipment, EquipmentDepreciationDto,
+    FuelConsumptionDto, UpdateEquipmentDto, UsageLogDto, UsageSummaryDto,
 };
 use crate::entities::site::{CreateSiteDto, Site, UpdateSiteDto};
 use crate::entities::spatial::SpatialObject;
@@ -156,6 +156,18 @@ pub trait EquipmentRepository: Send + Sync {
         hours_operated: f64,
         note: Option<&str>,
     ) -> RepositoryFuture<Option<UsageLogDto>>;
+    /// Get aggregated depreciation info for an equipment.
+    fn get_depreciation(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+    ) -> RepositoryFuture<Option<EquipmentDepreciationDto>>;
+    /// Get the yearly depreciation schedule for an equipment.
+    fn get_depreciation_schedule(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+    ) -> RepositoryFuture<Vec<DepreciationScheduleEntry>>;
 }
 
 #[cfg_attr(feature = "mocks", automock)]

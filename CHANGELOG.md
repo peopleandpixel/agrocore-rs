@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.11] - 2026-08-24
+
+### Added
+- **Equipment Depreciation (Backend + Admin UI)**
+  - Migration `20260824_004_add_equipment_depreciation.sql`: creates `equipment_depreciation` table with `equipment_id`, `tenant_id`, `purchase_price`, `salvage_value`, `accumulated_depreciation`, `depreciation_method`, `useful_life_years`, `net_book_value`, and `created_at` columns
+  - `EquipmentDepreciationDto` and `DepreciationScheduleEntry` domain entities in `crates/domain/src/entities/equipment.rs`
+  - `DepreciationMethod` enum: `StraightLine` and `DoubleDeclining`
+  - `EquipmentRepository::get_depreciation()` — calculates net book value and accumulated depreciation
+  - `EquipmentRepository::get_depreciation_schedule()` — generates year-by-year depreciation schedule
+  - `GET /api/v1/equipments/{id}/depreciation` endpoint — returns depreciation summary
+  - `GET /api/v1/equipments/{id}/depreciation-schedule` endpoint — returns year-by-year schedule
+  - Admin UI: Depreciation section in `EquipmentDetailPage` with summary card (cost basis, salvage, accumulated, net book value) and schedule table (year, amount, accumulated, net book value)
+  - Admin UI: `fetch_depreciation()` and `fetch_depreciation_schedule()` API client functions
+  - New i18n keys: `depreciation`, `depreciation_loading`, `cost_basis`, `salvage_value`, `accumulated_depreciation`, `net_book_value`, `annual_depreciation`, `useful_life_years`, `depreciation_year`, `no_depreciation_records`
+
+- **Dashboard Crate (Ratatui TUI)**
+  - New `crates/dashboard/` crate: live TUI dashboard using ratatui 0.29 + crossterm 0.29
+  - Four-panel layout: Services (PostgreSQL, NATS, MQTT port checks), Build (cargo check status), Git (branch + dirty state), System (CPU/memory/disk via /proc)
+  - `ProcessManager` for managing dev services
+  - Scripts: `scripts/dev.sh` and `scripts/server.sh`
+
+### Fixed
+- `returning the result of a let binding` in `crates/infrastructure/src/postgres/equipment.rs` `get_depreciation_schedule` — replaced `let dep = ...; dep` with inline expression
+- Depreciation schedule table field names: corrected `annual_depreciation_amount` → `depreciation_amount` to match `DepreciationScheduleEntry` DTO
+- Depreciation schedule table: removed non-existent `depreciation_method` column, added `net_book_value` column
+
+### Changed
+- Version bump: 0.9.10 → 0.9.11
+
 ## [0.9.10] - 2026-08-24
 
 ### Added

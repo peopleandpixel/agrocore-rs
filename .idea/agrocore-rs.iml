@@ -18,6 +18,7 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/lpis-providers/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/lpis-providers/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/lpis-providers/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/dashboard/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/i18n-codegen/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/i18n-shared/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/crates/admin-ui/dist/.stage" />

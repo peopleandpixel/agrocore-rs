@@ -5216,3 +5216,125 @@ usage_summary_loading:
   nl: Gebruiksamenvatting laden...
 
 
+
+depreciation:
+  en: Depreciation
+  de: Abschreibung
+  es: Amortización
+  fr: Amortissement
+  pt: Depreciação
+  it: Ammortamento
+  pl: Amortyzacja
+  ro: Amortizare
+  uk: Амортизація
+  nl: Afschrijving
+depreciation_loading:
+  en: Loading depreciation...
+  de: Lade Abschreibung...
+  es: Cargando amortización...
+  fr: Chargement de l'amortissement...
+  pt: Carregando depreciação...
+  it: Caricamento ammortamento...
+  pl: Ładowanie amortyzacji...
+  ro: Încărcare amortizare...
+  uk: Завантаження амортизації...
+  nl: AfSchrijving laden...
+cost_basis:
+  en: Cost Basis
+  de: Anschaffungskosten
+  es: Costo base
+  fr: Coût d'acquisition
+  pt: Custo base
+  it: Costo base
+  pl: Koszt początkowy
+  ro: Cost de bază
+  uk: Вартість
+  nl: Kostprijs
+salvage_value:
+  en: Salvage Value
+  de: Restwert
+  es: Valor de salvamento
+  fr: Valeur résiduelle
+  pt: Valor residual
+  it: Valore residuo
+  pl: Wartość rezydualna
+  ro: Valoare de salvare
+  uk: Вартість використання
+  nl: Restwaarde
+accumulated_depreciation:
+  en: Accumulated Depreciation
+  de: Ansammlte Abschreibung
+  es: Depreciación acumulada
+  fr: Amortissement cumulé
+  pt: Depreciação acumulada
+  it: Ammortamento cumulativo
+  pl: Skumulowana amortyzacja
+  ro: Amortizare cumulativă
+  uk: Нарахована амортизація
+  nl: Opgehoopte afschrijving
+net_book_value:
+  en: Net Book Value
+  de: Einlagevermögen
+  es: Valor en libros
+  fr: Valeur nominative
+  pt: Valor líquido
+  it: Valore nominale
+  pl: Wartość księgowa
+  ro: Valoare în Registrul Contabil
+  uk: Балансова вартість
+  nl: Boekwaarde
+annual_depreciation:
+  en: Annual Depreciation
+  de: Jährliche Abschreibung
+  es: Depreciación anual
+  fr: Amortissement annuel
+  pt: Depreciação anual
+  it: Ammortamento annuale
+  pl: Roczna amortyzacja
+  ro: Amortizare anuală
+  uk: Річна амортизація
+  nl: Jaarlijkse afschrijving
+useful_life_years:
+  en: Useful Life
+  de: Nutzungsdauer
+  es: Vida útil
+  fr: Durée d'utilisation
+  pt: Vida útil
+  it: Vita utile
+  pl: Okres użytkowania
+  ro: Viață utilă
+  uk: Окін корисного використання
+  nl: Gebruikslevensduur
+depreciation_year:
+  en: Year
+  de: Jahr
+  es: Año
+  fr: Année
+  pt: Ano
+  it: Anno
+  pl: Rok
+  ro: An
+  uk: Рік
+  nl: Jaar
+depreciation_method:
+  en: Method
+  de: Methode
+  es: Método
+  fr: Méthode
+  pt: Método
+  it: Metodo
+  pl: Metoda
+  ro: Metodă
+  uk: Метод
+  nl: Methode
+no_depreciation_records:
+  en: No depreciation records found.
+  de: Keine Abschreibungsdatensätze gefunden.
+  es: No se encontraron registros de amortización.
+  fr: Aucun enregistrement d'amortissement trouvé.
+  pt: Nenhum registro de depreciação encontrado.
+  it: Nessun record di ammortamento trovato.
+  pl: Nie znaleziono rejestrów amortyzacji.
+  ro: Nu s-au găsit înregistrări de amortizare.
+  uk: Записи амортизації не знайдено.
+  nl: Geen afschrijvingrecords gevonden.

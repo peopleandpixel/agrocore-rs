@@ -13,4 +13,4 @@ SQLX_OFFLINE = "true"
 # it causes "Option 'edition' given more than once" because Cargo.toml
 # already specifies edition = "2024".
 [target.wasm32-unknown-unknown]
-rustflags = ["--edition", "2024", "--cfg=web_sys_unstable_apis"]
+rustflags = ["--cfg=web_sys_unstable_apis"]

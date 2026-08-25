@@ -807,6 +807,52 @@ pub async fn record_usage(
     .await
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
+pub enum DepreciationMethod {
+    #[default]
+    StraightLine,
+    DoubleDeclining,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct EquipmentDepreciationDto {
+    pub equipment_id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub original_cost: f64,
+    pub salvage_value: f64,
+    pub purchase_date: Option<String>,
+    pub depreciation_method: DepreciationMethod,
+    pub useful_life_years: u32,
+    pub accumulated_depreciation: f64,
+    pub net_book_value: f64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct DepreciationScheduleEntry {
+    pub year: i32,
+    pub depreciation_amount: f64,
+    pub accumulated_depreciation: f64,
+    pub net_book_value: f64,
+}
+
+/// Fetch depreciation summary for an equipment.
+pub async fn fetch_depreciation(
+    id: uuid::Uuid,
+) -> Result<Option<EquipmentDepreciationDto>, String> {
+    get_json(&format!("/api/v1/equipments/{}/depreciation", id), true).await
+}
+
+/// Fetch depreciation schedule for an equipment.
+pub async fn fetch_depreciation_schedule(
+    id: uuid::Uuid,
+) -> Result<Vec<DepreciationScheduleEntry>, String> {
+    get_json(
+        &format!("/api/v1/equipments/{}/depreciation-schedule", id),
+        true,
+    )
+    .await
+}
+
 pub async fn fetch_orders() -> Result<PaginatedResponse<OrderDto>, String> {
     get_json("/api/v1/orders", true).await
 }

@@ -1,9 +1,10 @@
 use crate::AppState;
 use crate::dto::{
-    CreateEquipmentDto, CreateFuelConsumptionRequest, CreateUsageLogRequest, EquipmentDto,
-    EquipmentFilterDto, ErrorResponse, FuelConsumptionDto, MaintenanceCostSummaryDto,
-    MaintenanceLogDto, MaintenanceRecordDto, PaginatedEquipmentResponse, PaginatedResponseDto,
-    UpdateEquipmentDto, UsageLogDto, UsageSummaryDto,
+    CreateEquipmentDto, CreateFuelConsumptionRequest, CreateUsageLogRequest,
+    DepreciationScheduleEntry, EquipmentDepreciationDto, EquipmentDto, EquipmentFilterDto,
+    ErrorResponse, FuelConsumptionDto, MaintenanceCostSummaryDto, MaintenanceLogDto,
+    MaintenanceRecordDto, PaginatedEquipmentResponse, PaginatedResponseDto, UpdateEquipmentDto,
+    UsageLogDto, UsageSummaryDto,
 };
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
@@ -555,4 +556,57 @@ pub async fn record_usage(
         .await?
         .ok_or_else(|| SharedError::NotFound("Equipment not found".into()))?;
     Ok(HttpResponse::Created().json(record))
+}
+
+/// Get depreciation summary for a specific equipment.
+#[utoipa::path(
+    get,
+    path = "/api/v1/equipments/{id}/depreciation",
+    responses(
+        (status = 200, description = "Equipment depreciation", body = EquipmentDepreciationDto),
+        (status = 404, description = "Equipment not found", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "equipment",
+    security(("bearer_auth" = []))
+)]
+pub async fn get_depreciation(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let equipment_id = *path;
+    let depreciation = state
+        .db
+        .equipment_repo()
+        .get_depreciation(agrocore_domain::TenantId(auth.0.tenant_id), equipment_id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Equipment not found".into()))?;
+    Ok(HttpResponse::Ok().json(depreciation))
+}
+
+/// Get depreciation schedule for a specific equipment.
+#[utoipa::path(
+    get,
+    path = "/api/v1/equipments/{id}/depreciation-schedule",
+    responses(
+        (status = 200, description = "Depreciation schedule", body = Vec<DepreciationScheduleEntry>),
+        (status = 404, description = "Equipment not found", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "equipment",
+    security(("bearer_auth" = []))
+)]
+pub async fn get_depreciation_schedule(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let equipment_id = *path;
+    let schedule = state
+        .db
+        .equipment_repo()
+        .get_depreciation_schedule(agrocore_domain::TenantId(auth.0.tenant_id), equipment_id)
+        .await?;
+    Ok(HttpResponse::Ok().json(schedule))
 }

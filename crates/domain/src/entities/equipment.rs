@@ -143,3 +143,36 @@ pub struct UsageSummaryDto {
     pub first_used: Option<DateTime<Utc>>,
     pub last_used: Option<DateTime<Utc>>,
 }
+
+/// Depreciation method for equipment asset amortization.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, ToSchema)]
+pub enum DepreciationMethod {
+    #[default]
+    StraightLine,
+    DoubleDeclining,
+}
+
+/// Equipment depreciation information — financial tracking for asset amortization.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EquipmentDepreciationDto {
+    pub equipment_id: Uuid,
+    pub tenant_id: TenantId,
+    pub original_cost: f64,
+    pub salvage_value: f64,
+    pub purchase_date: Option<DateTime<Utc>>,
+    pub depreciation_method: DepreciationMethod,
+    pub useful_life_years: u32,
+    pub accumulated_depreciation: f64,
+    pub net_book_value: f64,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+/// Yearly depreciation schedule entry.
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct DepreciationScheduleEntry {
+    pub year: i32,
+    pub depreciation_amount: f64,
+    pub accumulated_depreciation: f64,
+    pub net_book_value: f64,
+}

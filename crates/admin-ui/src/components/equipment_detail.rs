@@ -33,6 +33,12 @@ pub fn EquipmentDetailPage() -> impl IntoView {
     let (usage_operation, set_usage_operation) = signal(String::new());
     let (usage_hours, set_usage_hours) = signal(String::new());
 
+    // Depreciation signals
+    let (depreciation, set_depreciation) = signal(None::<api::EquipmentDepreciationDto>);
+    let (depreciation_loading, set_depreciation_loading) = signal(true);
+    let (depreciation_schedule, set_depreciation_schedule) =
+        signal(Vec::<api::DepreciationScheduleEntry>::new());
+
     // Load equipment
     Effect::new(move |_| {
         set_loading.set(true);
@@ -104,6 +110,36 @@ pub fn EquipmentDetailPage() -> impl IntoView {
                 Ok(summary) => set_usage_summary.set(summary),
                 Err(e) => {
                     set_error.set(Some(format!("Failed to load usage summary: {}", e)));
+                }
+            }
+        });
+    });
+
+    // Load depreciation
+    Effect::new(move |_| {
+        let id = eid;
+        spawn_local(async move {
+            match api::fetch_depreciation(id).await {
+                Ok(data) => {
+                    set_depreciation.set(data);
+                    set_depreciation_loading.set(false);
+                }
+                Err(e) => {
+                    set_error.set(Some(format!("Failed to load depreciation: {}", e)));
+                    set_depreciation_loading.set(false);
+                }
+            }
+        });
+    });
+
+    // Load depreciation schedule
+    Effect::new(move |_| {
+        let id = eid;
+        spawn_local(async move {
+            match api::fetch_depreciation_schedule(id).await {
+                Ok(schedule) => set_depreciation_schedule.set(schedule),
+                Err(e) => {
+                    set_error.set(Some(format!("Failed to load depreciation schedule: {}", e)));
                 }
             }
         });
@@ -424,8 +460,88 @@ pub fn EquipmentDetailPage() -> impl IntoView {
                                     </div>
                                 </div>
                             </div>
+
+                            // Depreciation section
+                            <div class="mt-8">
+                                <h2 class="text-xl font-semibold mb-4">{crate::t!(t, "depreciation")}</h2>
+
+                                // Depreciation summary card
+                                {move || {
+                                    match (depreciation_loading.get(), depreciation.get()) {
+                                        (true, _) => view! {
+                                            <div class="card p-4 mb-4">
+                                                <h3 class="font-semibold mb-2">{crate::t!(t, "depreciation")}</h3>
+                                                <p>{crate::t!(t, "depreciation_loading")}</p>
+                                            </div>
+                                        }.into_any(),
+                                        (false, Some(dep)) => view! {
+                                            <div class="card p-4 mb-4">
+                                                <h3 class="font-semibold mb-2">{crate::t!(t, "depreciation")}</h3>
+                                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                    <div>
+                                                        <span class="text-xl font-bold">{"EUR "}{format!("{:.2}", dep.original_cost)}</span>
+                                                        <p class="text-sm text-gray-500">{crate::t!(t, "cost_basis")}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span class="text-xl font-bold">{"EUR "}{format!("{:.2}", dep.salvage_value)}</span>
+                                                        <p class="text-sm text-gray-500">{crate::t!(t, "salvage_value")}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span class="text-xl font-bold">{"EUR "}{format!("{:.2}", dep.accumulated_depreciation)}</span>
+                                                        <p class="text-sm text-gray-500">{crate::t!(t, "accumulated_depreciation")}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span class="text-xl font-bold">{"EUR "}{format!("{:.2}", dep.net_book_value)}</span>
+                                                        <p class="text-sm text-gray-500">{crate::t!(t, "net_book_value")}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }.into_any(),
+                                        (false, None) => ().into_any(),
+                                    }
+                                }}
+
+                                // Depreciation schedule table
+                                {move || {
+                                    if depreciation_schedule.get().is_empty() {
+                                        view! {
+                                            <p class="text-gray-500 mt-4">{crate::t!(t, "no_depreciation_records")}</p>
+                                        }.into_any()
+                                    } else {
+                                        view! {
+                                            <table class="table table-sm mt-4">
+                                                <thead>
+                                                    <tr>
+                                                        <th>{crate::t!(t, "depreciation_year")}</th>
+                                                        <th>{crate::t!(t, "annual_depreciation")}</th>
+                                                        <th>{crate::t!(t, "accumulated_depreciation")}</th>
+                                                        <th>{crate::t!(t, "net_book_value")}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {move || depreciation_schedule.get().iter().map(|entry| {
+                                                        let year = entry.year;
+                                                        let annual = format!("{:.2}", entry.depreciation_amount);
+                                                        let accumulated = format!("{:.2}", entry.accumulated_depreciation);
+                                                        let net_book = format!("{:.2}", entry.net_book_value);
+                                                        view! {
+                                                            <tr>
+                                                                <td>{year}</td>
+                                                                <td>{annual}</td>
+                                                                <td>{accumulated}</td>
+                                                                <td>{net_book}</td>
+                                                            </tr>
+                                                        }
+                                                    }).collect_view()}
+                                                </tbody>
+                                            </table>
+                                        }.into_any()
+                                    }
+                                }}
+                            </div>
                         }.into_any()
                     },
+
                     (false, false, None, None) => view! {
                         <div class="alert alert-warning">{crate::t!(t, "equipment_not_found")}</div>
                     }.into_any(),

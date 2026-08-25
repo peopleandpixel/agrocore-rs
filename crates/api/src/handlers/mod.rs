@@ -162,6 +162,14 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route(web::get().to(equipment::get_usage_summary)),
             )
             .service(
+                web::resource("/equipments/{id}/depreciation")
+                    .route(web::get().to(equipment::get_depreciation)),
+            )
+            .service(
+                web::resource("/equipments/{id}/depreciation-schedule")
+                    .route(web::get().to(equipment::get_depreciation_schedule)),
+            )
+            .service(
                 web::resource("/equipments/{id}/maintenance")
                     .route(web::post().to(equipment::record_maintenance))
                     .route(web::get().to(equipment::get_equipment_maintenance_log)),

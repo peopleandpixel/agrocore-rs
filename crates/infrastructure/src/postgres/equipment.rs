@@ -1,6 +1,7 @@
 use agrocore_domain::entities::equipment::{
-    CreateEquipmentDto, Equipment, FuelConsumptionDto, MaintenanceCostSummaryDto,
-    MaintenanceLogDto, UpdateEquipmentDto, UsageLogDto, UsageSummaryDto,
+    CreateEquipmentDto, DepreciationMethod, DepreciationScheduleEntry, Equipment,
+    EquipmentDepreciationDto, FuelConsumptionDto, MaintenanceCostSummaryDto, MaintenanceLogDto,
+    UpdateEquipmentDto, UsageLogDto, UsageSummaryDto,
 };
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::UserRole;
@@ -8,8 +9,9 @@ use agrocore_domain::repositories::{
     EquipmentRepository, PaginatedResponse, Pagination, RepositoryFuture,
 };
 use agrocore_shared::SharedError;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Datelike, Utc};
 use sqlx::PgPool;
+use sqlx::Row;
 use std::future::Future;
 use std::pin::Pin;
 use uuid::Uuid;
@@ -831,6 +833,144 @@ impl EquipmentRepository for PgEquipmentRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(Some(record))
+        })
+    }
+
+    fn get_depreciation(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+    ) -> RepositoryFuture<Option<EquipmentDepreciationDto>> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            let row = sqlx::query(
+                r#"SELECT
+                    id as equipment_id,
+                    tenant_id,
+                    original_cost,
+                    salvage_value,
+                    purchase_date,
+                    depreciation_method,
+                    useful_life_years,
+                    COALESCE(
+                        (SELECT COALESCE(SUM(depreciation_amount), 0.0)
+                         FROM equipment_depreciation_schedule
+                         WHERE equipment_id = $1 AND tenant_id = $2),
+                        0.0
+                    ) as accumulated_depreciation,
+                    now() as created_at,
+                    now() as updated_at
+                FROM equipment
+                WHERE id = $1 AND tenant_id = $2"#,
+            )
+            .bind(id)
+            .bind(tid)
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            match row {
+                Some(r) => {
+                    let method_str: String = r.try_get("depreciation_method")?;
+                    let method = match method_str.as_str() {
+                        "double_declining" => DepreciationMethod::DoubleDeclining,
+                        _ => DepreciationMethod::StraightLine,
+                    };
+                    Ok(Some(EquipmentDepreciationDto {
+                        equipment_id: r.try_get("equipment_id")?,
+                        tenant_id: r.try_get("tenant_id")?,
+                        original_cost: r.try_get::<f64, _>("original_cost")?,
+                        salvage_value: r.try_get::<f64, _>("salvage_value")?,
+                        purchase_date: r.try_get::<Option<DateTime<Utc>>, _>("purchase_date")?,
+                        depreciation_method: method,
+                        useful_life_years: r.try_get::<i32, _>("useful_life_years")? as u32,
+                        accumulated_depreciation: r
+                            .try_get::<f64, _>("accumulated_depreciation")?,
+                        net_book_value: r.try_get::<f64, _>("original_cost")?
+                            - r.try_get::<f64, _>("accumulated_depreciation")?,
+                        created_at: r.try_get("created_at")?,
+                        updated_at: r.try_get("updated_at")?,
+                    }))
+                }
+                None => Ok(None),
+            }
+        })
+    }
+
+    fn get_depreciation_schedule(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+    ) -> RepositoryFuture<Vec<DepreciationScheduleEntry>> {
+        let pool = self.pool.clone();
+        let now = Utc::now();
+        Box::pin(async move {
+            // If schedule entries exist in DB, use them; otherwise compute on the fly
+            let rows: Vec<DepreciationScheduleEntry> = sqlx::query_as::<_, DepreciationScheduleEntry>(
+                "SELECT year as year, depreciation_amount as depreciation_amount, accumulated_depreciation as accumulated_depreciation, net_book_value as net_book_value FROM equipment_depreciation_schedule WHERE equipment_id = $1 AND tenant_id = $2 ORDER BY year",
+            )
+            .bind(id)
+            .bind(tid)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            if rows.is_empty() {
+                // Compute schedule dynamically from equipment financials
+                let eq_row = sqlx::query(
+                    r#"SELECT original_cost, salvage_value, purchase_date, depreciation_method, useful_life_years
+                       FROM equipment WHERE id = $1 AND tenant_id = $2"#,
+                )
+                .bind(id)
+                .bind(tid)
+                .fetch_optional(&pool)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
+
+                match eq_row {
+                    Some(r) => {
+                        let cost: f64 = r.try_get("original_cost")?;
+                        let salvage: f64 = r.try_get("salvage_value")?;
+                        let method_str: String = r.try_get("depreciation_method")?;
+                        let life: i32 = r.try_get("useful_life_years")?;
+                        let purchase: Option<DateTime<Utc>> = r.try_get("purchase_date")?;
+
+                        let depreciable = cost - salvage;
+                        let life_u32 = life.max(1) as u32;
+                        let start_year = purchase.map(|d| d.year()).unwrap_or_else(|| now.year());
+
+                        let mut entries = Vec::new();
+                        let mut accumulated = 0.0;
+
+                        for year_offset in 0..life_u32 {
+                            let year = start_year + year_offset as i32;
+                            let amount = if method_str == "double_declining" {
+                                let rate = 2.0 / life_u32 as f64;
+                                let book_value = cost - accumulated;
+                                (book_value * rate).min(depreciable - accumulated).max(0.0)
+                            } else {
+                                // Straight-line
+                                depreciable / life_u32 as f64
+                            };
+
+                            accumulated += amount;
+                            let net_book = (cost - accumulated).max(salvage);
+
+                            entries.push(DepreciationScheduleEntry {
+                                year,
+                                depreciation_amount: amount,
+                                accumulated_depreciation: accumulated,
+                                net_book_value: net_book,
+                            });
+                        }
+
+                        Ok(entries)
+                    }
+                    None => Ok(Vec::new()),
+                }
+            } else {
+                Ok(rows)
+            }
         })
     }
 }

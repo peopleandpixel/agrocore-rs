@@ -5,7 +5,10 @@ pub mod common;
 pub mod compliance;
 pub mod customer;
 pub mod equipment;
-pub use equipment::{CreateFuelConsumptionRequest, CreateUsageLogRequest, FuelConsumptionDto};
+pub use equipment::{
+    CreateFuelConsumptionRequest, CreateUsageLogRequest, DepreciationMethod,
+    DepreciationScheduleEntry, EquipmentDepreciationDto, FuelConsumptionDto,
+};
 pub use equipment::{
     MaintenanceCostSummaryDto, MaintenanceLogDto, MaintenanceRecordDto, UsageLogDto,
     UsageSummaryDto,
