@@ -42,12 +42,40 @@ fn main() -> anyhow::Result<()> {
     })?;
 
     loop {
-        // Handle events — 'q' to quit
+        // Handle events
         #[allow(clippy::collapsible_if)]
         if event::poll(Duration::from_millis(100))? {
             if let Ok(Event::Key(key)) = event::read() {
-                if key.code == KeyCode::Char('q') {
-                    break;
+                match key.code {
+                    KeyCode::Char('q') => break,
+                    KeyCode::Char('s') => {
+                        app.show_service_menu = !app.show_service_menu;
+                    }
+                    KeyCode::Char('r') if app.show_service_menu => {
+                        app.restart_service("postgres");
+                        app.show_service_menu = false;
+                    }
+                    KeyCode::Char('n') if app.show_service_menu => {
+                        app.restart_service("nats");
+                        app.show_service_menu = false;
+                    }
+                    KeyCode::Char('m') if app.show_service_menu => {
+                        app.restart_service("mqtt");
+                        app.show_service_menu = false;
+                    }
+                    KeyCode::Char('i') if app.show_service_menu => {
+                        app.restart_service("redis");
+                        app.show_service_menu = false;
+                    }
+                    KeyCode::Char('a') if app.show_service_menu => {
+                        app.restart_all();
+                        app.show_service_menu = false;
+                    }
+                    KeyCode::Char('x') if app.show_service_menu => {
+                        app.stop_all();
+                        app.show_service_menu = false;
+                    }
+                    _ => {}
                 }
             }
         }

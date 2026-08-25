@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # server.sh — Start full live environment
-# Starts all services (PostgreSQL, NATS, MQTT) + API server + live dashboard.
+# Starts all services (PostgreSQL, NATS, MQTT, Redis) + API server + Admin UI + live dashboard.
 # The dashboard shows real-time status of all components.
 #
 # Usage: ./scripts/server.sh
@@ -20,14 +20,14 @@ echo -e "${YELLOW}Starting all services...${NC}"
 
 # Start all Docker services
 if command -v docker &>/dev/null && docker compose version &>/dev/null 2>&1; then
-    echo "  🐳 Starting PostgreSQL + NATS + MQTT via docker-compose..."
-    docker compose -f docker-compose.yml up -d 2>/dev/null || true
+    echo -e "${BLUE}  🐳 Starting PostgreSQL, NATS, MQTT, Redis, API, Admin UI via docker-compose...${NC}"
+    docker compose -f docker-compose.dev.yml up -d 2>/dev/null || true
 else
     echo -e "${YELLOW}  ⚠️  Docker not available — relying on local services${NC}"
 fi
 
 # Give services a moment to boot
-sleep 2
+sleep 5
 
 # Build everything
 echo -e "${YELLOW}Building all crates...${NC}"

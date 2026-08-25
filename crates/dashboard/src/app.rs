@@ -17,6 +17,12 @@ pub struct App {
     pub system: SystemInfo,
     pub process_mgr: ProcessManager,
     pub error: Option<String>,
+    /// History of CPU percentages for sparkline rendering (last 30 samples).
+    pub cpu_history: Vec<f32>,
+    /// History of memory percentages for sparkline rendering (last 30 samples).
+    pub mem_history: Vec<f32>,
+    /// Whether the service control menu is open.
+    pub show_service_menu: bool,
 }
 
 impl Default for App {
@@ -37,6 +43,9 @@ impl App {
             system: SystemInfo::default(),
             process_mgr: ProcessManager::new(),
             error: None,
+            cpu_history: Vec::new(),
+            mem_history: Vec::new(),
+            show_service_menu: false,
         }
     }
 
@@ -45,6 +54,16 @@ impl App {
         self.services.refresh_blocking();
         self.git.refresh();
         self.system.refresh();
+
+        // Update history (keep last 30 samples for sparkline)
+        self.cpu_history.push(self.system.cpu_percent);
+        self.mem_history.push(self.system.mem_percent);
+        if self.cpu_history.len() > 30 {
+            self.cpu_history.remove(0);
+        }
+        if self.mem_history.len() > 30 {
+            self.mem_history.remove(0);
+        }
     }
 
     pub fn uptime_seconds(&self) -> u64 {
@@ -69,6 +88,58 @@ impl App {
         match result.join() {
             Ok(status) => self.build = status,
             Err(_) => self.build = BuildStatus::Failing("task panicked".into()),
+        }
+    }
+
+    /// Restart a specific service by name via docker compose.
+    #[allow(dead_code)]
+    pub fn restart_service(&mut self, service: &str) {
+        let service_name = service.to_string();
+        let result = std::thread::spawn(move || {
+            use std::process::Command;
+            let _ = Command::new("docker")
+                .args([
+                    "compose",
+                    "-f",
+                    "docker-compose.dev.yml",
+                    "restart",
+                    &service_name,
+                ])
+                .status();
+        });
+        match result.join() {
+            Ok(_) => self.error = Some(format!("{} restarted", service)),
+            Err(_) => self.error = Some(format!("Failed to restart {}", service)),
+        }
+    }
+
+    /// Restart all services via docker compose.
+    #[allow(dead_code)]
+    pub fn restart_all(&mut self) {
+        let result = std::thread::spawn(|| {
+            use std::process::Command;
+            let _ = Command::new("docker")
+                .args(["compose", "-f", "docker-compose.dev.yml", "restart"])
+                .status();
+        });
+        match result.join() {
+            Ok(_) => self.error = Some("All services restarted".to_string()),
+            Err(_) => self.error = Some("Failed to restart services".to_string()),
+        }
+    }
+
+    /// Stop all services via docker compose.
+    #[allow(dead_code)]
+    pub fn stop_all(&mut self) {
+        let result = std::thread::spawn(|| {
+            use std::process::Command;
+            let _ = Command::new("docker")
+                .args(["compose", "-f", "docker-compose.dev.yml", "stop"])
+                .status();
+        });
+        match result.join() {
+            Ok(_) => self.error = Some("All services stopped".to_string()),
+            Err(_) => self.error = Some("Failed to stop services".to_string()),
         }
     }
 }
