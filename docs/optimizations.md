@@ -68,3 +68,22 @@ go on
 *   *Lösung:* Einführung von eigenen Metrics zur Erfassung von Geschäftsprozessen und KPIs.
 *   **Distributed Tracing Integration:** Verbesserung der bestehenden Tracing-Integration um mehr Span-Attributes für bessere Debugbarkeit hinzuzufügen (z.B. Tenant-ID, User-ID, Operationstyp).
 *   *Lösung:* Standardisierung dessen, was in Tracing-Spans aufgezeichnet wird über alle Service-Grenzen hinweg.
+
+### 3.4 Performance-Optimierungen aus Rust Performance Book (Neu)
+(Quelle: https://nnethercote.github.io/perf-book/ — Profiling, Build-Config, General Tips)
+
+* **Profiling-Setup:** `perf` / `flamegraph` / `samply` vor Optimierung einsetzen; `debug = "line-tables-only"` für Release-Profile; `-C force-frame-pointers=yes` für bessere Stack-Traces.
+* **Build-Konfiguration (Cargo.toml):**
+  - `codegen-units = 1` (bessere Optimierung, längere Compile-Zeit)
+  - `lto = "thin"` oder `"fat"` (10–20% schneller, kleinere Binaries)
+  - `panic = "abort"` (kleinere Binaries, keine Unwind-Overhead)
+  - `strip = "symbols"` (kleinere Binaries)
+  - `-C target-cpu=native` (wenn keine breite Architektur-Unterstützung nötig)
+* **Alternative Allocator:** `tikv-jemallocator` oder `mimalloc` für bessere Heap-Performance, ggf. mit `MALLOC_CONF="thp:always"`.
+* **Allgemeine Prinzipien (Perf Book):**
+  - Größte Gewinne durch Algorithmus-/Datenstruktur-Änderungen, nicht Mikro-Optimierungen.
+  - Heißer Code identifizieren (Profiling) und dann (a) schneller machen oder (b) Aufrufe reduzieren.
+  - Lazy/On-Demand-Berechnung bevorzugen; kleine Spezialfälle (0/1/2 Elemente) optimistisch behandeln; Caching für lokalitätsreiche Lookups.
+  - Release-Build (`cargo build --release`) ist 10–100x schneller als Dev-Build.
+
+> **Status:** Offen / Für v0.10.0 geplant — Profiling-Setup + `lto = "thin"` als erster Quick-Win.

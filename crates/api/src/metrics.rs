@@ -2,6 +2,13 @@ use prometheus::{
     HistogramOpts, HistogramVec, IntCounter, IntCounterVec, IntGauge, Opts, Registry,
 };
 
+/// Toggle monitoring at runtime via env `AGROCORE_METRICS_ENABLED`.
+pub fn is_enabled() -> bool {
+    std::env::var("AGROCORE_METRICS_ENABLED")
+        .map(|v| v == "1" || v.to_lowercase() == "true")
+        .unwrap_or(false)
+}
+
 /// Metrics registry for database query monitoring — integrates with Prometheus.
 ///
 /// Provides:
@@ -78,6 +85,9 @@ impl DbMetrics {
         duration_ms: u128,
         slow_threshold_ms: u128,
     ) {
+        if !is_enabled() {
+            return;
+        }
         let seconds = duration_ms as f64 / 1000.0;
         self.query_duration_seconds
             .with_label_values(&[query_type, table])
@@ -96,6 +106,9 @@ impl DbMetrics {
 
     /// Update pool connection gauges from sqlx Pool state.
     pub fn update_pool_metrics(&self, active: usize, idle: usize) {
+        if !is_enabled() {
+            return;
+        }
         self.pool_active_connections.set(active as i64);
         self.pool_idle_connections.set(idle as i64);
     }

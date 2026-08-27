@@ -8,6 +8,18 @@ authors = ["Jens Reinemuth <jens@reinemuth.pt>"]
 license = "GPL-3.0-or-later"
 edition = "2024"
 
+[profile.release]
+codegen-units = 1
+lto = "fat"
+panic = "abort"
+strip = "symbols"
+debug = "line-tables-only"
+
+[profile.dev]
+debug = false
+
+[build]
+rustflags = ["-C", "force-frame-pointers=yes", "-C", "symbol-mangling-version=v0"]
 
 [workspace.dependencies]
 tokio = { version = "1", default-features = false, features = ["rt", "macros", "sync", "time", "io-util"] }

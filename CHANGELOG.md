@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Dashboard TUI v0.9.12: Service control overlay + sparkline graphs + full tab navigation completed
 - Process manager for docker compose services
+- Monitoring (`DbMetrics`/`BusinessMetrics`) per `AGROCORE_METRICS_ENABLED` umschaltbar
+- Performance-Build: `lto = "fat"`, `codegen-units = 1`, `panic = "abort"`, `strip`, `force-frame-pointers=yes`
 
 ### Changed
 - Version bump: 0.9.11 → 0.9.12
