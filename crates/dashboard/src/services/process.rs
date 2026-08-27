@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use std::process::Command;
+use std::time::Duration;
 
 #[derive(Debug, Default)]
 pub struct ProcessManager;
@@ -11,7 +12,7 @@ impl ProcessManager {
         ProcessManager
     }
 
-    /// Start a service via docker compose up -d.
+    /// Start a service via docker compose up -d (timeout 30s).
     pub fn start_service(&self, name: &str) -> Result<()> {
         if !matches!(
             name,
@@ -19,10 +20,38 @@ impl ProcessManager {
         ) {
             return Err(anyhow::anyhow!("unknown service: {}", name));
         }
-        Command::new("docker")
+        let mut child = Command::new("docker")
             .args(["compose", "up", "-d", name])
-            .status()?;
-        Ok(())
+            .spawn()
+            .map_err(|e| anyhow::anyhow!("service {} start spawn failed: {}", name, e))?;
+        // Timeout 30s via loop with kill (tokio-timer-kompatibel)
+        let timeout = std::time::Duration::from_secs(30);
+        let start = std::time::Instant::now();
+        loop {
+            match child.try_wait() {
+                Ok(Some(status)) => {
+                    if !status.success() {
+                        return Err(anyhow::anyhow!(
+                            "service {} start failed: exit code {:?}",
+                            name,
+                            status.code()
+                        ));
+                    }
+                    return Ok(());
+                }
+                Ok(None) => {
+                    if start.elapsed() > timeout {
+                        let _ = child.kill();
+                        return Err(anyhow::anyhow!(
+                            "service {} start timed out after 30s",
+                            name
+                        ));
+                    }
+                    std::thread::sleep(Duration::from_millis(500));
+                }
+                Err(e) => return Err(anyhow::anyhow!("service {} wait error: {}", name, e)),
+            }
+        }
     }
 
     /// Restart a service via docker compose restart.
