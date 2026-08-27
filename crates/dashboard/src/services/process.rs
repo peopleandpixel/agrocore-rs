@@ -1,5 +1,8 @@
 //! Process manager — start/stop dev services from the dashboard.
 
+use anyhow::Result;
+use std::process::Command;
+
 #[derive(Debug, Default)]
 pub struct ProcessManager;
 
@@ -8,20 +11,39 @@ impl ProcessManager {
         ProcessManager
     }
 
-    #[allow(dead_code)]
-    pub fn start_service(&self, name: &str) -> anyhow::Result<u32> {
-        let cmd = match name {
-            "postgres" => ("docker", vec!["compose", "up", "-d", "postgres"]),
-            "nats" => ("docker", vec!["compose", "up", "-d", "nats"]),
-            _ => return Err(anyhow::anyhow!("unknown service: {}", name)),
-        };
-
-        let status = std::process::Command::new(cmd.0).args(&cmd.1).status()?;
-
-        if status.success() {
-            Ok(std::process::id())
-        } else {
-            Err(anyhow::anyhow!("failed to start {}", name))
+    /// Start a service via docker compose up -d.
+    pub fn start_service(&self, name: &str) -> Result<()> {
+        if !matches!(
+            name,
+            "postgres" | "nats" | "mqtt" | "redis" | "api" | "admin-ui"
+        ) {
+            return Err(anyhow::anyhow!("unknown service: {}", name));
         }
+        Command::new("docker")
+            .args(["compose", "up", "-d", name])
+            .status()?;
+        Ok(())
+    }
+
+    /// Restart a service via docker compose restart.
+    pub fn restart_service(&self, name: &str) -> Result<()> {
+        Command::new("docker")
+            .args(["compose", "restart", name])
+            .status()?;
+        Ok(())
+    }
+
+    /// Restart all services via docker compose restart.
+    pub fn restart_all(&self) -> Result<()> {
+        Command::new("docker")
+            .args(["compose", "restart"])
+            .status()?;
+        Ok(())
+    }
+
+    /// Stop all services via docker compose stop.
+    pub fn stop_all(&self) -> Result<()> {
+        Command::new("docker").args(["compose", "stop"]).status()?;
+        Ok(())
     }
 }

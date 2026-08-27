@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.12] - 2026-08-27
+
+### Added
+- Dashboard TUI v0.9.12: Service control overlay + sparkline graphs + full tab navigation completed
+- Process manager for docker compose services
+
+### Changed
+- Version bump: 0.9.11 → 0.9.12
+
 ## [0.9.11] - 2026-08-24
 
 ### Added
@@ -43,6 +52,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `returning the result of a let binding` in `crates/infrastructure/src/postgres/equipment.rs` `get_depreciation_schedule` — replaced `let dep = ...; dep` with inline expression
 - Depreciation schedule table field names: corrected `annual_depreciation_amount` → `depreciation_amount` to match `DepreciationScheduleEntry` DTO
 - Depreciation schedule table: removed non-existent `depreciation_method` column, added `net_book_value` column
+
+### Fixed
+- Mosquitto MQTT broker: fixed `per_listener_settings` must be set before security settings, removed unsupported `sys_topic_prefix` and `auto_save_interval` variables, replaced deprecated `message_size_limit` with `max_packet_size`
+- Mosquitto healthcheck: added `-h 127.0.0.1` for reliable port connectivity check
+- docker-compose dev/prod: mount mosquitto config read-write (fixes `chown: Read-only file system` error during container init)
 
 ### Changed
 - Version bump: 0.9.10 → 0.9.11

@@ -1,8 +1,9 @@
-//! Build status — runs `cargo check` periodically and reports results.
+//! Build status — runs `cargo check` on demand and reports results.
 
 use serde::{Deserialize, Serialize};
+use std::thread;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub enum BuildStatus {
     #[default]
     Unknown,
@@ -12,11 +13,16 @@ pub enum BuildStatus {
 }
 
 impl BuildStatus {
-    #[allow(dead_code)]
-    pub fn refresh(&mut self) {
+    /// Mark the build as "Running" without actually blocking.
+    /// The real cargo check is triggered separately via App::run_build.
+    pub fn set_running(&mut self) {
         *self = BuildStatus::Running;
+    }
 
-        let result = std::thread::spawn(|| {
+    /// Run `cargo check --workspace --quiet` in a blocking thread.
+    /// Returns the resulting status. Called by App::run_build_async.
+    pub fn run_check() -> BuildStatus {
+        let handle = thread::spawn(|| {
             use std::process::Command;
             let out = Command::new("cargo")
                 .args(["check", "--workspace", "--quiet"])
@@ -27,9 +33,8 @@ impl BuildStatus {
                 Err(_) => BuildStatus::Failing("cargo not found".into()),
             }
         });
-
-        *self = result
+        handle
             .join()
-            .unwrap_or(BuildStatus::Failing("task panicked".into()));
+            .unwrap_or(BuildStatus::Failing("task panicked".into()))
     }
 }

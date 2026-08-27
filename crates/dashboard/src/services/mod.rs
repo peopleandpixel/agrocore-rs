@@ -1,14 +1,24 @@
 //! Service polling modules — each polls an external resource.
+//!
+//! These modules are data-only: they collect raw metrics, build statuses,
+//! git info, process lists, and service health. The rendering layer
+//! (views/mod.rs) handles all UI concerns using SuperLightTUI state types.
 
 pub mod build;
 pub mod git;
+pub mod log;
 pub mod process;
 pub mod system;
 
+pub use build::BuildStatus;
+pub use git::GitStatus;
+pub use log::{ApiLogEntry, LogBuffer, SqlLogEntry};
 pub use process::ProcessManager;
+pub use system::SystemInfo;
 
 use serde::{Deserialize, Serialize};
 
+/// Aggregated snapshot of all infrastructure services.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ServicesState {
     pub postgres: ServiceStatus,
@@ -20,13 +30,26 @@ pub struct ServicesState {
 }
 
 impl ServicesState {
-    pub fn refresh_blocking(&mut self) {
+    /// Polling snapshot — called every refresh cycle from App::refresh.
+    pub fn refresh(&mut self) {
         self.postgres = check_port("127.0.0.1:5432");
         self.nats = check_port("127.0.0.1:4222");
         self.mqtt = check_port("127.0.0.1:1883");
         self.redis = check_port("127.0.0.1:6379");
         self.api = check_port("127.0.0.1:8080");
-        self.admin_ui = check_http("http://127.0.0.1:80");
+        self.admin_ui = check_port("127.0.0.1:80");
+    }
+
+    /// All services and their display labels — used for table rendering.
+    pub fn entries(&self) -> Vec<(&str, &ServiceStatus)> {
+        vec![
+            ("PostgreSQL", &self.postgres),
+            ("NATS", &self.nats),
+            ("MQTT", &self.mqtt),
+            ("Redis", &self.redis),
+            ("API", &self.api),
+            ("Admin UI", &self.admin_ui),
+        ]
     }
 }
 
@@ -45,15 +68,20 @@ pub struct ServiceStatus {
 }
 
 impl ServiceStatus {
-    pub fn status(&self) -> String {
+    pub fn is_up(&self) -> bool {
+        self.level == StatusLevel::Up
+    }
+
+    pub fn status_label(&self) -> &'static str {
         match self.level {
-            StatusLevel::Up => format!("✅ UP  ({})", self.detail),
-            StatusLevel::Down => format!("❌ DOWN ({})", self.detail),
-            StatusLevel::Checking => "🔄 checking...".to_string(),
+            StatusLevel::Up => "UP",
+            StatusLevel::Down => "DOWN",
+            StatusLevel::Checking => "CHECKING",
         }
     }
 }
 
+/// Check connectivity to a TCP port (e.g. database, broker, HTTP server).
 fn check_port(addr: &str) -> ServiceStatus {
     use std::net::TcpStream;
     use std::time::Duration;
@@ -67,24 +95,6 @@ fn check_port(addr: &str) -> ServiceStatus {
         Err(_) => ServiceStatus {
             level: StatusLevel::Down,
             detail: addr.to_string(),
-        },
-    }
-}
-
-fn check_http(url: &str) -> ServiceStatus {
-    use std::time::Duration;
-
-    match std::net::TcpStream::connect_timeout(
-        &"127.0.0.1:80".parse().unwrap(),
-        Duration::from_millis(500),
-    ) {
-        Ok(_) => ServiceStatus {
-            level: StatusLevel::Up,
-            detail: url.to_string(),
-        },
-        Err(_) => ServiceStatus {
-            level: StatusLevel::Down,
-            detail: url.to_string(),
         },
     }
 }

@@ -4,14 +4,19 @@ version.workspace = true
 edition = "2024"
 license.workspace = true
 
+[lib]
+name = "agrocore_dashboard"
+path = "src/lib.rs"
+
+[[bin]]
+name = "agrocore-dashboard"
+path = "src/main.rs"
+
 [dependencies]
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "time", "io-util", "process"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
 tracing = { workspace = true }
-ratatui = "0.29"
-crossterm = "0.29"
+superlighttui = { git = "https://github.com/subinium/SuperLightTUI", features = ["async"] }
 chrono = { workspace = true }
-uuid = { workspace = true }
-reqwest = { workspace = true, features = ["json"] }

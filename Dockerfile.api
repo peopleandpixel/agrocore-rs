@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for agrocore API
 # Build stage
-FROM rust:1.85-bookworm AS builder
+FROM rust:1.97-bookworm AS builder
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy Cargo files first for better caching
+# Copy workspace Cargo files first for better caching
 COPY Cargo.toml Cargo.lock ./
 COPY crates/shared/Cargo.toml crates/shared/
 COPY crates/domain/Cargo.toml crates/domain/
@@ -20,18 +20,23 @@ COPY crates/infrastructure/Cargo.toml crates/infrastructure/
 COPY crates/lpis-providers/Cargo.toml crates/lpis-providers/
 COPY crates/messaging/Cargo.toml crates/messaging/
 COPY crates/api/Cargo.toml crates/api/
+COPY crates/dashboard/Cargo.toml crates/dashboard/
 
 # Create dummy source files to build dependencies
-RUN mkdir -p crates/shared/src crates/domain/src crates/infrastructure/src crates/lpis-providers/src crates/messaging/src crates/api/src
+RUN mkdir -p crates/shared/src crates/domain/src crates/infrastructure/src crates/lpis-providers/src crates/messaging/src crates/api/src crates/dashboard/src
 RUN echo "// dummy" > crates/shared/src/lib.rs
 RUN echo "// dummy" > crates/domain/src/lib.rs
 RUN echo "// dummy" > crates/infrastructure/src/lib.rs
 RUN echo "// dummy" > crates/lpis-providers/src/lib.rs
 RUN echo "// dummy" > crates/messaging/src/lib.rs
 RUN echo "// dummy" > crates/api/src/lib.rs
+RUN echo "// dummy" > crates/dashboard/src/lib.rs
+RUN echo "fn main() {}" > crates/api/src/main.rs
+RUN echo "fn main() {}" > crates/dashboard/src/main.rs
 
 # Build dependencies (this layer will be cached)
-RUN cargo build --workspace --release --bin agrocore-api
+# Only build the library crates, not the dashboard binary
+RUN cargo build --release -p agrocore-shared -p agrocore-infrastructure -p agrocore-domain -p agrocore-lpis-providers -p agrocore-messaging
 
 # Copy actual source code
 COPY crates/shared/src crates/shared/src/
@@ -40,9 +45,10 @@ COPY crates/infrastructure/src crates/infrastructure/src/
 COPY crates/lpis-providers/src crates/lpis-providers/src/
 COPY crates/messaging/src crates/messaging/src/
 COPY crates/api/src crates/api/src/
+COPY crates/dashboard/src crates/dashboard/src/
 
 # Build the actual application
-RUN cargo build --workspace --release --bin agrocore-api
+RUN cargo build --release --bin agrocore-api
 
 # Runtime stage
 FROM debian:bookworm-slim AS runtime

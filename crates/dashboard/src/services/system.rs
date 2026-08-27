@@ -8,6 +8,8 @@ pub struct SystemInfo {
     pub mem_percent: f32,
     pub used_mem: u64,
     pub total_mem: u64,
+    pub disk_used: u64,
+    pub disk_total: u64,
 }
 
 impl SystemInfo {
@@ -19,24 +21,10 @@ impl SystemInfo {
         if mem_total > 0 {
             self.mem_percent = mem_used as f32 / mem_total as f32 * 100.0;
         }
-    }
 
-    pub fn disk_info(&self) -> String {
-        let out = std::process::Command::new("df").args(["-h", "/"]).output();
-        match out {
-            Ok(o) if o.status.success() => {
-                let stdout = String::from_utf8_lossy(&o.stdout);
-                let lines: Vec<&str> = stdout.lines().collect();
-                if lines.len() >= 2 {
-                    let parts: Vec<&str> = lines[1].split_whitespace().collect();
-                    if parts.len() >= 6 {
-                        return format!("{} / {}", parts[2], parts[1]);
-                    }
-                }
-                "error reading disk".into()
-            }
-            _ => "unavailable".into(),
-        }
+        let (disk_used, disk_total) = read_disk_info();
+        self.disk_used = disk_used;
+        self.disk_total = disk_total;
     }
 }
 
@@ -72,7 +60,6 @@ fn read_cpu_percent() -> f32 {
         };
 
         *state.borrow_mut() = (total, idle);
-
         compute_cpu_diff(total, idle, prev_total, prev_idle)
     })
 }
@@ -112,4 +99,27 @@ fn read_mem_info() -> (u64, u64) {
         0
     };
     (used, mem_total)
+}
+
+/// Read disk usage via `df` and return (used_kb, total_kb).
+fn read_disk_info() -> (u64, u64) {
+    use std::process::Command;
+
+    let out = Command::new("df").args(["-k", "/"]).output();
+    match out {
+        Ok(o) if o.status.success() => {
+            let stdout = String::from_utf8_lossy(&o.stdout);
+            let lines: Vec<&str> = stdout.lines().collect();
+            if lines.len() >= 2 {
+                let parts: Vec<&str> = lines[1].split_whitespace().collect();
+                if parts.len() >= 6 {
+                    let total: u64 = parts[1].parse().unwrap_or(0);
+                    let used: u64 = parts[2].parse().unwrap_or(0);
+                    return (used, total);
+                }
+            }
+            (0, 0)
+        }
+        _ => (0, 0),
+    }
 }

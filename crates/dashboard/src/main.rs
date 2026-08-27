@@ -1,96 +1,101 @@
-//! AgroCore Live Dashboard — a Ratatui-based TUI showing real-time
-//! service status, build state, git info, and system metrics.
+//! AgroCore Live Dashboard — a SuperLightTUI-based TUI showing real-time
+//! service status, build state, git info, system metrics, and live logs.
 
-use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-    execute,
-    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
-};
-use ratatui::{
-    Terminal,
-    backend::CrosstermBackend,
-    prelude::{Color, Style},
-    widgets::{Block, Paragraph},
-};
+use agrocore_dashboard::app::App;
+use agrocore_dashboard::services::build::BuildStatus;
+use agrocore_dashboard::views;
+use slt::{Context, KeyCode, KeyModifiers, RunConfig};
 use std::time::{Duration, Instant};
 
-mod app;
-mod services;
-mod views;
-
-use app::App;
-
-fn main() -> anyhow::Result<()> {
-    // Terminal setup
-    enable_raw_mode()?;
-    let mut stdout = std::io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(std::io::stdout());
-    let mut terminal = Terminal::new(backend)?;
-
+fn main() -> std::io::Result<()> {
     let mut app = App::new();
+    let refresh_interval = Duration::from_secs(2);
     let mut last_refresh = Instant::now();
 
-    // Initial render
-    terminal.draw(|f| {
-        let area = f.area();
-        let block = Block::bordered().title("AgroCore Dashboard");
-        let inner = block.inner(area);
-        f.render_widget(block, area);
-        let txt = Paragraph::new("Loading services...").style(Style::default().fg(Color::Cyan));
-        f.render_widget(txt, inner);
-    })?;
+    slt::run_with(RunConfig::default().mouse(true), |ui: &mut Context| {
+        // Handle global key events
+        if ui.key_mod('q', KeyModifiers::CONTROL) || ui.key_code(KeyCode::Esc) {
+            ui.quit();
+        }
+        if ui.key('1') || ui.key_code(KeyCode::Tab) {
+            app.current_tab = 0;
+        }
+        if ui.key('2') {
+            app.current_tab = 1;
+        }
+        if ui.key('3') {
+            app.current_tab = 2;
+        }
+        if ui.key('4') {
+            app.current_tab = 3;
+        }
+        if ui.key('5') {
+            app.current_tab = 4;
+        }
+        if ui.key('6') {
+            app.current_tab = 5;
+        }
 
-    loop {
-        // Handle events
-        #[allow(clippy::collapsible_if)]
-        if event::poll(Duration::from_millis(100))? {
-            if let Ok(Event::Key(key)) = event::read() {
-                match key.code {
-                    KeyCode::Char('q') => break,
-                    KeyCode::Char('s') => {
-                        app.show_service_menu = !app.show_service_menu;
-                    }
-                    KeyCode::Char('r') if app.show_service_menu => {
-                        app.restart_service("postgres");
-                        app.show_service_menu = false;
-                    }
-                    KeyCode::Char('n') if app.show_service_menu => {
-                        app.restart_service("nats");
-                        app.show_service_menu = false;
-                    }
-                    KeyCode::Char('m') if app.show_service_menu => {
-                        app.restart_service("mqtt");
-                        app.show_service_menu = false;
-                    }
-                    KeyCode::Char('i') if app.show_service_menu => {
-                        app.restart_service("redis");
-                        app.show_service_menu = false;
-                    }
-                    KeyCode::Char('a') if app.show_service_menu => {
-                        app.restart_all();
-                        app.show_service_menu = false;
-                    }
-                    KeyCode::Char('x') if app.show_service_menu => {
-                        app.stop_all();
-                        app.show_service_menu = false;
-                    }
-                    _ => {}
-                }
+        // Toggle service control menu
+        if ui.key('s') {
+            app.show_service_menu = !app.show_service_menu;
+        }
+
+        // Service control hotkeys (when menu is open)
+        if app.show_service_menu {
+            if ui.key('r') {
+                app.restart_service("postgres");
+                app.show_service_menu = false;
+            }
+            if ui.key('n') {
+                app.restart_service("nats");
+                app.show_service_menu = false;
+            }
+            if ui.key('m') {
+                app.restart_service("mqtt");
+                app.show_service_menu = false;
+            }
+            if ui.key('i') {
+                app.restart_service("redis");
+                app.show_service_menu = false;
+            }
+            if ui.key('a') {
+                app.restart_all();
+                app.show_service_menu = false;
+            }
+            if ui.key('x') {
+                app.stop_all();
+                app.show_service_menu = false;
             }
         }
 
-        // Refresh every 2 seconds
-        if last_refresh.elapsed() >= Duration::from_secs(2) {
-            app.update_blocking();
+        // Trigger build check on 'b'
+        if ui.key('b') {
+            app.build = BuildStatus::Running;
+            app.build_pending = true;
+        }
+
+        // If a build was triggered, run the check (blocking — but quick)
+        if app.build_pending {
+            app.build = BuildStatus::run_check();
+            app.build_pending = false;
+        }
+
+        // Auto-refresh data every 2 seconds
+        if last_refresh.elapsed() >= refresh_interval {
+            app.refresh();
             last_refresh = Instant::now();
         }
 
-        terminal.draw(|f| views::render(f, &mut app))?;
-    }
+        // Render the dashboard
+        views::render(ui, &mut app);
 
-    // Cleanup
-    disable_raw_mode()?;
-    execute!(stdout, LeaveAlternateScreen, DisableMouseCapture)?;
-    Ok(())
+        // Toast notifications overlay
+        ui.toast(&mut app.toast_state);
+
+        // Service control overlay
+        if app.show_service_menu {
+            views::render_service_menu(ui, &mut app);
+        }
+    })
 }

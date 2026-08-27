@@ -11,7 +11,6 @@ pub struct GitStatus {
 }
 
 impl GitStatus {
-    #[allow(dead_code)]
     pub fn refresh(&mut self) {
         // Branch name
         let branch = Command::new("git")

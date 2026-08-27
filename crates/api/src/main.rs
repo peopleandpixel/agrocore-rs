@@ -2,7 +2,7 @@ use agrocore_infrastructure::Database;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    agrocore_shared::telemetry::init_telemetry("agrocore_api");
+    agrocore_shared::telemetry::init_telemetry_with_logs("agrocore_api");
     let _ = jsonwebtoken::crypto::rust_crypto::DEFAULT_PROVIDER.install_default();
 
     let _config = agrocore_shared::config::AgroCoreConfig::init_global(
