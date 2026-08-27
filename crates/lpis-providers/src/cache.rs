@@ -110,7 +110,7 @@ impl LpisCache {
             return Ok(());
         }
 
-        // Set in memory cache (Arc avoids clone of Vec<u8>)
+        // Set in memory cache — Arc::from avoids clone of Vec<u8> bytes
         if let Some(mem) = &self.memory {
             mem.insert(key.clone(), Arc::from(value.as_slice())).await;
         }

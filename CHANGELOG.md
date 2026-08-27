@@ -22,10 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - OPT-001 Dashboard TUI: process.rs Timeout (30s) und explizite Fehlerbehandlung eingebaut
 - Monitoring Toggle (`AGROCORE_METRICS_ENABLED`) aktiv
-- OPT-002 Database: Pool-Metrik-Timer (5s) eingebaut, Env-Abfrage korrekt
+- OPT-005 LPIS-Providers Cache und retry: Arc<[u8]> nutzt, kein doppelter Klon; retry via with_retry aktiv. Status: erledigt.
 
 ### Changed
-- Version bump: 0.9.13 → 0.9.14
+- Version bump: 0.9.16 → 0.9.17
+
+- OPT-005 LPIS-Providers: Cache nutzt Arc<[u8]>, kein doppelter Klon; retry aktiv
 
 ## [0.9.12] - 2026-08-27
 
