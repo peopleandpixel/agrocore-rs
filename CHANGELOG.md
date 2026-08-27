@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.25] - 2026-08-27
+
+### Added
+- Migration: `trigger_updated_at()` Funktion (für alle `updated_at`-Trigger)
+
+### Changed
+- Version bump: 0.9.24 → 0.9.25
+
 ## [0.9.24] - 2026-08-27
 
 ### Fixed
