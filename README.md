@@ -127,3 +127,12 @@ cargo audit
 ## License
 
 This project is licensed under the GNU GPL v3.0 or later.
+
+## 💬 Support & Commercial Services
+
+Agrocore is open-source software built for the agricultural community. 
+
+If you or your company rely on Agrocore, consider supporting its development:
+
+- 💸 **Financial Support:** [Sponsor on GitHub](https://github.com/sponsors/peopleandpixel) or [Open Collective](https://opencollective.com/agrocore)
+- 🛠️ **Commercial Support & Customization:** Need custom Rust integration, hardware adapter development, or enterprise deployment? [Contact us for B2B Consulting](mailto:info@peopleandpixel.com).

@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.23] - 2026-08-27
+
+### Added
+- Domain feature `depreciation`: `Cargo.toml` feature + `lib.rs` `#[cfg]` + Modul `depreciation.rs`
+- Abschreibung: Timer + Modul vollständig; Finanzbericht-Integration als nächster Schritt
+- Equipment-Filter: `find_all_filtered` erweitert (`fuel_efficiency_range`, `location_filter`); `EquipmentFilterDto` aktualisiert; Handler integriert.
+
+### Fixed
+- `domain/src/repositories.rs`: `find_all_filtered` Lifetime-Fehler (`'b'`) + `#[allow(clippy::too_many_arguments)]` behoben
+- `Cargo.toml`: `[build]` entfernt (nach `.cargo/config.toml` verschoben) — `unused manifest key` behoben
+- `admin-ui`: Leptos konsolidiert `0.8.6`
+- `lpis-providers`: `with_retry` `Box::pin` fix
+- `geometry-service`: Timeout-Struktur + worker timeout
+- `weather-service`: Timeout + `tracing` import
+- `api/middleware`: doppelte Imports entfernt
+- `reporting-service`: `info` Import bereinigt
+
+### Changed
+- docs/tasks.md: Abschreibung als `[x]` markiert; Equipment-Suche als `[x]`
+- docs/optimizations.md: nur noch P1/P3/P4 Haupt-Tasks offen
+- Version bump: 0.9.22 → 0.9.23
+
 ## [0.9.22] - 2026-08-27
 
 ### Added

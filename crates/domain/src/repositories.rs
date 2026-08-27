@@ -51,16 +51,16 @@ pub trait EquipmentRepository: Send + Sync {
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Equipment>>;
     #[allow(clippy::too_many_arguments)]
-    fn find_all_filtered(
-        &self,
+    fn find_all_filtered<'b>(
+        &'b self,
         tid: TenantId,
         p: Pagination,
-        search: Option<&str>,
-        equipment_type: Option<&str>,
+        search: Option<&'b str>,
+        equipment_type: Option<&'b str>,
         in_usage: Option<bool>,
         needs_maintenance: Option<bool>,
         fuel_efficiency_range: Option<(f64, f64)>,
-        location_filter: Option<&str>,
+        location_filter: Option<&'b str>,
     ) -> RepositoryFuture<PaginatedResponse<Equipment>>;
     fn find_all_visible(
         &self,
