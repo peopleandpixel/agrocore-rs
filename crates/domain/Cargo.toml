@@ -22,3 +22,4 @@ strum = { version = "0.26", features = ["derive"] }
 default = ["sqlx"]
 sqlx = ["dep:sqlx", "agrocore-shared/sqlx"]
 mocks = ["dep:mockall"]
+depreciation = []

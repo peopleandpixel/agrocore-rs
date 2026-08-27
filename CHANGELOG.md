@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.23] - 2026-08-27
+
+### Added
+- Domain feature `depreciation`: `Cargo.toml` feature + `lib.rs` `#[cfg]` + Modul `depreciation.rs`
+- Abschreibung: Timer + Modul vollständig; Finanzbericht-Integration als nächster Schritt
+
+### Changed
+- docs/tasks.md: Abschreibung als `[x]` markiert; Equipment-Suche als `[x]`
+- docs/optimizations.md: nur noch 009, 010 offen (und P1/P3/P4 Haupt-Tasks)
+- Version bump: 0.9.22 → 0.9.23
+
 ## [0.9.22] - 2026-08-27
 
 ### Added
