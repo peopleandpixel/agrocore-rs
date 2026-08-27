@@ -20,14 +20,14 @@ P3 (langfristig / niedriger Priorität):
 
 Crates-Analyse — nur offen:
 
-OPT-008 Domain lazy-loading (P2). Datei: crates/domain/src/lib.rs. Status: Offen.
+OPT-008 Domain lazy-loading (P2). Datei: crates/domain/src/lib.rs. Aktion: Mock-Branch lazy-loading (OnceLock). Status: erledigt.
 
 OPT-009 Reporting-Service Timeout und Paginierung (P2). Datei: crates/reporting-service/src/main.rs. Status: Offen.
 
 OPT-010 Weather-Service und Geometry-Service Timeout (P3). Datei: crates/weather-service/src/main.rs + geometry-service/src/main.rs. Status: Offen.
 
 Abgeschlossen / Abgebrochen (nur zur Information, nicht mehr aktiv):
-- 001, 002, 004, 005, 006, 007: erledigt
+- 001, 002, 004, 005, 006, 007, 008: erledigt
 - 003: ABGESAGT (Leptos 0.8.x bleibt)
 - 2: erledigt (Build-Optimierung aktiv)
 - 1: erledigt (Monitoring-Toggle aktiv)

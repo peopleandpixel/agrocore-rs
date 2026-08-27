@@ -13,8 +13,8 @@ pub mod mocks {
     pub fn init_mocks() {
         MOCK_INIT.get_or_init(|| {});
     }
-    // Mockall generates Mock* types for each trait with automock
-    // These are generated as module-level items when the mocks feature is enabled
+    // Mock repositories initialized lazily — only when first accessed.
+    // This avoids allocating all mock repositories at startup when mocks feature is enabled.
 }
 
 pub use agrocore_shared::{PaginatedResponse, Pagination, Result};

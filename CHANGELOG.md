@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.18] - 2026-08-27
+
+### Added
+- OPT-008: Domain Mock lazy-loading (OnceLock) eingebaut
+
+### Changed
+- docs/optimizations.md bereinigt — nur noch 009, 010 offen; 008 als erledigt markiert
+- Version bump: 0.9.17 → 0.9.18
+
 ## [0.9.17] - 2026-08-27
 
 ### Added
