@@ -23,7 +23,7 @@ OPT-005 LPIS-Providers Cache doppelter Klon retry (P2). Datei: crates/lpis-provi
 
 OPT-006 Messaging Hardcoded-Strings retry-Integration (P2). Datei: crates/messaging/src/lib.rs. Aktion: Retry-Backoff (max 3 Versuche) eingebaut; retry aktiv. Status: erledigt.
 
-OPT-007 Shared async-trait und Arc-Klone (P3). Datei: crates/shared/src/lib.rs. Aktion: with_retry und db_exec prüfen. Status: Offen.
+OPT-007 Shared async-trait und Arc-Klone (P3). Datei: crates/shared/src/lib.rs. Aktion: db_exec Makro verbessert (Referenz-Klon statt direkter Referenz); with_retry bleibt. Status: erledigt.
 
 OPT-008 Domain lazy-loading (P2). Datei: crates/domain/src/lib.rs. Aktion: Repository-Enum Mock-Branch mit lazy-loading. Status: Offen.
 
@@ -31,4 +31,4 @@ OPT-009 Reporting-Service Timeout und Paginierung (P2). Datei: crates/reporting-
 
 OPT-010 Weather-Service und Geometry-Service Timeout (P3). Datei: crates/weather-service/src/main.rs + crates/geometry-service/src/main.rs. Aktion: Timeout-Struktur hinzufügen. Status: Offen.
 
-Status: 001, 002, 004, 005, 006 erledigt. 2 (Build) erledigt, 1 (Toggle) erledigt. 003 abgebrochen. Übrige offen (007, 008, 009, 010). 7 (Flag) offen, 6 (Allocator) offen, 5 (Threshold) offen, 3 (Profiling) offen, 8 (KI) offen.
+Status: 001, 002, 004, 005, 006, 007 erledigt. 2 (Build) erledigt, 1 (Toggle) erledigt. 003 abgebrochen. Übrige offen (008, 009, 010). 7 (Flag) offen, 6 (Allocator) offen, 5 (Threshold) offen, 3 (Profiling) offen, 8 (KI) offen.

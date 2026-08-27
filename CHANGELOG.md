@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.17] - 2026-08-27
+
+### Added
+- OPT-005: LPIS Cache nutzt Arc<[u8]>, kein doppelter Klon; retry via with_retry aktiv
+- OPT-007: db_exec Makro verbessert (Referenz-Klon statt direkter Referenz)
+
+### Changed
+- Version bump: 0.9.16 → 0.9.17
+
 ## [0.9.16] - 2026-08-27
 
 ### Added

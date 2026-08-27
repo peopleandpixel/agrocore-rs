@@ -277,9 +277,12 @@ macro_rules! pg_repo {
 #[macro_export]
 macro_rules! db_exec {
     ($pool:expr, $body:expr) => {{
-        let pool: &sqlx::PgPool = &$pool;
+        let pool_ref: &sqlx::PgPool = &$pool;
         std::boxed::Box::pin(async move {
-            let result: Result<_, sqlx::Error> = async { $body }.await;
+            let result: Result<_, sqlx::Error> = async {
+                let pool = pool_ref.clone();
+                $body
+            }.await;
             result
         })
     }};
