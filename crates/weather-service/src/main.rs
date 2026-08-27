@@ -31,10 +31,13 @@ async fn main() -> anyhow::Result<()> {
     let db_clone = db.clone();
     let nats_url_clone = nats_url.clone();
 
-    // Start worker in background
+    // Start worker in background with 30s timeout (OPT-010)
+    let timeout_duration = std::time::Duration::from_secs(30);
     tokio::spawn(async move {
-        if let Err(e) = worker::start(db_clone, nats_url_clone).await {
-            eprintln!("Worker error: {}", e);
+        match tokio::time::timeout(timeout_duration, worker::start(db_clone, nats_url_clone)).await {
+            Ok(Ok(())) => info!("Weather worker completed"),
+            Ok(Err(e)) => error!("Worker error: {}", e),
+            Err(_) => error!("Timeout: Weather worker exceeded 30s"),
         }
     });
 

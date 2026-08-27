@@ -152,15 +152,19 @@ pub async fn start(db: Database, nats_url: String) -> anyhow::Result<()> {
                         let messaging_clone = messaging.clone();
                         let client = reqwest::Client::new();
                         tokio::spawn(async move {
-                            if let Err(e) = process_tenant_weather(
-                                &db_clone, &tenant, &registry_clone, &client, &messaging_clone,
-                            )
-                            .await
-                            {
-                                error!(
-                                    "Error processing weather for new tenant {}: {}",
-                                    tenant.id, e
-                                );
+                            // Timeout 30s für Tenant-Wetter-Verarbeitung (OPT-010)
+                            match tokio::time::timeout(
+                                std::time::Duration::from_secs(30),
+                                process_tenant_weather(
+                                    &db_clone, &tenant, &registry_clone, &client, &messaging_clone,
+                                ),
+                            ).await {
+                                Ok(Ok(())) => info!("Tenant weather processed: {}", tenant.id),
+                                Ok(Err(e)) => error!("Error processing weather: {}", e),
+                                Err(_) => error!(
+                                    "Timeout: Weather processing exceeded 30s for tenant {}",
+                                    tenant.id
+                                ),
                             }
                         });
                     }

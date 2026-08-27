@@ -21,7 +21,7 @@ impl ReportingService {
     pub async fn generate_orders_excel(&self, tenant_id: Uuid) -> anyhow::Result<Vec<u8>> {
         let pagination = Pagination {
             page: Some(0),
-            per_page: Some(100),
+            per_page: Some(500),
         };
         let orders = self
             .db
@@ -61,7 +61,7 @@ impl ReportingService {
             Ok(Err(e)) => Err(e),
             Err(_) => {
                 error!("Excel generation timed out after 30 seconds");
-                tracing::warn!("Timeout: Excel generierung überschritt 30 Sekunden");
+                tracing::info!("Timeout: Excel generierung überschritt 30 Sekunden — Paginierung 500 aktiv");
                 anyhow::bail!("Excel generation timeout (30s)")
             }
         }
@@ -73,7 +73,7 @@ impl ReportingService {
     ) -> anyhow::Result<FeatureCollection> {
         let pagination = Pagination {
             page: Some(0),
-            per_page: Some(100),
+            per_page: Some(500),
         };
         let sites = self
             .db
@@ -121,7 +121,7 @@ impl ReportingService {
     pub async fn generate_pac_sip_excel(&self, tenant_id: Uuid) -> anyhow::Result<Vec<u8>> {
         let pagination = Pagination {
             page: Some(0),
-            per_page: Some(100),
+            per_page: Some(500),
         };
         let sites = self
             .db
@@ -167,7 +167,7 @@ impl ReportingService {
     pub async fn generate_veterinary_report(&self, tenant_id: Uuid) -> anyhow::Result<Vec<u8>> {
         let pagination = Pagination {
             page: Some(0),
-            per_page: Some(100),
+            per_page: Some(500),
         };
         let animals = self
             .db

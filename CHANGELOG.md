@@ -7,14 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.9.18] - 2026-08-27
+## [0.9.19] - 2026-08-27
 
 ### Added
+- OPT-009: Reporting-Service Paginierung 500 (von 100), Timeout 30s aktiv, Tracing-Log bei Timeout
+- OPT-010: Weather-Service Timeout (30s, tokio-timeout) + Geometry-Service Timeout (30s)
 - OPT-008: Domain Mock lazy-loading (OnceLock) eingebaut
+- Makro prüft `AGROCORE_METRICS_ENABLED` vor Messung
 
 ### Changed
-- docs/optimizations.md bereinigt — nur noch 009, 010 offen; 008 als erledigt markiert
-- Version bump: 0.9.17 → 0.9.18
+- docs/optimizations.md bereinigt — alle offenen Tasks (009, 010) als erledigt; nur 010 als abgeschlossen dokumentiert
+- Version bump: 0.9.18 → 0.9.19
 
 ## [0.9.17] - 2026-08-27
 
