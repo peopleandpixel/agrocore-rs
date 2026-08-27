@@ -282,7 +282,8 @@ macro_rules! db_exec {
             let result: Result<_, sqlx::Error> = async {
                 let pool = pool_ref.clone();
                 $body
-            }.await;
+            }
+            .await;
             result
         })
     }};

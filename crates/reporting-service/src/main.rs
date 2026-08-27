@@ -61,7 +61,9 @@ impl ReportingService {
             Ok(Err(e)) => Err(e),
             Err(_) => {
                 error!("Excel generation timed out after 30 seconds");
-                tracing::info!("Timeout: Excel generierung überschritt 30 Sekunden — Paginierung 500 aktiv");
+                tracing::info!(
+                    "Timeout: Excel generierung überschritt 30 Sekunden — Paginierung 500 aktiv"
+                );
                 anyhow::bail!("Excel generation timeout (30s)")
             }
         }

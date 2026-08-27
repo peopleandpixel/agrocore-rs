@@ -75,8 +75,8 @@ Erledigte Arbeit ist weggelassen; ein Modul ohne offene Punkte ist als erledigt 
 - [x] Wartungskosten-Tracking (Teile, Arbeitszeit, Ausfallkosten)
 - [x] Kraftstoffverbrauch (Liter/Stunde, pro Operation, pro Feld)
 - [x] Nutzung-Logging (wer hat was, wann, wie lange)
-- [ ] Abschreibung (automatische Amortisation für Finanzberichte)
-- [ ] Equipment-Suche und Filterung
+- [ ] Abschreibung (automatische Amortisation für Finanzberichte) — Plan: (A) Cron/Timer: monatliche Amortisation berechnen (StraightLine/DoubleDeclining); (B) Finanzbericht-Endpoint erweitern (`GET /financial/reports` mit equipment_depreciation Aggregation); (C) UI: Amortisationsplan-Tabelle. Aufwand: 3 Tage.
+- [ ] Equipment-Suche und Filterung — Plan: (A) Backend: `EquipmentRepository::find_all` Filter-Parametern (maintenance_due, fuel_efficiency_range, location) hinzufügen; (B) API: Query-Parameter `/equipments?filter=...`; (C) Admin-UI: Filter-Formular + dynamische Liste. Aufwand: 2 Tage.
 
 #### Tierhaltung (Erweiterung)
 - [ ] Zucht-Records (Brunft, KI, Kalbung/Meerschweinchenpaarung)

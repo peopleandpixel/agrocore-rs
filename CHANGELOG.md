@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.9.19] - 2026-08-27
+## [0.9.20] - 2026-08-27
 
 ### Added
 - OPT-009: Reporting-Service Paginierung 500 (von 100), Timeout 30s aktiv, Tracing-Log bei Timeout
@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - docs/optimizations.md bereinigt — alle offenen Tasks (009, 010) als erledigt; nur 010 als abgeschlossen dokumentiert
-- Version bump: 0.9.18 → 0.9.19
+- Version bump: 0.9.19 → 0.9.20
 
 ## [0.9.17] - 2026-08-27
 

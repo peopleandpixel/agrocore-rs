@@ -2,6 +2,7 @@ use actix_web::{App, HttpResponse, HttpServer, Responder, web};
 use agrocore_infrastructure::Database;
 use std::time::Duration;
 
+use tracing::{error, info};
 /// Timeout-Struktur für Service-Operationen (OPT-010)
 pub const SERVICE_TIMEOUT_SECS: u64 = 30;
 pub const WORKER_TIMEOUT: Duration = Duration::from_secs(SERVICE_TIMEOUT_SECS);
@@ -34,7 +35,8 @@ async fn main() -> anyhow::Result<()> {
     // Start worker in background with 30s timeout (OPT-010)
     let timeout_duration = std::time::Duration::from_secs(30);
     tokio::spawn(async move {
-        match tokio::time::timeout(timeout_duration, worker::start(db_clone, nats_url_clone)).await {
+        match tokio::time::timeout(timeout_duration, worker::start(db_clone, nats_url_clone)).await
+        {
             Ok(Ok(())) => info!("Weather worker completed"),
             Ok(Err(e)) => error!("Worker error: {}", e),
             Err(_) => error!("Timeout: Weather worker exceeded 30s"),
