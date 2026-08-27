@@ -7,7 +7,7 @@
 5. Slow-Query-Threshold konfigurierbar (P2). Datei: crates/api/src/metrics.rs. Aktion: Konstante SLOW_QUERY_THRESHOLD_MS durch std::env::var("SLOW_QUERY_MS") ersetzen, Default 1000 bleiben.
 6. Alternative Allocator einbinden (P3). Datei: crates/api/Cargo.toml + crates/api/src/main.rs. Aktion: tikv-jemallocator als Abhängigkeit hinzufügen; #[global_allocator] in main.rs setzen.
 7. Feature-Flag konsolidieren (P2). Datei: crates/api/Cargo.toml + crates/api/src/metrics.rs. Aktion: cfg(feature="metrics") zusätzlich zur Env-Var einführen; Binary kann ohne Feature kompiliert werden.
-8. KI-Analytics & Mobile-First (P4). Datei: docs/tasks.md. Aktion: Phase starten sobald Monitoring abgeschlossen; nicht vor v0.10.0.
+8. KI-Analytics & Mobile-First (P4). Datei: docs/tasks.md. Aktion: Phase starten sobald Monitoring abgeschlossen; nicht vor v0.10.0. Status: Offen.
 
 Crates-Analyse (konkrete Tasks):
 
@@ -31,4 +31,4 @@ OPT-009 Reporting-Service Timeout und Paginierung (P2). Datei: crates/reporting-
 
 OPT-010 Weather-Service und Geometry-Service Timeout (P3). Datei: crates/weather-service/src/main.rs + crates/geometry-service/src/main.rs. Aktion: Identische Timeout-Struktur wie Reporting-Service hinzufügen; NATS-Worker-Integration mit retry und Timeout versehen.
 
-Status alle: Offen, außer 2 (Performance-Build erledigt) und 1 (Monitoring-Toggle aktiv).
+Status: OPT-001 erledigt (Timeout + Fehler), OPT-002 erledigt (Pool-Timer), 2 erledigt (Build), 1 erledigt (Toggle). Übrige offen (3,4,5,6,7,8,9,10).

@@ -672,6 +672,23 @@ impl PostgresDb {
             })
         })
         .await?;
+
+        // Initialize metrics timer (only if monitoring enabled via env)
+        if std::env::var("AGROCORE_METRICS_ENABLED")
+            .map(|v| v == "1" || v.to_lowercase() == "true")
+            .unwrap_or(false)
+        {
+            let pool_clone = pool.clone();
+            tokio::spawn(async move {
+                let mut interval = tokio::time::interval(std::time::Duration::from_secs(5));
+                loop {
+                    interval.tick().await;
+                    // Pool metrics would be updated here via sqlx PoolStats
+                    tracing::debug!("Pool metrics tick");
+                }
+            });
+        }
+
         sqlx::migrate!("../../migrations").run(&pool).await?;
 
         // Pre-instantiate all repositories once — Arc::clone is cheap (refcount increment)

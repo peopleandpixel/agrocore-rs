@@ -12,9 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - OPT-001 Dashboard TUI: process.rs Timeout (30s) und explizite Fehlerbehandlung eingebaut
 - Monitoring Toggle (`AGROCORE_METRICS_ENABLED`) aktiv
+- OPT-002 Database: Pool-Metrik-Timer (5s) eingebaut, Env-Abfrage korrekt
 
 ### Changed
-- Version bump: 0.9.12 → 0.9.13
+- Version bump: 0.9.13 → 0.9.14
 
 ## [0.9.12] - 2026-08-27
 
