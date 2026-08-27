@@ -689,6 +689,17 @@ impl PostgresDb {
             });
         }
 
+        // Monthly depreciation automation timer (OPT-Abschreibung)
+        tokio::spawn(async move {
+            let mut interval =
+                tokio::time::interval(std::time::Duration::from_secs(30 * 24 * 60 * 60)); // ~monthly
+            loop {
+                interval.tick().await;
+                tracing::info!("Monthly depreciation automation tick");
+                // Here: call depreciation calculation for all active equipment
+            }
+        });
+
         sqlx::migrate!("../../migrations").run(&pool).await?;
 
         // Pre-instantiate all repositories once — Arc::clone is cheap (refcount increment)

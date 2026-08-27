@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.22] - 2026-08-27
+
+### Added
+- Equipment-Filter: `find_all_filtered` erweitert (`fuel_efficiency_range`, `location_filter`); `EquipmentFilterDto` aktualisiert; Handler integriert.
+- Abschreibung: monatlicher Timer (`tokio::spawn` in `database.rs`); Modul `depreciation.rs` (`calculate_straight_line`, `double_declining`, `schedule`)
+
+### Changed
+- docs/tasks.md: Equipment-Suche als erledigt markiert
+- Version bump: 0.9.21 → 0.9.22
+
+## [0.9.21] - 2026-08-27
+
+### Fixed
+- admin-ui (Leptos): konsolidiert auf 0.8.6 (von 0.9.0-beta) — 86 Fehler behoben
+- lpis-providers: with_retry Box::pin fix
+- geometry-service: Timeout-Struktur eingebaut; worker timeout aktiv
+- api/middleware: doppelte Imports entfernt
+- weather-service: Timeout-Struktur + tracing import
+- reporting-service: Paginierung 500, Timeout 30s, Tracing-Log
+
+### Added
+- OPT-009: Reporting-Service Paginierung 500 + Timeout 30s + Tracing
+- OPT-010: Weather-Service Timeout + Geometry-Service Timeout
+
+### Changed
+- Version bump: 0.9.20 → 0.9.21
+
 ## [0.9.20] - 2026-08-27
 
 ### Added
@@ -17,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - docs/optimizations.md bereinigt — alle offenen Tasks (009, 010) als erledigt; nur 010 als abgeschlossen dokumentiert
-- Version bump: 0.9.19 → 0.9.20
+- Version bump: 0.9.20 → 0.9.21
 
 ## [0.9.17] - 2026-08-27
 

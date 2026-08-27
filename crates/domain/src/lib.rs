@@ -1,3 +1,5 @@
+#[cfg(feature = "depreciation")]
+pub mod depreciation;
 pub mod entities;
 pub mod repositories;
 pub mod services;

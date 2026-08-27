@@ -1,4 +1,7 @@
-use actix_web::{Error, FromRequest, HttpRequest};
+use actix_web::{
+    Error, FromRequest, HttpRequest,
+    dev::{Service, ServiceRequest, ServiceResponse, Transform},
+};
 use agrocore_shared::config::decoding_key;
 use dashmap::DashMap;
 use jsonwebtoken::{Algorithm, Validation, decode};
@@ -7,6 +10,7 @@ use serde::Deserialize;
 use std::future::{Ready, ready};
 use std::net::IpAddr;
 use std::sync::Arc;
+use std::task::{Context, Poll};
 use std::time::{Duration, Instant};
 
 /// Token revocation list — stores revoked JWT IDs (jti) with TTL.
@@ -388,14 +392,6 @@ mod tests {
         );
     }
 }
-
-use actix_web::{
-    Error,
-    dev::{Service, ServiceRequest, ServiceResponse, Transform},
-};
-use std::future::{Ready, ready};
-use std::pin::Pin;
-use std::task::{Context, Poll};
 
 /// Metrics middleware: checks is_enabled() and registers metrics.
 pub struct MetricsMiddleware;

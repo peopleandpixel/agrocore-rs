@@ -103,13 +103,13 @@ impl BaseClient {
             || {
                 let url = url_owned.clone();
                 let client = self.client.clone();
-                async move {
+                Box::pin(async move {
                     client
                         .get(&url)
                         .send()
                         .await
                         .map_err(BaseProviderError::Http)
-                }
+                })
             },
         )
         .await?;

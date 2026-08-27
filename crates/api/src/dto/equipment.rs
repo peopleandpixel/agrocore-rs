@@ -254,6 +254,11 @@ pub struct EquipmentFilterDto {
     pub in_usage: Option<bool>,
     /// Only show equipment needing maintenance
     pub needs_maintenance: Option<bool>,
+    /// Filter by fuel efficiency range (min, max liters/hour)
+    pub fuel_efficiency_range_min: Option<f64>,
+    pub fuel_efficiency_range_max: Option<f64>,
+    /// Filter by location reference
+    pub location_filter: Option<String>,
 }
 
 impl From<UpdateEquipmentDto> for agrocore_domain::entities::equipment::UpdateEquipmentDto {

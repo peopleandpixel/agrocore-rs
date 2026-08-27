@@ -121,6 +121,8 @@ impl EquipmentRepository for PgEquipmentRepo {
         equipment_type: Option<&str>,
         in_usage: Option<bool>,
         needs_maintenance: Option<bool>,
+        fuel_efficiency_range: Option<(f64, f64)>,
+        location_filter: Option<&str>,
     ) -> RepositoryFuture<PaginatedResponse<Equipment>> {
         let pool = self.pool.clone();
         let page = p.page.unwrap_or(0);

@@ -234,6 +234,14 @@ pub async fn search_equipments(
             filter.equipment_type.as_deref(),
             filter.in_usage,
             filter.needs_maintenance,
+            match (
+                filter.fuel_efficiency_range_min,
+                filter.fuel_efficiency_range_max,
+            ) {
+                (Some(min), Some(max)) => Some((min, max)),
+                _ => None,
+            },
+            filter.location_filter.as_deref(),
         )
         .await?;
 

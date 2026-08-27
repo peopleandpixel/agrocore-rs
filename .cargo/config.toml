@@ -12,5 +12,8 @@ SQLX_OFFLINE = "true"
 # NOTE: Do NOT use [build].rustflags with "--edition" for native targets —
 # it causes "Option 'edition' given more than once" because Cargo.toml
 # already specifies edition = "2024".
+[build]
+rustflags = ["-C", "force-frame-pointers=yes", "-C", "symbol-mangling-version=v0"]
+
 [target.wasm32-unknown-unknown]
 rustflags = ["--cfg=web_sys_unstable_apis"]

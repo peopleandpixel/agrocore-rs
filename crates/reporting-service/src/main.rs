@@ -6,7 +6,7 @@ use geojson::{Feature, FeatureCollection, Geometry, GeometryValue};
 use rust_xlsxwriter::*;
 use std::time::Duration;
 use tokio::time::timeout;
-use tracing::{error, info};
+use tracing::error;
 use uuid::Uuid;
 
 pub struct ReportingService {

@@ -26,10 +26,13 @@ pub enum GeometryResponse {
 }
 
 pub async fn start(_db: Database, nats_url: String) -> anyhow::Result<()> {
-    let messaging = with_retry("geometry-nats-connect", 3, 1, || async {
-        MessagingClient::connect(&nats_url)
-            .await
-            .map_err(|e| anyhow::anyhow!("NATS connection failed: {}", e))
+    let messaging = with_retry("geometry-nats-connect", 3, 1, || {
+        let url = nats_url.clone();
+        Box::pin(async move {
+            MessagingClient::connect(&url)
+                .await
+                .map_err(|e| anyhow::anyhow!("NATS connection failed: {}", e))
+        })
     })
     .await?;
     let mut subscriber = messaging.subscribe("geometry.request").await?;
