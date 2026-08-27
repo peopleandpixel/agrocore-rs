@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.24] - 2026-08-27
+
+### Fixed
+- `domain/src/repositories.rs`: `find_all_filtered` + `record_fuel_consumption` + `record_usage` Lifetime (`'b`) behoben; `#[allow(clippy::too_many_arguments)]` korrekt gesetzt; `Cargo.toml` `depreciation` Feature hinzugefügt
+- Alle `cargo c` Fehler behoben (`geometry` Timeout eingebaut; `weather` Timeout + tracing import; `reporting` Paginierung 500 + Timeout 30s; `lpis-providers` `Box::pin` fix; `api/middleware` doppelte Imports entfernt)
+
+### Added
+- Abschreibung: Timer (`database.rs`), Modul `depreciation.rs`, Domain-Feature `depreciation`
+- Equipment-Suche: Filter (`find_all_filtered` + 2 Felder), API-DTO + Handler
+
+### Changed
+- docs/tasks.md: Abschreibung + Equipment-Suche als `[x]`
+- docs/optimizations.md: Status aktualisiert
+- Version bump: 0.9.23 → 0.9.24
+
 ## [0.9.23] - 2026-08-27
 
 ### Added

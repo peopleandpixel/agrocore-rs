@@ -126,16 +126,16 @@ pub trait EquipmentRepository: Send + Sync {
     ) -> RepositoryFuture<Vec<FuelConsumptionDto>>;
     /// Record a fuel consumption entry.
     #[allow(clippy::too_many_arguments)]
-    fn record_fuel_consumption(
-        &self,
+    fn record_fuel_consumption<'b>(
+        &'b self,
         tid: TenantId,
         equipment_id: Uuid,
         liters: f64,
         cost_per_liter: Option<f64>,
-        operation_type: Option<&str>,
+        operation_type: Option<&'b str>,
         field_id: Option<Uuid>,
         hours_operated: Option<f64>,
-        notes: Option<&str>,
+        notes: Option<&'b str>,
     ) -> RepositoryFuture<Option<FuelConsumptionDto>>;
     /// Get usage log history for an equipment, newest first.
     fn get_usage_log(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Vec<UsageLogDto>>;
@@ -147,17 +147,17 @@ pub trait EquipmentRepository: Send + Sync {
     ) -> RepositoryFuture<Option<UsageSummaryDto>>;
     /// Record a usage log entry for an equipment.
     #[allow(clippy::too_many_arguments)]
-    fn record_usage(
-        &self,
+    fn record_usage<'b>(
+        &'b self,
         tid: TenantId,
         equipment_id: Uuid,
         worker_id: Option<Uuid>,
         task_id: Option<Uuid>,
-        operation_type: Option<&str>,
+        operation_type: Option<&'b str>,
         started_at: DateTime<Utc>,
         ended_at: Option<DateTime<Utc>>,
         hours_operated: f64,
-        note: Option<&str>,
+        note: Option<&'b str>,
     ) -> RepositoryFuture<Option<UsageLogDto>>;
     /// Get aggregated depreciation info for an equipment.
     fn get_depreciation(
