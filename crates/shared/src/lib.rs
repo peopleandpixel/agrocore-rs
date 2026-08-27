@@ -71,7 +71,7 @@ pub struct Audit {
 pub struct Pagination {
     #[validate(range(min = 0))]
     pub page: Option<u64>,
-    #[validate(range(min = 1, max = 100))]
+    #[validate(range(min = 1, max = 500))]
     pub per_page: Option<u64>,
 }
 
@@ -277,7 +277,7 @@ macro_rules! pg_repo {
 #[macro_export]
 macro_rules! db_exec {
     ($pool:expr, $body:expr) => {{
-        let pool = $pool.clone();
+        let pool: &sqlx::PgPool = &$pool;
         std::boxed::Box::pin(async move {
             let result: Result<_, sqlx::Error> = async { $body }.await;
             result

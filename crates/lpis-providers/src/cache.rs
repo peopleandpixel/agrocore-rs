@@ -4,13 +4,14 @@ use moka::future::Cache;
 use redis::AsyncCommands;
 use redis::aio::ConnectionManager;
 use redis::cmd;
+use std::sync::Arc;
 use std::time::Duration;
 use tracing::{debug, warn};
 
 /// Unified cache interface supporting both in-memory (moka) and distributed (redis) caching
 #[derive(Clone)]
 pub struct LpisCache {
-    memory: Option<Cache<String, Vec<u8>>>,
+    memory: Option<Cache<String, Arc<[u8]>>>,
     redis: Option<ConnectionManager>,
     default_ttl: Duration,
     enabled: bool,
@@ -73,7 +74,7 @@ impl LpisCache {
     }
 
     /// Get a value from cache
-    pub async fn get(&self, key: &str) -> Option<Vec<u8>> {
+    pub async fn get(&self, key: &str) -> Option<Arc<[u8]>> {
         if !self.enabled {
             return None;
         }
@@ -91,7 +92,7 @@ impl LpisCache {
             let mut conn = conn.clone();
             if let Ok(value) = conn.get::<_, Vec<u8>>(key).await {
                 debug!("Cache hit (redis): {}", key);
-                return Some(value);
+                return Some(Arc::from(value));
             }
         }
 
@@ -109,9 +110,9 @@ impl LpisCache {
             return Ok(());
         }
 
-        // Set in memory cache
+        // Set in memory cache (Arc avoids clone of Vec<u8>)
         if let Some(mem) = &self.memory {
-            mem.insert(key.clone(), value.clone()).await;
+            mem.insert(key.clone(), Arc::from(value.as_slice())).await;
         }
 
         // Set in Redis
@@ -140,7 +141,7 @@ impl LpisCache {
         }
 
         if let Some(mem) = &self.memory {
-            mem.insert(key.clone(), value.clone()).await;
+            mem.insert(key.clone(), Arc::from(value.as_slice())).await;
         }
 
         if let Some(conn) = &self.redis {

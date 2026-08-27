@@ -236,17 +236,21 @@ pub fn classify_query_type(sql: &str) -> &'static str {
 #[macro_export]
 macro_rules! measure_sqlx_query {
     ($pool:expr, $metrics:expr, $sql:expr, $query_type_override:expr) => {{
-        let start = std::time::Instant::now();
-        let result = $sql;
-        let elapsed_ms = start.elapsed().as_millis();
-        let qtype = $query_type_override;
-        let table = $crate::metrics::extract_table_from_sql($sql);
-        $metrics.record_query(
-            qtype,
-            table,
-            elapsed_ms,
-            $crate::metrics::SLOW_QUERY_THRESHOLD_MS,
-        );
-        result
+        if !$crate::metrics::is_enabled() {
+            $sql
+        } else {
+            let start = std::time::Instant::now();
+            let result = $sql;
+            let elapsed_ms = start.elapsed().as_millis();
+            let qtype = $query_type_override;
+            let table = $crate::metrics::extract_table_from_sql($sql);
+            $metrics.record_query(
+                qtype,
+                table,
+                elapsed_ms,
+                $crate::metrics::SLOW_QUERY_THRESHOLD_MS,
+            );
+            result
+        }
     }};
 }

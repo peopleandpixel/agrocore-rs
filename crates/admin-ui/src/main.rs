@@ -179,7 +179,7 @@ fn AuthenticatedShell(
                                         leptos::task::spawn_local(async move {
                                             if let Ok(resp) = api::stop_impersonation().await {
                                                 api::set_auth_token(&resp.token);
-                                                api::set_user_role(&resp.roles.first().cloned().unwrap_or_else(|| String::from("Admin")));
+                                                api::set_user_role(resp.roles.first().map(String::as_str).unwrap_or("Admin"));
                                                 let _ = window().location().set_href("/users");
                                             }
                                         });

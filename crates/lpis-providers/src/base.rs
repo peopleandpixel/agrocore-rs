@@ -6,6 +6,7 @@
 //! - Rate limiting via governor
 
 use crate::{cache::LpisCache, config::ProviderConfig};
+use agrocore_shared::with_retry;
 use governor::clock::DefaultClock;
 use governor::middleware::NoOpMiddleware;
 use governor::state::{InMemoryState, NotKeyed};
@@ -94,12 +95,24 @@ impl BaseClient {
             limiter.until_ready().await;
         }
 
-        let response = self
-            .client
-            .get(url)
-            .send()
-            .await
-            .map_err(BaseProviderError::Http)?;
+        let url_owned = url.to_string();
+        let response = with_retry(
+            "execute HTTP request",
+            self.max_retries,
+            self.base_delay.as_secs(),
+            || {
+                let url = url_owned.clone();
+                let client = self.client.clone();
+                async move {
+                    client
+                        .get(&url)
+                        .send()
+                        .await
+                        .map_err(BaseProviderError::Http)
+                }
+            },
+        )
+        .await?;
 
         Ok(response)
     }

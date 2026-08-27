@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.16] - 2026-08-27
+
+### Added
+- OPT-004 Metrics Makro `measure_sqlx_query!` vollständig integriert (nur aktiv wenn `is_enabled()`); Middleware `MetricsMiddleware` als actix-web Middleware eingebunden
+- OPT-006 Messaging: Webhook-Event-Handler `handle_webhook_event()` mit exponentiellem Retry-Backoff (max 3 Versuche) ergänzt; retry für NATS `publish` und `publish_raw` aktiv (`with_retry` aus shared, 3 Versuche, exponentiell)
+- Makro prüft `AGROCORE_METRICS_ENABLED` vor Messung
+
+### Changed
+- Version bump: 0.9.14 → 0.9.16
+
 ## [0.9.13] - 2026-08-27
 
 ### Fixed

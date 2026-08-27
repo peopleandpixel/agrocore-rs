@@ -145,6 +145,7 @@ pub async fn run_server(
             .wrap(security_headers)
             .wrap(Governor::new(&gov_conf))
             .wrap(cors)
+            .wrap(crate::middleware::MetricsMiddleware)
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").url(
                 "/api-docs/openapi.json",
                 openapi::ApiDoc::openapi_with_security(),

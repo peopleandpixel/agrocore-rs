@@ -8,6 +8,11 @@ pub use services::weather::{WeatherDataProvider, WeatherFetchResult, WeatherServ
 #[cfg(feature = "mocks")]
 pub mod mocks {
     pub use super::repositories::*;
+    use std::sync::OnceLock;
+    pub static MOCK_INIT: OnceLock<()> = OnceLock::new();
+    pub fn init_mocks() {
+        MOCK_INIT.get_or_init(|| {});
+    }
     // Mockall generates Mock* types for each trait with automock
     // These are generated as module-level items when the mocks feature is enabled
 }

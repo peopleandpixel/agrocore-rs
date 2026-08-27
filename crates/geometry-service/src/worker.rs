@@ -1,5 +1,6 @@
 use agrocore_infrastructure::Database;
 use agrocore_messaging::{Event, GlobalEvent, MessagingClient};
+use agrocore_shared::with_retry;
 use futures::StreamExt;
 use geo::prelude::*;
 use geo::{Point, Polygon};
@@ -25,7 +26,12 @@ pub enum GeometryResponse {
 }
 
 pub async fn start(_db: Database, nats_url: String) -> anyhow::Result<()> {
-    let messaging = MessagingClient::connect(&nats_url).await?;
+    let messaging = with_retry("geometry-nats-connect", 3, 1, || async {
+        MessagingClient::connect(&nats_url)
+            .await
+            .map_err(|e| anyhow::anyhow!("NATS connection failed: {}", e))
+    })
+    .await?;
     let mut subscriber = messaging.subscribe("geometry.request").await?;
 
     info!("Geometry worker listening on geometry.request");

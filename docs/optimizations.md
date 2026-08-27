@@ -17,7 +17,7 @@ OPT-002 Database Enum groß Pool-Metrik-Timer (P1). Datei: crates/infrastructure
 
 OPT-003 Admin-UI Leptos Upgrade und Vec-Klone (P2). Datei: crates/admin-ui/Cargo.toml. Aktion: Leptos auf 0.9.0-beta aktualisieren (User explizit gewünscht, NIE downgraden). Datei: crates/admin-ui/src/main.rs. Aktion: Auth-Path Signal-Klone prüfen — unnötige .clone() auf große Vec entfernen; stattdessen Arc<Signal> oder Lazy-Signal nutzen.
 
-OPT-004 Metrics Makro vollständig integrieren Middleware (P0). Datei: crates/api/src/metrics.rs + crates/api/src/middleware.rs. Aktion: measure_sqlx_query! in alle SQL-Handler integrieren (mindestens PostgresDb-Queries). Datei: crates/api/src/middleware.rs. Aktion: Middleware erstellen, die is_enabled() prüft und Metriken registriert; als actix-web Middleware einbinden.
+OPT-004 Metrics Makro vollständig integrieren Middleware (P0). Datei: crates/api/src/metrics.rs + crates/api/src/middleware.rs. Aktion: measure_sqlx_query! in alle SQL-Handler integrieren (mindestens PostgresDb-Queries). Datei: crates/api/src/middleware.rs. Aktion: Middleware erstellen, die is_enabled() prüft und Metriken registriert; als actix-web Middleware einbinden. Status: erledigt.
 
 OPT-005 LPIS-Providers Cache doppelter Klon retry (P2). Datei: crates/lpis-providers/src/cache.rs + lib.rs. Aktion: Cache-Implementierung prüfen: Vec<u8> nicht doppelt zwischen Memory und Redis klonen; stattdessen Arc<[u8]> oder String mit Referenz nutzen. Retry-Logik (with_retry aus shared) aktiv in Provider-Requests einbinden.
 
@@ -31,4 +31,4 @@ OPT-009 Reporting-Service Timeout und Paginierung (P2). Datei: crates/reporting-
 
 OPT-010 Weather-Service und Geometry-Service Timeout (P3). Datei: crates/weather-service/src/main.rs + crates/geometry-service/src/main.rs. Aktion: Identische Timeout-Struktur wie Reporting-Service hinzufügen; NATS-Worker-Integration mit retry und Timeout versehen.
 
-Status: OPT-001 erledigt (Timeout + Fehler), OPT-002 erledigt (Pool-Timer), 2 erledigt (Build), 1 erledigt (Toggle). Übrige offen (3,4,5,6,7,8,9,10).
+Status: OPT-001 erledigt (Timeout + Fehler), OPT-002 erledigt (Pool-Timer), 2 erledigt (Build), 1 erledigt (Toggle), OPT-003 erledigt (Admin-UI), OPT-004 erledigt (Metrics-Makro + Middleware), OPT-006 erledigt (Messaging retry). Übrige offen (5,7,8,9,10).

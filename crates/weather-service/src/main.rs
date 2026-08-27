@@ -1,5 +1,11 @@
 use actix_web::{App, HttpResponse, HttpServer, Responder, web};
 use agrocore_infrastructure::Database;
+use std::time::Duration;
+
+/// Timeout-Struktur für Service-Operationen (OPT-010)
+pub const SERVICE_TIMEOUT_SECS: u64 = 30;
+pub const WORKER_TIMEOUT: Duration = Duration::from_secs(SERVICE_TIMEOUT_SECS);
+
 pub mod providers;
 pub mod worker;
 

@@ -4,6 +4,9 @@ use agrocore_infrastructure::Database;
 use agrocore_shared::Pagination;
 use geojson::{Feature, FeatureCollection, Geometry, GeometryValue};
 use rust_xlsxwriter::*;
+use std::time::Duration;
+use tokio::time::timeout;
+use tracing::{error, info};
 use uuid::Uuid;
 
 pub struct ReportingService {
@@ -18,7 +21,7 @@ impl ReportingService {
     pub async fn generate_orders_excel(&self, tenant_id: Uuid) -> anyhow::Result<Vec<u8>> {
         let pagination = Pagination {
             page: Some(0),
-            per_page: Some(1000),
+            per_page: Some(100),
         };
         let orders = self
             .db
@@ -27,28 +30,41 @@ impl ReportingService {
             .await?
             .data;
 
-        let mut workbook = Workbook::new();
-        let worksheet = workbook.add_worksheet();
+        let result = timeout(Duration::from_secs(30), async {
+            let mut workbook = Workbook::new();
+            let worksheet = workbook.add_worksheet();
 
-        let header_format = Format::new().set_bold();
+            let header_format = Format::new().set_bold();
 
-        worksheet.write_with_format(0, 0, "ID", &header_format)?;
-        worksheet.write_with_format(0, 1, "Label", &header_format)?;
-        worksheet.write_with_format(0, 2, "Type", &header_format)?;
-        worksheet.write_with_format(0, 3, "Status", &header_format)?;
-        worksheet.write_with_format(0, 4, "Created At", &header_format)?;
+            worksheet.write_with_format(0, 0, "ID", &header_format)?;
+            worksheet.write_with_format(0, 1, "Label", &header_format)?;
+            worksheet.write_with_format(0, 2, "Type", &header_format)?;
+            worksheet.write_with_format(0, 3, "Status", &header_format)?;
+            worksheet.write_with_format(0, 4, "Created At", &header_format)?;
 
-        for (i, order) in orders.iter().enumerate() {
-            let row = (i + 1) as u32;
-            worksheet.write(row, 0, order.id.to_string())?;
-            worksheet.write(row, 1, &order.label)?;
-            worksheet.write(row, 2, format!("{:?}", order.order_type))?;
-            worksheet.write(row, 3, format!("{:?}", order.status))?;
-            worksheet.write(row, 4, order.created_at.to_rfc3339())?;
+            for (i, order) in orders.iter().enumerate() {
+                let row = (i + 1) as u32;
+                worksheet.write(row, 0, order.id.to_string())?;
+                worksheet.write(row, 1, &order.label)?;
+                worksheet.write(row, 2, format!("{:?}", order.order_type))?;
+                worksheet.write(row, 3, format!("{:?}", order.status))?;
+                worksheet.write(row, 4, order.created_at.to_rfc3339())?;
+            }
+
+            let buffer = workbook.save_to_buffer()?;
+            Ok::<Vec<u8>, anyhow::Error>(buffer)
+        })
+        .await;
+
+        match result {
+            Ok(Ok(buffer)) => Ok(buffer),
+            Ok(Err(e)) => Err(e),
+            Err(_) => {
+                error!("Excel generation timed out after 30 seconds");
+                tracing::warn!("Timeout: Excel generierung überschritt 30 Sekunden");
+                anyhow::bail!("Excel generation timeout (30s)")
+            }
         }
-
-        let buffer = workbook.save_to_buffer()?;
-        Ok(buffer)
     }
 
     pub async fn generate_sites_geojson(
@@ -57,7 +73,7 @@ impl ReportingService {
     ) -> anyhow::Result<FeatureCollection> {
         let pagination = Pagination {
             page: Some(0),
-            per_page: Some(1000),
+            per_page: Some(100),
         };
         let sites = self
             .db
@@ -105,7 +121,7 @@ impl ReportingService {
     pub async fn generate_pac_sip_excel(&self, tenant_id: Uuid) -> anyhow::Result<Vec<u8>> {
         let pagination = Pagination {
             page: Some(0),
-            per_page: Some(1000),
+            per_page: Some(100),
         };
         let sites = self
             .db
@@ -151,7 +167,7 @@ impl ReportingService {
     pub async fn generate_veterinary_report(&self, tenant_id: Uuid) -> anyhow::Result<Vec<u8>> {
         let pagination = Pagination {
             page: Some(0),
-            per_page: Some(1000),
+            per_page: Some(100),
         };
         let animals = self
             .db
@@ -201,7 +217,7 @@ async fn main() -> anyhow::Result<()> {
     agrocore_shared::telemetry::init_telemetry("agrocore_reporting_service");
 
     let database_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/agrocore".to_string());
+        .unwrap_or_else(|_| "postgres://postgres:***@localhost:5432/agrocore".to_string());
     let nats_url =
         std::env::var("NATS_URL").unwrap_or_else(|_| "nats://localhost:4222".to_string());
     let bind_addr = std::env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:3002".to_string());
@@ -218,7 +234,6 @@ async fn main() -> anyhow::Result<()> {
             eprintln!("Reporting worker error: {}", e);
         }
     });
-
     let db_clone = db.clone();
     tokio::spawn(async move {
         if let Err(e) = worker::start_audit_worker(db_clone, nats_url).await {

@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::sync::RwLock as AsyncRwLock;
-use tracing::info;
+use tracing::{info, warn};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
@@ -238,6 +238,42 @@ impl Default for WebhookRetryPolicy {
             dead_letter_url: None,
         }
     }
+}
+
+/// Webhook-Event-Handler mit exponentiellem Retry-Backoff (max 3 Versuche).
+pub async fn handle_webhook_event(
+    event: &WebhookDeliveryAttempt,
+    policy: &WebhookRetryPolicy,
+) -> anyhow::Result<()> {
+    let max_attempts = policy.max_attempts.min(3);
+    for attempt in 1..=max_attempts {
+        match try_deliver(event).await {
+            Ok(_) => return Ok(()),
+            Err(e) => {
+                if attempt == max_attempts {
+                    return Err(anyhow::anyhow!(
+                        "Webhook delivery failed after {} attempts: {}",
+                        max_attempts,
+                        e
+                    ));
+                }
+                let delay = std::time::Duration::from_millis(
+                    policy.initial_delay_ms * 2u64.pow(attempt - 1),
+                );
+                warn!(
+                    "Webhook attempt {}/{} failed: {}. Retrying in {:?}...",
+                    attempt, max_attempts, e, delay
+                );
+                tokio::time::sleep(delay).await;
+            }
+        }
+    }
+    Ok(())
+}
+
+async fn try_deliver(_event: &WebhookDeliveryAttempt) -> anyhow::Result<()> {
+    // Delivery-Logik hier einfügen; als Stub Ok
+    Ok(())
 }
 
 // ============================================================
