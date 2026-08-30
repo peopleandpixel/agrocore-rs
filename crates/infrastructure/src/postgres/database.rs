@@ -1,31 +1,33 @@
 use crate::postgres::{
-    animal::PgAnimalRepo, audit_log::PgAuditLogRepo, clock_entry::PgClockEntryRepo,
-    cold_chain_log::PgColdChainLogRepo, compliance::PgComplianceChecklistRepo,
-    cost_center::PgCostCenterRepo, customer::PgCustomerRepo, equipment::PgEquipmentRepo,
-    fertilizer_record::PgFertilizerRecordRepo, financial_record::PgFinancialRecordRepo,
-    frost_warning::PgFrostWarningRepo, growing_degree_day::PgGrowingDegreeDayRepo,
-    harvest_delivery::PgHarvestDeliveryRepo, harvest_lot::PgHarvestLotRepo,
-    harvest_season::PgHarvestSeasonRepo, inventory_item::PgInventoryItemRepo,
-    inventory_location::PgInventoryLocationRepo, inventory_transaction::PgInventoryTransactionRepo,
-    kelter_delivery::PgKelterDeliveryRepo, olive_grove::PgOliveGroveRepo,
+    animal::PgAnimalRepo, audit_log::PgAuditLogRepo, breed::PgBreedRepo, building::PgBuildingRepo,
+    clock_entry::PgClockEntryRepo, cold_chain_log::PgColdChainLogRepo,
+    compliance::PgComplianceChecklistRepo, cost_center::PgCostCenterRepo, customer::PgCustomerRepo,
+    equipment::PgEquipmentRepo, fertilizer_record::PgFertilizerRecordRepo,
+    financial_record::PgFinancialRecordRepo, frost_warning::PgFrostWarningRepo, group::PgGroupRepo,
+    growing_degree_day::PgGrowingDegreeDayRepo, harvest_delivery::PgHarvestDeliveryRepo,
+    harvest_lot::PgHarvestLotRepo, harvest_season::PgHarvestSeasonRepo,
+    inventory_item::PgInventoryItemRepo, inventory_location::PgInventoryLocationRepo,
+    inventory_transaction::PgInventoryTransactionRepo, kelter_delivery::PgKelterDeliveryRepo,
+    livestock::PgLivestockRepo, olive_grove::PgOliveGroveRepo,
     olive_oil_record::PgOliveOilRecordRepo, order::PgOrderRepo,
     pac_application::PgPACApplicationRepo, pest_risk::PgPestRiskRepo,
     phenology_record::PgPhenologyRecordRepo, plant_protection_record::PgPlantProtectionRecordRepo,
     site::PgSiteRepo, soil_moisture_config::PgSoilMoistureConfigRepo, task_data::PgTaskDataRepo,
-    tenant::PgTenantRepo, user::PgUserRepo, vineyard::PgVineyardRepo,
-    weather_data::PgWeatherDataRepo, weather_station::PgWeatherStationRepo,
-    work_log::PgWorkLogRepo, worker::PgWorkerRepo, worker_location::PgWorkerLocationRepo,
-    worker_task_status::PgWorkerTaskStatusRepo,
+    tenant::PgTenantRepo, tree::PgTreeRepo, user::PgUserRepo, variety::PgVarietyRepo,
+    vineyard::PgVineyardRepo, weather_data::PgWeatherDataRepo,
+    weather_station::PgWeatherStationRepo, work_log::PgWorkLogRepo, worker::PgWorkerRepo,
+    worker_location::PgWorkerLocationRepo, worker_task_status::PgWorkerTaskStatusRepo,
 };
 use agrocore_domain::repositories::{
-    AnimalRepository, AuditLogRepo, ClockEntryRepo, ColdChainLogRepo, ComplianceChecklistRepo,
-    CostCenterRepo, CustomerRepository, EquipmentRepository, FertilizerRecordRepo,
-    FinancialRecordRepo, FrostWarningRepo, GrowingDegreeDayRepo, HarvestDeliveryRepo,
-    HarvestLotRepo, HarvestSeasonRepo, InventoryItemRepository, InventoryLocationRepo,
-    InventoryTransactionRepo, KelterDeliveryRepo, OliveGroveRepo, OliveOilRecordRepo,
-    OrderRepository, PACApplicationRepo, PestRiskRepo, PhenologyRecordRepo,
-    PlantProtectionRecordRepo, SiteRepository, SoilMoistureConfigRepo, SpatialObjectRepository,
-    TaskDataRepository, TenantRepository, UserRepository, VineyardRepo, WaterQuotaRepo,
+    AnimalRepository, AuditLogRepo, BreedRepository, BuildingRepository, ClockEntryRepo,
+    ColdChainLogRepo, ComplianceChecklistRepo, CostCenterRepo, CustomerRepository,
+    EquipmentRepository, FertilizerRecordRepo, FinancialRecordRepo, FrostWarningRepo,
+    GroupRepository, GrowingDegreeDayRepo, HarvestDeliveryRepo, HarvestLotRepo, HarvestSeasonRepo,
+    InventoryItemRepository, InventoryLocationRepo, InventoryTransactionRepo, KelterDeliveryRepo,
+    LivestockRepository, OliveGroveRepo, OliveOilRecordRepo, OrderRepository, PACApplicationRepo,
+    PestRiskRepo, PhenologyRecordRepo, PlantProtectionRecordRepo, SiteRepository,
+    SoilMoistureConfigRepo, SpatialObjectRepository, TaskDataRepository, TenantRepository,
+    TreeRepository, UserRepository, VarietyRepository, VineyardRepo, WaterQuotaRepo,
     WaterSourceRepo, WaterUsageRepo, WeatherDataRepo, WeatherStationRepo, WorkLogRepo,
     WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
 };
@@ -95,6 +97,12 @@ pub struct MockDatabase {
     pub pest_risk_repo: Option<Arc<agrocore_domain::repositories::MockPestRiskRepo>>,
     pub soil_moisture_config_repo:
         Option<Arc<agrocore_domain::repositories::MockSoilMoistureConfigRepo>>,
+    pub building_repo: Option<Arc<agrocore_domain::repositories::MockBuildingRepository>>,
+    pub group_repo: Option<Arc<agrocore_domain::repositories::MockGroupRepository>>,
+    pub tree_repo: Option<Arc<agrocore_domain::repositories::MockTreeRepository>>,
+    pub livestock_repo: Option<Arc<agrocore_domain::repositories::MockLivestockRepository>>,
+    pub variety_repo: Option<Arc<agrocore_domain::repositories::MockVarietyRepository>>,
+    pub breed_repo: Option<Arc<agrocore_domain::repositories::MockBreedRepository>>,
 }
 
 impl Database {
@@ -592,6 +600,66 @@ impl Database {
                 as Arc<dyn SoilMoistureConfigRepo>,
         }
     }
+
+    pub fn building_repo(&self) -> Arc<dyn BuildingRepository> {
+        match self {
+            Self::Postgres(db) => db.building_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => m.building_repo.clone().expect("building_repo mock not set")
+                as Arc<dyn BuildingRepository>,
+        }
+    }
+
+    pub fn group_repo(&self) -> Arc<dyn GroupRepository> {
+        match self {
+            Self::Postgres(db) => db.group_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => {
+                m.group_repo.clone().expect("group_repo mock not set") as Arc<dyn GroupRepository>
+            }
+        }
+    }
+
+    pub fn tree_repo(&self) -> Arc<dyn TreeRepository> {
+        match self {
+            Self::Postgres(db) => db.tree_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => {
+                m.tree_repo.clone().expect("tree_repo mock not set") as Arc<dyn TreeRepository>
+            }
+        }
+    }
+
+    pub fn livestock_repo(&self) -> Arc<dyn LivestockRepository> {
+        match self {
+            Self::Postgres(db) => db.livestock_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => m
+                .livestock_repo
+                .clone()
+                .expect("livestock_repo mock not set")
+                as Arc<dyn LivestockRepository>,
+        }
+    }
+
+    pub fn variety_repo(&self) -> Arc<dyn VarietyRepository> {
+        match self {
+            Self::Postgres(db) => db.variety_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => m.variety_repo.clone().expect("variety_repo mock not set")
+                as Arc<dyn VarietyRepository>,
+        }
+    }
+
+    pub fn breed_repo(&self) -> Arc<dyn BreedRepository> {
+        match self {
+            Self::Postgres(db) => db.breed_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => {
+                m.breed_repo.clone().expect("breed_repo mock not set") as Arc<dyn BreedRepository>
+            }
+        }
+    }
 }
 
 /// PostgreSQL Database Wrapper
@@ -647,6 +715,12 @@ pub struct PostgresDb {
     pub growing_degree_day_repo: Arc<dyn GrowingDegreeDayRepo>,
     pub pest_risk_repo: Arc<dyn PestRiskRepo>,
     pub soil_moisture_config_repo: Arc<dyn SoilMoistureConfigRepo>,
+    pub building_repo: Arc<dyn BuildingRepository>,
+    pub group_repo: Arc<dyn GroupRepository>,
+    pub tree_repo: Arc<dyn TreeRepository>,
+    pub livestock_repo: Arc<dyn LivestockRepository>,
+    pub variety_repo: Arc<dyn VarietyRepository>,
+    pub breed_repo: Arc<dyn BreedRepository>,
 }
 
 impl PostgresDb {
@@ -763,6 +837,12 @@ impl PostgresDb {
             soil_moisture_config_repo: Arc::new(
                 crate::postgres::soil_moisture_config::PgSoilMoistureConfigRepo::new(pool.clone()),
             ),
+            building_repo: Arc::new(PgBuildingRepo::new(pool.clone())),
+            group_repo: Arc::new(PgGroupRepo::new(pool.clone())),
+            tree_repo: Arc::new(PgTreeRepo::new(pool.clone())),
+            livestock_repo: Arc::new(PgLivestockRepo::new(pool.clone())),
+            variety_repo: Arc::new(PgVarietyRepo::new(pool.clone())),
+            breed_repo: Arc::new(PgBreedRepo::new(pool.clone())),
             pool,
         })
     }
@@ -829,6 +909,13 @@ impl PostgresDb {
             soil_moisture_config_repo: Arc::new(
                 crate::postgres::soil_moisture_config::PgSoilMoistureConfigRepo::new(pool.clone()),
             ),
+            building_repo: Arc::new(PgBuildingRepo::new(pool.clone())),
+            group_repo: Arc::new(PgGroupRepo::new(pool.clone())),
+            tree_repo: Arc::new(PgTreeRepo::new(pool.clone())),
+            livestock_repo: Arc::new(PgLivestockRepo::new(pool.clone())),
+            variety_repo: Arc::new(PgVarietyRepo::new(pool.clone())),
+            breed_repo: Arc::new(PgBreedRepo::new(pool.clone())),
+
             pool,
         }
     }
@@ -1008,5 +1095,29 @@ impl PostgresDb {
 
     pub fn soil_moisture_config_repo(&self) -> Arc<dyn SoilMoistureConfigRepo> {
         self.soil_moisture_config_repo.clone()
+    }
+
+    pub fn building_repo(&self) -> Arc<dyn BuildingRepository> {
+        self.building_repo.clone()
+    }
+
+    pub fn group_repo(&self) -> Arc<dyn GroupRepository> {
+        self.group_repo.clone()
+    }
+
+    pub fn tree_repo(&self) -> Arc<dyn TreeRepository> {
+        self.tree_repo.clone()
+    }
+
+    pub fn livestock_repo(&self) -> Arc<dyn LivestockRepository> {
+        self.livestock_repo.clone()
+    }
+
+    pub fn variety_repo(&self) -> Arc<dyn VarietyRepository> {
+        self.variety_repo.clone()
+    }
+
+    pub fn breed_repo(&self) -> Arc<dyn BreedRepository> {
+        self.breed_repo.clone()
     }
 }

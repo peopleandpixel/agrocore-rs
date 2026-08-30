@@ -248,6 +248,11 @@ pub trait AnimalRepository: Send + Sync {
         id: Uuid,
         treatment: crate::entities::livestock::TreatmentRecord,
     ) -> RepositoryFuture<bool>;
+    fn find_treatments_by_animal(
+        &self,
+        tid: TenantId,
+        animal_id: Uuid,
+    ) -> RepositoryFuture<Option<Vec<crate::entities::livestock::TreatmentRecord>>>;
     fn add_grazing_record(
         &self,
         tid: TenantId,
@@ -1570,5 +1575,153 @@ pub trait InventoryLocationRepo: Send + Sync {
         dto: UpdateInventoryLocationDto,
         by: Uuid,
     ) -> RepositoryFuture<Option<InventoryLocation>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+use crate::entities::{Breed, CreateBreedDto, Species, UpdateBreedDto};
+use crate::entities::{Building, BuildingType, CreateBuildingDto, UpdateBuildingDto};
+use crate::entities::{CreateGroupDto, Group, GroupType, UpdateGroupDto};
+use crate::entities::{CreateLivestockDto, Livestock, LivestockType, UpdateLivestockDto};
+use crate::entities::{CreateTreeDto, Tree, TreeType, UpdateTreeDto};
+use crate::entities::{CreateVarietyDto, UpdateVarietyDto, Variety, VarietyCategory};
+
+#[cfg_attr(feature = "mocks", automock)]
+pub trait BuildingRepository: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Building>>;
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<Building>>;
+    fn find_by_plot(
+        &self,
+        tid: TenantId,
+        plot_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<Building>>;
+    fn create(&self, tid: TenantId, dto: CreateBuildingDto, by: Uuid)
+    -> RepositoryFuture<Building>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateBuildingDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<Building>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+#[cfg_attr(feature = "mocks", automock)]
+pub trait GroupRepository: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Group>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Group>>;
+    fn find_by_plot(
+        &self,
+        tid: TenantId,
+        plot_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<Group>>;
+    fn find_children(&self, tid: TenantId, parent_id: Uuid) -> RepositoryFuture<Vec<Group>>;
+    fn create(&self, tid: TenantId, dto: CreateGroupDto, by: Uuid) -> RepositoryFuture<Group>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateGroupDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<Group>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+#[cfg_attr(feature = "mocks", automock)]
+pub trait TreeRepository: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Tree>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Tree>>;
+    fn find_by_plot(
+        &self,
+        tid: TenantId,
+        plot_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<Tree>>;
+    fn find_by_group(&self, tid: TenantId, group_id: Uuid) -> RepositoryFuture<Vec<Tree>>;
+    fn create(&self, tid: TenantId, dto: CreateTreeDto, by: Uuid) -> RepositoryFuture<Tree>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateTreeDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<Tree>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+#[cfg_attr(feature = "mocks", automock)]
+pub trait LivestockRepository: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Livestock>>;
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<Livestock>>;
+    fn find_by_plot(
+        &self,
+        tid: TenantId,
+        plot_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<Livestock>>;
+    fn find_by_herd(&self, tid: TenantId, herd_id: String) -> RepositoryFuture<Vec<Livestock>>;
+    fn create(
+        &self,
+        tid: TenantId,
+        dto: CreateLivestockDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Livestock>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateLivestockDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<Livestock>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+#[cfg_attr(feature = "mocks", automock)]
+pub trait VarietyRepository: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Variety>>;
+    fn find_all(
+        &self,
+        tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<Variety>>;
+    fn find_by_category(
+        &self,
+        tid: TenantId,
+        category: VarietyCategory,
+    ) -> RepositoryFuture<Vec<Variety>>;
+    fn create(&self, tid: TenantId, dto: CreateVarietyDto, by: Uuid) -> RepositoryFuture<Variety>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateVarietyDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<Variety>>;
+    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+}
+
+#[cfg_attr(feature = "mocks", automock)]
+pub trait BreedRepository: Send + Sync {
+    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Breed>>;
+    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Breed>>;
+    fn find_by_species(&self, tid: TenantId, species: Species) -> RepositoryFuture<Vec<Breed>>;
+    fn create(&self, tid: TenantId, dto: CreateBreedDto, by: Uuid) -> RepositoryFuture<Breed>;
+    fn update(
+        &self,
+        tid: TenantId,
+        id: Uuid,
+        dto: UpdateBreedDto,
+        by: Uuid,
+    ) -> RepositoryFuture<Option<Breed>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }

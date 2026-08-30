@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub mod breed;
+pub mod building;
 pub mod compliance;
 pub mod customer;
 pub mod equipment;
 pub mod fertilizer;
 pub mod finance;
+pub mod group;
 pub mod harvest;
 pub mod inventory;
 pub mod livestock;
@@ -28,7 +31,9 @@ pub mod spatial;
 pub mod sync;
 pub mod task;
 pub mod tenant;
+pub mod tree;
 pub mod user;
+pub mod variety;
 pub mod vineyard;
 pub mod water;
 pub mod weather;
@@ -38,12 +43,20 @@ pub mod workforce;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
+pub use breed::{Breed, CreateBreedDto, Species, UpdateBreedDto};
+pub use building::{Building, BuildingType, CreateBuildingDto, UpdateBuildingDto};
 pub use compliance::{
     AuditAction, AuditLog, ChecklistItem, ChecklistType, ComplianceChecklist, ComplianceStatus,
     CreateAuditLogDto, CreateComplianceChecklistDto, CreateFertilizerRecordDto, FertilizerRecord,
     UpdateComplianceChecklistDto, UpdateFertilizerRecordDto,
 };
 pub use customer::{CreateCustomerDto, Customer, UpdateCustomerDto};
+pub use group::{CreateGroupDto, Group, GroupType, UpdateGroupDto};
+pub use livestock::{
+    Animal, AnimalSpecies, AnimalStatus, CreateAnimalDto, CreateGrazingRecordDto,
+    CreateLivestockDto, CreateTreatmentRecordDto, GrazingRecord, Livestock, LivestockType,
+    TreatmentRecord, UpdateAnimalDto, UpdateLivestockDto,
+};
 pub use olive::{
     CreateOliveGroveDto, CreateOliveOilRecordDto, OilGrade, OliveGrove, OliveOilRecord,
     UpdateOliveGroveDto, UpdateOliveOilRecordDto,
@@ -60,11 +73,18 @@ pub use sync::{
     SyncPullRequest, SyncPullResponse, SyncRequest, SyncResponse, VectorClock,
 };
 pub use task::{CreateTaskDataDto, GpsPoint, MaterialUsage, TaskData, UpdateTaskDataDto};
+pub use tree::{CreateTreeDto, Tree, TreeType, UpdateTreeDto};
+pub use variety::{CreateVarietyDto, UpdateVarietyDto, Variety, VarietyCategory};
 pub use vineyard::{
     CreateKelterDeliveryDto, CreateVineyardDto, DocArea, KelterDelivery, QualityGrade,
     UpdateKelterDeliveryDto, UpdateVineyardDto, Vineyard,
 };
 pub use worker_task_status::{CreateWorkerTaskStatusDto, WorkerTaskStatus, WorkerTaskStatusType};
+pub use workforce::{
+    ClockEntry, ClockEntryType, ClockSession, CreateClockEntryDto, CreateWorkLogDto,
+    CreateWorkerDto, CreateWorkerLocationDto, UpdateClockEntryDto, UpdateWorkLogDto,
+    UpdateWorkerDto, WorkLog, Worker, WorkerLocation,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum SiteType {
@@ -104,6 +124,30 @@ pub enum CropType {
     Citrus,
     #[serde(rename = "vegetable")]
     Vegetable(String),
+    #[serde(rename = "nut")]
+    Nut,
+    #[serde(rename = "cork_oak")]
+    CorkOak,
+    #[serde(rename = "almond")]
+    Almond,
+    #[serde(rename = "hazelnut")]
+    Hazelnut,
+    #[serde(rename = "chestnut")]
+    Chestnut,
+    #[serde(rename = "berry")]
+    Berry,
+    #[serde(rename = "tropical")]
+    Tropical,
+    #[serde(rename = "poultry")]
+    Poultry,
+    #[serde(rename = "livestock")]
+    Livestock,
+    #[serde(rename = "fallow")]
+    Fallow,
+    #[serde(rename = "forest")]
+    Forest,
+    #[serde(rename = "pasture")]
+    Pasture,
     #[serde(rename = "grain")]
     Grain(String),
     #[serde(rename = "other")]

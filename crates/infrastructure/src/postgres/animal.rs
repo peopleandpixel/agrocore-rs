@@ -202,6 +202,28 @@ impl AnimalRepository for PgAnimalRepo {
         })
     }
 
+    fn find_treatments_by_animal(
+        &self,
+        tid: TenantId,
+        animal_id: Uuid,
+    ) -> Fut<Option<Vec<TreatmentRecord>>> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            sqlx::query_as::<_, TreatmentRecord>(
+                r#"SELECT id, animal_id, treatment_type, date, medication, dosage, veterinarian, withdrawal_days, notes, created_at
+                   FROM animal_treatments
+                   WHERE animal_id = $1 AND tenant_id = $2
+                   ORDER BY date DESC"#,
+            )
+            .bind(animal_id)
+            .bind(tid)
+            .fetch_all(&pool)
+            .await
+            .map(|v| if v.is_empty() { None } else { Some(v) })
+            .map_err(|e| SharedError::Database(e.to_string()))
+        })
+    }
+
     fn add_grazing_record(&self, tid: TenantId, id: Uuid, record: GrazingRecord) -> Fut<bool> {
         let pool = self.pool.clone();
         Box::pin(async move {

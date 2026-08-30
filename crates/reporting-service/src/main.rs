@@ -191,12 +191,19 @@ impl ReportingService {
 
         let mut row = 1;
         for animal in animals {
-            for treatment in animal.treatments {
+            // Fetch treatments separately (pre-existing code referenced non-existent field)
+            let treatments = self
+                .db
+                .animal_repo()
+                .find_treatments_by_animal(TenantId(tenant_id), animal.id)
+                .await?
+                .unwrap_or_default();
+            for treatment in treatments {
                 worksheet.write(row, 0, &animal.identifier)?;
                 worksheet.write(row, 1, format!("{:?}", animal.species))?;
                 worksheet.write(row, 2, treatment.date.to_rfc3339())?;
                 worksheet.write(row, 3, &treatment.treatment_type)?;
-                worksheet.write(row, 4, treatment.medication.as_deref().unwrap_or("-"))?;
+                worksheet.write(row, 4, &treatment.medication)?;
                 worksheet.write(row, 5, treatment.withdrawal_days.unwrap_or(0))?;
                 row += 1;
             }

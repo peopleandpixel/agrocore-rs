@@ -2,14 +2,18 @@ use actix_web::web;
 
 pub mod agriculture;
 pub mod auth;
+pub mod breed;
+pub mod building;
 pub mod compliance;
 pub mod customers;
 pub mod equipment;
 pub mod finance;
+pub mod group;
 pub mod harvest;
 pub mod inventory;
 pub mod iot;
 pub mod livestock;
+pub mod livestock_new;
 pub mod nutrition;
 pub mod orders;
 pub mod reporting;
@@ -19,7 +23,9 @@ pub mod sites;
 pub mod specialized;
 pub mod system;
 pub mod tasks;
+pub mod tree;
 pub mod users;
+pub mod variety;
 pub mod water;
 pub mod weather;
 pub mod workforce;
@@ -232,9 +238,15 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .configure(reporting::configure)
             .configure(nutrition::configure)
             .configure(harvest::configure)
-            .configure(livestock::configure)
+            .configure(livestock_new::configure)
             .configure(iot::configure)
-            .configure(agriculture::configure),
+            .configure(agriculture::configure)
+            .configure(building::configure)
+            .configure(group::configure)
+            .configure(tree::configure)
+            .configure(livestock_new::configure)
+            .configure(variety::configure)
+            .configure(breed::configure),
     );
 }
 

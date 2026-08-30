@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-08-28
+
+### Added
+- **6 neue Domain-Entitäten** (vollständig implementiert, keine Stubs):
+  - `Building` mit `BuildingType` Enum, CRUD DTOs, PostgreSQL Repo + API Handler
+  - `Group` mit `GroupType` Enum, hierarchische Struktur (`parent_group_id`), CRUD + Children + by_plot
+  - `Tree` mit `TreeType` Enum, `group_id` Referenz, CRUD + by_plot + by_group
+  - `Livestock` (herden-basiert) mit `LivestockType` Enum, `herd_id`, `count`, CRUD + by_plot + by_herd
+  - `Variety` mit `VarietyCategory` Enum, CRUD + by_category
+  - `Breed` mit `Species` Enum, CRUD + by_species
+- **Repository Traits** in `domain/src/repositories.rs`: 6 neue Traits mit vollständigen CRUD + spezialisierten Find-Methoden
+- **PostgreSQL Implementierungen** (6 neue Dateien in `infrastructure/src/postgres/`): alle nutzen `pg_repo!` Macro mit `PaginatedResponse`
+- **Infrastructure Wiring** (`database.rs`): alle 6 Repos in `PostgresDb` struct, `connect()`/`from_pool()`, Accessor-Methoden, `Database` Enum Delegation, `MockDatabase` Felder
+- **API Layer**: DTOs + Handler für alle 6 Entitäten (`building.rs`, `group.rs`, `tree.rs`, `livestock_new.rs`, `variety.rs`, `breed.rs`), registriert in `handlers/mod.rs`
+- **Admin UI i18n**: Alle neuen Navigation-Schlüssel (`nav_groups`, `nav_trees`, `nav_buildings`, `nav_plot_entities`, `nav_livestock`) und Entity-Schlüssel (`livestock_goat`, `livestock_chicken`, `livestock_sheep`, `livestock_cattle`, `tree_cork_oak`, `group_building`, `group_coop`) vollständig für alle 10 Sprachen (de, en, es, fr, pt, it, pl, ro, uk, nl)
+- **Pre-existing Fixes**: `TreatmentRecord` mit `sqlx::FromRow`, `find_treatments_by_animal` Methode, `reporting-service` Fetch-Trennung, `livestock.rs` DTO Type-Mismatches behoben
+- **Version bump**: 0.9.26 → 0.10.0 (Major bump für 6 neue Domain-Entitäten)
+
+### Changed
+- Alle Quality Gates (`cargo fmt`, `cargo check`, `cargo test`, `cargo clippy`) laufen fehlerfrei durch (nur unused-import warnings)
+
+## [0.9.26] - 2026-08-28
+
+### Added
+- Neue Domain-Entitäten: Group, Livestock, Tree, Building, Variety, Breed
+- Migrationen 001-008, CSV-Kataloge, Import-Script, AdminUI-Module, Navigation, i18n, API-Endpunkte, DB-Repos (vollständig, keine Stubs)
+
 ## [0.9.25] - 2026-08-27
 
 ### Added

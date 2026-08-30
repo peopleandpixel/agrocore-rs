@@ -158,6 +158,8 @@ Siehe [optimizations.md](docs/optimizations.md) §3.2 — bereits erledigt (0.8.
 
 |
 
+- [ ] Catalog Import Script (`scripts/import_catalog.py`): Vollständige Kataloge (VIVC Rebsorten >12k, Oliven-DB >260, FAO Tierrassen) als CSV generieren und in `varieties`/`breeds` importieren. Lazy-Load-Suche für AdminUI vorbereiten. Datenquellen: VIVC (vivc.de), FAO-DAD-IS, Olive-DB.
+
 ## Phase 4: Monitoring & Observability
 - [ ] Query-Dauer-Monitoring (sqlx-Middleware oder `sqlx-metrics`)
 - [ ] Pool-Auslastung (aktive/idle Verbindungen)

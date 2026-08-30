@@ -494,6 +494,105 @@ crop_type_grain:
   ro: Grain
   uk: Grain
   nl: Grain
+group_herd:
+  en: Herd
+  de: Herde
+  es: Rebaño
+  fr: Troupeau
+  pt: Rebanho
+  it: Branco
+  pl: Stado
+  ro: Turmă
+  uk: Стадо
+  nl: Kudde
+group_grove:
+  en: Grove
+  de: Baumgruppe
+  es: Grupo de árboles
+  fr: Bosquet
+  pt: Grupo de árvores
+  it: Gruppo di alberi
+  pl: Grupa drzew
+  ro: Grup de copaci
+  uk: Група дерев
+  nl: Boomgroep
+group_coop:
+  en: Coop
+  de: Stall
+  es: Gallinero
+  fr: Poulailler
+  pt: Galinheiro
+  it: Pollaio
+  pl: Kurnik
+  ro: Coop
+  uk: Курятник
+  nl: Hok
+group_building:
+  en: Building
+  de: Gebäude
+  es: Edificio
+  fr: Bâtiment
+  pt: Edifício
+  it: Edificio
+  pl: Budynek
+  ro: Clădire
+  uk: Будівля
+  nl: Gebouw
+livestock_goat:
+  en: Goat
+  de: Ziege
+  es: Cabra
+  fr: Chèvre
+  pt: Cabra
+  it: Capra
+  pl: Koza
+  ro: Capră
+  uk: Коза
+  nl: Geit
+livestock_chicken:
+  en: Chicken
+  de: Huhn
+  es: Pollo
+  fr: Poulet
+  pt: Frango
+  it: Pollo
+  pl: Kurczak
+  ro: Pui
+  uk: Куря
+  nl: Kip
+livestock_sheep:
+  en: Sheep
+  de: Schaf
+  es: Oveja
+  fr: Mouton
+  pt: Ovelha
+  it: Pecora
+  pl: Owca
+  ro: Oaie
+  uk: Вівця
+  nl: Schap
+livestock_cattle:
+  en: Cattle
+  de: Rind
+  es: Ganado
+  fr: Bétail
+  pt: Gado
+  it: Bovino
+  pl: Bydło
+  ro: Bovine
+  uk: Велика рогата худоба
+  nl: Rundvee
+tree_cork_oak:
+  en: Cork Oak
+  de: Korkeiche
+  es: Alcornoque
+  pt: Sobreiro
+  it: Quercia da sughero
+  fr: Chêne-liège
+  nl: Kurkeik
+  pl: Dąb korkowy
+  ro: Stejar de plopi
+  uk: Пробковий дуб
 crop_type_other:
   en: Other
   de: Andere
@@ -2363,6 +2462,50 @@ nav_map:
   ro: Harta
   uk: Карта
   nl: Kaart
+nav_groups:
+  en: Groups
+  de: Gruppen
+  es: Grupos
+  fr: Groupes
+  pt: Grupos
+  it: Gruppi
+  pl: Grupy
+  ro: Grupuri
+  uk: Групи
+  nl: Groepen
+nav_trees:
+  en: Trees
+  de: Bäume
+  es: Árboles
+  fr: Arbres
+  pt: Árvores
+  it: Alberi
+  pl: Drzewa
+  ro: Copaci
+  uk: Дерева
+  nl: Bomen
+nav_buildings:
+  en: Buildings
+  de: Gebäude
+  es: Edificios
+  fr: Bâtiments
+  pt: Edifícios
+  it: Edifici
+  pl: Budynki
+  ro: Clădiri
+  uk: Будівлі
+  nl: Gebouwen
+nav_plot_entities:
+  en: Field Entities
+  de: Feld-Entitäten
+  es: Entidades del Campo
+  fr: Entités du Champ
+  pt: Entidades do Campo
+  it: Entità del Campo
+  pl: Encje Pola
+  ro: Entități de Câmp
+  uk: Об'єкти Поля
+  nl: Veldentiteiten
 nav_livestock:
   en: Livestock
   de: Tierhaltung

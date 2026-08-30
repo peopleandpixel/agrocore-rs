@@ -7,22 +7,26 @@ mod tests;
 
 use crate::components::analytics::AnalyticsPage;
 use crate::components::audit::AuditLogPage;
+use crate::components::buildings::BuildingManagement;
 use crate::components::compliance::CompliancePage;
 use crate::components::dashboard::DashboardView;
 use crate::components::equipment::EquipmentManagement;
 use crate::components::equipment_detail::EquipmentDetailPage;
 use crate::components::finance::FinanceManagement;
+use crate::components::groups::GroupManagement;
 use crate::components::import::DataImport;
 use crate::components::inventory::InventoryManagement;
 use crate::components::livestock::LivestockManagement;
 use crate::components::login::LoginView;
 use crate::components::map::MapView;
 use crate::components::orders::OrderList;
+use crate::components::plot_subentity::PlotSubEntityLayout;
 use crate::components::resources::ResourcesPage;
 use crate::components::settings::SettingsPage;
 use crate::components::sites::SiteManagement;
 use crate::components::task_detail::TaskDetailPage;
 use crate::components::toast::{ToastContainer, provide_toast_context};
+use crate::components::trees::TreeManagement;
 use crate::components::users::UserManagement;
 use crate::components::weather::WeatherManagement;
 use crate::components::wizard::WizardView;
@@ -208,6 +212,10 @@ fn AuthenticatedShell(
                             <Route path=path!("/tasks") view=|| view! { <OrderList /> } />
                             <Route path=path!("/tasks/:id") view=|| view! { <TaskDetailPage /> } />
                             <Route path=path!("/customers") view=|| view! { <components::customers::CustomersPage /> } />
+                            <Route path=path!("/groups") view=|| view! { <GroupManagement /> } />
+                            <Route path=path!("/trees") view=|| view! { <TreeManagement /> } />
+                            <Route path=path!("/buildings") view=|| view! { <BuildingManagement /> } />
+                            <Route path=path!("/plot/entities") view=|| view! { <PlotSubEntityLayout /> } />
                             <Route path=path!("/livestock") view=|| view! { <LivestockManagement /> } />
                             <Route path=path!("/weather") view=|| view! { <WeatherManagement /> } />
                             <Route path=path!("/finance") view=|| view! { <FinanceManagement /> } />
@@ -253,6 +261,18 @@ fn AuthenticatedShell(
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full { "" } else { "hidden" }>
                         <a href="/map"><Icon icon=LuMapPin width="20" height="20" />{crate::t!(t, "nav_map")}</a>
+                    </li>
+                    <li class=move || if view_mode.get() == ViewMode::Full { "" } else { "hidden" }>
+                        <a href="/groups"><Icon icon=LuUsers width="20" height="20" />{crate::t!(t, "nav_groups")}</a>
+                    </li>
+                    <li>
+                        <a href="/trees"><Icon icon=LuMapPin width="20" height="20" />{crate::t!(t, "nav_trees")}</a>
+                    </li>
+                    <li>
+                        <a href="/buildings"><Icon icon=LuBox width="20" height="20" />{crate::t!(t, "nav_buildings")}</a>
+                    </li>
+                    <li>
+                        <a href="/plot/entities"><Icon icon=LuClipboardList width="20" height="20" />{crate::t!(t, "nav_plot_entities")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full { "" } else { "hidden" }>
                         <a href="/livestock"><Icon icon=LuBeef width="20" height="20" />{crate::t!(t, "nav_livestock")}</a>
