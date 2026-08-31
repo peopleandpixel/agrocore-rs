@@ -1,0 +1,81 @@
+[package]
+name = "agrocore-backup"
+version.workspace = true
+edition = "2024"
+license.workspace = true
+
+[[bin]]
+name = "agrocore-backup"
+path = "src/main.rs"
+
+[dependencies]
+# Core
+tokio = { workspace = true, features = ["net", "rt-multi-thread", "io-std", "macros", "sync", "time", "fs", "signal"] }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+uuid = { workspace = true, features = ["v4", "v5", "serde"] }
+config = { workspace = true }
+dotenvy = { workspace = true }
+
+# PostgreSQL
+sqlx = { workspace = true, features = ["postgres", "runtime-tokio-rustls", "uuid", "chrono", "json", "tls-rustls"] }
+postgres = { version = "0.19", features = ["with-chrono-0_4", "with-serde_json-1", "with-uuid-0_8"] }
+cron = "0.9"
+
+# Object Storage (pluggable backends)
+object_store = { version = "0.11", features = ["aws", "azure", "gcp", "http"] }
+aws-config = { version = "1.0" }
+aws-sdk-s3 = { version = "1.0", features = ["default"] }
+aws-sdk-kms = { version = "1.0", features = ["default"] }
+google-cloud-storage = "0.12"
+
+# SFTP/SSH
+async-ssh2 = { version = "0.1.2-beta" }
+smol = "0.3"
+
+# WebDAV (NextCloud, ownCloud, etc.)
+webdav = "0.1"
+reqwest = { workspace = true }
+
+# Encryption
+age = "0.12"
+aes-gcm = { version = "0.10", features = ["aes"] }
+zeroize = "1.8"
+rand_core = "0.6"
+
+# Scheduling
+tokio-cron-scheduler = { version = "0.13", features = ["signal"] }
+
+# Async trait support for dyn compatibility
+async-trait = "0.1"
+
+# NATS
+async-nats = { workspace = true }
+futures = { workspace = true }
+
+# Compression
+flate2 = "1.0"
+tar = "0.4"
+
+# Metrics
+prometheus = { workspace = true }
+
+# Utils
+bytes = { workspace = true }
+tempfile = "3.10"
+walkdir = "2.5"
+
+# Internal
+agrocore-shared = { path = "../shared" }
+agrocore-domain = { path = "../domain" }
+agrocore-infrastructure = { path = "../infrastructure" }
+agrocore-messaging = { path = "../messaging" }
+
+[dev-dependencies]
+testcontainers = "0.27"
+testcontainers-modules = { version = "0.15", features = ["postgres"] }

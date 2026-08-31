@@ -1,5 +1,19 @@
 [workspace]
-members = ["crates/*"]
+members = [
+    "crates/shared",
+    "crates/domain",
+    "crates/infrastructure",
+    "crates/api",
+    "crates/admin-ui",
+    "crates/messaging",
+    "crates/lpis-providers",
+    "crates/reporting-service",
+    "crates/geometry-service",
+    "crates/asset-registry",
+    "crates/weather-service",
+    "crates/i18n-shared",
+    "crates/dashboard",
+]
 resolver = "2"
 
 [workspace.package]
@@ -63,3 +77,5 @@ redis = { version = "0.24", features = ["tokio-comp", "connection-manager", "jso
 governor = { version = "0.6", features = ["jitter"] }
 retry = { version = "0.1" }
 rumqttc = { version = "0.25", features = ["use-rustls-no-provider"] }
+bytes = "1"
+cron = "0.9"

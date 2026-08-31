@@ -21,6 +21,7 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/dashboard/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/i18n-codegen/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/i18n-shared/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/backup-service/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/crates/admin-ui/dist/.stage" />
       <excludeFolder url="file://$MODULE_DIR$/crates/admin-ui/dist/snippets/admin-ui-e32c81e87b81db6a" />
       <excludeFolder url="file://$MODULE_DIR$/target" />

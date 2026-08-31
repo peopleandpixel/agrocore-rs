@@ -173,3 +173,116 @@ Siehe [optimizations.md](docs/optimizations.md) §3.2 — bereits erledigt (0.8.
 ### Distributed Tracing
 - [ ] Span-Attribute: Tenant-ID, User-ID, Operationstyp
 - [ ] Konsistente Tracing-Standardisierung über alle Service-Grenzen
+
+---
+
+## Phase 5: Backup & Recovery (Kritisch - MVP Level)
+
+**Status:** Geplant · **Priorität:** P1 · **Aufwand:** 5–10 Tage
+
+### Kern-Anforderungen
+
+- [ ] **Automatisiertes Backup-Scheduling** (konfigurierbar via Cron-Expression / Intervall)
+  - Täglich / Wöchentlich / Monatlich konfigurierbar
+  - Separate Schedules für DB (PostgreSQL) und Config (Files/Env/Secrets)
+  - Timezone-Support für globale Deployments
+
+- [ ] **Speicherziele (pluggable Backends)**
+  - Lokal: Mounted Volume / NFS / SMB
+  - Cloud: S3-kompatibel (AWS S3, MinIO, Wasabi, Backblaze B2), Azure Blob, Google Cloud Storage
+  - Optional: SFTP/RSync für Legacy-Backup-Server
+  - Multi-Target: paralleles Schreiben auf mehrere Backends (Redundanz)
+
+- [ ] **Backup-Inhalt**
+  - **Datenbank**: `pg_dump` (Schema + Data, komprimiert, optional --no-owner --no-privileges)
+  - **Konfiguration**: `.env`, `config/`, `docker-compose*.yml`, `Dockerfile.*`, TLS-Zertifikate, Secrets (verschlüsselt)
+  - **Applikationsdaten**: Uploads, generierte Reports, Logs (optional, configurable)
+  - **Metadaten**: Backup-Manifest (Version, Timestamp, Git-Commit, Schema-Version, Checksums)
+
+- [ ] **One-Click / Ad-Hoc Backup** (Admin UI + CLI)
+  - Button in Admin UI (Settings → Backup): "Jetzt Backup erstellen"
+  - CLI: `agrocore backup create [--config-only|--db-only] [--target=s3|local|...]`
+  - Progress-Anzeige + Status-Polling (WebSocket / SSE)
+
+- [ ] **Recovery / Restore**
+  - **Point-in-Time Recovery (PITR)**: WAL-Archiving für PostgreSQL (optional, P2)
+  - **Full Restore**: Einzelnen Backup auswählen → DB + Config wiederherstellen
+  - **Selective Restore**: Nur Config / Nur DB / Einzelne Tabellen / Einzelne Tenants (Multi-Tenant)
+  - **Dry-Run / Preview**: Was würde wiederhergestellt werden? (Schema-Diff, Row-Counts)
+  - **Rollback-Safety**: Pre-Restore-Snapshot der aktuellen DB vor Restore automatisch erstellen
+
+- [ ] **Backup-Verifizierung & Integrität**
+  - Automatischer Test-Restore nach Backup (in isolierter Test-DB / Container)
+  - Checksum-Validierung (SHA256) aller Backup-Artefakte
+  - `pg_restore --list` + Row-Count-Vergleich Source vs. Restore
+  - Alerting bei Failed Verification (E-Mail, Webhook, PagerDuty, Slack)
+
+- [ ] **Retention & Lifecycle Policies**
+  - Grandfather-Father-Son (GFS): Täglich 7d, Wöchentlich 4W, Monatsweise 12M, Jährlich 7Y
+  - Konfigurierbar pro Backend-Ziel
+  - Auto-Cleanup (Altbackups löschen nach Policy, mit Grace-Period)
+  - Legal Hold / Compliance Tagging (Backup nicht löschen bei Audit-Flag)
+
+- [ ] **Security & Encryption**
+  - **At Rest**: AES-256-GCM für alle Backup-Dateien (Key-Management via Vault / Age / SOPS / KMS)
+  - **In Transit**: TLS 1.3 für alle Cloud-Uploads
+  - **Secrets**: DB-Passwörter, API-Keys in Config-Backups separat verschlüsseln (Envelope Encryption)
+
+- [ ] **Monitoring & Observability**
+  - Metriken: `backup_duration_seconds`, `backup_size_bytes`, `backup_success_total`, `backup_failed_total`, `restore_duration_seconds`, `restore_success_total`
+  - Alerting: Backup überfällig (> Schedule + Grace), Verification Failed, Storage Quota > 80%
+  - Dashboard: Backup-History, Success-Rate, Storage-Trends, Next-Scheduled
+
+- [ ] **Disaster Recovery Runbook** (Dokumentation + Automatisierung)
+  - Schritt-für-Schritt Anleitung: "Total Loss of Primary DB" → Restore in < 15 Min
+  - RTO / RPO Definitionen pro Tenant-Tier (Free/Pro/Enterprise)
+  - Fire-Drill: Monatlicher automatischer Test-Restore in Staging (Report an Admin)
+
+### Technische Architektur
+
+- **Backup-Service** (neuer Rust-Service / Sidecar):
+  - Nutzt `postgres` crate für `pg_dump`/`pg_restore` Streaming (kein Shell-out)
+  - `object_store` crate für pluggable Backends (S3, Azure, GCS, Local, SFTP)
+  - `age` / `aws-kms` / `vault` für Encryption
+  - NATS-Integration für Job-Queue + Progress-Events
+  - Admin UI: `BackupPage` (History, Status, Manual Trigger, Restore Wizard)
+
+- **Konfiguration** (via `AgroCoreConfig` / ENV):
+  ```yaml
+  backup:
+    enabled: true
+    schedule_db: "0 2 * * *"       # Täglich 02:00 UTC
+    schedule_config: "0 3 * * 0"   # Wöchentlich Sonntags 03:00
+    targets:
+      - type: s3
+        bucket: "agrocore-backups-prod"
+        region: "eu-central-1"
+        prefix: "tenant-{tenant_id}/"
+        encryption: aws-kms
+        kms_key_id: "arn:aws:kms:..."
+      - type: local
+        path: "/var/backups/agrocore"
+        encryption: age
+        age_recipient: "age1..."
+    retention:
+      daily: 7
+      weekly: 4
+      monthly: 12
+      yearly: 7
+    verification:
+      enabled: true
+      test_db_name: "agrocore_backup_test"
+    encryption:
+      default: age
+      age_recipients: ["age1..."]
+  ```
+
+### Acceptance Criteria
+
+1. ✅ Täglich um 02:00 läuft DB-Backup automatisch, landet in S3 + Lokal, verschlüsselt
+2. ✅ Admin klickt "Backup jetzt" → innerhalb 30s Start, Progress 0-100%, Erfolg/Fehler gemeldet
+3. ✅ Restore-Test (CI/CD Pipeline) stellt Backup in Test-DB wieder her, Row-Counts matchen
+4. ✅ Backup älter als Retention-Policy wird automatisch gelöscht (Log + Metrik)
+5. ✅ Fehlgeschlagenes Backup → Alert in Slack/E-Mail + Metrik `backup_failed_total`++
+6. ✅ RTO < 15 Min für Full Restore (Single Tenant, 50GB DB)
+7. ✅ Dokumentation: Runbook + Fire-Drill-Checkliste im Repo (`docs/disaster-recovery.md`)
