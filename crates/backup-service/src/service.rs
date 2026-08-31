@@ -7,6 +7,7 @@ use crate::pg_dump::PgDump;
 use crate::retention::RetentionManager;
 use crate::storage::StorageBackendTrait;
 use crate::verification::VerificationManager;
+use agrocore_scheduler::{JobDefinition, JobType, SchedulerConfig, SchedulerService};
 use async_nats::Client as NatsClientInner;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -90,6 +91,7 @@ pub struct BackupService {
     verification: Arc<crate::verification::VerificationManager>,
     manifest: Arc<crate::manifest::ManifestManager>,
     job_state: Arc<RwLock<HashMap<Uuid, BackupJob>>>,
+    pub scheduler: Option<Arc<SchedulerService>>,
 }
 
 impl BackupService {
@@ -130,6 +132,7 @@ impl BackupService {
             verification,
             manifest,
             job_state: Arc::new(RwLock::new(HashMap::new())),
+            scheduler: None,
         })
     }
 
@@ -137,74 +140,89 @@ impl BackupService {
         &self.config
     }
 
-    pub async fn start_scheduler(&self) -> BackupResult<tokio_cron_scheduler::JobScheduler> {
-        use tokio_cron_scheduler::{Job, JobScheduler};
+    pub async fn start_scheduler(&mut self) -> BackupResult<()> {
+        let scheduler_config = SchedulerConfig {
+            enabled: self.config.enabled,
+            timezone: self.config.timezone.clone(),
+            default_job_timeout_seconds: 3600,
+            max_concurrent_jobs: 10,
+            retry_failed_jobs: true,
+            max_retries: 3,
+            retry_delay_seconds: 60,
+        };
 
-        let scheduler = JobScheduler::new()
-            .await
-            .map_err(|e| BackupError::Scheduling(e.to_string()))?;
+        let nats_client = self.nats.clone();
+        let scheduler = Arc::new(
+            SchedulerService::new(scheduler_config, Some(nats_client.inner().clone())).await?,
+        );
 
-        let db_schedule = self.config.schedule_db.clone();
-        let config_schedule = self.config.schedule_config.clone();
-
-        // DB backup job
+        // Register builtin handlers for backup jobs
         let service = self.clone();
-        let db_job = Job::new_async(
-            db_schedule
-                .parse::<cron::Schedule>()
-                .map_err(|e| BackupError::Scheduling(e.to_string()))?,
-            move |_uuid: Uuid, _lock| {
+        scheduler
+            .register_handler("backup_database", move |job_def| {
                 let service = service.clone();
+                let backup_type = job_def
+                    .payload
+                    .get("backup_type")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("database");
+                let bt = match backup_type {
+                    "config" => crate::service::BackupType::Config,
+                    _ => crate::service::BackupType::Database,
+                };
                 Box::pin(async move {
-                    if let Err(e) = service.run_backup(BackupType::Database).await {
-                        error!("Scheduled DB backup failed: {}", e);
-                        service
-                            .nats
-                            .publish_backup_failed("database", &e.to_string())
-                            .await;
+                    if let Err(e) = service.run_backup(bt).await {
+                        error!("Scheduled backup failed: {}", e);
                     }
+                    Ok(())
                 })
+            })
+            .await;
+
+        // Start the scheduler
+        scheduler.start().await?;
+
+        // Add DB backup job
+        let db_job = JobDefinition {
+            id: "backup-database".to_string(),
+            name: "Database Backup".to_string(),
+            description: "Scheduled database backup".to_string(),
+            schedule: self.config.schedule_db.clone(),
+            timezone: Some(self.config.timezone.clone()),
+            job_type: JobType::Builtin {
+                handler: "backup_database".to_string(),
             },
-        )
-        .map_err(|e| BackupError::Scheduling(e.to_string()))?;
+            payload: serde_json::json!({ "backup_type": "database" }),
+            timeout_seconds: Some(3600),
+            max_retries: Some(3),
+            retry_delay_seconds: Some(60),
+            enabled: self.config.enabled,
+            tags: vec!["backup".to_string(), "database".to_string()],
+        };
+        scheduler.add_job(db_job).await?;
 
-        scheduler
-            .add(db_job)
-            .await
-            .map_err(|e| BackupError::Scheduling(e.to_string()))?;
-
-        // Config backup job
-        let service = self.clone();
-        let config_job = Job::new_async(
-            config_schedule
-                .parse::<cron::Schedule>()
-                .map_err(|e| BackupError::Scheduling(e.to_string()))?,
-            move |_uuid, _lock| {
-                let service = service.clone();
-                Box::pin(async move {
-                    if let Err(e) = service.run_backup(BackupType::Config).await {
-                        error!("Scheduled Config backup failed: {}", e);
-                        service
-                            .nats
-                            .publish_backup_failed("config", &e.to_string())
-                            .await;
-                    }
-                })
+        // Add Config backup job
+        let config_job = JobDefinition {
+            id: "backup-config".to_string(),
+            name: "Config Backup".to_string(),
+            description: "Scheduled config backup".to_string(),
+            schedule: self.config.schedule_config.clone(),
+            timezone: Some(self.config.timezone.clone()),
+            job_type: JobType::Builtin {
+                handler: "backup_database".to_string(),
             },
-        )
-        .map_err(|e| BackupError::Scheduling(e.to_string()))?;
+            payload: serde_json::json!({ "backup_type": "config" }),
+            timeout_seconds: Some(3600),
+            max_retries: Some(3),
+            retry_delay_seconds: Some(60),
+            enabled: self.config.enabled,
+            tags: vec!["backup".to_string(), "config".to_string()],
+        };
+        scheduler.add_job(config_job).await?;
 
-        scheduler
-            .add(config_job)
-            .await
-            .map_err(|e| BackupError::Scheduling(e.to_string()))?;
+        self.scheduler = Some(scheduler);
 
-        scheduler
-            .start()
-            .await
-            .map_err(|e| BackupError::Scheduling(e.to_string()))?;
-
-        Ok(scheduler)
+        Ok(())
     }
 
     pub async fn run_backup(&self, backup_type: BackupType) -> BackupResult<BackupJob> {
@@ -510,6 +528,7 @@ impl Clone for BackupService {
             verification: self.verification.clone(),
             manifest: self.manifest.clone(),
             job_state: self.job_state.clone(),
+            scheduler: self.scheduler.clone(),
         }
     }
 }

@@ -57,17 +57,15 @@ async fn main() -> BackupResult<()> {
     info!("NATS connected successfully");
 
     // Create backup service
-    let backup_service = Arc::new(
-        BackupService::new(
-            backup_config,
-            agro_config.database_url.clone(),
-            nats_client.clone(),
-        )
-        .await?,
-    );
+    let mut backup_service = BackupService::new(
+        backup_config,
+        agro_config.database_url.clone(),
+        nats_client.clone(),
+    )
+    .await?;
 
     // Start scheduled jobs
-    let mut scheduler_handle = backup_service.start_scheduler().await?;
+    backup_service.start_scheduler().await?;
 
     info!("Backup service started successfully");
     info!("  DB Schedule: {}", backup_service.config().schedule_db);
@@ -95,8 +93,10 @@ async fn main() -> BackupResult<()> {
     }
 
     // Stop scheduler
-    if let Err(e) = scheduler_handle.shutdown().await {
-        error!("Failed to stop scheduler: {}", e);
+    if let Some(scheduler) = &backup_service.scheduler {
+        if let Err(e) = scheduler.stop().await {
+            error!("Failed to stop scheduler: {}", e);
+        }
     }
     info!("Scheduler stopped");
 

@@ -1,3 +1,4 @@
+use agrocore_scheduler::error::{SchedulerError, SchedulerResult};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -76,6 +77,9 @@ pub enum BackupError {
 
     #[error("Job scheduler error: {0}")]
     JobScheduler(String),
+
+    #[error("Scheduler error: {0}")]
+    Scheduler(#[from] SchedulerError),
 }
 
 pub type BackupResult<T> = Result<T, BackupError>;

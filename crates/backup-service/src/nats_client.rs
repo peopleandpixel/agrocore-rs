@@ -32,6 +32,10 @@ impl Clone for NatsClient {
 }
 
 impl NatsClient {
+    pub fn inner(&self) -> &Client {
+        &self.client
+    }
+
     pub async fn connect(url: &str) -> BackupResult<Self> {
         let options = ConnectOptions::new()
             .max_reconnects(10)
