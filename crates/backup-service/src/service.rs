@@ -5,7 +5,7 @@ use crate::manifest::ManifestManager;
 use crate::nats_client::NatsClient;
 use crate::pg_dump::PgDump;
 use crate::retention::RetentionManager;
-use crate::storage::StorageBackend;
+use crate::storage::StorageBackendTrait;
 use crate::verification::VerificationManager;
 use async_nats::Client as NatsClientInner;
 use chrono::{DateTime, Utc};
@@ -151,7 +151,7 @@ impl BackupService {
         let service = self.clone();
         let db_job = Job::new_async(
             db_schedule
-                .parse()
+                .parse::<cron::Schedule>()
                 .map_err(|e| BackupError::Scheduling(e.to_string()))?,
             move |_uuid: Uuid, _lock| {
                 let service = service.clone();
@@ -177,7 +177,7 @@ impl BackupService {
         let service = self.clone();
         let config_job = Job::new_async(
             config_schedule
-                .parse()
+                .parse::<cron::Schedule>()
                 .map_err(|e| BackupError::Scheduling(e.to_string()))?,
             move |_uuid, _lock| {
                 let service = service.clone();

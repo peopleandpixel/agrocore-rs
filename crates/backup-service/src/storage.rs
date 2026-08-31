@@ -47,6 +47,7 @@ impl StorageBackend {
         let mut local_paths = Vec::new();
 
         for target in targets {
+            let target_for_storage = target.clone();
             match target {
                 BackupTarget::S3 {
                     bucket,
@@ -56,13 +57,16 @@ impl StorageBackend {
                     ..
                 } => {
                     let client = Self::create_s3_client(
-                        bucket,
-                        region,
+                        &bucket,
+                        &region,
                         endpoint.clone(),
                         credentials.clone(),
                     )
                     .await?;
-                    s3_clients.push((target, Arc::new(client) as Arc<dyn ObjectStore>));
+                    s3_clients.push((
+                        target_for_storage.clone(),
+                        Arc::new(client) as Arc<dyn ObjectStore>,
+                    ));
                 }
                 BackupTarget::MinIO {
                     bucket,
@@ -72,50 +76,59 @@ impl StorageBackend {
                     ..
                 } => {
                     let client = Self::create_s3_client(
-                        bucket,
-                        region,
+                        &bucket,
+                        &region,
                         Some(endpoint.clone()),
                         credentials.clone(),
                     )
                     .await?;
-                    s3_clients.push((target, Arc::new(client) as Arc<dyn ObjectStore>));
+                    s3_clients.push((
+                        target_for_storage.clone(),
+                        Arc::new(client) as Arc<dyn ObjectStore>,
+                    ));
                 }
                 BackupTarget::B2 {
                     bucket,
                     region,
                     endpoint,
-                    credentials,
+                    ref credentials,
                     ..
                 } => {
                     let client = Self::create_s3_client(
-                        bucket,
-                        region,
+                        &bucket,
+                        &region,
                         Some(endpoint.clone()),
                         credentials.clone(),
                     )
                     .await?;
-                    s3_clients.push((target, Arc::new(client) as Arc<dyn ObjectStore>));
+                    s3_clients.push((
+                        target_for_storage.clone(),
+                        Arc::new(client) as Arc<dyn ObjectStore>,
+                    ));
                 }
                 BackupTarget::Wasabi {
                     bucket,
                     region,
-                    credentials,
+                    ref credentials,
                     ..
                 } => {
                     let client = Self::create_s3_client(
-                        bucket,
-                        region,
+                        &bucket,
+                        &region,
                         Some("s3.wasabisys.com".to_string()),
                         credentials.clone(),
                     )
                     .await?;
-                    s3_clients.push((target, Arc::new(client) as Arc<dyn ObjectStore>));
+                    s3_clients.push((
+                        target_for_storage.clone(),
+                        Arc::new(client) as Arc<dyn ObjectStore>,
+                    ));
                 }
                 BackupTarget::Local { path, .. } => {
                     tokio::fs::create_dir_all(&path)
                         .await
                         .map_err(|e| BackupError::Io(e))?;
-                    local_paths.push((target, path));
+                    local_paths.push((target_for_storage.clone(), path.clone()));
                 }
                 BackupTarget::Azure {
                     account,
@@ -124,16 +137,23 @@ impl StorageBackend {
                     ..
                 } => {
                     let client =
-                        Self::create_azure_client(account, container, credentials.clone()).await?;
-                    azure_clients.push((target, Arc::new(client) as Arc<dyn ObjectStore>));
+                        Self::create_azure_client(&account, &container, credentials.clone())
+                            .await?;
+                    azure_clients.push((
+                        target_for_storage.clone(),
+                        Arc::new(client) as Arc<dyn ObjectStore>,
+                    ));
                 }
                 BackupTarget::GCS {
                     bucket,
                     credentials_path,
                     ..
                 } => {
-                    let client = Self::create_gcs_client(bucket, credentials_path.clone()).await?;
-                    gcs_clients.push((target, Arc::new(client) as Arc<dyn ObjectStore>));
+                    let client = Self::create_gcs_client(&bucket, credentials_path.clone()).await?;
+                    gcs_clients.push((
+                        target_for_storage.clone(),
+                        Arc::new(client) as Arc<dyn ObjectStore>,
+                    ));
                 }
                 BackupTarget::SFTP { .. } => {
                     warn!("SFTP backend not yet implemented");
@@ -224,21 +244,30 @@ impl StorageBackend {
         Ok(Arc::new(client))
     }
 
-    fn find_s3_store(&self, target: &BackupTarget) -> Option<(&BackupTarget, Arc<dyn ObjectStore>)> {
+    fn find_s3_store(
+        &self,
+        target: &BackupTarget,
+    ) -> Option<(&BackupTarget, Arc<dyn ObjectStore>)> {
         self.s3_clients
             .iter()
             .find(|(t, _)| t.target_id() == target.target_id())
             .map(|(t, s)| (t, s.clone()))
     }
 
-    fn find_azure_store(&self, target: &BackupTarget) -> Option<(&BackupTarget, Arc<dyn ObjectStore>)> {
+    fn find_azure_store(
+        &self,
+        target: &BackupTarget,
+    ) -> Option<(&BackupTarget, Arc<dyn ObjectStore>)> {
         self.azure_clients
             .iter()
             .find(|(t, _)| t.target_id() == target.target_id())
             .map(|(t, s)| (t, s.clone()))
     }
 
-    fn find_gcs_store(&self, target: &BackupTarget) -> Option<(&BackupTarget, Arc<dyn ObjectStore>)> {
+    fn find_gcs_store(
+        &self,
+        target: &BackupTarget,
+    ) -> Option<(&BackupTarget, Arc<dyn ObjectStore>)> {
         self.gcs_clients
             .iter()
             .find(|(t, _)| t.target_id() == target.target_id())
@@ -292,7 +321,7 @@ impl StorageBackendTrait for StorageBackend {
                         .map_err(|e| BackupError::ObjectStore(e))?;
                 }
             }
-            BackupTarget::Local { ref path, .. } => {
+            BackupTarget::Local { path, .. } => {
                 let full_path = path.join(object_name);
                 if let Some(parent) = full_path.parent() {
                     tokio::fs::create_dir_all(parent)
@@ -393,19 +422,17 @@ impl StorageBackendTrait for StorageBackend {
                     )))
                 }
             }
-            BackupTarget::Local { ref path, .. } => {
+            BackupTarget::Local { path, .. } => {
                 let full_path = path.join(object_name);
                 let data = tokio::fs::read(full_path)
                     .await
                     .map_err(|e| BackupError::Io(e))?;
                 Ok(data)
             }
-            _ => {
-                Err(BackupError::Config(format!(
-                    "No storage backend configured for target: {}",
-                    target.target_id()
-                )))
-            }
+            _ => Err(BackupError::Config(format!(
+                "No storage backend configured for target: {}",
+                target.target_id()
+            ))),
         }
     }
 
@@ -414,8 +441,10 @@ impl StorageBackendTrait for StorageBackend {
         target: &BackupTarget,
         manifest: &crate::manifest::BackupManifest,
     ) -> BackupResult<()> {
-        let manifest_json = serde_json::to_vec_pretty(manifest).map_err(|e| BackupError::Serialization(e))?;
+        let manifest_json =
+            serde_json::to_vec_pretty(manifest).map_err(|e| BackupError::Serialization(e))?;
         let object_name = format!("manifests/{}.json", manifest.backup_id);
-        self.upload_bytes(target, &object_name, &manifest_json).await
+        self.upload_bytes(target, &object_name, &manifest_json)
+            .await
     }
 }

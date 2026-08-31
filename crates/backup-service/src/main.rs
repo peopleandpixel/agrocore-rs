@@ -53,7 +53,7 @@ async fn main() -> BackupResult<()> {
     // Connect to NATS
     let nats_url = &agro_config.nats_url;
     info!("Connecting to NATS at {}", nats_url);
-    let nats_client = NatsClient::connect(nats_url).await?;
+    let mut nats_client = NatsClient::connect(nats_url).await?;
     info!("NATS connected successfully");
 
     // Create backup service
@@ -67,7 +67,7 @@ async fn main() -> BackupResult<()> {
     );
 
     // Start scheduled jobs
-    let scheduler_handle = backup_service.start_scheduler().await?;
+    let mut scheduler_handle = backup_service.start_scheduler().await?;
 
     info!("Backup service started successfully");
     info!("  DB Schedule: {}", backup_service.config().schedule_db);
@@ -95,7 +95,9 @@ async fn main() -> BackupResult<()> {
     }
 
     // Stop scheduler
-    scheduler_handle.shutdown().await?;
+    if let Err(e) = scheduler_handle.shutdown().await {
+        error!("Failed to stop scheduler: {}", e);
+    }
     info!("Scheduler stopped");
 
     // Close NATS connection

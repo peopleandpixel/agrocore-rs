@@ -13,6 +13,8 @@ members = [
     "crates/weather-service",
     "crates/i18n-shared",
     "crates/dashboard",
+    "crates/backup-service",
+    "crates/scheduler",
 ]
 resolver = "2"
 
