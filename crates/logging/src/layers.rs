@@ -1,8 +1,13 @@
 use crate::config::LoggingConfig;
 use crate::error::{LoggingError, LoggingResult};
+
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 use tracing_subscriber::Registry;
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 use tracing_subscriber::layer::Layer;
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 use tracing_subscriber::layer::SubscriberExt;
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 use tracing_subscriber::registry::LookupSpan;
 
 #[cfg(feature = "otlp")]
@@ -50,23 +55,40 @@ impl LoggingHandle {
 
 /// Initialize logging based on config
 pub fn init_logging(config: LoggingConfig) -> LoggingResult<LoggingHandle> {
-    let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| config.level.clone().into());
+    #[cfg(not(any(feature = "dev-console", feature = "otlp")))]
+    {
+        // No tracing features enabled - just set up basic log crate
+        log::set_max_level(config.level.parse().unwrap_or(log::LevelFilter::Info));
+        return Ok(LoggingHandle::new(None));
+    }
 
-    let subscriber = tracing_subscriber::registry().with(env_filter);
+    #[cfg(any(feature = "dev-console", feature = "otlp"))]
+    {
+        let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| config.level.clone().into());
 
-    // 1. Console layer (dev)
-    if config.console_enabled {
-        let console_layer = build_console_layer(&config);
-        let subscriber = subscriber.with(console_layer);
+        let subscriber = tracing_subscriber::registry().with(env_filter);
 
-        // 2. File layer - not implemented for simplicity
+        // Install log -> tracing bridge
+        tracing_log::LogTracer::init().ok();
 
-        // 3. OTLP layer (distributed tracing)
-        #[cfg(feature = "otlp")]
-        if config.otlp_enabled {
-            let otlp_layer = build_otlp_layer(&config)?;
-            let subscriber = subscriber.with(otlp_layer);
+        // 1. Console layer (dev)
+        if config.console_enabled {
+            let console_layer = build_console_layer(&config);
+            let subscriber = subscriber.with(console_layer);
+
+            // 3. OTLP layer (distributed tracing)
+            #[cfg(feature = "otlp")]
+            if config.otlp_enabled {
+                let otlp_layer = build_otlp_layer(&config)?;
+                let subscriber = subscriber.with(otlp_layer);
+
+                let _ = tracing::subscriber::set_global_default(subscriber)
+                    .map_err(|e| LoggingError::InvalidConfig(e.to_string()))?;
+
+                let handle = LoggingHandle::new(None);
+                return Ok(handle);
+            }
 
             let _ = tracing::subscriber::set_global_default(subscriber)
                 .map_err(|e| LoggingError::InvalidConfig(e.to_string()))?;
@@ -75,22 +97,17 @@ pub fn init_logging(config: LoggingConfig) -> LoggingResult<LoggingHandle> {
             return Ok(handle);
         }
 
+        // No console, just try to set minimal logging
         let _ = tracing::subscriber::set_global_default(subscriber)
             .map_err(|e| LoggingError::InvalidConfig(e.to_string()))?;
 
         let handle = LoggingHandle::new(None);
-        return Ok(handle);
+        Ok(handle)
     }
-
-    // No console, just try to set minimal logging
-    let _ = tracing::subscriber::set_global_default(subscriber)
-        .map_err(|e| LoggingError::InvalidConfig(e.to_string()))?;
-
-    let handle = LoggingHandle::new(None);
-    Ok(handle)
 }
 
 /// Console layer builder - uses conditional compilation to handle pretty
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 fn build_console_layer<S>(config: &LoggingConfig) -> impl Layer<S> + Send + Sync
 where
     S: tracing::Subscriber + for<'a> LookupSpan<'a>,

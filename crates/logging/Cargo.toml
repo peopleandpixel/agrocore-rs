@@ -6,15 +6,18 @@ license.workspace = true
 
 [features]
 default = ["dev-console"]
-dev-console = []           # pretty console for local dev
-otlp = ["opentelemetry", "opentelemetry-otlp", "opentelemetry_sdk", "tracing-opentelemetry"]  # distributed tracing
+dev-console = ["tracing", "tracing-subscriber", "tracing-log"]           # pretty console for local dev
+otlp = ["opentelemetry", "opentelemetry-otlp", "opentelemetry_sdk", "tracing-opentelemetry", "tracing", "tracing-subscriber"]  # distributed tracing
 
 [dependencies]
-# Core
-tracing = { workspace = true, features = ["std"] }
-tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
+# Public API - log crate facade (zero tracing coupling for consumers)
+log = "0.4"
+
+# Internal - tracing only for OTLP/console output (optional features)
+tracing = { version = "0.1", features = ["std"], optional = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"], optional = true }
+tracing-log = { version = "0.2", optional = true }  # log -> tracing bridge
 tracing-appender = { version = "0.2", optional = true, features = ["parking_lot"] }
-uuid = { workspace = true, features = ["v4", "serde"] }
 
 # Optional features
 opentelemetry = { version = "0.27", features = ["trace"], optional = true }
@@ -30,3 +33,4 @@ anyhow = { workspace = true }
 
 # Internal
 agrocore-shared = { path = "../shared" }
+uuid = { workspace = true, features = ["v4", "serde"] }

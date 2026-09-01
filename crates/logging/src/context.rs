@@ -2,11 +2,16 @@ use crate::config::EnvironmentType;
 use crate::error::{LoggingError, LoggingResult};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tracing::Subscriber;
-use tracing::field::Field;
-use tracing_subscriber::layer::Context;
-use tracing_subscriber::registry::LookupSpan;
 use uuid::Uuid;
+
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
+use tracing::Subscriber;
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
+use tracing::field::Field;
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
+use tracing_subscriber::layer::Context;
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
+use tracing_subscriber::registry::LookupSpan;
 
 /// Service context attached to all spans
 #[derive(Debug, Clone, Default)]
@@ -40,6 +45,7 @@ impl ServiceContext {
     }
 
     /// Create a new span with service context
+    #[cfg(any(feature = "dev-console", feature = "otlp"))]
     pub fn span(&self, name: &str) -> tracing::Span {
         let span = tracing::info_span!(
             "service_operation",
@@ -55,6 +61,12 @@ impl ServiceContext {
         }
 
         span
+    }
+
+    /// No-op when no tracing features enabled
+    #[cfg(not(any(feature = "dev-console", feature = "otlp")))]
+    pub fn span(&self, _name: &str) {
+        // No-op - tracing not available
     }
 }
 
@@ -105,6 +117,7 @@ impl RequestContext {
     }
 
     /// Create a span with request context
+    #[cfg(any(feature = "dev-console", feature = "otlp"))]
     pub fn span(&self, name: &str) -> tracing::Span {
         let mut span = tracing::info_span!(
             "http_request",
@@ -133,9 +146,15 @@ impl RequestContext {
 
         span
     }
+
+    #[cfg(not(any(feature = "dev-console", feature = "otlp")))]
+    pub fn span(&self, _name: &str) {
+        // No-op
+    }
 }
 
 /// Extension trait for adding structured fields to spans
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 pub trait SpanExt {
     fn record_error(&self, error: &dyn std::error::Error);
     fn record_latency(&self, micros: u64);
@@ -145,6 +164,7 @@ pub trait SpanExt {
     fn record_user(&self, user_id: &str);
 }
 
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 impl SpanExt for tracing::Span {
     fn record_error(&self, error: &dyn std::error::Error) {
         self.record("error", true);
@@ -179,50 +199,13 @@ impl SpanExt for tracing::Span {
     }
 }
 
-/// Macro for creating a span with service + request context
-#[macro_export]
-macro_rules! agrocore_span {
-    ($name:expr) => {
-        tracing::info_span!($name)
-    };
-    ($name:expr, $($field:tt)*) => {
-        tracing::info_span!($name, $($field)*)
-    };
-}
-
-/// Macro for structured info logging with context
-#[macro_export]
-macro_rules! agrocore_info {
-    ($($arg:tt)*) => {
-        tracing::info!($($arg)*)
-    };
-}
-
-/// Macro for structured error logging with context
-#[macro_export]
-macro_rules! agrocore_error {
-    ($($arg:tt)*) => {
-        tracing::error!($($arg)*)
-    };
-}
-
-/// Macro for structured warn logging with context
-#[macro_export]
-macro_rules! agrocore_warn {
-    ($($arg:tt)*) => {
-        tracing::warn!($($arg)*)
-    };
-}
-
-/// Macro for structured debug logging with context
-#[macro_export]
-macro_rules! agrocore_debug {
-    ($($arg:tt)*) => {
-        tracing::debug!($($arg)*)
-    };
-}
-
 /// Thread-local service context for automatic span enrichment
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
+thread_local! {
+    static SERVICE_CONTEXT: std::cell::RefCell<Option<Arc<ServiceContext>>> = const { std::cell::RefCell::new(None) };
+}
+
+#[cfg(not(any(feature = "dev-console", feature = "otlp")))]
 thread_local! {
     static SERVICE_CONTEXT: std::cell::RefCell<Option<Arc<ServiceContext>>> = const { std::cell::RefCell::new(None) };
 }
@@ -243,16 +226,19 @@ pub fn get_service_context() -> Option<Arc<ServiceContext>> {
 }
 
 /// Layer that automatically adds service context to all spans
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 pub struct ServiceContextLayer {
     context: Arc<ServiceContext>,
 }
 
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 impl ServiceContextLayer {
     pub fn new(context: Arc<ServiceContext>) -> Self {
         Self { context }
     }
 }
 
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 impl<S> tracing_subscriber::Layer<S> for ServiceContextLayer
 where
     S: tracing::Subscriber + for<'a> LookupSpan<'a>,
@@ -280,8 +266,10 @@ where
     }
 }
 
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 struct ServiceContextVisitor<'a>(&'a Arc<ServiceContext>);
 
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 impl<'a> tracing::field::Visit for ServiceContextVisitor<'a> {
     fn record_f64(&mut self, _field: &Field, _value: f64) {}
     fn record_i64(&mut self, _field: &Field, _value: i64) {}
@@ -301,6 +289,7 @@ impl<'a> tracing::field::Visit for ServiceContextVisitor<'a> {
 }
 
 /// Create a new span with full context (service + request)
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 pub fn create_span(
     service_ctx: &ServiceContext,
     request_ctx: Option<&RequestContext>,
@@ -314,4 +303,13 @@ pub fn create_span(
     }
 
     span
+}
+
+#[cfg(not(any(feature = "dev-console", feature = "otlp")))]
+pub fn create_span(
+    _service_ctx: &ServiceContext,
+    _request_ctx: Option<&RequestContext>,
+    _name: &str,
+) {
+    // No-op
 }
