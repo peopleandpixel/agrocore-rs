@@ -15,6 +15,7 @@ members = [
     "crates/dashboard",
     "crates/backup-service",
     "crates/scheduler",
+    "crates/logging",
 ]
 resolver = "2"
 
@@ -49,8 +50,8 @@ rand = "0.8"
 validator = { version = "0.20", features = ["derive"] }
 thiserror = "2"
 anyhow = "1"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing = { version = "0.1", features = ["std"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 tracing-actix-web = "0.7"
 utoipa = { version = "5", features = ["actix_extras", "uuid", "chrono"] }
 utoipa-swagger-ui = { version = "8", features = ["actix-web", "vendored"] }
