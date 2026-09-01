@@ -3,7 +3,7 @@
 [![Rust](https://img.shields.io/badge/rust-2024-orange.svg)](https://www.rust-lang.org/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Rust CI](https://github.com/peopleandpixel/agrocore-rs/actions/workflows/ci-cd.yml/badge.svg?branch=main)](https://github.com/peopleandpixel/agrocore-rs/actions/workflows/ci-cd.yml)
-[![Version](https://img.shields.io/badge/version-0.5.0-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.11.0-green.svg)](CHANGELOG.md)
 
 AgroCore RS is a farm operations platform built from scratch in this repository. The code, structure, naming, and product decisions were created here independently, while the implementation benefits from practical experience gained in earlier professional work.
 
@@ -30,6 +30,8 @@ AgroCore is designed for teams that need to record, check, and later evaluate op
 - Finance, cost centers, PAC-related workflows, and reporting
 - Compliance and certification tracking
 - Equipment and resource management
+- **Backup & Recovery** (automatisiert, verschlüsselt, multi-target: S3, MinIO, Azure, GCS, Local, SFTP, WebDAV)
+- **Scheduler** (wiederkehrende Worker-Tasks + einmalige Termine via `agrocore-scheduler` crate)
 - A reactive Admin UI for day-to-day office work
 
 ## Technology
@@ -45,10 +47,12 @@ AgroCore is designed for teams that need to record, check, and later evaluate op
 
 - `crates/api`: HTTP API and request handlers
 - `crates/admin-ui`: Web UI
+- `crates/backup-service`: Backup & Recovery Service (pg_dump Streaming, AES-256-GCM, GFS Retention)
 - `crates/domain`: Business logic and entities
 - `crates/infrastructure`: Persistence and integrations
 - `crates/messaging`: Event and messaging support
 - `crates/reporting-service`: Excel/GeoJSON/PAC-SIP export worker
+- `crates/scheduler`: Wiederverwendbarer Scheduler (Cron Jobs + OneTime Appointments)
 - `crates/weather-service`: Weather data ingestion worker
 
 ## Local Development
@@ -84,6 +88,7 @@ Services:
 - **postgres**: PostgreSQL 16 + PostGIS with auto-migrations (15 migration files)
 - **nats**: NATS 2.10 with JetStream
 - **api**: Actix Web API on port 8080
+- **backup-service**: Backup & Recovery binary (sidecar)
 - **reporting-service**: Export worker (Excel, GeoJSON, PAC-SIP)
 - **weather-service**: Weather data ingestion worker
 - **admin-ui**: Leptos Admin UI on port 3000

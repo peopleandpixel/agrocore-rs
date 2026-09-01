@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-08-31
+
+### Added
+- **agrocore-scheduler crate (NEW)**: Wiederverwendbarer Scheduler-Service für wiederkehrende Worker-Aufgaben UND einmalige Termine
+  - `JobType::OneTime { execute_at: DateTime<Utc> }` für präzise Terminplanung zu exakten Zeitpunkten
+  - Cron-basierte wiederkehrende Jobs (wie zuvor) für Worker-Tasks (Backups, Cleanup, Sync, etc.)
+  - `SchedulerService` mit NATS Event-Publishing (job.started, job.completed, job.failed)
+  - Retry-Policies mit konfigurierbaren Delays und max_retries
+  - Timezone-Support für cron-Ausdrücke
+  - Handler-Registry für Builtin/Command/HTTP/NATS Jobs
+- **Backup-Service**: Refactored auf externen `agrocore-scheduler` Crate
+  - Entfernt direkte `tokio-cron-scheduler` Abhängigkeit
+  - Nutzt jetzt `SchedulerService` mit `JobDefinition`, `JobType::Builtin`
+  - Registrierter Handler "backup_database" für DB- und Config-Backups
+  - NATS-Events für Backup-Start/Progress/Completed/Failed
+
+### Changed
+- **Version bump**: 0.10.0 → 0.11.0 (Minor bump für neue Scheduler-Features)
+- **agrocore-scheduler**: Re-exports für `JobDefinition`, `JobType`, `SchedulerConfig`, `SchedulerService`, `SchedulerError`
+- **Quality Gates**: Alle 14 Crates kompilieren, Tests grün (153+), Clippy sauber (nur unused-import warnings)
+
+### Fixed
+- **Scheduler**: OneTime Jobs nutzen `tokio::time::sleep` für exakte Ausführungszeit
+- **Scheduler**: `add_job()` validiert OneTime Jobs ohne Cron-Parsing
+- **Backup-Service**: Clone-Impl für `BackupService` includes `scheduler` field
+
 ## [0.10.0] - 2026-08-28
 
 ### Added
