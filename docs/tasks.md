@@ -1,6 +1,6 @@
 # Agrocore-RS Open Tasks
 
-Letztes Update: 2026-08-21
+Letztes Update: 2026-08-31
 
 Tasks sind nach Priorität und geschätztem Implementierungsaufwand geordnet.
 Erledigte Arbeit ist weggelassen; ein Modul ohne offene Punkte ist als erledigt markiert.
@@ -43,7 +43,7 @@ Erledigte Arbeit ist weggelassen; ein Modul ohne offene Punkte ist als erledigt 
 
 **Alle 6 Stubs wurden in v0.9.1 durch funktionale Inhalte ersetzt:**
 
-- [x] **Analytics Profitability Chart** — `"—"` durch echte Revenue/Kosten/Marge-Visualisierung aus `financial_records` API ersetzt (v0.9.1)
+- [x] **Analytics Profitability Chart** — `""` durch echte Revenue/Kosten/Marge-Visualisierung aus `financial_records` API ersetzt (v0.9.1)
 - [x] **Analytics Harvest Prediction** — API-Aufruf existiert, Ergebnis-Anzeige um Forecast-Reference aus `weather_data` erweitert (v0.9.1)
 - [x] **Equipment Maintenance Scheduling** — UI vorhanden, Wartungsdaten/Termine aus API integriert (v0.9.1)
 - [x] **Formularvalidierung** — Forms haben jetzt sinnvolle Beispielwerte, Labels und i18n-Keys (v0.9.1)
@@ -155,8 +155,6 @@ Erledigte Arbeit ist weggelassen; ein Modul ohne offene Punkte ist als erledigt 
 Siehe [optimizations.md](docs/optimizations.md) §3.2 — bereits erledigt (0.8.14).
 
 ---
-
-|
 
 - [ ] Catalog Import Script (`scripts/import_catalog.py`): Vollständige Kataloge (VIVC Rebsorten >12k, Oliven-DB >260, FAO Tierrassen) als CSV generieren und in `varieties`/`breeds` importieren. Lazy-Load-Suche für AdminUI vorbereiten. Datenquellen: VIVC (vivc.de), FAO-DAD-IS, Olive-DB.
 
@@ -292,10 +290,9 @@ Siehe [optimizations.md](docs/optimizations.md) §3.2 — bereits erledigt (0.8.
 
 ---
 
-### Phase 6: Scheduler & Appointments (NEU) ✅ **ERLEDIGT**
+## Phase 6: Scheduler & Appointments (NEU) ✅ **ERLEDIGT**
 
 **Status:** Abgeschlossen · **Priorität:** P2 · **Aufwand:** 3–5 Tage
-
 - [x] **agrocore-scheduler Crate** als wiederverwendbarer Service
 - [x] **OneTime Jobs** — Termine zu exakten Zeitpunkten (`JobType::OneTime { execute_at }`)
 - [x] Wiederkehrende Cron-Jobs für Worker-Tasks (Backup, Cleanup, Sync, etc.)
@@ -304,3 +301,136 @@ Siehe [optimizations.md](docs/optimizations.md) §3.2 — bereits erledigt (0.8.
 - [x] Timezone-Support
 - [x] Handler-Registry für Builtin/Command/HTTP/NATS
 - [x] Backup-Service nutzt jetzt externen Scheduler-Crate
+
+---
+
+## Phase 7: Migration auf externe Services (KRITISCH - P0) 🔴 **HÖCHSTE PRIORITÄT**
+
+**Status:** Geplant · **Priorität:** P0 · **Aufwand:** 5–10 Tage
+
+### Ziel
+Alle existierenden Crates/Services migrieren, die **interne Scheduling/Timer/Logging** nutzen, auf die neuen **externen Services** (`agrocore-scheduler`, `agrocore-logging`, `agrocore-messaging`).
+
+### Zu migrierende Services
+
+#### 1. Logging-Migration → `agrocore-logging`
+**Betroffene Crates (alle 15 nutzen `tracing` direkt):**
+- [ ] `agrocore-api` — `tracing` imports in Handlers, Middleware
+- [ ] `agrocore-backup` — `tracing` in `main.rs`, `service.rs`, `storage.rs`, `encryption.rs`, `manifest.rs`, `retention.rs`, `verification.rs`, `pg_dump.rs`, `nats_client.rs`, `config.rs`
+- [ ] `agrocore-scheduler` — `tracing` in `service.rs`, `config.rs`
+- [ ] `agrocore-messaging` — `tracing` in `lib.rs`, `bridge.rs`, `publisher.rs`, `consumer.rs`
+- [ ] `agrocore-infrastructure` — `tracing` in `database.rs`, Postgres Repos
+- [ ] `agrocore-api` — `tracing-actix-web` Middleware
+- [ ] `agrocore-weather-service` — `tracing` in `worker.rs`
+- [ ] `agrocore-reporting-service` — `tracing` in `worker.rs`, `processor.rs`
+- [ ] `agrocore-lpis-providers` — `tracing` in Provider-Implementierungen
+- [ ] `agrocore-geometry-service` — `tracing` in `worker.rs`
+- [ ] `agrocore-asset-registry` — `tracing` in `service.rs`
+- [ ] `agrocore-dashboard` — `tracing` in `main.rs`, `process.rs`
+- [ ] `agrocore-domain` — `tracing` in Repositories
+- [ ] `agrocore-messaging` — `tracing` in NATS handlers
+- [ ] `agrocore-admin-ui` — `tracing` in Leptos Components (wasm)
+
+**Migration Steps pro Crate:**
+1. `Cargo.toml`: `agrocore-logging = { path = "../logging", features = ["dev-console"] }` (dev) / `["otlp"]` (prod)
+2. Ersetze `use tracing::{info, error, warn, debug}` → `use agrocore_logging::{info, error, warn, debug}`
+3. Ersetze `tracing::info_span!` → `agrocore_span!`
+4. Füge `ServiceContext` + `RequestContext` in Entry-Points hinzu
+5. Nutze `SpanExt` für strukturierte Fehler/Latency/DB/HTTP Logging
+
+#### 2. Scheduler-Migration → `agrocore-scheduler`
+**Betroffene Services mit internen Timern/Intervalls:**
+
+| Crate | File | Aktuelle Implementierung | Migration Ziel |
+|-------|------|-------------------------|----------------|
+| `agrocore-messaging` | `lib.rs:971` | `tokio::time::interval(Duration::from_secs(ping_interval_secs))` für NATS Ping | `JobType::Builtin { handler: "nats_ping" }` mit Cron/OneTime |
+| `agrocore-messaging` | `bridge.rs:351` | `tokio::time::interval(Duration::from_secs(60))` für Bridge Health | `JobType::Builtin { handler: "bridge_health" }` alle 60s |
+| `agrocore-weather-service` | `worker.rs:120` | `tokio::time::interval(Duration::from_secs(1800))` für Wetter-Updates alle 30min | `JobType::Builtin { handler: "weather_update" }` Cron `0 */30 * * * *` |
+| `agrocore-infrastructure` | `database.rs:757` | `tokio::time::interval(Duration::from_secs(5))` für Connection Pool Health | `JobType::Builtin { handler: "db_pool_health" }` alle 5s |
+| `agrocore-infrastructure` | `database.rs:769` | `tokio::time::interval(Duration::from_secs(30*24*60*60))` für monatliche Cleanup | `JobType::Builtin { handler: "db_monthly_cleanup" }` Cron `0 0 1 * *` |
+
+**Migration Steps pro Service:**
+1. `Cargo.toml`: `agrocore-scheduler = { path = "../scheduler" }`
+2. Entferne `tokio::time::interval` / `tokio::spawn` Timer-Code
+3. Erstelle `JobDefinition` mit `JobType::Builtin` + Handler-Name
+4. Registriere Handler in `SchedulerService` (`register_handler()`)
+4. Starte `SchedulerService` in Main/Entry-Point
+5. Konfiguriere via `SchedulerConfig` (ENV/Config-File)
+
+#### 3. Messaging-Migration → `agrocore-messaging`
+**Betroffene Crates die NATS direkt nutzen:**
+- [ ] `agrocore-api` — `async_nats` in Middleware, Webhooks
+- [ ] `agrocore-backup` — `async_nats` in `nats_client.rs`
+- [ ] `agrocore-scheduler` — `async_nats` in `service.rs`
+- [ ] `agrocore-weather-service` — `async_nats` in `worker.rs`
+- [ ] `agrocore-reporting-service` — `async_nats` in `processor.rs`
+
+**Migration:** Nutze `agrocore_messaging::Publisher` / `Subscriber` Traits statt raw `async_nats::Client`
+
+### Akzeptanzkriterien
+- [ ] **Alle 15 Crates** nutzen `agrocore_logging` (kein direkter `tracing` Import mehr in Business-Logic)
+- [ ] **Alle Timer/Intervalle** (`tokio::time::interval`, `tokio::spawn` für wiederkehrende Tasks) durch `agrocore_scheduler` Jobs ersetzt
+- [ ] **Keine direkten `async_nats` Imports** in Business-Logic — nur über `agrocore_messaging` Traits
+- [ ] **ServiceContext** in allen Entry-Points (Main, HTTP Handlers, Workers, Scheduler Jobs)
+- [ ] **RequestContext** in allen HTTP Handlers via Middleware
+- [ ] **SpanExt** genutzt für alle strukturierten Logs (Errors, Latency, DB Queries, HTTP Status)
+- [ ] **Konfiguration** über `LoggingConfig` / `SchedulerConfig` aus ENV/Config-Files
+- [ ] **Tests grün** nach Migration (alle 153+ Tests)
+- [ ] **Quality Gates** `cargo fmt && cargo check && cargo test && cargo clippy` laufen durch
+
+### Technische Details
+
+**Logging-Migration Pattern:**
+```rust
+// VORHER
+use tracing::{info, error, info_span};
+info!("Backup started");
+
+// NACHHER
+use agrocore_logging::{info, error, agrocore_span, SpanExt};
+let span = agrocore_span!("backup_start");
+span.record_tenant(&tenant_id);
+info!("Backup started");
+```
+
+**Scheduler-Migration Pattern:**
+```rust
+// VORHER
+tokio::spawn(async move {
+    let mut interval = interval(Duration::from_secs(1800));
+    loop {
+        interval.tick().await;
+        update_weather().await;
+    }
+});
+
+// NACHHER
+let job = JobDefinition {
+    id: "weather_update".into(),
+    name: "Weather Update".into(),
+    job_type: JobType::Builtin { handler: "weather_update".into() },
+    schedule: "0 */30 * * * *".into(), // alle 30 min
+    ..Default::default()
+};
+scheduler.add_job(job).await?;
+// Handler registrieren:
+scheduler.register_handler("weather_update", || async { update_weather().await; Ok(()) });
+```
+
+### Abhängigkeiten
+- `agrocore-logging` ✅ **FERTIG** (v0.12.0)
+- `agrocore-scheduler` ✅ **FERTIG** (v0.12.0)
+- `agrocore-messaging` ✅ **FERTIG** (exists)
+
+### Nächste Schritte
+1. **Sofort**: `agrocore-logging` in `agrocore-scheduler` und `agrocore-backup` integrieren (einfache Crates)
+2. **Dann**: `agrocore-messaging` Bridge + Ping auf Scheduler migrieren
+3. **Dann**: `agrocore-weather-service` Worker auf Scheduler migrieren
+4. **Dann**: `agrocore-infrastructure` Database Health/ Cleanup auf Scheduler migrieren
+5. **Zum Schluss**: Alle übrigen Crates auf `agrocore_logging` migrieren
+6. **Validierung**: Alle Tests + Quality Gates
+
+### Referenzen
+- `agrocore-logging` Docs: `crates/logging/README.md` (zu erstellen)
+- `agrocore-scheduler` Examples: `crates/scheduler/examples/` (zu erstellen)
+- `agrocore-messaging` Traits: `crates/messaging/src/lib.rs` (Publisher/Subscriber)

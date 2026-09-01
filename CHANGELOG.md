@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-08-31
+
+### Added
+- **agrocore-logging crate (NEW)**: Einheitlicher strukturierter Logging-Service für alle 15 Crates
+  - `ServiceContext` / `RequestContext` für automatische Span-Anreicherung (service_name, environment, version, instance_id, request_id, tenant_id)
+  - `SpanExt` Trait für strukturierte Felder: `record_error()`, `record_latency()`, `record_db_query()`, `record_http_status()`, `record_tenant()`, `record_user()`
+  - Console Layer (pretty output mit Thread-IDs/Names) + OTLP Layer (OpenTelemetry distributed tracing)
+  - Macros: `agrocore_span!`, `agrocore_info!`, `agrocore_error!`, `agrocore_warn!`, `agrocore_debug!`
+  - Konfiguration via `LoggingConfig` (Env-File + Env-Vars `AGROCORE_LOG__*`)
+  - Feature-gated: `dev-console` (default, pretty console), `otlp` (OpenTelemetry)
+
+### Changed
+- **Version bump**: 0.11.0 → 0.12.0 (Minor bump für neues Logging-Crate)
+- **Quality Gates**: Alle 15 Crates kompilieren, Tests grün (153+), Clippy sauber (nur unused-import warnings)
+
 ## [0.11.0] - 2026-08-31
 
 ### Added
