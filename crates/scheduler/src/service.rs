@@ -116,6 +116,7 @@ impl SchedulerService {
         // Check if handler exists
         let handler_name = match &job_def.job_type {
             JobType::Builtin { handler } => handler.clone(),
+            JobType::OneTime { .. } => "onetime".to_string(),
             _ => "default".to_string(),
         };
 
@@ -124,14 +125,23 @@ impl SchedulerService {
             handlers.contains_key(&handler_name)
         };
 
-        if !handler_exists && !matches!(job_def.job_type, JobType::Builtin { .. }) {
+        if !handler_exists
+            && !matches!(job_def.job_type, JobType::Builtin { .. })
+            && !matches!(job_def.job_type, JobType::OneTime { .. })
+        {
             // Allow non-builtin jobs without handlers for now
         }
 
         let uuid = Uuid::new_v4();
         let now = Utc::now();
 
-        // Calculate next run
+        // Handle OneTime jobs differently
+        if let JobType::OneTime { execute_at } = &job_def.job_type {
+            let execute_at = *execute_at;
+            return self.add_onetime_job(job_def, uuid, now, execute_at).await;
+        }
+
+        // Calculate next run for recurring jobs
         let schedule = <cron::Schedule as std::str::FromStr>::from_str(&job_def.schedule)
             .map_err(|e| SchedulerError::Cron(e))?;
         let next_run = schedule.upcoming(Utc).next();
@@ -310,6 +320,7 @@ impl SchedulerService {
     async fn run_job_handler(&self, job_def: &JobDefinition) -> SchedulerResult<()> {
         let handler_name = match &job_def.job_type {
             JobType::Builtin { handler } => handler.clone(),
+            JobType::OneTime { .. } => "onetime".to_string(),
             _ => "default".to_string(),
         };
 
@@ -382,6 +393,10 @@ impl SchedulerService {
                         .await
                         .map_err(|e| SchedulerError::Nats(e.to_string()))?;
                 }
+                Ok(())
+            }
+            JobType::OneTime { .. } => {
+                // OneTime jobs are handled by the scheduler directly, not by handlers
                 Ok(())
             }
             JobType::Builtin { handler } => Err(SchedulerError::InvalidState(format!(
@@ -597,6 +612,92 @@ impl SchedulerService {
     pub async fn get_job_definition(&self, job_id: &str) -> Option<JobDefinition> {
         let jobs = self.jobs.read().await;
         jobs.get(job_id).map(|j| j.definition.clone())
+    }
+
+    async fn add_onetime_job(
+        &self,
+        job_def: JobDefinition,
+        uuid: Uuid,
+        now: DateTime<Utc>,
+        execute_at: DateTime<Utc>,
+    ) -> SchedulerResult<()> {
+        // Store job
+        let scheduled_job = ScheduledJob {
+            definition: job_def.clone(),
+            uuid,
+            status: if job_def.enabled {
+                JobRunStatus::Pending
+            } else {
+                JobRunStatus::Disabled
+            },
+            created_at: now,
+            updated_at: now,
+        };
+
+        {
+            let mut jobs = self.jobs.write().await;
+            jobs.insert(job_def.id.clone(), scheduled_job);
+        }
+
+        // Initialize job status
+        {
+            let mut state = self.job_state.write().await;
+            state.insert(
+                job_def.id.clone(),
+                JobStatus {
+                    id: job_def.id.clone(),
+                    name: job_def.name.clone(),
+                    status: if job_def.enabled {
+                        JobRunStatus::Pending
+                    } else {
+                        JobRunStatus::Disabled
+                    },
+                    last_run: None,
+                    next_run: Some(execute_at),
+                    run_count: 0,
+                    success_count: 0,
+                    failure_count: 0,
+                    last_error: None,
+                    last_duration_ms: None,
+                },
+            );
+        }
+
+        // Schedule one-time execution using tokio::time::sleep_until
+        if job_def.enabled {
+            let service = self.clone_for_job();
+            let job_id = job_def.id.clone();
+            let timeout = job_def
+                .timeout_seconds
+                .unwrap_or(self.config.default_job_timeout_seconds);
+            let max_retries = job_def.max_retries.unwrap_or(self.config.max_retries);
+            let retry_delay = job_def
+                .retry_delay_seconds
+                .unwrap_or(self.config.retry_delay_seconds);
+
+            // Calculate delay until execution
+            let now_utc = Utc::now();
+            let delay = if execute_at > now_utc {
+                (execute_at - now_utc)
+                    .to_std()
+                    .unwrap_or(std::time::Duration::from_secs(0))
+            } else {
+                std::time::Duration::from_secs(0)
+            };
+
+            tokio::spawn(async move {
+                tokio::time::sleep(delay).await;
+                service
+                    .execute_job(&job_id, timeout, max_retries, retry_delay)
+                    .await;
+            });
+        }
+
+        info!(
+            "Added one-time job: {} ({}) at {}",
+            job_def.name, job_def.id, execute_at
+        );
+        Ok(())
     }
 }
 

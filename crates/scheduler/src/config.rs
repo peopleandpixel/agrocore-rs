@@ -82,23 +82,25 @@ impl JobDefinition {
             ));
         }
 
-        if self.schedule.is_empty() {
-            return Err(SchedulerError::Config(
-                "Job schedule cannot be empty".to_string(),
-            ));
-        }
+        // OneTime jobs don't need a cron schedule
+        if !matches!(self.job_type, JobType::OneTime { .. }) {
+            if self.schedule.is_empty() {
+                return Err(SchedulerError::Config(
+                    "Job schedule cannot be empty".to_string(),
+                ));
+            }
 
-        let tz = self.timezone.as_deref().unwrap_or("UTC");
-        cron::Schedule::from_str(&self.schedule).map_err(|e| {
-            SchedulerError::Config(format!("Invalid schedule cron expression: {e}"))
-        })?;
+            let tz = self.timezone.as_deref().unwrap_or("UTC");
+            cron::Schedule::from_str(&self.schedule).map_err(|e| {
+                SchedulerError::Config(format!("Invalid schedule cron expression: {e}"))
+            })?;
+        }
 
         Ok(())
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(tag = "type", rename_all = "lowercase")]
 pub enum JobType {
     Builtin {
         handler: String,
@@ -116,6 +118,9 @@ pub enum JobType {
     Nats {
         subject: String,
         payload: serde_json::Value,
+    },
+    OneTime {
+        execute_at: chrono::DateTime<chrono::Utc>,
     },
 }
 
