@@ -32,5 +32,4 @@ thiserror = { workspace = true }
 anyhow = { workspace = true }
 
 # Internal
-agrocore-shared = { path = "../shared" }
 uuid = { workspace = true, features = ["v4", "serde"] }

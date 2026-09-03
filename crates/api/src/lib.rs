@@ -29,6 +29,8 @@ use std::sync::Arc;
 // Re-export for admin-ui
 pub use agrocore_shared::lpis::LpisProviderConfig;
 
+use agrocore_logging::{debug, error as logging_error, info, warn};
+
 #[derive(Clone)]
 pub struct AppState {
     pub db: Arc<Database>,
@@ -63,7 +65,7 @@ fn build_cors() -> Cors {
             cors
         }
         Err(_) => {
-            tracing::warn!(
+            warn!(
                 "CORS_ALLOWED_ORIGINS not set - using permissive CORS policy (all origins allowed). \
                  Set CORS_ALLOWED_ORIGINS in production for security."
             );
@@ -80,7 +82,7 @@ fn init_token_revocation() -> TokenRevocationList {
         Some(url) => match TokenRevocationList::from_redis(url) {
             Ok(trl) => trl,
             Err(e) => {
-                tracing::warn!(
+                warn!(
                     "Failed to initialize Redis-backed token revocation list: {}. Falling back to in-memory store.",
                     e
                 );
@@ -176,7 +178,7 @@ async fn db_metrics_handler(state: web::Data<AppState>) -> actix_web::HttpRespon
     match encoder.encode_to_string(&mf) {
         Ok(output) => actix_web::HttpResponse::Ok().body(output),
         Err(e) => {
-            tracing::error!("Failed to encode DB metrics: {}", e);
+            logging_error!("Failed to encode DB metrics: {}", e);
             actix_web::HttpResponse::InternalServerError().body("metrics encode error")
         }
     }
@@ -189,7 +191,7 @@ async fn business_metrics_handler(state: web::Data<AppState>) -> actix_web::Http
     match encoder.encode_to_string(&mf) {
         Ok(output) => actix_web::HttpResponse::Ok().body(output),
         Err(e) => {
-            tracing::error!("Failed to encode business metrics: {}", e);
+            logging_error!("Failed to encode business metrics: {}", e);
             actix_web::HttpResponse::InternalServerError().body("metrics encode error")
         }
     }

@@ -9,6 +9,7 @@ use crate::dto::ErrorResponse;
 use actix_web::{HttpResponse, ResponseError, http::StatusCode};
 use agrocore_shared::SharedError;
 
+use agrocore_logging::{debug, error, info, warn};
 #[cfg(feature = "sqlx")]
 use sqlx;
 
@@ -93,7 +94,7 @@ impl ResponseError for ApiError {
         let status = self.status_code();
         // Server-Fehler werden protokolliert; Client-Fehler (4xx) sind erwartbar.
         if status.is_server_error() {
-            tracing::error!("Request failed: {}", self.0);
+            error!("Request failed: {}", self.0);
         }
         HttpResponse::build(status).json(ErrorResponse {
             error: self.slug().into(),

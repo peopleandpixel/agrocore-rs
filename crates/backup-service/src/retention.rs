@@ -1,9 +1,9 @@
 use crate::config::{BackupConfig, BackupTarget, RetentionConfig};
 use crate::error::{BackupError, BackupResult};
 use crate::storage::StorageBackendTrait;
+use agrocore_logging::{debug, info, warn};
 use chrono::{DateTime, Duration, Utc};
 use std::sync::Arc;
-use tracing::{debug, info, warn};
 use uuid::Uuid;
 
 pub struct RetentionManager {

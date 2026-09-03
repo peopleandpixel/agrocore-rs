@@ -11,6 +11,7 @@ use agrocore_domain::entities::workforce::CreateWorkLogDto;
 #[allow(unused_imports)]
 use agrocore_domain::repositories::WorkerTaskStatusRepository;
 use agrocore_domain::services::workflow::WorkflowService;
+use agrocore_logging::{debug, error, info, warn};
 use agrocore_messaging::{Event, GlobalEvent};
 use agrocore_shared::SharedError;
 use chrono::Utc;
@@ -35,7 +36,7 @@ pub async fn list_orders(
     auth: AuthUser,
     query: web::Query<agrocore_shared::Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    tracing::info!(
+    info!(
         "Listing orders for tenant: {}",
         agrocore_domain::TenantId(auth.0.tenant_id)
     );
@@ -75,7 +76,7 @@ pub async fn get_order(
     path: web::Path<uuid::Uuid>,
 ) -> Result<HttpResponse, ApiError> {
     let order_id = *path;
-    tracing::info!(
+    info!(
         "Getting order {} for tenant: {}",
         order_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -112,7 +113,7 @@ pub async fn create_order(
     dto: web::Json<CreateOrderDto>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
-    tracing::info!(
+    info!(
         "Creating order for tenant: {}",
         agrocore_domain::TenantId(auth.0.tenant_id)
     );
@@ -129,7 +130,10 @@ pub async fn create_order(
         )
         .await?;
     let event = Event::new("api".into(), GlobalEvent::OrderCreated(o.clone()));
-    let _ = state.messaging.publish("events.orders", &event).await;
+    let _ = state
+        .messaging
+        .publish("events.orders".to_string(), &event)
+        .await;
     Ok(HttpResponse::Created().json(OrderDto::from(o)))
 }
 
@@ -154,7 +158,7 @@ pub async fn update_order(
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
     let order_id = *path;
-    tracing::info!(
+    info!(
         "Updating order {} for tenant: {}",
         order_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -174,7 +178,10 @@ pub async fn update_order(
         .await?
         .ok_or_else(|| SharedError::NotFound("Order not found".into()))?;
     let event = Event::new("api".into(), GlobalEvent::OrderUpdated(o.clone()));
-    let _ = state.messaging.publish("events.orders", &event).await;
+    let _ = state
+        .messaging
+        .publish("events.orders".to_string(), &event)
+        .await;
     Ok(HttpResponse::Ok().json(OrderDto::from(o)))
 }
 
@@ -196,7 +203,7 @@ pub async fn delete_order(
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
     let order_id = *path;
-    tracing::info!(
+    info!(
         "Deleting order {} for tenant: {}",
         order_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -208,7 +215,10 @@ pub async fn delete_order(
         .await?
     {
         let event = Event::new("api".into(), GlobalEvent::OrderDeleted(order_id));
-        let _ = state.messaging.publish("events.orders", &event).await;
+        let _ = state
+            .messaging
+            .publish("events.orders".to_string(), &event)
+            .await;
         Ok(HttpResponse::Ok().json(serde_json::json!({"deleted": true})))
     } else {
         Err(SharedError::NotFound("Order not found".into()).into())
@@ -283,7 +293,7 @@ pub async fn complete_order(
         Ok(Some(worker)) => worker.id,
         Ok(None) => auth.0.user_id,
         Err(e) => {
-            tracing::warn!("Failed to resolve worker for worklog: {}", e);
+            warn!("Failed to resolve worker for worklog: {}", e);
             auth.0.user_id
         }
     };
@@ -304,10 +314,9 @@ pub async fn complete_order(
         .create(tenant_id, worklog, auth.0.user_id)
         .await
     {
-        tracing::warn!(
+        warn!(
             "Failed to create worklog for completed order {}: {}",
-            order_id,
-            e
+            order_id, e
         );
     }
 
@@ -323,12 +332,15 @@ pub async fn complete_order(
             .create(tenant_id, next_order_dto, auth.0.user_id)
             .await
         {
-            tracing::error!("Failed to create follow-up order: {}", e);
+            error!("Failed to create follow-up order: {}", e);
         }
     }
 
     let event = Event::new("api".into(), GlobalEvent::OrderUpdated(updated.clone()));
-    let _ = state.messaging.publish("events.orders", &event).await;
+    let _ = state
+        .messaging
+        .publish("events.orders".to_string(), &event)
+        .await;
     Ok(HttpResponse::Ok().json(OrderDto::from(updated)))
 }
 
@@ -385,7 +397,10 @@ pub async fn start_order(
         .await?
         .ok_or_else(|| SharedError::NotFound("Order not found".into()))?;
     let event = Event::new("api".into(), GlobalEvent::OrderUpdated(updated.clone()));
-    let _ = state.messaging.publish("events.orders", &event).await;
+    let _ = state
+        .messaging
+        .publish("events.orders".to_string(), &event)
+        .await;
     Ok(HttpResponse::Ok().json(OrderDto::from(updated)))
 }
 
@@ -403,7 +418,7 @@ pub async fn my_tasks(
     state: web::Data<AppState>,
     auth: AuthUser,
 ) -> Result<HttpResponse, ApiError> {
-    tracing::info!("Listing active tasks for user: {}", auth.0.user_id);
+    info!("Listing active tasks for user: {}", auth.0.user_id);
     let tasks = state
         .db
         .order_repo()

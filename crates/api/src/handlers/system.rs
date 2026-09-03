@@ -130,7 +130,7 @@ pub async fn initial_setup(
     let _ = state
         .messaging
         .publish(
-            "system.tenant.created",
+            "system.tenant.created".to_string(),
             &agrocore_messaging::Event::new(
                 tenant.id.to_string(),
                 agrocore_messaging::GlobalEvent::TenantCreated(tenant.clone()),

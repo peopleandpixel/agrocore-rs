@@ -13,8 +13,7 @@ path = "src/main.rs"
 tokio = { workspace = true, features = ["net", "rt-multi-thread", "io-std", "macros", "sync", "time", "fs", "signal"] }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
-tracing = { workspace = true }
-tracing-subscriber = { workspace = true }
+agrocore-logging = { path = "../logging", features = ["dev-console"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
@@ -33,6 +32,10 @@ aws-config = { version = "1.0" }
 aws-sdk-s3 = { version = "1.0", features = ["default"] }
 aws-sdk-kms = { version = "1.0", features = ["default"] }
 google-cloud-storage = "0.12"
+
+# Tracing
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
 
 # SFTP/SSH
 async-ssh2 = { version = "0.1.2-beta" }

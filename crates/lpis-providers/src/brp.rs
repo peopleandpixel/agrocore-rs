@@ -32,6 +32,7 @@ use std::time::Duration;
 use thiserror::Error;
 use uuid::Uuid;
 
+use agrocore_logging::warn;
 #[allow(dead_code)]
 const DEFAULT_BRP_WFS_URL: &str = "https://geodata.nationaalgeoregister.nl/brppercelen/wfs";
 
@@ -336,7 +337,7 @@ impl LpisProvider for BrpProvider {
             for parcel in feature.parcels {
                 match self.parcel_to_lpis(&parcel, tenant_id) {
                     Ok(lpis_parcel) => parcels.push(lpis_parcel),
-                    Err(e) => tracing::warn!("Failed to convert parcel: {}", e),
+                    Err(e) => warn!("Failed to convert parcel: {}", e),
                 }
             }
         }

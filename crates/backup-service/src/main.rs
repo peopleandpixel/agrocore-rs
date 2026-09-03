@@ -2,10 +2,11 @@ use crate::config::load_config;
 use crate::error::{BackupError, BackupResult};
 use crate::nats_client::NatsClient;
 use crate::service::BackupService;
+use agrocore_logging::{info, warn};
 use agrocore_shared::config::AgroCoreConfig;
 use std::sync::Arc;
 use tokio::signal;
-use tracing::{error, info, warn};
+use tracing::error;
 
 mod config;
 mod encryption;

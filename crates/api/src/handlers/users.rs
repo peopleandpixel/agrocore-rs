@@ -6,6 +6,7 @@ use crate::dto::{
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
+use agrocore_logging::{debug, error, info, warn};
 use agrocore_messaging::{Event, GlobalEvent};
 use agrocore_shared::SharedError;
 use validator::Validate;
@@ -30,7 +31,7 @@ pub async fn list_users(
     query: web::Query<agrocore_shared::Pagination>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
-    tracing::info!(
+    info!(
         "Listing users for tenant: {}",
         agrocore_domain::TenantId(auth.0.tenant_id)
     );
@@ -73,7 +74,7 @@ pub async fn get_user(
         );
     }
 
-    tracing::info!(
+    info!(
         "Getting user {} for tenant: {}",
         user_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -105,7 +106,7 @@ pub async fn create_user(
     dto: web::Json<CreateUserDto>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_admin()?;
-    tracing::info!(
+    info!(
         "Creating user for tenant: {}",
         agrocore_domain::TenantId(auth.0.tenant_id)
     );
@@ -122,7 +123,10 @@ pub async fn create_user(
         )
         .await?;
     let event = Event::new("api".into(), GlobalEvent::UserCreated(u.clone()));
-    let _ = state.messaging.publish("events.users", &event).await;
+    let _ = state
+        .messaging
+        .publish("events.users".to_string(), &event)
+        .await;
     Ok(HttpResponse::Created().json(UserDto::from(u)))
 }
 
@@ -151,7 +155,7 @@ pub async fn update_user(
     {
         return Err(e.into());
     }
-    tracing::info!(
+    info!(
         "Updating user {} for tenant: {}",
         user_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -171,7 +175,10 @@ pub async fn update_user(
         .await?
         .ok_or_else(|| SharedError::NotFound("User not found".into()))?;
     let event = Event::new("api".into(), GlobalEvent::UserUpdated(u.clone()));
-    let _ = state.messaging.publish("events.users", &event).await;
+    let _ = state
+        .messaging
+        .publish("events.users".to_string(), &event)
+        .await;
     Ok(HttpResponse::Ok().json(UserDto::from(u)))
 }
 
@@ -193,7 +200,7 @@ pub async fn delete_user(
 ) -> Result<HttpResponse, ApiError> {
     auth.require_admin()?;
     let user_id = *path;
-    tracing::info!(
+    info!(
         "Deleting user {} for tenant: {}",
         user_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -205,7 +212,10 @@ pub async fn delete_user(
         .await?
     {
         let event = Event::new("api".into(), GlobalEvent::UserDeleted(user_id));
-        let _ = state.messaging.publish("events.users", &event).await;
+        let _ = state
+            .messaging
+            .publish("events.users".to_string(), &event)
+            .await;
         Ok(HttpResponse::Ok().json(serde_json::json!({"deleted": true})))
     } else {
         Err(SharedError::NotFound("User not found".into()).into())

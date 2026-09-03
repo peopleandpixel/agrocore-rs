@@ -1,8 +1,8 @@
 use agrocore_infrastructure::Database;
+use agrocore_logging::info;
 use agrocore_messaging::{Event, GlobalEvent, MessagingClient};
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
-use tracing::info;
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -29,7 +29,7 @@ pub struct AssetSummary {
 
 pub async fn start(_db: Database, nats_url: String) -> anyhow::Result<()> {
     let messaging = MessagingClient::connect(&nats_url).await?;
-    let mut subscriber = messaging.subscribe("assets.request").await?;
+    let mut subscriber = messaging.subscribe("assets.request".to_string()).await?;
 
     info!("Asset Registry worker listening on assets.request");
 
@@ -45,7 +45,7 @@ pub async fn start(_db: Database, nats_url: String) -> anyhow::Result<()> {
                 {
                     let response = serde_json::json!({"status": "ok", "service": "asset-registry"});
                     let _ = messaging
-                        .publish_raw(reply_to.as_str(), serde_json::to_vec(&response)?)
+                        .publish_raw(reply_to.to_string(), serde_json::to_vec(&response)?)
                         .await;
                 }
                 continue;
@@ -60,7 +60,7 @@ pub async fn start(_db: Database, nats_url: String) -> anyhow::Result<()> {
         if let Some(reply_to) = message.reply {
             let response_payload = serde_json::to_vec(&response)?;
             messaging
-                .publish_raw(reply_to.as_str(), response_payload)
+                .publish_raw(reply_to.to_string(), response_payload)
                 .await?;
         }
     }

@@ -258,7 +258,7 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
 name = "admin-ui"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "agrocore-shared",
  "base64 0.23.0",
@@ -374,7 +374,7 @@ dependencies = [
 
 [[package]]
 name = "agrocore-api"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "actix-cors",
  "actix-files",
@@ -383,6 +383,7 @@ dependencies = [
  "actix-web-prometheus",
  "agrocore-domain",
  "agrocore-infrastructure",
+ "agrocore-logging",
  "agrocore-lpis-providers",
  "agrocore-messaging",
  "agrocore-shared",
@@ -407,9 +408,7 @@ dependencies = [
  "testcontainers-modules",
  "tokio",
  "toml 0.8.23",
- "tracing",
  "tracing-actix-web",
- "tracing-subscriber",
  "utoipa",
  "utoipa-swagger-ui",
  "uuid 1.23.5",
@@ -418,11 +417,12 @@ dependencies = [
 
 [[package]]
 name = "agrocore-asset-registry"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "actix-web",
  "agrocore-domain",
  "agrocore-infrastructure",
+ "agrocore-logging",
  "agrocore-messaging",
  "agrocore-shared",
  "anyhow",
@@ -433,19 +433,18 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.18",
  "tokio",
- "tracing",
- "tracing-subscriber",
  "uuid 1.23.5",
 ]
 
 [[package]]
 name = "agrocore-backup"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "aes-gcm",
  "age",
  "agrocore-domain",
  "agrocore-infrastructure",
+ "agrocore-logging",
  "agrocore-messaging",
  "agrocore-scheduler",
  "agrocore-shared",
@@ -489,20 +488,20 @@ dependencies = [
 
 [[package]]
 name = "agrocore-dashboard"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
+ "agrocore-logging",
  "anyhow",
  "chrono",
  "serde",
  "serde_json",
  "superlighttui",
  "tokio",
- "tracing",
 ]
 
 [[package]]
 name = "agrocore-domain"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "agrocore-shared",
  "chrono",
@@ -520,11 +519,12 @@ dependencies = [
 
 [[package]]
 name = "agrocore-geometry-service"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "actix-web",
  "agrocore-domain",
  "agrocore-infrastructure",
+ "agrocore-logging",
  "agrocore-messaging",
  "agrocore-shared",
  "anyhow",
@@ -537,14 +537,12 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.18",
  "tokio",
- "tracing",
- "tracing-subscriber",
  "uuid 1.23.5",
 ]
 
 [[package]]
 name = "agrocore-i18n-shared"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "serde",
  "serde_yaml",
@@ -552,9 +550,10 @@ dependencies = [
 
 [[package]]
 name = "agrocore-infrastructure"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "agrocore-domain",
+ "agrocore-logging",
  "agrocore-shared",
  "anyhow",
  "argon2",
@@ -570,15 +569,13 @@ dependencies = [
  "testcontainers",
  "testcontainers-modules",
  "tokio",
- "tracing",
  "uuid 1.23.5",
 ]
 
 [[package]]
 name = "agrocore-logging"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
- "agrocore-shared",
  "anyhow",
  "config",
  "log",
@@ -597,9 +594,10 @@ dependencies = [
 
 [[package]]
 name = "agrocore-lpis-providers"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "agrocore-domain",
+ "agrocore-logging",
  "agrocore-shared",
  "async-compression",
  "async-trait",
@@ -621,7 +619,6 @@ dependencies = [
  "thiserror 2.0.18",
  "tokio",
  "toml 0.8.23",
- "tracing",
  "url",
  "urlencoding",
  "uuid 1.23.5",
@@ -630,9 +627,10 @@ dependencies = [
 
 [[package]]
 name = "agrocore-messaging"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "agrocore-domain",
+ "agrocore-logging",
  "agrocore-shared",
  "anyhow",
  "async-nats",
@@ -645,7 +643,6 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.18",
  "tokio",
- "tracing",
  "utoipa",
  "uuid 1.23.5",
  "validator",
@@ -653,11 +650,12 @@ dependencies = [
 
 [[package]]
 name = "agrocore-reporting-service"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "actix-web",
  "agrocore-domain",
  "agrocore-infrastructure",
+ "agrocore-logging",
  "agrocore-messaging",
  "agrocore-shared",
  "anyhow",
@@ -670,17 +668,16 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.18",
  "tokio",
- "tracing",
- "tracing-subscriber",
  "uuid 1.23.5",
 ]
 
 [[package]]
 name = "agrocore-scheduler"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "agrocore-domain",
  "agrocore-infrastructure",
+ "agrocore-logging",
  "agrocore-messaging",
  "agrocore-shared",
  "anyhow",
@@ -700,15 +697,14 @@ dependencies = [
  "thiserror 2.0.18",
  "tokio",
  "tokio-cron-scheduler",
- "tracing",
- "tracing-subscriber",
  "uuid 1.23.5",
 ]
 
 [[package]]
 name = "agrocore-shared"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
+ "agrocore-logging",
  "async-trait",
  "chrono",
  "geo",
@@ -719,6 +715,7 @@ dependencies = [
  "thiserror 2.0.18",
  "tokio",
  "tracing",
+ "tracing-actix-web",
  "tracing-subscriber",
  "utoipa",
  "uuid 1.23.5",
@@ -727,11 +724,12 @@ dependencies = [
 
 [[package]]
 name = "agrocore-weather-service"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "actix-web",
  "agrocore-domain",
  "agrocore-infrastructure",
+ "agrocore-logging",
  "agrocore-messaging",
  "agrocore-shared",
  "anyhow",
@@ -744,8 +742,6 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.18",
  "tokio",
- "tracing",
- "tracing-subscriber",
  "urlencoding",
  "uuid 1.23.5",
 ]

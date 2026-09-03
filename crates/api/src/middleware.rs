@@ -2,6 +2,7 @@ use actix_web::{
     Error, FromRequest, HttpRequest,
     dev::{Service, ServiceRequest, ServiceResponse, Transform},
 };
+use agrocore_logging::{debug, error, info, warn};
 use agrocore_shared::config::decoding_key;
 use dashmap::DashMap;
 use jsonwebtoken::{Algorithm, Validation, decode};
@@ -431,7 +432,7 @@ where
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
         if crate::metrics::is_enabled() {
-            tracing::debug!("Metrics enabled — registering request metrics");
+            debug!("Metrics enabled — registering request metrics");
         }
         self.service.call(req)
     }

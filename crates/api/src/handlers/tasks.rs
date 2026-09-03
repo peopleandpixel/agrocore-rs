@@ -6,6 +6,7 @@ use crate::dto::{
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
+use agrocore_logging::{debug, error, info, warn};
 use agrocore_shared::SharedError;
 use validator::Validate;
 
@@ -29,7 +30,7 @@ pub async fn list_tasks(
     query: web::Query<agrocore_shared::Pagination>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
-    tracing::info!(
+    info!(
         "Listing tasks for tenant: {}",
         agrocore_domain::TenantId(auth.0.tenant_id)
     );
@@ -68,7 +69,7 @@ pub async fn get_task(
     path: web::Path<uuid::Uuid>,
 ) -> Result<HttpResponse, ApiError> {
     let task_id = *path;
-    tracing::info!(
+    info!(
         "Getting task {} for tenant: {}",
         task_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -101,7 +102,7 @@ pub async fn create_task(
 ) -> Result<HttpResponse, ApiError> {
     // Workers should be able to create tasks (log their own work),
     // but managers are definitely allowed.
-    tracing::info!(
+    info!(
         "Creating task for tenant: {}",
         agrocore_domain::TenantId(auth.0.tenant_id)
     );
@@ -141,7 +142,7 @@ pub async fn update_task(
     dto: web::Json<UpdateTaskDataDto>,
 ) -> Result<HttpResponse, ApiError> {
     let task_id = *path;
-    tracing::info!(
+    info!(
         "Updating task {} for tenant: {}",
         task_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -182,7 +183,7 @@ pub async fn delete_task(
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
     let task_id = *path;
-    tracing::info!(
+    info!(
         "Deleting task {} for tenant: {}",
         task_id,
         agrocore_domain::TenantId(auth.0.tenant_id)

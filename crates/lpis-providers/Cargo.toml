@@ -12,7 +12,7 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 async-trait = "0.1"
 reqwest = { workspace = true, features = ["json", "rustls"], default-features = false }
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread"] }
 geo = { workspace = true }
 geojson = "1.0"
 quick-xml = { version = "0.41", features = ["serialize"] }
@@ -20,7 +20,7 @@ urlencoding = "2.1"
 chrono = { workspace = true }
 uuid = { workspace = true }
 url = "2.5"
-tracing = { workspace = true }
+agrocore-logging = { path = "../logging", features = ["dev-console"] }
 async-compression = "0.4"
 futures = { workspace = true }
 bytes = "1.5"

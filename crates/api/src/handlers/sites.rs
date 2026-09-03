@@ -7,6 +7,7 @@ use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use crate::services::import_service::ImportService;
 use actix_web::{HttpResponse, web};
+use agrocore_logging::{debug, error, info, warn};
 use agrocore_messaging::{Event, GlobalEvent};
 use agrocore_shared::SharedError;
 use validator::Validate;
@@ -30,7 +31,7 @@ pub async fn list_sites(
     auth: AuthUser,
     query: web::Query<agrocore_shared::Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    tracing::info!(
+    info!(
         "Listing sites for tenant: {}",
         agrocore_domain::TenantId(auth.0.tenant_id)
     );
@@ -70,7 +71,7 @@ pub async fn get_site(
     path: web::Path<uuid::Uuid>,
 ) -> Result<HttpResponse, ApiError> {
     let site_id = *path;
-    tracing::info!(
+    info!(
         "Getting site {} for tenant: {}",
         site_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -107,7 +108,7 @@ pub async fn create_site(
     dto: web::Json<CreateSiteDto>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
-    tracing::info!(
+    info!(
         "Creating site for tenant: {}",
         agrocore_domain::TenantId(auth.0.tenant_id)
     );
@@ -124,7 +125,10 @@ pub async fn create_site(
         )
         .await?;
     let event = Event::new("api".into(), GlobalEvent::SiteCreated(site.clone()));
-    let _ = state.messaging.publish("events.sites", &event).await;
+    let _ = state
+        .messaging
+        .publish("events.sites".to_string(), &event)
+        .await;
     Ok(HttpResponse::Created().json(SiteDto::from(site)))
 }
 
@@ -149,7 +153,7 @@ pub async fn update_site(
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
     let site_id = *path;
-    tracing::info!(
+    info!(
         "Updating site {} for tenant: {}",
         site_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -169,7 +173,10 @@ pub async fn update_site(
         .await?
         .ok_or_else(|| SharedError::NotFound("Site not found".into()))?;
     let event = Event::new("api".into(), GlobalEvent::SiteUpdated(site.clone()));
-    let _ = state.messaging.publish("events.sites", &event).await;
+    let _ = state
+        .messaging
+        .publish("events.sites".to_string(), &event)
+        .await;
     Ok(HttpResponse::Ok().json(SiteDto::from(site)))
 }
 
@@ -191,7 +198,7 @@ pub async fn delete_site(
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
     let site_id = *path;
-    tracing::info!(
+    info!(
         "Deleting site {} for tenant: {}",
         site_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -203,7 +210,10 @@ pub async fn delete_site(
         .await?
     {
         let event = Event::new("api".into(), GlobalEvent::SiteDeleted(site_id));
-        let _ = state.messaging.publish("events.sites", &event).await;
+        let _ = state
+            .messaging
+            .publish("events.sites".to_string(), &event)
+            .await;
         Ok(HttpResponse::Ok().json(serde_json::json!({"deleted": true})))
     } else {
         Err(SharedError::NotFound("Site not found".into()).into())
@@ -228,7 +238,7 @@ pub async fn import_sites(
     dto: web::Json<ImportSitesRequest>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
-    tracing::info!(
+    info!(
         "Importing {} sites for tenant: {}",
         dto.0.sites.len(),
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -263,7 +273,7 @@ pub async fn import_geojson(
     dto: web::Json<GeoJsonImportRequest>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
-    tracing::info!(
+    info!(
         "Importing {} GeoJSON features for tenant: {}",
         dto.0.features.len(),
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -295,7 +305,7 @@ pub async fn import_shapefile(
     dto: web::Json<ShapefileImportRequest>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
-    tracing::info!(
+    info!(
         "Importing shapefile for tenant: {}",
         agrocore_domain::TenantId(auth.0.tenant_id)
     );

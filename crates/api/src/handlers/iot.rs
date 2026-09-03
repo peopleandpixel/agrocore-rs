@@ -8,11 +8,11 @@ use crate::dto::{
 };
 use crate::error::ApiError;
 use actix_web::{HttpResponse, web};
-use agrocore_messaging::{IoTDeviceConfig, generate_ha_discovery_configs};
+use agrocore_logging::info;
+use agrocore_messaging::{IoTDeviceConfig, IoTMeasurement, generate_ha_discovery_configs};
 use agrocore_shared::SharedError;
 use sqlx::Row;
 use std::collections::HashMap;
-use tracing::info;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -241,6 +241,7 @@ pub async fn create_device(
         created_at: now,
         updated_at: now,
         last_seen: None,
+        topic_prefix: dto.topic_prefix,
     };
 
     persist_device(&state, &device).await?;
@@ -528,7 +529,7 @@ pub async fn get_ha_discovery(
                         agrocore_messaging::IoTCapability::SoilMoisture
                     }
                     IoTCapabilityType::Light => agrocore_messaging::IoTCapability::Light,
-                    IoTCapabilityType::Gps => agrocore_messaging::IoTCapability::GPS,
+                    IoTCapabilityType::GPS => agrocore_messaging::IoTCapability::GPS,
                     IoTCapabilityType::BatteryLevel => {
                         agrocore_messaging::IoTCapability::BatteryLevel
                     }
@@ -541,13 +542,84 @@ pub async fn get_ha_discovery(
                     IoTCapabilityType::FirmwareUpdate => {
                         agrocore_messaging::IoTCapability::FirmwareUpdate
                     }
+                    IoTCapabilityType::Power => agrocore_messaging::IoTCapability::Power,
+                    IoTCapabilityType::Energy => agrocore_messaging::IoTCapability::Energy,
+                    IoTCapabilityType::Pressure => agrocore_messaging::IoTCapability::Pressure,
+                    IoTCapabilityType::Voltage => agrocore_messaging::IoTCapability::Voltage,
+                    IoTCapabilityType::Current => agrocore_messaging::IoTCapability::Current,
                     IoTCapabilityType::Custom(s) => agrocore_messaging::IoTCapability::Custom(s),
                 })
                 .collect(),
             metadata: device.metadata.clone(),
+            topic_prefix: device
+                .topic_prefix
+                .clone()
+                .unwrap_or_else(|| "agrocore".to_string()),
         };
 
-        let configs = generate_ha_discovery_configs(&iot_config, "agrocore");
+        // Generate measurements from capabilities for HA discovery
+        let measurements: Vec<IoTMeasurement> = iot_config
+            .capabilities
+            .iter()
+            .map(|cap| {
+                let (unit, capability) = match cap {
+                    agrocore_messaging::IoTCapability::Temperature => {
+                        ("°C", agrocore_messaging::IoTCapability::Temperature)
+                    }
+                    agrocore_messaging::IoTCapability::Humidity => {
+                        ("%", agrocore_messaging::IoTCapability::Humidity)
+                    }
+                    agrocore_messaging::IoTCapability::SoilMoisture => {
+                        ("%", agrocore_messaging::IoTCapability::SoilMoisture)
+                    }
+                    agrocore_messaging::IoTCapability::Light => {
+                        ("lux", agrocore_messaging::IoTCapability::Light)
+                    }
+                    agrocore_messaging::IoTCapability::GPS => {
+                        ("°", agrocore_messaging::IoTCapability::GPS)
+                    }
+                    agrocore_messaging::IoTCapability::BatteryLevel => {
+                        ("%", agrocore_messaging::IoTCapability::BatteryLevel)
+                    }
+                    agrocore_messaging::IoTCapability::SignalStrength => {
+                        ("dBm", agrocore_messaging::IoTCapability::SignalStrength)
+                    }
+                    agrocore_messaging::IoTCapability::ActuatorControl => {
+                        ("%", agrocore_messaging::IoTCapability::ActuatorControl)
+                    }
+                    agrocore_messaging::IoTCapability::FirmwareUpdate => {
+                        ("%", agrocore_messaging::IoTCapability::FirmwareUpdate)
+                    }
+                    agrocore_messaging::IoTCapability::Power => {
+                        ("W", agrocore_messaging::IoTCapability::Power)
+                    }
+                    agrocore_messaging::IoTCapability::Energy => {
+                        ("kWh", agrocore_messaging::IoTCapability::Energy)
+                    }
+                    agrocore_messaging::IoTCapability::Pressure => {
+                        ("hPa", agrocore_messaging::IoTCapability::Pressure)
+                    }
+                    agrocore_messaging::IoTCapability::Voltage => {
+                        ("V", agrocore_messaging::IoTCapability::Voltage)
+                    }
+                    agrocore_messaging::IoTCapability::Current => {
+                        ("A", agrocore_messaging::IoTCapability::Current)
+                    }
+                    agrocore_messaging::IoTCapability::Custom(s) => (
+                        s.as_str(),
+                        agrocore_messaging::IoTCapability::Custom(s.clone()),
+                    ),
+                };
+                IoTMeasurement {
+                    capability,
+                    value: 0.0,
+                    unit: unit.to_string(),
+                    quality: None,
+                }
+            })
+            .collect();
+
+        let configs = generate_ha_discovery_configs(&iot_config, &measurements);
 
         Ok(HttpResponse::Ok().json(HaDiscoveryConfigResponse { configs }))
     } else {

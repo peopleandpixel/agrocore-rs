@@ -10,6 +10,7 @@ use std::path::PathBuf;
 use utoipa::ToSchema;
 use validator::Validate;
 
+use agrocore_logging::{debug, error, info, warn};
 /// Find the config file by searching from current directory up to project root
 fn find_config_file() -> PathBuf {
     let mut current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
@@ -93,10 +94,9 @@ pub async fn get_lpis_settings(
         eprintln!("DEBUG HANDLER: Config error: {:?}", e);
     }
     let config = config_result.unwrap_or_else(|e| {
-        tracing::warn!(
+        warn!(
             "Failed to load LPIS config from {:?}: {:?}, using defaults",
-            config_path,
-            e
+            config_path, e
         );
         Default::default()
     });
@@ -197,7 +197,7 @@ pub async fn update_lpis_settings(
         .save_to_path(&config_path)
         .map_err(|e| SharedError::Internal(format!("Failed to save LPIS config: {}", e)))?;
 
-    tracing::info!("LPIS settings updated by user: {}", auth.0.user_id);
+    info!("LPIS settings updated by user: {}", auth.0.user_id);
 
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "message": "LPIS settings updated successfully",

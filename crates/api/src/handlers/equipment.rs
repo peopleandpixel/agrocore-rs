@@ -6,6 +6,8 @@ use crate::dto::{
     MaintenanceRecordDto, PaginatedEquipmentResponse, PaginatedResponseDto, UpdateEquipmentDto,
     UsageLogDto, UsageSummaryDto,
 };
+use agrocore_logging::{debug, error, info, warn};
+
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
@@ -34,7 +36,7 @@ pub async fn list_equipments(
     auth: AuthUser,
     query: web::Query<agrocore_shared::Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    tracing::info!(
+    info!(
         "Listing equipment for tenant: {}",
         agrocore_domain::TenantId(auth.0.tenant_id)
     );
@@ -69,7 +71,7 @@ pub async fn get_equipment(
     path: web::Path<uuid::Uuid>,
 ) -> Result<HttpResponse, ApiError> {
     let equipment_id = *path;
-    tracing::info!(
+    info!(
         "Getting equipment {} for tenant: {}",
         equipment_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -100,7 +102,7 @@ pub async fn create_equipment(
     auth: AuthUser,
     dto: web::Json<CreateEquipmentDto>,
 ) -> Result<HttpResponse, ApiError> {
-    tracing::info!(
+    info!(
         "Creating equipment for tenant: {}",
         agrocore_domain::TenantId(auth.0.tenant_id)
     );
@@ -139,7 +141,7 @@ pub async fn update_equipment(
     dto: web::Json<UpdateEquipmentDto>,
 ) -> Result<HttpResponse, ApiError> {
     let equipment_id = *path;
-    tracing::info!(
+    info!(
         "Updating equipment {} for tenant: {}",
         equipment_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -178,7 +180,7 @@ pub async fn delete_equipment(
     path: web::Path<uuid::Uuid>,
 ) -> Result<HttpResponse, ApiError> {
     let equipment_id = *path;
-    tracing::info!(
+    info!(
         "Deleting equipment {} for tenant: {}",
         equipment_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -220,7 +222,7 @@ pub async fn search_equipments(
     filter: web::Query<EquipmentFilterDto>,
     query: web::Query<Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    tracing::info!(
+    info!(
         "Searching equipment for tenant: {} with filters",
         agrocore_domain::TenantId(auth.0.tenant_id)
     );
@@ -270,7 +272,7 @@ pub async fn list_maintenance_due(
     auth: AuthUser,
     query: web::Query<Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    tracing::info!(
+    info!(
         "Listing maintenance-due equipment for tenant: {}",
         agrocore_domain::TenantId(auth.0.tenant_id)
     );
@@ -309,7 +311,7 @@ pub async fn record_maintenance(
     dto: web::Json<MaintenanceRecordDto>,
 ) -> Result<HttpResponse, ApiError> {
     let equipment_id = *path;
-    tracing::info!(
+    info!(
         "Recording maintenance for equipment {} in tenant: {}",
         equipment_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -400,7 +402,7 @@ pub async fn get_fuel_consumption(
     path: web::Path<uuid::Uuid>,
 ) -> Result<HttpResponse, ApiError> {
     let equipment_id = *path;
-    tracing::info!(
+    info!(
         "Getting fuel consumption for equipment {} in tenant: {}",
         equipment_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -433,7 +435,7 @@ pub async fn record_fuel_consumption(
     dto: web::Json<CreateFuelConsumptionRequest>,
 ) -> Result<HttpResponse, ApiError> {
     let equipment_id = *path;
-    tracing::info!(
+    info!(
         "Recording fuel consumption for equipment {} in tenant: {}",
         equipment_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -474,7 +476,7 @@ pub async fn get_usage_log(
     path: web::Path<uuid::Uuid>,
 ) -> Result<HttpResponse, ApiError> {
     let equipment_id = *path;
-    tracing::info!(
+    info!(
         "Getting usage log for equipment {} in tenant: {}",
         equipment_id,
         agrocore_domain::TenantId(auth.0.tenant_id)
@@ -533,7 +535,7 @@ pub async fn record_usage(
     dto: web::Json<CreateUsageLogRequest>,
 ) -> Result<HttpResponse, ApiError> {
     let equipment_id = *path;
-    tracing::info!(
+    info!(
         "Recording usage for equipment {} in tenant: {}",
         equipment_id,
         agrocore_domain::TenantId(auth.0.tenant_id)

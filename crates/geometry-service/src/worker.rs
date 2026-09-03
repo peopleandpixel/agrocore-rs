@@ -1,11 +1,11 @@
 use agrocore_infrastructure::Database;
+use agrocore_logging::info;
 use agrocore_messaging::{Event, GlobalEvent, MessagingClient};
 use agrocore_shared::with_retry;
 use futures::StreamExt;
 use geo::prelude::*;
 use geo::{Point, Polygon};
 use serde::{Deserialize, Serialize};
-use tracing::info;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum GeometryRequest {
@@ -35,7 +35,7 @@ pub async fn start(_db: Database, nats_url: String) -> anyhow::Result<()> {
         })
     })
     .await?;
-    let mut subscriber = messaging.subscribe("geometry.request").await?;
+    let mut subscriber = messaging.subscribe("geometry.request".to_string()).await?;
 
     info!("Geometry worker listening on geometry.request");
 
@@ -51,7 +51,7 @@ pub async fn start(_db: Database, nats_url: String) -> anyhow::Result<()> {
                 {
                     let response = serde_json::json!({"status": "ok", "service": "geometry"});
                     let _ = messaging
-                        .publish_raw(reply_to.as_str(), serde_json::to_vec(&response)?)
+                        .publish_raw(reply_to.to_string(), serde_json::to_vec(&response)?)
                         .await;
                 }
                 continue;
@@ -91,7 +91,7 @@ pub async fn start(_db: Database, nats_url: String) -> anyhow::Result<()> {
         if let Some(reply_to) = message.reply {
             let response_payload = serde_json::to_vec(&response)?;
             messaging
-                .publish_raw(reply_to.as_str(), response_payload)
+                .publish_raw(reply_to.to_string(), response_payload)
                 .await?;
         }
     }

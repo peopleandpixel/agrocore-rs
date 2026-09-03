@@ -1,12 +1,12 @@
 use actix_web::{App, HttpResponse, HttpServer, Responder, web};
 use agrocore_domain::TenantId;
 use agrocore_infrastructure::Database;
+use agrocore_logging::{error, info};
 use agrocore_shared::Pagination;
 use geojson::{Feature, FeatureCollection, Geometry, GeometryValue};
 use rust_xlsxwriter::*;
 use std::time::Duration;
 use tokio::time::timeout;
-use tracing::error;
 use uuid::Uuid;
 
 pub struct ReportingService {
@@ -61,9 +61,7 @@ impl ReportingService {
             Ok(Err(e)) => Err(e),
             Err(_) => {
                 error!("Excel generation timed out after 30 seconds");
-                tracing::info!(
-                    "Timeout: Excel generierung überschritt 30 Sekunden — Paginierung 500 aktiv"
-                );
+                info!("Timeout: Excel generierung überschritt 30 Sekunden — Paginierung 500 aktiv");
                 anyhow::bail!("Excel generation timeout (30s)")
             }
         }

@@ -5,10 +5,10 @@ use aes_gcm::{
     Aes256Gcm, Key, Nonce,
     aead::{Aead, KeyInit, OsRng},
 };
+use agrocore_logging::{debug, info, warn};
 use rand_core::RngCore;
 use std::fs;
 use std::path::Path;
-use tracing::{debug, info, warn};
 
 pub struct EncryptionManager {
     default_method: EncryptionMethod,

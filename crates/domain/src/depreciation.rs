@@ -8,6 +8,7 @@
 use agrocore_domain::entities::equipment::{
     DepreciationMethod, DepreciationScheduleEntry, EquipmentDepreciationDto,
 };
+use agrocore_logging::info;
 use chrono::{DateTime, Duration, Utc};
 
 /// Calculate monthly depreciation amount for StraightLine method.

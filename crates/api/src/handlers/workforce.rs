@@ -16,6 +16,7 @@ use agrocore_domain::entities::workforce::{
     CreateClockEntryDto, CreateWorkLogDto, CreateWorkerDto, CreateWorkerLocationDto,
     ReportLocationDto, UpdateClockEntryDto, UpdateWorkLogDto, UpdateWorkerDto,
 };
+use agrocore_logging::{debug, error, info, warn};
 use agrocore_messaging::{Event, GlobalEvent, SpatialPolygonEventKind, SpatialPresenceEvent};
 use agrocore_shared::{Pagination, SharedError};
 use chrono::Utc;
@@ -391,7 +392,10 @@ pub async fn report_location(
                 kind: SpatialPolygonEventKind::EnteredPolygon,
             }),
         );
-        let _ = state.messaging.publish("events.spatial", &event).await;
+        let _ = state
+            .messaging
+            .publish("events.spatial".to_string(), &event)
+            .await;
     }
 
     for object in current_objects.iter() {
@@ -410,7 +414,10 @@ pub async fn report_location(
                 kind: SpatialPolygonEventKind::InPolygon,
             }),
         );
-        let _ = state.messaging.publish("events.spatial", &event).await;
+        let _ = state
+            .messaging
+            .publish("events.spatial".to_string(), &event)
+            .await;
     }
 
     match state
@@ -460,10 +467,9 @@ pub async fn report_location(
                         )
                         .await
                     {
-                        tracing::warn!(
+                        warn!(
                             "Failed to persist auto-presence state for order {}: {}",
-                            order.id,
-                            e
+                            order.id, e
                         );
                     }
                     continue;
@@ -493,15 +499,17 @@ pub async fn report_location(
                     )
                     .await
                 {
-                    tracing::warn!(
+                    warn!(
                         "Failed to persist auto-presence transition for order {}: {}",
-                        order.id,
-                        e
+                        order.id, e
                     );
                 }
 
                 let event = Event::new("api".into(), GlobalEvent::OrderUpdated(order.clone()));
-                let _ = state.messaging.publish("events.orders", &event).await;
+                let _ = state
+                    .messaging
+                    .publish("events.orders".to_string(), &event)
+                    .await;
 
                 if matches!(
                     action,
@@ -519,10 +527,7 @@ pub async fn report_location(
                         Ok(Some(worker)) => worker.id,
                         Ok(None) => auth.0.user_id,
                         Err(e) => {
-                            tracing::warn!(
-                                "Failed to resolve worker for auto-complete worklog: {}",
-                                e
-                            );
+                            warn!("Failed to resolve worker for auto-complete worklog: {}", e);
                             auth.0.user_id
                         }
                     };
@@ -547,16 +552,15 @@ pub async fn report_location(
                         )
                         .await
                     {
-                        tracing::warn!(
+                        warn!(
                             "Failed to create auto-complete worklog for order {}: {}",
-                            order.id,
-                            e
+                            order.id, e
                         );
                     }
                 }
             }
         }
-        Err(e) => tracing::warn!("Failed to load auto-presence orders: {}", e),
+        Err(e) => warn!("Failed to load auto-presence orders: {}", e),
     }
 
     for object in previous_objects
@@ -578,7 +582,10 @@ pub async fn report_location(
                 kind: SpatialPolygonEventKind::LeftPolygon,
             }),
         );
-        let _ = state.messaging.publish("events.spatial", &event).await;
+        let _ = state
+            .messaging
+            .publish("events.spatial".to_string(), &event)
+            .await;
     }
 
     Ok(HttpResponse::Created().json(loc))

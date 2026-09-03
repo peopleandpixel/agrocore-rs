@@ -1,8 +1,8 @@
 use crate::ReportingService;
+use agrocore_logging::{error, info};
 use agrocore_messaging::{Event, GlobalEvent, MessagingClient};
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
-use tracing::{error, info};
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -22,7 +22,7 @@ pub enum ReportingResponse {
 
 pub async fn start(service: ReportingService, nats_url: String) -> anyhow::Result<()> {
     let messaging = MessagingClient::connect(&nats_url).await?;
-    let mut subscriber = messaging.subscribe("reporting.request").await?;
+    let mut subscriber = messaging.subscribe("reporting.request".to_string()).await?;
 
     info!("Reporting worker listening on reporting.request");
 
@@ -67,7 +67,7 @@ pub async fn start(service: ReportingService, nats_url: String) -> anyhow::Resul
         if let Some(reply_to) = message.reply {
             let response_payload = serde_json::to_vec(&response)?;
             messaging
-                .publish_raw(reply_to.as_str(), response_payload)
+                .publish_raw(reply_to.to_string(), response_payload)
                 .await?;
         }
     }
@@ -80,7 +80,7 @@ pub async fn start_audit_worker(
     nats_url: String,
 ) -> anyhow::Result<()> {
     let messaging = MessagingClient::connect(&nats_url).await?;
-    let mut subscriber = messaging.subscribe("events.audit").await?;
+    let mut subscriber = messaging.subscribe("events.audit".to_string()).await?;
 
     info!("Audit worker listening on events.audit");
 
@@ -116,7 +116,7 @@ pub async fn start_audit_worker(
                     let response =
                         serde_json::json!({"status": "ok", "service": "reporting-audit"});
                     let _ = messaging
-                        .publish_raw(reply_to.as_str(), serde_json::to_vec(&response)?)
+                        .publish_raw(reply_to.to_string(), serde_json::to_vec(&response)?)
                         .await;
                 }
             }

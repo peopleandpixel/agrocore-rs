@@ -11,6 +11,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
+use agrocore_logging::{debug, error, info, warn};
 #[derive(Deserialize, Validate, ToSchema)]
 pub struct LoginRequest {
     #[validate(email)]
@@ -45,7 +46,7 @@ pub async fn login(
             password: dto.password.clone(),
         })
         .await?;
-    tracing::info!("User {} logged in successfully", user.user_id);
+    info!("User {} logged in successfully", user.user_id);
     // Generate refresh token
     let refresh_token = Uuid::new_v4().to_string();
     let refresh_expires_at = Utc::now() + chrono::Duration::days(7);
@@ -161,7 +162,7 @@ pub async fn logout(
         .invalidate_refresh_token(auth.0.user_id)
         .await?;
 
-    tracing::info!("User {} logged out, token revoked", auth.0.user_id);
+    info!("User {} logged out, token revoked", auth.0.user_id);
     Ok(HttpResponse::NoContent().finish())
 }
 

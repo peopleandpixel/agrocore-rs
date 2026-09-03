@@ -14,6 +14,7 @@ use serde::Serialize;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::sync::Mutex;
+use tracing;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{EnvFilter, Layer};
 

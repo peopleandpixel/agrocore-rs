@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
 
+use agrocore_logging::warn;
 #[allow(dead_code)]
 const SIGPAC_WFS_URL: &str = "https://sigpac.mapa.gob.es/wfs";
 
@@ -241,7 +242,7 @@ impl LpisProvider for SigpacProvider {
             for parcel in feature.parcels {
                 match self.parcel_to_lpis(&parcel, tenant_id) {
                     Ok(lpis_parcel) => parcels.push(lpis_parcel),
-                    Err(e) => tracing::warn!("Failed to convert parcel: {}", e),
+                    Err(e) => warn!("Failed to convert parcel: {}", e),
                 }
             }
         }

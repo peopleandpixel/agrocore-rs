@@ -17,6 +17,7 @@ use agrocore_domain::entities::inventory::{
     CreateInventoryItemDto, CreateInventoryLocationDto, CreateInventoryTransactionDto,
     UpdateInventoryItemDto,
 };
+use agrocore_logging::{debug, error, info, warn};
 use agrocore_shared::SharedError;
 
 #[utoipa::path(
@@ -38,7 +39,7 @@ pub async fn list_inventory_items(
     auth: AuthUser,
     query: web::Query<agrocore_shared::Pagination>,
 ) -> Result<HttpResponse, ApiError> {
-    tracing::info!(
+    info!(
         "Listing inventory items for tenant: {}",
         agrocore_domain::TenantId(auth.0.tenant_id)
     );

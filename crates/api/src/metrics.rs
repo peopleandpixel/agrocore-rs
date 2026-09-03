@@ -2,6 +2,8 @@ use prometheus::{
     HistogramOpts, HistogramVec, IntCounter, IntCounterVec, IntGauge, Opts, Registry,
 };
 
+use agrocore_logging::{debug, error, info, warn};
+
 /// Toggle monitoring at runtime via env `AGROCORE_METRICS_ENABLED`.
 pub fn is_enabled() -> bool {
     std::env::var("AGROCORE_METRICS_ENABLED")
@@ -94,12 +96,9 @@ impl DbMetrics {
             .observe(seconds);
         if duration_ms >= slow_threshold_ms {
             self.slow_query_count.with_label_values(&[table]).inc();
-            tracing::warn!(
+            warn!(
                 "Slow query detected: type={}, table={}, duration={}ms (threshold={:?}ms)",
-                query_type,
-                table,
-                duration_ms,
-                slow_threshold_ms,
+                query_type, table, duration_ms, slow_threshold_ms,
             );
         }
     }

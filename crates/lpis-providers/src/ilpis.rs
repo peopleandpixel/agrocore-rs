@@ -1,4 +1,5 @@
 use crate::config::ProviderConfig;
+use agrocore_logging::warn;
 use agrocore_shared::lpis::{LpisCountry, LpisProvider};
 use async_trait::async_trait;
 use chrono::Datelike;
@@ -253,7 +254,7 @@ impl LpisProvider for IlpisProvider {
             for parcel in feature.parcels {
                 match self.parcel_to_lpis(&parcel, tenant_id) {
                     Ok(lpis_parcel) => parcels.push(lpis_parcel),
-                    Err(e) => tracing::warn!("Failed to convert parcel: {}", e),
+                    Err(e) => warn!("Failed to convert parcel: {}", e),
                 }
             }
         }

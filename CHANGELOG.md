@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-09-03
+
+### Added
+- **agrocore-messaging crate**: Added request-reply pattern support
+  - `MessagingClient::request()` - native async-nats 0.50 request-reply pattern
+  - `MessagingClient::request_with_headers()` - request-reply with custom headers
+  - `MessagingClient::new_mock()` behind "mocks" feature for testing
+- **agrocore-backup crate**: Fixed name conflict with `error` module
+  - Renamed imported `error` from agrocore_logging to avoid conflict with local `mod error;`
+  - Use `tracing::error` macro instead
+  - Added `tracing` and `tracing-subscriber` dependencies
+- **IoT Device Registry**: Fixed Home Assistant discovery config generation
+  - Fixed type mismatch in `generate_ha_discovery_configs()` call
+  - Added proper measurements generation from device capabilities
+- **IoTCapabilityType enum**: Added missing variants (GPS, Power, Energy, Pressure, Voltage, Current)
+
+### Changed
+- **Version bump**: 0.12.0 → 0.13.0 (Minor bump für neue Messaging-Features und IoT-Fixes)
+- **Quality Gates**: Alle 15 Crates kompilieren (`cargo fmt`, `cargo check`, `cargo test`, `cargo clippy`)
+
 ## [0.12.0] - 2026-08-31
 
 ### Added

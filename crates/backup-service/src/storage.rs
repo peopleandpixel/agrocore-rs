@@ -1,10 +1,10 @@
 use crate::config::BackupTarget;
 use crate::error::{BackupError, BackupResult};
+use agrocore_logging::{debug, info, warn};
 use async_trait::async_trait;
 use object_store::{ObjectStore, PutPayload, path::Path};
 use reqwest;
 use std::sync::Arc;
-use tracing::{debug, info, warn};
 
 #[async_trait]
 pub trait StorageBackendTrait: Send + Sync {

@@ -7,6 +7,7 @@ use crate::pg_dump::PgDump;
 use crate::retention::RetentionManager;
 use crate::storage::StorageBackendTrait;
 use crate::verification::VerificationManager;
+use agrocore_logging::{debug, info, warn};
 use agrocore_scheduler::{JobDefinition, JobType, SchedulerConfig, SchedulerService};
 use async_nats::Client as NatsClientInner;
 use chrono::{DateTime, Utc};
@@ -14,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{debug, error, info, warn};
+use tracing::error;
 use uuid::Uuid;
 
 use std::collections::HashMap;

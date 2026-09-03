@@ -1,12 +1,12 @@
 //! Caching layer for LPIS providers
 
+use agrocore_logging::{debug, warn};
 use moka::future::Cache;
 use redis::AsyncCommands;
 use redis::aio::ConnectionManager;
 use redis::cmd;
 use std::sync::Arc;
 use std::time::Duration;
-use tracing::{debug, warn};
 
 /// Unified cache interface supporting both in-memory (moka) and distributed (redis) caching
 #[derive(Clone)]

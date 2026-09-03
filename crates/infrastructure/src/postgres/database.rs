@@ -31,6 +31,7 @@ use agrocore_domain::repositories::{
     WaterSourceRepo, WaterUsageRepo, WeatherDataRepo, WeatherStationRepo, WorkLogRepo,
     WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
 };
+use agrocore_logging::{debug, info};
 use sqlx::PgPool;
 use std::sync::Arc;
 
@@ -758,7 +759,7 @@ impl PostgresDb {
                 loop {
                     interval.tick().await;
                     // Pool metrics would be updated here via sqlx PoolStats
-                    tracing::debug!("Pool metrics tick");
+                    debug!("Pool metrics tick");
                 }
             });
         }
@@ -769,7 +770,7 @@ impl PostgresDb {
                 tokio::time::interval(std::time::Duration::from_secs(30 * 24 * 60 * 60)); // ~monthly
             loop {
                 interval.tick().await;
-                tracing::info!("Monthly depreciation automation tick");
+                info!("Monthly depreciation automation tick");
                 // Here: call depreciation calculation for all active equipment
             }
         });

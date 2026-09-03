@@ -1,5 +1,6 @@
 use crate::config::{JobDefinition, JobRunStatus, JobStatus, JobType, SchedulerConfig};
 use crate::error::{SchedulerError, SchedulerResult};
+use agrocore_logging::{debug, error, info, warn};
 use async_nats::Client as NatsClient;
 use async_trait::async_trait;
 use bytes::Bytes;
@@ -14,7 +15,6 @@ use std::time::Duration;
 use tokio::process::Command;
 use tokio::sync::RwLock;
 use tokio_cron_scheduler::{Job, JobScheduler};
-use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 
 pub type JobHandler = Arc<

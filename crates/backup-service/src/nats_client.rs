@@ -1,10 +1,10 @@
 use crate::error::{BackupError, BackupResult};
 use crate::service::{BackupJob, BackupStatus, BackupType};
+use agrocore_logging::{debug, info, warn};
 use async_nats::{Client, ConnectOptions};
 use futures::sink::SinkExt;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{debug, info, warn};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

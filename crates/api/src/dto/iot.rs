@@ -15,6 +15,7 @@ pub struct CreateIoTDeviceDto {
     pub site_id: Option<Uuid>,
     pub capabilities: Vec<IoTCapabilityDto>,
     pub metadata: Option<serde_json::Value>,
+    pub topic_prefix: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Validate)]
@@ -25,6 +26,7 @@ pub struct UpdateIoTDeviceDto {
     pub capabilities: Option<Vec<IoTCapabilityDto>>,
     pub metadata: Option<serde_json::Value>,
     pub status: Option<DeviceStatusDto>,
+    pub topic_prefix: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -43,6 +45,7 @@ pub struct IoTDeviceResponse {
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub last_seen: Option<chrono::DateTime<chrono::Utc>>,
+    pub topic_prefix: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq, Validate)]
@@ -62,11 +65,16 @@ pub enum IoTCapabilityType {
     Humidity,
     SoilMoisture,
     Light,
-    Gps,
+    GPS,
     BatteryLevel,
     SignalStrength,
     ActuatorControl,
     FirmwareUpdate,
+    Power,
+    Energy,
+    Pressure,
+    Voltage,
+    Current,
     Custom(String),
 }
 
@@ -102,7 +110,7 @@ impl From<agrocore_messaging::IoTCapability> for IoTCapabilityDto {
                 precision: Some(0),
             },
             agrocore_messaging::IoTCapability::GPS => Self {
-                capability_type: IoTCapabilityType::Gps,
+                capability_type: IoTCapabilityType::GPS,
                 unit: Some("degrees".to_string()),
                 min_value: Some(-180.0),
                 max_value: Some(180.0),
@@ -135,6 +143,41 @@ impl From<agrocore_messaging::IoTCapability> for IoTCapabilityDto {
                 min_value: None,
                 max_value: None,
                 precision: None,
+            },
+            agrocore_messaging::IoTCapability::Power => Self {
+                capability_type: IoTCapabilityType::Power,
+                unit: Some("W".to_string()),
+                min_value: Some(0.0),
+                max_value: Some(10000.0),
+                precision: Some(1),
+            },
+            agrocore_messaging::IoTCapability::Energy => Self {
+                capability_type: IoTCapabilityType::Energy,
+                unit: Some("kWh".to_string()),
+                min_value: Some(0.0),
+                max_value: Some(1000000.0),
+                precision: Some(2),
+            },
+            agrocore_messaging::IoTCapability::Pressure => Self {
+                capability_type: IoTCapabilityType::Pressure,
+                unit: Some("hPa".to_string()),
+                min_value: Some(300.0),
+                max_value: Some(1200.0),
+                precision: Some(1),
+            },
+            agrocore_messaging::IoTCapability::Voltage => Self {
+                capability_type: IoTCapabilityType::Voltage,
+                unit: Some("V".to_string()),
+                min_value: Some(0.0),
+                max_value: Some(500.0),
+                precision: Some(2),
+            },
+            agrocore_messaging::IoTCapability::Current => Self {
+                capability_type: IoTCapabilityType::Current,
+                unit: Some("A".to_string()),
+                min_value: Some(0.0),
+                max_value: Some(100.0),
+                precision: Some(2),
             },
             agrocore_messaging::IoTCapability::Custom(s) => Self {
                 capability_type: IoTCapabilityType::Custom(s),

@@ -6,6 +6,7 @@
 //! - Rate limiting via governor
 
 use crate::{cache::LpisCache, config::ProviderConfig};
+use agrocore_logging::{debug, warn};
 use agrocore_shared::with_retry;
 use governor::clock::DefaultClock;
 use governor::middleware::NoOpMiddleware;
@@ -127,7 +128,7 @@ impl BaseClient {
         #[allow(clippy::collapsible_if)]
         if let Some(cache) = &self.cache {
             if let Some(cached) = cache.get(cache_key).await {
-                tracing::debug!("Cache hit: {}", cache_key);
+                debug!("Cache hit: {}", cache_key);
                 return Ok(String::from_utf8_lossy(&cached).to_string());
             }
         }

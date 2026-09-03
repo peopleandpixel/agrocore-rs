@@ -1,9 +1,9 @@
 use crate::config::{BackupConfig, BackupTarget, VerificationConfig};
 use crate::error::{BackupError, BackupResult};
 use crate::storage::StorageBackend;
+use agrocore_logging::{debug, info, warn};
 use chrono::{DateTime, Utc};
 use std::sync::Arc;
-use tracing::{debug, info, warn};
 
 pub struct VerificationManager {
     config: VerificationConfig,

@@ -7,6 +7,7 @@ use agrocore_domain::services::weather::{
 };
 use agrocore_domain::{TenantId, entities::tenant::Tenant};
 use agrocore_infrastructure::Database;
+use agrocore_logging::{error, info, warn};
 use agrocore_messaging::{
     Event, GlobalEvent, IrrigationCommand, IrrigationCommandEvent, MessagingClient,
     NATS_SUBJECT_COMMANDS_IRRIGATION, NATS_SUBJECT_TELEMETRY_SOIL, NATS_SUBJECT_TELEMETRY_WEATHER,
@@ -16,7 +17,6 @@ use agrocore_shared::Pagination;
 use futures::StreamExt;
 use serde::Deserialize;
 use std::time::Duration;
-use tracing::{error, info, warn};
 use uuid::Uuid;
 
 /// A registry of all available weather service providers.
@@ -62,11 +62,11 @@ impl ProviderRegistry {
                 let parsed: serde_json::Value = serde_json::from_str(config).ok()?;
                 let provider_type = parsed
                     .get("provider")
-                    .and_then(|v| v.as_str())
+                    .and_then(|v| Some(v.to_string()))
                     .and_then(|s| s.parse::<WeatherServiceType>().ok())?;
                 let api_key = parsed
                     .get("api_key")
-                    .and_then(|v| v.as_str())
+                    .and_then(|v| Some(v.to_string()))
                     .map(|s| s.to_string());
                 Some((provider_type, api_key))
             }
@@ -99,10 +99,14 @@ struct GeocodingResult {
 
 pub async fn start(db: Database, nats_url: String) -> anyhow::Result<()> {
     let messaging = MessagingClient::connect(&nats_url).await?;
-    let mut subscriber = messaging.subscribe(">").await?;
+    let mut subscriber = messaging.subscribe(">".to_string()).await?;
     // Also subscribe to specific telemetry subjects forwarded by the MQTT bridge
-    let weather_telemetry_sub = messaging.subscribe(NATS_SUBJECT_TELEMETRY_WEATHER).await?;
-    let soil_telemetry_sub = messaging.subscribe(NATS_SUBJECT_TELEMETRY_SOIL).await?;
+    let weather_telemetry_sub = messaging
+        .subscribe(NATS_SUBJECT_TELEMETRY_WEATHER.to_string())
+        .await?;
+    let soil_telemetry_sub = messaging
+        .subscribe(NATS_SUBJECT_TELEMETRY_SOIL.to_string())
+        .await?;
 
     let registry = ProviderRegistry::default();
 
@@ -137,7 +141,7 @@ pub async fn start(db: Database, nats_url: String) -> anyhow::Result<()> {
                 let Some(message) = message else { break; };
                 let subject = message.subject.clone();
 
-                if subject.as_str() == "system.tenant.created" {
+                if subject.to_string() == "system.tenant.created" {
                     let event: Event<GlobalEvent> = match serde_json::from_slice(&message.payload) {
                         Ok(e) => e,
                         Err(e) => {
@@ -171,11 +175,11 @@ pub async fn start(db: Database, nats_url: String) -> anyhow::Result<()> {
                     continue;
                 }
 
-                if subject.as_str() == "weather.health" {
+                if subject.to_string() == "weather.health" {
                     if let Some(reply_to) = message.reply {
                         let response = serde_json::json!({"status": "ok", "service": "weather"});
                         let _ = messaging
-                            .publish_raw(reply_to.as_str(), serde_json::to_vec(&response)?)
+                            .publish_raw(reply_to.to_string(), serde_json::to_vec(&response)?)
                             .await;
                     }
                     continue;
@@ -199,7 +203,7 @@ pub async fn start(db: Database, nats_url: String) -> anyhow::Result<()> {
                         if let Some(reply_to) = message.reply {
                             let response = serde_json::json!({"status": "ok", "service": "weather"});
                             let _ = messaging
-                                .publish_raw(reply_to.as_str(), serde_json::to_vec(&response)?)
+                                .publish_raw(reply_to.to_string(), serde_json::to_vec(&response)?)
                                 .await;
                         }
                     }
@@ -382,7 +386,7 @@ async fn process_tenant_weather(
             .as_ref()
             .and_then(|v| v.get("company_profile"))
             .and_then(|v| v.get("address"))
-            .and_then(|v| v.as_str())
+            .and_then(|v| Some(v.to_string()))
         {
             Some(a) if !a.trim().is_empty() => a,
             _ => continue,
@@ -390,7 +394,7 @@ async fn process_tenant_weather(
 
         let geocoding_url = format!(
             "https://geocoding-api.open-meteo.com/v1/search?name={}&count=1&language=en&format=json",
-            urlencoding::encode(address)
+            urlencoding::encode(&address)
         );
         let geocoding_resp: GeocodingResponse =
             client.get(&geocoding_url).send().await?.json().await?;
@@ -466,7 +470,7 @@ async fn store_weather_data(
     );
     let payload = serde_json::to_vec(&event)?;
     let _ = messaging
-        .publish_raw(NATS_SUBJECT_TELEMETRY_WEATHER, payload)
+        .publish_raw(NATS_SUBJECT_TELEMETRY_WEATHER.to_string(), payload)
         .await;
 
     // If soil moisture data is present, check thresholds and publish alerts
@@ -530,7 +534,7 @@ async fn process_soil_moisture_alerts(
             );
             let payload = serde_json::to_vec(&event).unwrap_or_default();
             let _ = messaging
-                .publish_raw(NATS_SUBJECT_TELEMETRY_SOIL, payload)
+                .publish_raw(NATS_SUBJECT_TELEMETRY_SOIL.to_string(), payload)
                 .await;
 
             // Publish irrigation command via NATS
@@ -553,7 +557,7 @@ async fn process_soil_moisture_alerts(
             );
             let cmd_payload = serde_json::to_vec(&cmd_event).unwrap_or_default();
             let _ = messaging
-                .publish_raw(NATS_SUBJECT_COMMANDS_IRRIGATION, cmd_payload)
+                .publish_raw(NATS_SUBJECT_COMMANDS_IRRIGATION.to_string(), cmd_payload)
                 .await;
 
             info!(

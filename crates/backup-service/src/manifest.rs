@@ -2,10 +2,10 @@ use crate::config::{BackupConfig, BackupMetadataConfig, BackupTarget};
 use crate::error::{BackupError, BackupResult};
 use crate::service::{BackupStatus, BackupType};
 use crate::storage::StorageBackendTrait;
+use agrocore_logging::{debug, info, warn};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{debug, info, warn};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
