@@ -57,6 +57,7 @@ pub async fn calculate_demand(
         total_nitrogen_kg: total_demand.n * site_area,
         total_phosphorus_kg: total_demand.p * site_area,
         total_potassium_kg: total_demand.k * site_area,
+        area_ha: site_area,
     }))
 }
 

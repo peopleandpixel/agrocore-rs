@@ -5,6 +5,7 @@ pub mod auth;
 pub mod backup;
 pub mod breed;
 pub mod building;
+pub mod calculation;
 pub mod compliance;
 pub mod customers;
 pub mod equipment;
@@ -248,7 +249,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .configure(livestock_new::configure)
             .configure(variety::configure)
             .configure(breed::configure)
-            .configure(backup::configure),
+            .configure(backup::configure)
+            .configure(calculation::configure),
     );
 }
 
