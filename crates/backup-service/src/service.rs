@@ -28,7 +28,7 @@ pub enum BackupType {
 }
 
 impl BackupType {
-    fn prefix(&self) -> &'static str {
+    pub fn prefix(&self) -> &'static str {
         match self {
             BackupType::Database => "db/",
             BackupType::Config => "config/",
@@ -55,6 +55,19 @@ pub enum BackupStatus {
     Failed,
     VerificationFailed,
     Cancelled,
+}
+
+impl std::fmt::Display for BackupStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BackupStatus::Pending => write!(f, "pending"),
+            BackupStatus::Running => write!(f, "running"),
+            BackupStatus::Completed => write!(f, "completed"),
+            BackupStatus::Failed => write!(f, "failed"),
+            BackupStatus::VerificationFailed => write!(f, "verification_failed"),
+            BackupStatus::Cancelled => write!(f, "cancelled"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

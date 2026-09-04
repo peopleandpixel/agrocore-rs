@@ -1,4 +1,8 @@
+use agrocore_backup::config::load_config;
+use agrocore_backup::nats_client::NatsClient as BackupNatsClient;
+use agrocore_backup::service::BackupService;
 use agrocore_infrastructure::Database;
+use std::sync::Arc;
 
 use agrocore_logging::{debug, error, info, warn};
 #[actix_web::main]
@@ -24,6 +28,29 @@ async fn main() -> std::io::Result<()> {
         .await
         .map_err(|e| std::io::Error::other(e.to_string()))?;
 
+    // Initialize backup service
+    let backup_config = load_config().unwrap_or_default();
+    let backup_service = if backup_config.enabled {
+        let backup_nats = BackupNatsClient::connect(&nats_url)
+            .await
+            .map_err(|e| std::io::Error::other(e.to_string()))?;
+        match BackupService::new(backup_config, database_url.clone(), backup_nats).await {
+            Ok(svc) => Some(Arc::new(svc)),
+            Err(e) => {
+                error!("Failed to initialize backup service: {}", e);
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     info!("Server starting on {}", bind_addr);
-    agrocore_api::run_server(Database::Postgres(db), messaging, &bind_addr).await
+    agrocore_api::run_server(
+        Database::Postgres(db),
+        messaging,
+        &bind_addr,
+        backup_service,
+    )
+    .await
 }

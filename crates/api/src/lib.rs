@@ -20,6 +20,7 @@ mod dto_validation_tests;
 
 pub use crate::metrics::{BusinessMetrics, DbMetrics};
 use crate::middleware::TokenRevocationList;
+use agrocore_backup::service::BackupService;
 use agrocore_infrastructure::Database;
 use agrocore_lpis_providers::create_default_registry;
 use agrocore_messaging::MessagingClient;
@@ -40,6 +41,7 @@ pub struct AppState {
     pub db_metrics: DbMetrics,
     pub business_metrics: BusinessMetrics,
     pub metrics_registry: Arc<Registry>,
+    pub backup_service: Option<Arc<BackupService>>,
 }
 
 /// Builds a CORS configuration from the `CORS_ALLOWED_ORIGINS` environment variable.
@@ -97,6 +99,7 @@ pub async fn run_server(
     db: Database,
     messaging: MessagingClient,
     bind_addr: &str,
+    backup_service: Option<Arc<BackupService>>,
 ) -> std::io::Result<()> {
     // Initialize LPIS Registry with all providers
     let lpis_registry = Arc::new(create_default_registry());
@@ -114,6 +117,7 @@ pub async fn run_server(
         db_metrics,
         business_metrics,
         metrics_registry: metrics_registry.clone(),
+        backup_service,
     });
 
     let prometheus = PrometheusMetricsBuilder::new("agrocore")

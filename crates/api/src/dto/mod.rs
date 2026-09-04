@@ -1,5 +1,6 @@
 //! API Data Transfer Objects
 
+pub mod backup;
 pub mod breed;
 pub mod building;
 pub mod calculations;
@@ -36,6 +37,7 @@ pub mod weather;
 pub mod workforce;
 
 // Re-exports for handlers
+pub use backup::*;
 pub use breed::*;
 pub use building::*;
 pub use calculations::*;

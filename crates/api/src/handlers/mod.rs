@@ -2,6 +2,7 @@ use actix_web::web;
 
 pub mod agriculture;
 pub mod auth;
+pub mod backup;
 pub mod breed;
 pub mod building;
 pub mod compliance;
@@ -246,7 +247,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .configure(tree::configure)
             .configure(livestock_new::configure)
             .configure(variety::configure)
-            .configure(breed::configure),
+            .configure(breed::configure)
+            .configure(backup::configure),
     );
 }
 

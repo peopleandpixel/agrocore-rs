@@ -8,6 +8,10 @@ license.workspace = true
 name = "agrocore-backup"
 path = "src/main.rs"
 
+[lib]
+name = "agrocore_backup"
+path = "src/lib.rs"
+
 [dependencies]
 # Core
 tokio = { workspace = true, features = ["net", "rt-multi-thread", "io-std", "macros", "sync", "time", "fs", "signal"] }

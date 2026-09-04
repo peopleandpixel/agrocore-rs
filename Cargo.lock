@@ -381,6 +381,7 @@ dependencies = [
  "actix-governor",
  "actix-web",
  "actix-web-prometheus",
+ "agrocore-backup",
  "agrocore-domain",
  "agrocore-infrastructure",
  "agrocore-logging",

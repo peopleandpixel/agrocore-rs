@@ -3,7 +3,8 @@
 [![Rust](https://img.shields.io/badge/rust-2024-orange.svg)](https://www.rust-lang.org/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Rust CI](https://github.com/peopleandpixel/agrocore-rs/actions/workflows/ci-cd.yml/badge.svg?branch=main)](https://github.com/peopleandpixel/agrocore-rs/actions/workflows/ci-cd.yml)
-[![Version](https://img.shields.io/badge/version-0.11.0-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.13.0-green.svg)](CHANGELOG.md)
+[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/peopleandpixel/agrocore-rs)](https://github.com/peopleandpixel/agrocore-rs/commits/main)
 
 AgroCore RS is a farm operations platform built from scratch in this repository. The code, structure, naming, and product decisions were created here independently, while the implementation benefits from practical experience gained in earlier professional work.
 

@@ -496,6 +496,19 @@ pub enum EncryptionMethod {
     GcpKms,
 }
 
+impl std::fmt::Display for EncryptionMethod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            EncryptionMethod::None => write!(f, "none"),
+            EncryptionMethod::Age => write!(f, "age"),
+            EncryptionMethod::Aes256Gcm => write!(f, "aes256gcm"),
+            EncryptionMethod::AwsKms => write!(f, "awskms"),
+            EncryptionMethod::AzureKeyVault => write!(f, "azurekeyvault"),
+            EncryptionMethod::GcpKms => write!(f, "gcpkms"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PgDumpConfig {
     pub compression_level: i32,
@@ -545,7 +558,7 @@ impl PgDumpConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum DumpFormat {
     Custom,

@@ -36,6 +36,7 @@ agrocore-infrastructure = { path = "../infrastructure" }
 agrocore-shared = { path = "../shared", features = ["sqlx"] }
 agrocore-lpis-providers = { path = "../lpis-providers" }
 agrocore-messaging = { path = "../messaging" }
+agrocore-backup = { path = "../backup-service" }
 actix-web = { workspace = true }
 actix-files = { workspace = true }
 actix-cors = { workspace = true }

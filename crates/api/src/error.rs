@@ -57,6 +57,10 @@ impl ApiError {
         Self(SharedError::Validation(message.into()))
     }
 
+    pub fn internal(message: impl Into<String>) -> Self {
+        Self(SharedError::Internal(message.into()))
+    }
+
     /// Kurzer, stabiler Fehler-Slug für das `error`-Feld der JSON-Antwort.
     fn slug(&self) -> &'static str {
         match self.0 {
