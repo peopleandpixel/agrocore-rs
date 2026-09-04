@@ -145,7 +145,7 @@ jobs:
           cp target/wasm32-unknown-unknown/release/admin_ui_bg.wasm target/wasm32-unknown-unknown/release/admin-ui.wasm
 
       - name: Upload WASM artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: admin-ui-wasm
           path: target/wasm32-unknown-unknown/release/admin-ui.wasm
