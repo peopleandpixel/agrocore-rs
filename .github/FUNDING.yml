@@ -1,0 +1,6 @@
+# GitHub Funding Configuration
+# Place this file at .github/FUNDING.yml
+
+github: [peopleandpixel]
+open_collective: agrocore
+custom: ["https://github.com/sponsors/peopleandpixel", "https://opencollective.com/agrocore"]

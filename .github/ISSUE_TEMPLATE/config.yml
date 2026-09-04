@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Ask a Question / Start a Discussion
+    url: https://github.com/peopleandpixel/agrocore-rs/discussions/new
+    about: General questions, ideas, show & tell, non-technical feedback
+  - name: 🔒 Report a Security Vulnerability
+    url: https://github.com/peopleandpixel/agrocore-rs/security/advisories/new
+    about: Private disclosure for security issues (see SECURITY.md)
+  - name: 💰 Sponsor / Financial Support
+    url: https://github.com/sponsors/peopleandpixel
+    about: Support development via GitHub Sponsors or Open Collective
