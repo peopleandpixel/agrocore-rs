@@ -212,12 +212,12 @@ We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for:
 
 AgroCore is **open-source** (GPL v3) built for the agricultural community.
 
-| Need | Contact |
-|------|---------|
-| **Bug reports / Feature requests** | [GitHub Issues](https://github.com/peopleandpixel/agrocore-rs/issues) |
-| **Questions / Discussion** | [GitHub Discussions](https://github.com/peopleandpixel/agrocore-rs/discussions) |
-| **Financial Support** | [GitHub Sponsors](https://github.com/sponsors/peopleandpixel) \| [Open Collective](https://opencollective.com/agrocore) |
-| **Commercial Support** | Custom Rust integration, hardware adapters, enterprise deployment → [info@peopleandpixel.com](mailto:info@peopleandpixel.com) |
+| Need | Contact                                                                                                                   |
+|------|---------------------------------------------------------------------------------------------------------------------------|
+| **Bug reports / Feature requests** | [GitHub Issues](https://github.com/peopleandpixel/agrocore-rs/issues)                                                     |
+| **Questions / Discussion** | [GitHub Discussions](https://github.com/peopleandpixel/agrocore-rs/discussions)                                           |
+| **Financial Support** | [GitHub Sponsors](https://github.com/sponsors/peopleandpixel) \| [Open Collective](https://opencollective.com/agrocore)   |
+| **Commercial Support** | Custom Rust integration, hardware adapters, enterprise deployment → [lda@peopleandpixel.pt](mailto:lda@peopleandpixel.pt) |
 
 ---
 
