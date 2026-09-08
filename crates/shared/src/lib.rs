@@ -208,7 +208,7 @@ where
                 retry_count += 1;
                 let delay =
                     std::time::Duration::from_secs(base_delay_secs * (1u64 << (retry_count - 1)));
-                tracing::warn!(
+                agrocore_logging::warn!(
                     "Failed to {} (attempt {}/{}): {}. Retrying in {:?}...",
                     operation_name,
                     retry_count,

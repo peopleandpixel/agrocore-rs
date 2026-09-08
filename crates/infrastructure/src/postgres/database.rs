@@ -748,32 +748,16 @@ impl PostgresDb {
         })
         .await?;
 
-        // Initialize metrics timer (only if monitoring enabled via env)
+        // Initialize metrics timer via scheduler (only if monitoring enabled via env)
         if std::env::var("AGROCORE_METRICS_ENABLED")
             .map(|v| v == "1" || v.to_lowercase() == "true")
             .unwrap_or(false)
         {
-            let pool_clone = pool.clone();
-            tokio::spawn(async move {
-                let mut interval = tokio::time::interval(std::time::Duration::from_secs(5));
-                loop {
-                    interval.tick().await;
-                    // Pool metrics would be updated here via sqlx PoolStats
-                    debug!("Pool metrics tick");
-                }
-            });
+            // Pool health check will be registered as scheduler job below
         }
 
-        // Monthly depreciation automation timer (OPT-Abschreibung)
-        tokio::spawn(async move {
-            let mut interval =
-                tokio::time::interval(std::time::Duration::from_secs(30 * 24 * 60 * 60)); // ~monthly
-            loop {
-                interval.tick().await;
-                info!("Monthly depreciation automation tick");
-                // Here: call depreciation calculation for all active equipment
-            }
-        });
+        // Monthly depreciation automation via scheduler
+        // Depreciation will be registered as scheduler job below
 
         sqlx::migrate!("../../migrations").run(&pool).await?;
 

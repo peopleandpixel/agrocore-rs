@@ -5,9 +5,9 @@ use crate::manifest::ManifestManager;
 use crate::nats_client::NatsClient;
 use crate::pg_dump::PgDump;
 use crate::retention::RetentionManager;
-use crate::storage::StorageBackendTrait;
+use crate::storage::{StorageBackend, StorageBackendTrait};
 use crate::verification::VerificationManager;
-use agrocore_logging::{debug, info, warn};
+use agrocore_logging::{debug, error, info, warn};
 use agrocore_scheduler::{JobDefinition, JobType, SchedulerConfig, SchedulerService};
 use async_nats::Client as NatsClientInner;
 use chrono::{DateTime, Utc};
@@ -15,7 +15,6 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::error;
 use uuid::Uuid;
 
 use std::collections::HashMap;
@@ -121,7 +120,8 @@ impl BackupService {
 
         // Initialize components
         let pg_dump = crate::pg_dump::PgDump::new(db_pool.clone(), config.pg_dump.clone());
-        let storage = Arc::new(crate::storage::StorageBackend::new(config.targets.clone()).await?);
+        let storage = Arc::new(crate::storage::StorageBackend::new(config.targets.clone()).await?)
+            as Arc<dyn crate::storage::StorageBackendTrait>;
         let encryption = Arc::new(crate::encryption::EncryptionManager::new(
             config.encryption.clone(),
         ));
@@ -154,7 +154,14 @@ impl BackupService {
         &self.config
     }
 
-    pub async fn start_scheduler(&mut self) -> BackupResult<()> {
+    pub fn db_pool(&self) -> &sqlx::PgPool {
+        &self.db_pool
+    }
+
+    pub async fn start_scheduler(
+        &mut self,
+        mut bridge: agrocore_messaging::MqttBridge,
+    ) -> BackupResult<()> {
         let scheduler_config = SchedulerConfig {
             enabled: self.config.enabled,
             timezone: self.config.timezone.clone(),
@@ -188,6 +195,26 @@ impl BackupService {
                     if let Err(e) = service.run_backup(bt).await {
                         error!("Scheduled backup failed: {}", e);
                     }
+                    Ok(())
+                })
+            })
+            .await;
+
+        // Register handler for MQTT Bridge stats reporting
+        let stats = bridge.stats.clone();
+        scheduler
+            .register_handler("bridge_stats_reporter", move |_job_def| {
+                let stats = stats.clone();
+                Box::pin(async move {
+                    let stats = stats.read().await;
+                    agrocore_logging::info!(
+                        "Bridge Stats - NATS→MQTT: {}, MQTT→NATS: {}, NATS Errors: {}, MQTT Errors: {}, Connected: {}",
+                        stats.nats_to_mqtt_messages,
+                        stats.mqtt_to_nats_messages,
+                        stats.nats_errors,
+                        stats.mqtt_errors,
+                        stats.connected
+                    );
                     Ok(())
                 })
             })
@@ -233,6 +260,35 @@ impl BackupService {
             tags: vec!["backup".to_string(), "config".to_string()],
         };
         scheduler.add_job(config_job).await?;
+
+        // Add MQTT Bridge stats reporter job (every 60 seconds)
+        let bridge_stats_job = JobDefinition {
+            id: "bridge_stats_reporter".to_string(),
+            name: "MQTT Bridge Stats Reporter".to_string(),
+            description: "Periodic stats reporting for MQTT Bridge".to_string(),
+            schedule: "* * * * * *".to_string(), // Every 60 seconds (every minute)
+            timezone: Some("UTC".to_string()),
+            job_type: JobType::Builtin {
+                handler: "bridge_stats_reporter".to_string(),
+            },
+            payload: serde_json::json!({}),
+            timeout_seconds: Some(30),
+            max_retries: Some(3),
+            retry_delay_seconds: Some(10),
+            enabled: true,
+            tags: vec![
+                "messaging".to_string(),
+                "bridge".to_string(),
+                "stats".to_string(),
+            ],
+        };
+        scheduler.add_job(bridge_stats_job).await?;
+
+        // Start the bridge on main thread (blocks until shutdown)
+        info!("Starting MQTT Bridge on main thread...");
+        if let Err(e) = bridge.start().await {
+            agrocore_logging::error!("MQTT Bridge error: {}", e);
+        }
 
         self.scheduler = Some(scheduler);
 

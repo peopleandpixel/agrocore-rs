@@ -1,7 +1,7 @@
 use actix_web::{App, HttpResponse, HttpServer, Responder, web};
 use agrocore_domain::TenantId;
 use agrocore_infrastructure::Database;
-use agrocore_logging::{error, info};
+use agrocore_logging::{EnvironmentType, LoggingConfig, error, info, init_logging};
 use agrocore_shared::Pagination;
 use geojson::{Feature, FeatureCollection, Geometry, GeometryValue};
 use rust_xlsxwriter::*;
@@ -221,7 +221,18 @@ async fn health() -> impl Responder {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
-    agrocore_shared::telemetry::init_telemetry("agrocore_reporting_service");
+
+    // Initialize logging via agrocore-logging
+    let logging_config = LoggingConfig {
+        level: "info".to_string(),
+        console_enabled: true,
+        console_pretty: true,
+        console_thread_ids: true,
+        console_thread_names: true,
+        environment: EnvironmentType::Development,
+        ..Default::default()
+    };
+    init_logging(logging_config)?;
 
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgres://postgres:***@localhost:5432/agrocore".to_string());

@@ -130,7 +130,7 @@ pub struct BridgeStats {
 pub struct MqttBridge {
     nats_client: MessagingClient,
     config: BridgeConfig,
-    stats: Arc<RwLock<BridgeStats>>,
+    pub stats: Arc<RwLock<BridgeStats>>,
     shutdown_tx: Option<mpsc::Sender<()>>,
     // MQTT client is optional - bridge can work NATS-only
     mqtt_client: Option<rumqttc::AsyncClient>,
@@ -190,7 +190,7 @@ impl MqttBridge {
 
     /// Start the bridge
     pub async fn start(&mut self) -> anyhow::Result<()> {
-        let (shutdown_tx, mut shutdown_rx) = mpsc::channel(1);
+        let (shutdown_tx, mut shutdown_rx) = mpsc::channel::<()>(1);
         self.shutdown_tx = Some(shutdown_tx);
 
         // Start NATS to MQTT forwarding (if MQTT available)
@@ -198,9 +198,6 @@ impl MqttBridge {
             self.start_nats_to_mqtt().await?;
             self.start_mqtt_to_nats().await?;
         }
-
-        // Start stats reporter
-        self.start_stats_reporter().await;
 
         info!(
             "MQTT Bridge started (NATS-only mode: {})",
@@ -367,31 +364,6 @@ impl MqttBridge {
         }
 
         true
-    }
-
-    /// Start periodic stats reporting
-    async fn start_stats_reporter(&self) {
-        let stats = self.stats.clone();
-        tokio::spawn(async move {
-            let mut interval = tokio::time::interval(Duration::from_secs(60));
-            loop {
-                interval.tick().await;
-                let stats = stats.read().await;
-                info!(
-                    "Bridge Stats - NATS→MQTT: {}, MQTT→NATS: {}, NATS Errors: {}, MQTT Errors: {}, Connected: {}",
-                    stats.nats_to_mqtt_messages,
-                    stats.mqtt_to_nats_messages,
-                    stats.nats_errors,
-                    stats.mqtt_errors,
-                    stats.connected
-                );
-            }
-        });
-    }
-
-    /// Get bridge statistics
-    pub async fn get_stats(&self) -> BridgeStats {
-        self.stats.read().await.clone()
     }
 
     /// Shutdown the bridge

@@ -4,7 +4,6 @@ use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_web::{App, HttpServer, web};
 use actix_web_prometheus::PrometheusMetricsBuilder;
 use prometheus::Registry;
-use tracing_actix_web::TracingLogger;
 use utoipa_swagger_ui::SwaggerUi;
 
 pub mod dto;
@@ -147,7 +146,6 @@ pub async fn run_server(
         App::new()
             .app_data(state.clone())
             .wrap(prometheus.clone())
-            .wrap(TracingLogger::default())
             .wrap(security_headers)
             .wrap(Governor::new(&gov_conf))
             .wrap(cors)

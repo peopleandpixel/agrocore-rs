@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-09-08
+
+### Added
+- **Phase 7: Migration auf externe Services (P0 - KRITISCH)** — Vollständige Migration aller 15 Crates auf zentrale Services
+  - **Scheduler-Migration**: 4 Timer von `tokio::spawn` / `tokio-cron-scheduler` → `agrocore-scheduler` Crate
+    - `bridge_stats_reporter` (60s) — MQTT Bridge Statistiken
+    - `weather_update` (Cron `0 */30 * * * *`) — Wetterdaten-Updates
+    - `db_pool_health` (5s) — Datenbank-Pool-Health-Check
+    - `db_monthly_cleanup` (Cron `0 0 1 * *`) — Monatliche Bereinigung + Abschreibung
+  - Alle Jobs extern in `backup-service/main.rs` registriert (keine zyklischen Dependencies)
+  - Bridge (nicht `Send`) läuft auf Main Thread, Scheduler Jobs (`Send`) in Background Tasks
+
+### Changed
+- **Messaging-Migration**: Alle Crates von direkter `async_nats` Nutzung → `agrocore_messaging::Publisher/Subscriber` Traits
+  - Neue Traits: `Publisher`, `Subscriber`, `MessageStream` in `agrocore-messaging`
+  - `MessagingClient` implementiert beide Traits
+  - NATS Subject-Konstanten öffentlich exportiert für konsistente Nutzung
+
+- **Logging-Migration (Rest)**: 5 Crates auf `agrocore_logging` migriert
+  - `agrocore-domain` (`depreciation.rs`)
+  - `agrocore-geometry-service` (`main.rs`)
+  - `agrocore-asset-registry` (`main.rs`)
+  - `agrocore-reporting-service` (`main.rs`)
+  - `agrocore-lpis-providers` (nutzte bereits `agrocore_logging`)
+
+- **WASM Migration**: `agrocore-admin-ui` 
+  - `tracing` Dependency entfernt
+  - `agrocore-logging` mit `dev-console` Feature hinzugefügt (Browser Console Logging)
+
+- **Version bump**: 0.13.0 → 0.14.0 (Minor bump für Phase 7 Migration)
+
+- **Quality Gates**: Alle 15 Crates kompilieren (`cargo fmt`, `cargo check`, `cargo test`, `cargo clippy`)
+  - 153+ Tests grün
+  - Clippy sauber (nur unused-import warnings)
+  - WASM Target `wasm32-unknown-unknown` kompiliert fehlerfrei
+
 ## [0.13.0] - 2026-09-03
 
 ### Added

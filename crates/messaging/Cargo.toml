@@ -23,5 +23,6 @@ validator.workspace = true
 rumqttc.workspace = true
 
 futures-util = "0.3.32"
+async-trait = "0.1"
 [features]
 mocks = []

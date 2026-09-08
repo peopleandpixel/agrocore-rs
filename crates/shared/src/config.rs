@@ -236,7 +236,9 @@ pub fn jwt_secret() -> &'static str {
         .get_or_init(|| {
             let secret = AgroCoreConfig::global().jwt_secret.clone();
             if secret == "dev-secret" {
-                tracing::warn!("Set JWT_SECRET environment variable before running in production!");
+                agrocore_logging::warn!(
+                    "Set JWT_SECRET environment variable before running in production!"
+                );
             }
             secret
         })

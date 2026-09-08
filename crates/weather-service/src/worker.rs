@@ -99,7 +99,7 @@ struct GeocodingResult {
 
 pub async fn start(db: Database, nats_url: String) -> anyhow::Result<()> {
     let messaging = MessagingClient::connect(&nats_url).await?;
-    let mut subscriber = messaging.subscribe(">".to_string()).await?;
+    let mut subscriber = messaging.subscribe("\">".to_string()).await?;
     // Also subscribe to specific telemetry subjects forwarded by the MQTT bridge
     let weather_telemetry_sub = messaging
         .subscribe(NATS_SUBJECT_TELEMETRY_WEATHER.to_string())
@@ -111,8 +111,8 @@ pub async fn start(db: Database, nats_url: String) -> anyhow::Result<()> {
     let registry = ProviderRegistry::default();
 
     info!(
-        "Weather Service worker started, listening on all subjects (>), \
-         providers registered: OpenMeteo (free), OpenWeather (paid), Weather Underground (paid). \
+        "Weather Service worker started, listening on all subjects (>), \\
+         providers registered: OpenMeteo (free), OpenWeather (paid), Weather Underground (paid). \\
          Also subscribed to MQTT-bridged telemetry: {}, {}",
         NATS_SUBJECT_TELEMETRY_WEATHER, NATS_SUBJECT_TELEMETRY_SOIL
     );
@@ -519,7 +519,7 @@ async fn process_soil_moisture_alerts(
                 threshold_percent: config.moisture_threshold_percent,
                 timestamp: chrono::Utc::now(),
                 recommended_action: format!(
-                    "Soil moisture {:.1}% below threshold {:.1}%. \
+                    "Soil moisture {:.1}% below threshold {:.1}%. \\
                      Irrigation recommended for {} minutes.",
                     moisture_percent,
                     config.moisture_threshold_percent,
@@ -561,7 +561,7 @@ async fn process_soil_moisture_alerts(
                 .await;
 
             info!(
-                "Soil moisture alert: {:.1}% < threshold {:.1}% for station {} — \
+                "Soil moisture alert: {:.1}% < threshold {:.1}% for station {} — \\
                  irrigation commanded for {} minutes",
                 moisture_percent,
                 config.moisture_threshold_percent,
@@ -570,4 +570,172 @@ async fn process_soil_moisture_alerts(
             );
         }
     }
+}
+
+/// Start the weather service worker (for NATS message handling only, no periodic updates)
+pub async fn start_nats_listener(db: Database, nats_url: String) -> anyhow::Result<()> {
+    let messaging = MessagingClient::connect(&nats_url).await?;
+    let mut subscriber = messaging.subscribe("\">".to_string()).await?;
+    // Also subscribe to specific telemetry subjects forwarded by the MQTT bridge
+    let weather_telemetry_sub = messaging
+        .subscribe(NATS_SUBJECT_TELEMETRY_WEATHER.to_string())
+        .await?;
+    let soil_telemetry_sub = messaging
+        .subscribe(NATS_SUBJECT_TELEMETRY_SOIL.to_string())
+        .await?;
+
+    let registry = ProviderRegistry::default();
+
+    info!(
+        "Weather Service NATS listener started, listening on all subjects (>), \\
+         providers registered: OpenMeteo (free), OpenWeather (paid), Weather Underground (paid). \\
+         Also subscribed to MQTT-bridged telemetry: {}, {}",
+        NATS_SUBJECT_TELEMETRY_WEATHER, NATS_SUBJECT_TELEMETRY_SOIL
+    );
+
+    tokio::pin!(weather_telemetry_sub, soil_telemetry_sub);
+
+    loop {
+        tokio::select! {
+            // Handle general NATS messages (health, tenant created, etc.)
+            message = subscriber.next() => {
+                let Some(message) = message else { break; };
+                let subject = message.subject.clone();
+
+                if subject.to_string() == "system.tenant.created" {
+                    let event: Event<GlobalEvent> = match serde_json::from_slice(&message.payload) {
+                        Ok(e) => e,
+                        Err(e) => {
+                            error!("Failed to deserialize tenant created event: {}", e);
+                            continue;
+                        }
+                    };
+                    if let GlobalEvent::TenantCreated(tenant) = event.payload {
+                        info!("Received TenantCreated event for tenant {}", tenant.id);
+                        let db_clone = db.clone();
+                        let registry_clone = registry.clone();
+                        let messaging_clone = messaging.clone();
+                        let client = reqwest::Client::new();
+                        tokio::spawn(async move {
+                            // Timeout 30s für Tenant-Wetter-Verarbeitung (OPT-010)
+                            match tokio::time::timeout(
+                                std::time::Duration::from_secs(30),
+                                process_tenant_weather(
+                                    &db_clone, &tenant, &registry_clone, &client, &messaging_clone,
+                                ),
+                            ).await {
+                                Ok(Ok(())) => info!("Tenant weather processed: {}", tenant.id),
+                                Ok(Err(e)) => error!("Error processing weather: {}", e),
+                                Err(_) => error!(
+                                    "Timeout: Weather processing exceeded 30s for tenant {}",
+                                    tenant.id
+                                ),
+                            }
+                        });
+                    }
+                    continue;
+                }
+
+                if subject.to_string() == "weather.health" {
+                    if let Some(reply_to) = message.reply {
+                        let response = serde_json::json!({"status": "ok", "service": "weather"});
+                        let _ = messaging
+                            .publish_raw(reply_to.to_string(), serde_json::to_vec(&response)?)
+                            .await;
+                    }
+                    continue;
+                }
+
+                let event: Event<GlobalEvent> = match serde_json::from_slice(&message.payload) {
+                    Ok(e) => e,
+                    Err(e) => {
+                        error!(
+                            "Failed to deserialize weather event on subject {}: {}",
+                            subject, e
+                        );
+                        continue;
+                    }
+                };
+
+                info!("Received message on subject: {}", subject);
+
+                match event.payload {
+                    GlobalEvent::HealthCheckRequested => {
+                        if let Some(reply_to) = message.reply {
+                            let response = serde_json::json!({"status": "ok", "service": "weather"});
+                            let _ = messaging
+                                .publish_raw(reply_to.to_string(), serde_json::to_vec(&response)?)
+                                .await;
+                        }
+                    }
+                    GlobalEvent::WeatherDataCollected(data) => {
+                        info!(
+                            "Received WeatherDataCollected event for station {} (tenant {})",
+                            data.station_id, data.tenant_id
+                        );
+                    }
+                    GlobalEvent::SoilMoistureAlert(_) => {
+                        info!("Received soil moisture alert event");
+                    }
+                    GlobalEvent::IrrigationTriggered(_) => {
+                        info!("Received irrigation command event");
+                    }
+                    _ => {}
+                }
+            }
+
+            // Handle weather telemetry forwarded from MQTT by the bridge
+            weather_msg = weather_telemetry_sub.next() => {
+                let Some(message) = weather_msg else { break; };
+                if let Ok(event) = serde_json::from_slice::<Event<GlobalEvent>>(&message.payload)
+                    && let GlobalEvent::WeatherDataCollected(data) = event.payload
+                {
+                    info!(
+                        "Received IoT weather telemetry from NATS (bridge from MQTT) for station {}",
+                        data.station_id
+                    );
+                }
+            }
+
+            // Handle soil moisture telemetry forwarded from MQTT by the bridge
+            soil_msg = soil_telemetry_sub.next() => {
+                let Some(message) = soil_msg else { break; };
+                if let Ok(event) = serde_json::from_slice::<Event<GlobalEvent>>(&message.payload) {
+                    match event.payload {
+                        GlobalEvent::WeatherDataCollected(data) => {
+                            if let Some(moisture) = data.soil_moisture_percent {
+                                process_soil_moisture_alerts(&db, data.tenant_id, data.station_id, moisture, &messaging).await;
+                            }
+                        }
+                        GlobalEvent::SoilMoistureAlert(alert) => {
+                            info!(
+                                "Received soil alert via MQTT bridge: {}% below {}%",
+                                alert.moisture_percent, alert.threshold_percent
+                            );
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Run weather update for all tenants (called by scheduler)
+pub async fn run_weather_update(db: Database, nats_url: String) -> anyhow::Result<()> {
+    let messaging = MessagingClient::connect(&nats_url).await?;
+    let registry = ProviderRegistry::default();
+
+    let tenants = db.tenant_repo().find_all(Pagination::default()).await?;
+    let client = reqwest::Client::new();
+
+    for tenant in tenants.data {
+        if let Err(e) = process_tenant_weather(&db, &tenant, &registry, &client, &messaging).await {
+            error!("Error processing weather for tenant {}: {}", tenant.id, e);
+        }
+    }
+
+    Ok(())
 }

@@ -50,7 +50,7 @@ pub fn generate_schedule_entry(
 /// can use the existing `get_depreciation()` and `get_depreciation_schedule()`
 /// repository methods from `EquipmentRepository`.
 pub async fn run_monthly_amortization() -> anyhow::Result<()> {
-    tracing::info!("Running monthly equipment amortization");
+    agrocore_logging::info!("Running monthly equipment amortization");
     // Implementation: iterate over all equipment_depreciation records,
     // calculate monthly amount based on method, accumulate.
     // This is a placeholder for full automated execution.

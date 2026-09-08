@@ -9,6 +9,7 @@ use async_nats::Client;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use failsafe::Config;
+use futures_util::StreamExt;
 use rumqttc::{
     AsyncClient, Event as MqttEvent, EventLoop, MqttOptions, QoS, TlsConfiguration, Transport,
 };
@@ -19,6 +20,46 @@ use tokio::sync::RwLock as AsyncRwLock;
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
+
+// Publisher trait for sending messages
+#[async_trait::async_trait]
+pub trait Publisher: Send + Sync {
+    async fn publish_raw(&self, subject: String, payload: Vec<u8>) -> anyhow::Result<()>;
+    async fn publish<T: serde::Serialize + Send + Sync>(
+        &self,
+        subject: String,
+        payload: &T,
+    ) -> anyhow::Result<()>;
+    async fn request<
+        T: serde::Serialize + Send + Sync,
+        R: for<'de> serde::Deserialize<'de> + Send,
+    >(
+        &self,
+        subject: &str,
+        payload: &T,
+    ) -> anyhow::Result<R>;
+    async fn request_with_headers<
+        T: serde::Serialize + Send + Sync,
+        R: for<'de> serde::Deserialize<'de> + Send,
+    >(
+        &self,
+        subject: &str,
+        headers: async_nats::HeaderMap,
+        payload: &T,
+    ) -> anyhow::Result<R>;
+}
+
+// Subscriber trait for receiving messages
+#[async_trait::async_trait]
+pub trait Subscriber: Send + Sync {
+    async fn subscribe(&self, subject: String) -> anyhow::Result<Box<dyn MessageStream>>;
+}
+
+// Message stream trait
+#[async_trait::async_trait]
+pub trait MessageStream: Send + Sync {
+    async fn next(&mut self) -> Option<async_nats::Message>;
+}
 
 // Precomputed static NATS subjects to avoid repeated string allocations
 pub const NATS_SUBJECT_EVENTS: &str = "events.>";
@@ -103,6 +144,84 @@ impl MessagingClient {
 
     pub fn nats(&self) -> &async_nats::Client {
         &self.client
+    }
+}
+
+// Implement Publisher trait for MessagingClient
+#[async_trait::async_trait]
+impl Publisher for MessagingClient {
+    async fn publish_raw(&self, subject: String, payload: Vec<u8>) -> anyhow::Result<()> {
+        self.client.publish(subject, payload.into()).await?;
+        Ok(())
+    }
+
+    async fn publish<T: serde::Serialize + Send + Sync>(
+        &self,
+        subject: String,
+        payload: &T,
+    ) -> anyhow::Result<()> {
+        let payload = serde_json::to_vec(payload)?;
+        self.client
+            .publish(subject.to_string(), payload.into())
+            .await?;
+        Ok(())
+    }
+
+    async fn request<
+        T: serde::Serialize + Send + Sync,
+        R: for<'de> serde::Deserialize<'de> + Send,
+    >(
+        &self,
+        subject: &str,
+        payload: &T,
+    ) -> anyhow::Result<R> {
+        let payload = serde_json::to_vec(payload)?;
+
+        let response = self
+            .client
+            .request(subject.to_string(), payload.into())
+            .await?;
+
+        serde_json::from_slice(&response.payload).map_err(Into::into)
+    }
+
+    async fn request_with_headers<
+        T: serde::Serialize + Send + Sync,
+        R: for<'de> serde::Deserialize<'de> + Send,
+    >(
+        &self,
+        subject: &str,
+        headers: async_nats::HeaderMap,
+        payload: &T,
+    ) -> anyhow::Result<R> {
+        let payload = serde_json::to_vec(payload)?;
+
+        let response = self
+            .client
+            .request_with_headers(subject.to_string(), headers, payload.into())
+            .await?;
+
+        serde_json::from_slice(&response.payload).map_err(Into::into)
+    }
+}
+
+// Subscriber implementation for async_nats::Subscriber
+struct NatsSubscriber {
+    inner: async_nats::Subscriber,
+}
+
+#[async_trait::async_trait]
+impl MessageStream for NatsSubscriber {
+    async fn next(&mut self) -> Option<async_nats::Message> {
+        self.inner.next().await
+    }
+}
+
+#[async_trait::async_trait]
+impl Subscriber for MessagingClient {
+    async fn subscribe(&self, subject: String) -> anyhow::Result<Box<dyn MessageStream>> {
+        let subscriber = self.client.subscribe(subject).await?;
+        Ok(Box::new(NatsSubscriber { inner: subscriber }))
     }
 }
 

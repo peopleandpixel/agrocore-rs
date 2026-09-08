@@ -46,7 +46,6 @@ uuid = { workspace = true }
 chrono = { workspace = true }
 jsonwebtoken = { workspace = true }
 agrocore-logging = { path = "../logging", features = ["dev-console"] }
-tracing-actix-web = { workspace = true }
 utoipa = { workspace = true, features = ["uuid", "chrono"] }
 utoipa-swagger-ui = { workspace = true }
 actix-web-prometheus = { workspace = true }

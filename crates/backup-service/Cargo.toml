@@ -37,10 +37,6 @@ aws-sdk-s3 = { version = "1.0", features = ["default"] }
 aws-sdk-kms = { version = "1.0", features = ["default"] }
 google-cloud-storage = "0.12"
 
-# Tracing
-tracing = { workspace = true }
-tracing-subscriber = { workspace = true }
-
 # SFTP/SSH
 async-ssh2 = { version = "0.1.2-beta" }
 smol = "0.3"
