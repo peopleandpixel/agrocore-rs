@@ -49,7 +49,7 @@ agrocore-logging = { path = "../logging", features = ["dev-console"] }
 utoipa = { workspace = true, features = ["uuid", "chrono"] }
 utoipa-swagger-ui = { workspace = true }
 actix-web-prometheus = { workspace = true }
-prometheus = "0.13"
+prometheus = "0.14"
 actix-governor = "0.10"
 dashmap = "6"
 redis = { workspace = true }
@@ -61,7 +61,7 @@ sqlx = { workspace = true, optional = true }
 argon2 = { workspace = true }
 password-hash = { workspace = true }
 rand = { workspace = true }
-base64 = "0.22"
+base64 = "0.23"
 geo = { workspace = true }
 # tokio with net for server targets — not pulled in for wasm builds
 tokio = { workspace = true, features = ["net", "rt-multi-thread", "io-std"] }
@@ -73,7 +73,7 @@ mocks = ["agrocore-domain/mocks", "agrocore-infrastructure/mocks", "agrocore-mes
 [dev-dependencies]
 testcontainers = "0.27.3"
 testcontainers-modules = { version = "0.15.0", features = ["postgres"] }
-toml = "0.8"
+toml = "1.1"
 
 [[test]]
 name = "compliance_test"

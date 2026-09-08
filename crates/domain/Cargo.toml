@@ -16,7 +16,7 @@ geo = { workspace = true }
 mockall = { workspace = true, optional = true }
 sqlx = { workspace = true, features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono", "ipnetwork", "bigdecimal", "json"], optional = true }
 geozero = { workspace = true }
-strum = { version = "0.26", features = ["derive"] }
+strum = { version = "0.28", features = ["derive"] }
 
 [features]
 default = ["sqlx"]
