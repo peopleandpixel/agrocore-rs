@@ -3,7 +3,7 @@
 Priorität: P0 zuerst, dann P1, P2, P3, P4.
 
 P0 (kritisch / höchster Nutzen):
-- (keine aktiv)
+- **Phase 7: Migration auf externe Services — ERLEDIGT (v0.14.0)**
 
 P1 (wichtig / kleiner Aufwand):
 - 3. Profiling-Skript erstellen. Datei: scripts/profile.sh. Status: Offen.
