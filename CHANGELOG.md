@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-09-12
+
+### Fixed
+- **Dependency Updates (Phase 2)**: Updated `jsonwebtoken` to 11.0.0 with `rust_crypto` feature — crypto backend trait API migration
+- **Quality Gates**: All 15 crates pass `cargo fmt`, `cargo check`, `cargo clippy`, `cargo test`
+
 ## [0.16.0] - 2026-09-12
 
 ### Fixed
