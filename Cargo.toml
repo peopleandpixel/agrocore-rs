@@ -20,7 +20,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.15.0"
+version = "0.16.0"
 authors = ["Jens Reinemuth <jens@reinemuth.pt>"]
 license = "GPL-3.0-or-later"
 edition = "2024"
@@ -44,9 +44,9 @@ reqwest = { version = "0.13", features = ["json", "rustls"], default-features = 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 jsonwebtoken = { version = "10.4.0", features = ["rust_crypto"] }
-argon2 = "0.5.1"
-password-hash = "0.5"
-rand = "0.8"
+argon2 = "0.6.0"
+password-hash = "0.6"
+rand = "0.10.2"
 validator = { version = "0.20", features = ["derive"] }
 thiserror = "2"
 anyhow = "1"

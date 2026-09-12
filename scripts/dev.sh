@@ -276,10 +276,22 @@ if ! wait_for_port "$REDIS_PORT" "Redis"; then
 fi
 wait_for_health "agrocore-redis" "Redis (healthcheck)" || true
 
-# ════════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════════════════════════
 # Start API server
 # ════════════════════════════════════════════════════════════════
 echo -e "${BLUE}  🐳 Starting API server...${NC}"
+
+# Try to pull prebuilt image first (if DOCKERHUB_USERNAME is set)
+if [[ -n "${DOCKERHUB_USERNAME:-}" ]]; then
+    echo -e "    ${CYAN}Trying to pull prebuilt API image...${NC}"
+    if docker pull "${DOCKERHUB_USERNAME}/agrocore-api:latest" 2>/dev/null; then
+        echo -e "    ${GREEN}✅ Using prebuilt API image${NC}"
+    else
+        echo -e "    ${YELLOW}⚠️  Prebuilt API image not found, will build locally${NC}"
+    fi
+else
+    echo -e "    ${YELLOW}⚠️  DOCKERHUB_USERNAME not set, building API locally${NC}"
+fi
 
 # Export dynamic port info into the container via env
 # docker-compose.dev.yml already maps ${API_PORT:-8080}:8080
@@ -307,10 +319,23 @@ echo -e "${BLUE}  🐳 Starting Notification Service...${NC}"
 docker compose -f docker-compose.dev.yml up -d notification-service 2>/dev/null || true
 wait_for_health "agrocore-notification-service" "Notification Service" || true
 
-# ════════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════════════════════════
 # Start Admin UI
-# ════════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════════════════════════
 echo -e "${BLUE}  🐳 Starting Admin UI...${NC}"
+
+# Try to pull prebuilt image first (if DOCKERHUB_USERNAME is set)
+if [[ -n "${DOCKERHUB_USERNAME:-}" ]]; then
+    echo -e "    ${CYAN}Trying to pull prebuilt Admin UI image...${NC}"
+    if docker pull "${DOCKERHUB_USERNAME}/agrocore-admin-ui:latest" 2>/dev/null; then
+        echo -e "    ${GREEN}✅ Using prebuilt Admin UI image${NC}"
+    else
+        echo -e "    ${YELLOW}⚠️  Prebuilt Admin UI image not found, will build locally${NC}"
+    fi
+else
+    echo -e "    ${YELLOW}⚠️  DOCKERHUB_USERNAME not set, building Admin UI locally${NC}"
+fi
+
 docker compose -f docker-compose.dev.yml up -d admin-ui 2>/dev/null || true
 
 # Wait for Admin UI port to be reachable from host

@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile for agrocore Admin UI (WASM)
-# Build stage
+# Build stage - builds WASM if artifacts not provided
 FROM rust:1.97-bookworm AS builder
 
 # Install system dependencies
@@ -16,26 +16,33 @@ RUN cargo install wasm-pack --version 0.13.1
 # Set working directory
 WORKDIR /app
 
-# Copy Cargo files first for better caching
+# Copy workspace files
 COPY Cargo.toml Cargo.lock ./
-COPY crates/shared/Cargo.toml crates/shared/
-COPY crates/admin-ui/Cargo.toml crates/admin-ui/
+COPY crates/ ./crates/
 
-# Create dummy source files to build dependencies
-RUN mkdir -p crates/shared/src crates/admin-ui/src
-RUN echo "// dummy" > crates/shared/src/lib.rs
-RUN echo "// dummy" > crates/admin-ui/src/lib.rs
+# Copy REAL logging crate (needed for macro exports in dependent crates)
+RUN rm -rf crates/logging
+COPY crates/logging ./crates/logging
 
-# Build dependencies (this layer will be cached)
-RUN cd crates/admin-ui && cargo build --target wasm32-unknown-unknown --release
+# Copy SQLx query cache (needed for offline builds)
+COPY .sqlx ./.sqlx
 
-# Copy actual source code
-COPY crates/shared/src crates/shared/src/
-COPY crates/admin-ui/src crates/admin-ui/src/
-COPY crates/admin-ui/locales crates/admin-ui/locales/
+# Build dependencies (this layer will be cached) - only build admin-ui deps
+RUN cargo build --target wasm32-unknown-unknown --release -p agrocore-shared -p agrocore-logging -p admin-ui --lib 2>/dev/null || true
 
-# Build the actual WASM
-RUN cd crates/admin-ui && cargo build --target wasm32-unknown-unknown --release
+# Build the actual WASM (or use prebuilt if available via ARG)
+ARG PREBUILT_WASM_PATH=""
+RUN if [ -n "$PREBUILT_WASM_PATH" ] && [ -f "$PREBUILT_WASM_PATH" ]; then \
+      echo "Using prebuilt WASM from $PREBUILT_WASM_PATH"; \
+      mkdir -p /app/crates/admin-ui/target/wasm32-unknown-unknown/release/; \
+      cp "$PREBUILT_WASM_PATH" /app/crates/admin-ui/target/wasm32-unknown-unknown/release/admin-ui.wasm; \
+    else \
+      echo "Building WASM from source..."; \
+      cargo build --target wasm32-unknown-unknown --release -p admin-ui; \
+      # cargo build outputs admin_ui.wasm, copy to expected name \
+      cp /app/crates/admin-ui/target/wasm32-unknown-unknown/release/admin_ui.wasm \
+         /app/crates/admin-ui/target/wasm32-unknown-unknown/release/admin-ui.wasm; \
+    fi
 
 # Runtime stage - Nginx to serve static files
 FROM nginx:alpine AS runtime

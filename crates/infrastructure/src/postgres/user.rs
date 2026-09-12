@@ -13,9 +13,8 @@ agrocore_shared::pg_repo!(PgUserRepo);
 
 use crate::jwt::generate_jwt;
 use crate::postgres::error_mapper::map_db_error;
-use argon2::{Argon2, PasswordHasher, PasswordVerifier};
-use password_hash::{PasswordHash, SaltString};
-use rand::thread_rng;
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
+use password_hash::phc::SaltString;
 
 /// Shared SQL query fragment for selecting a user with assigned site IDs via LEFT JOIN.
 /// Replaces the correlated subquery `COALESCE((SELECT json_agg(site_id) FROM user_sites WHERE user_id = u.id), '[]'::json)`
@@ -129,9 +128,11 @@ impl UserRepository for PgUserRepo {
             let mut tx = pool.begin().await.map_err(map_db_error)?;
             let id = Uuid::new_v4();
 
-            let salt = SaltString::generate(&mut rand::thread_rng());
+            // Generate salt using OsRng (replaces thread_rng)
+            let salt = SaltString::generate();
+
             let password_hash = Argon2::default()
-                .hash_password(dto.password.as_bytes(), &salt)
+                .hash_password(dto.password.as_bytes())
                 .map_err(|e| SharedError::Internal(format!("Hashing error: {}", e)))?
                 .to_string();
 

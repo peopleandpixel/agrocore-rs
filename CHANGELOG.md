@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-09-12
+
+### Fixed
+- **Dependency Updates (Phase 1)**: Updated `argon2` to 0.6.0, `password-hash` to 0.6, `rand` to 0.10.2 — resolves CI build failure with `SaltString`/`thread_rng` imports
+- **API Migration**: Updated password hashing in `PgUserRepo::create()`, `system.rs::initial_setup()`, `demo.rs::seed_demo()` to use `password-hash` 0.6 API (`phc::SaltString::generate()`, `hash_password()` without explicit salt)
+- **Quality Gates**: All 15 crates pass `cargo fmt`, `cargo check`, `cargo clippy`, `cargo test`
+
 ## [0.15.0] - 2026-09-10
 
 ### Added

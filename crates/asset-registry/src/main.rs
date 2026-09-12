@@ -1,7 +1,6 @@
 use actix_web::{App, HttpResponse, HttpServer, Responder, web};
 use agrocore_infrastructure::Database;
-use agrocore_logging::{EnvironmentType, LoggingConfig, error, info, init_logging};
-use std::time::Duration;
+use agrocore_logging::{EnvironmentType, LoggingConfig, init_logging};
 
 pub mod worker;
 

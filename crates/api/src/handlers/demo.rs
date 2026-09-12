@@ -110,12 +110,11 @@ pub async fn seed_demo(
     // Create Admin User
     let user_id = Uuid::new_v4();
     use argon2::PasswordHasher;
-    use password_hash::SaltString;
-    use rand::thread_rng;
+    use password_hash::phc::SaltString;
 
-    let salt = SaltString::generate(&mut thread_rng());
+    let _salt = SaltString::generate();
     let password_hash = argon2::Argon2::default()
-        .hash_password(b"demo123", &salt)
+        .hash_password(b"demo123")
         .map_err(|e| SharedError::Internal(format!("Hashing error: {}", e)))?
         .to_string();
 

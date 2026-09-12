@@ -14,6 +14,16 @@ RUN apt-get update && apt-get install -y \
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 
+# Copy REAL logging crate (needed for macro exports in dependent crates)
+RUN rm -rf crates/logging
+COPY crates/logging ./crates/logging
+
+# Copy migrations directory (needed for sqlx::migrate! in infrastructure)
+COPY migrations ./migrations
+
+# Copy SQLx query cache (needed for offline builds)
+COPY .sqlx ./.sqlx
+
 # Build dependencies first (caching layer)
 RUN cargo build --release --workspace --exclude admin-ui 2>/dev/null || true
 
