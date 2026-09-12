@@ -1,11 +1,10 @@
-use crate::config::{EncryptionConfig, EncryptionMethod, TargetEncryption};
+use crate::config::{EncryptionConfig, EncryptionMethod};
 use crate::error::{BackupError, BackupResult};
 use aes_gcm::aead::generic_array::GenericArray;
 use aes_gcm::{
-    Aes256Gcm, Key, Nonce,
+    Aes256Gcm, Nonce,
     aead::{Aead, KeyInit, OsRng},
 };
-use agrocore_logging::{debug, info, warn};
 use rand_core::RngCore;
 use std::fs;
 use std::path::Path;

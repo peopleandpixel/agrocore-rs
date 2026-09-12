@@ -1,11 +1,8 @@
 use crate::config::EnvironmentType;
-use crate::error::{LoggingError, LoggingResult};
 use std::collections::HashMap;
 use std::sync::Arc;
 use uuid::Uuid;
 
-#[cfg(any(feature = "dev-console", feature = "otlp"))]
-use tracing::Subscriber;
 #[cfg(any(feature = "dev-console", feature = "otlp"))]
 use tracing::field::Field;
 #[cfg(any(feature = "dev-console", feature = "otlp"))]
@@ -119,7 +116,7 @@ impl RequestContext {
     /// Create a span with request context
     #[cfg(any(feature = "dev-console", feature = "otlp"))]
     pub fn span(&self, name: &str) -> tracing::Span {
-        let mut span = tracing::info_span!(
+        let span = tracing::info_span!(
             "http_request",
             request_id = %self.request_id,
             operation = %name,
@@ -199,7 +196,7 @@ impl SpanExt for tracing::Span {
     }
 }
 
-/// Thread-local service context for automatic span enrichment
+// Thread-local service context for automatic span enrichment
 #[cfg(any(feature = "dev-console", feature = "otlp"))]
 thread_local! {
     static SERVICE_CONTEXT: std::cell::RefCell<Option<Arc<ServiceContext>>> = const { std::cell::RefCell::new(None) };
@@ -249,25 +246,25 @@ where
         id: &tracing::Id,
         ctx: Context<'_, S>,
     ) {
-        if let Some(span) = ctx.span(id) {
-            let mut extensions = span.extensions_mut();
+        if let Some(_span) = ctx.span(id) {
+            let mut extensions = _span.extensions_mut();
             extensions.insert(self.context.clone());
 
-            let mut visitor = ServiceContextVisitor(&self.context);
+            let mut visitor = ServiceContextVisitor(std::marker::PhantomData);
             attrs.record(&mut visitor);
         }
     }
 
     fn on_record(&self, id: &tracing::Id, values: &tracing::span::Record<'_>, ctx: Context<'_, S>) {
-        if let Some(span) = ctx.span(id) {
-            let mut visitor = ServiceContextVisitor(&self.context);
+        if let Some(_span) = ctx.span(id) {
+            let mut visitor = ServiceContextVisitor(std::marker::PhantomData);
             values.record(&mut visitor);
         }
     }
 }
 
 #[cfg(any(feature = "dev-console", feature = "otlp"))]
-struct ServiceContextVisitor<'a>(&'a Arc<ServiceContext>);
+struct ServiceContextVisitor<'a>(std::marker::PhantomData<&'a Arc<ServiceContext>>);
 
 #[cfg(any(feature = "dev-console", feature = "otlp"))]
 impl<'a> tracing::field::Visit for ServiceContextVisitor<'a> {
@@ -275,15 +272,7 @@ impl<'a> tracing::field::Visit for ServiceContextVisitor<'a> {
     fn record_i64(&mut self, _field: &Field, _value: i64) {}
     fn record_u64(&mut self, _field: &Field, _value: u64) {}
     fn record_bool(&mut self, _field: &Field, _value: bool) {}
-    fn record_str(&mut self, field: &Field, value: &str) {
-        if field.name() == "service"
-            || field.name() == "environment"
-            || field.name() == "version"
-            || field.name() == "instance_id"
-        {
-            return;
-        }
-    }
+    fn record_str(&mut self, _field: &Field, _value: &str) {}
     fn record_error(&mut self, _field: &Field, _value: &(dyn std::error::Error + 'static)) {}
     fn record_debug(&mut self, _field: &Field, _value: &dyn std::fmt::Debug) {}
 }

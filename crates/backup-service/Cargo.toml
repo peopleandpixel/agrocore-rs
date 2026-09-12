@@ -25,6 +25,9 @@ uuid = { workspace = true, features = ["v4", "v5", "serde"] }
 config = { workspace = true }
 dotenvy = { workspace = true }
 
+# CLI
+clap = { version = "4", features = ["derive", "env"] }
+
 # PostgreSQL
 sqlx = { workspace = true, features = ["postgres", "runtime-tokio-rustls", "uuid", "chrono", "json", "tls-rustls"] }
 postgres = { version = "0.19", features = ["with-chrono-0_4", "with-serde_json-1", "with-uuid-0_8"] }
@@ -50,6 +53,9 @@ age = "0.12"
 aes-gcm = { version = "0.10", features = ["aes"] }
 zeroize = "1.8"
 rand_core = "0.6"
+
+# Hashing
+sha2 = "0.10"
 
 # Scheduling
 # tokio-cron-scheduler = { version = "0.13", features = ["signal"] }

@@ -3,11 +3,6 @@ use crate::dto::{CreateGroupDto, GroupDto, PaginatedGroupResponse, UpdateGroupDt
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
-use agrocore_domain::entities::group::{
-    CreateGroupDto as DomainCreateGroupDto, Group, GroupType,
-    UpdateGroupDto as DomainUpdateGroupDto,
-};
-use agrocore_domain::repositories::GroupRepository;
 use agrocore_shared::SharedError;
 use uuid::Uuid;
 

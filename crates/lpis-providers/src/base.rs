@@ -6,7 +6,7 @@
 //! - Rate limiting via governor
 
 use crate::{cache::LpisCache, config::ProviderConfig};
-use agrocore_logging::{debug, warn};
+use agrocore_logging::debug;
 use agrocore_shared::with_retry;
 use governor::clock::DefaultClock;
 use governor::middleware::NoOpMiddleware;

@@ -8,7 +8,7 @@ use crate::dto::{
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor;
 use actix_web::{HttpResponse, web};
-use agrocore_backup::service::{BackupService, BackupStatus, BackupType};
+use agrocore_backup::service::{BackupStatus, BackupType};
 use agrocore_logging::info;
 use serde_json::json;
 use uuid::Uuid;
@@ -39,7 +39,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 }
 
 async fn get_backup_config(
-    state: web::Data<AppState>,
+    _state: web::Data<AppState>,
     _auth: AuthExtractor,
 ) -> Result<HttpResponse, ApiError> {
     // Return current backup configuration
@@ -59,9 +59,9 @@ async fn get_backup_config(
 }
 
 async fn update_backup_config(
-    state: web::Data<AppState>,
+    _state: web::Data<AppState>,
     auth: AuthExtractor,
-    req: web::Json<UpdateBackupConfigRequest>,
+    _req: web::Json<UpdateBackupConfigRequest>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_any_role(vec!["admin"])?;
     // TODO: Persist config changes
@@ -70,7 +70,7 @@ async fn update_backup_config(
 }
 
 async fn list_backups(
-    state: web::Data<AppState>,
+    _state: web::Data<AppState>,
     _auth: AuthExtractor,
 ) -> Result<HttpResponse, ApiError> {
     // TODO: Implement listing from backup service
@@ -242,7 +242,7 @@ async fn delete_backup(
         .as_ref()
         .ok_or_else(|| ApiError::internal("Backup service not available"))?;
 
-    let job = backup_service
+    let _job = backup_service
         .get_job_status(backup_id)
         .await
         .ok_or_else(|| ApiError::not_found("Backup job not found"))?;

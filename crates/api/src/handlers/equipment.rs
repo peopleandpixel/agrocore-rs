@@ -6,7 +6,7 @@ use crate::dto::{
     MaintenanceRecordDto, PaginatedEquipmentResponse, PaginatedResponseDto, UpdateEquipmentDto,
     UsageLogDto, UsageSummaryDto,
 };
-use agrocore_logging::{debug, error, info, warn};
+use agrocore_logging::info;
 
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;

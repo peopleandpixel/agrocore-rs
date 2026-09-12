@@ -1,11 +1,9 @@
 use crate::error::{BackupError, BackupResult};
-use crate::service::{BackupJob, BackupStatus, BackupType};
-use agrocore_logging::{debug, info, warn};
+use crate::service::BackupJob;
+use agrocore_logging::{info, warn};
 use async_nats::{Client, ConnectOptions};
 use futures::sink::SinkExt;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BackupEvent {

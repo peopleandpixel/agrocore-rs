@@ -3,11 +3,6 @@ use crate::dto::{BuildingDto, CreateBuildingDto, PaginatedBuildingResponse, Upda
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
-use agrocore_domain::entities::building::{
-    Building, BuildingType, CreateBuildingDto as DomainCreateBuildingDto,
-    UpdateBuildingDto as DomainUpdateBuildingDto,
-};
-use agrocore_domain::repositories::BuildingRepository;
 use agrocore_shared::SharedError;
 use uuid::Uuid;
 

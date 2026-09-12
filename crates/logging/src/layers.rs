@@ -2,8 +2,6 @@ use crate::config::LoggingConfig;
 use crate::error::{LoggingError, LoggingResult};
 
 #[cfg(any(feature = "dev-console", feature = "otlp"))]
-use tracing_subscriber::Registry;
-#[cfg(any(feature = "dev-console", feature = "otlp"))]
 use tracing_subscriber::layer::Layer;
 #[cfg(any(feature = "dev-console", feature = "otlp"))]
 use tracing_subscriber::layer::SubscriberExt;
@@ -13,9 +11,9 @@ use tracing_subscriber::registry::LookupSpan;
 #[cfg(feature = "otlp")]
 use opentelemetry::KeyValue;
 #[cfg(feature = "otlp")]
-use opentelemetry_otlp::WithExportConfig;
+use opentelemetry::trace::TracerProvider as _;
 #[cfg(feature = "otlp")]
-use opentelemetry_sdk::trace::TracerProvider;
+use opentelemetry_otlp::WithExportConfig;
 #[cfg(feature = "otlp")]
 use tracing_opentelemetry::OpenTelemetryLayer;
 
@@ -151,10 +149,7 @@ where
 
 /// OTLP layer builder
 #[cfg(feature = "otlp")]
-fn build_otlp_layer(config: &LoggingConfig) -> LoggingResult<impl Layer<Registry> + Send + Sync>
-where
-    S: tracing::Subscriber + for<'a> LookupSpan<'a>,
-{
+fn build_otlp_layer(config: &LoggingConfig) -> LoggingResult<impl Layer<Registry> + Send + Sync> {
     let endpoint = config.otlp_endpoint.clone();
     let service_name = config.otlp_service_name.clone();
 
@@ -165,8 +160,8 @@ where
                 .with_endpoint(endpoint)
                 .with_timeout(std::time::Duration::from_millis(
                     config.otlp_batch_timeout_ms,
-                ))
-                .with_max_export_batch_size(config.otlp_max_export_batch_size),
+                )),
+            opentelemetry_sdk::runtime::Tokio,
         )
         .with_resource(opentelemetry_sdk::Resource::new(vec![
             KeyValue::new("service.name", service_name),

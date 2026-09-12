@@ -2,7 +2,7 @@ use actix_web::{
     Error, FromRequest, HttpRequest,
     dev::{Service, ServiceRequest, ServiceResponse, Transform},
 };
-use agrocore_logging::{debug, error, info, warn};
+use agrocore_logging::debug;
 use agrocore_shared::config::decoding_key;
 use dashmap::DashMap;
 use jsonwebtoken::{Algorithm, Validation, decode};

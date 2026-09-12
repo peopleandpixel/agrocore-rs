@@ -1,10 +1,8 @@
 use crate::error::{BackupError, BackupResult};
-use cron::Schedule;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::time::Duration;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BackupConfig {
@@ -662,7 +660,6 @@ pub fn load_config() -> BackupResult<BackupConfig> {
 }
 
 mod cron {
-    use std::str::FromStr;
 
     pub struct Schedule;
 

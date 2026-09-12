@@ -4,7 +4,7 @@ use agrocore_backup::service::BackupService;
 use agrocore_infrastructure::Database;
 use std::sync::Arc;
 
-use agrocore_logging::{debug, error, info, warn};
+use agrocore_logging::{error, info};
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     agrocore_shared::telemetry::init_telemetry_with_logs("agrocore_api");

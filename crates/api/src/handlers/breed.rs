@@ -3,10 +3,6 @@ use crate::dto::{BreedDto, CreateBreedDto, PaginatedBreedResponse, UpdateBreedDt
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
-use agrocore_domain::entities::breed::{
-    Breed, CreateBreedDto as DomainCreateBreedDto, Species, UpdateBreedDto as DomainUpdateBreedDto,
-};
-use agrocore_domain::repositories::BreedRepository;
 use agrocore_shared::SharedError;
 use uuid::Uuid;
 

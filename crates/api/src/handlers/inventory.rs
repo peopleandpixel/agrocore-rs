@@ -17,7 +17,7 @@ use agrocore_domain::entities::inventory::{
     CreateInventoryItemDto, CreateInventoryLocationDto, CreateInventoryTransactionDto,
     UpdateInventoryItemDto,
 };
-use agrocore_logging::{debug, error, info, warn};
+use agrocore_logging::info;
 use agrocore_shared::SharedError;
 
 #[utoipa::path(

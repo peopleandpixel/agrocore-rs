@@ -3,7 +3,7 @@
 [![Rust](https://img.shields.io/badge/rust-2024-orange.svg)](https://www.rust-lang.org/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Rust CI](https://github.com/peopleandpixel/agrocore-rs/actions/workflows/ci-cd.yml/badge.svg?branch=main)](https://github.com/peopleandpixel/agrocore-rs/actions/workflows/ci-cd.yml)
-[![Version](https://img.shields.io/badge/version-0.13.0-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.15.0-green.svg)](CHANGELOG.md)
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/peopleandpixel/agrocore-rs)](https://github.com/peopleandpixel/agrocore-rs/commits/main)
 [![Tests](https://img.shields.io/badge/tests-153%2B-brightgreen.svg)](https://github.com/peopleandpixel/agrocore-rs/actions/workflows/ci-cd.yml)
 [![Crates](https://img.shields.io/badge/crates-15-blue.svg)](#repository-layout)

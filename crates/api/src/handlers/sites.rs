@@ -7,7 +7,7 @@ use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use crate::services::import_service::ImportService;
 use actix_web::{HttpResponse, web};
-use agrocore_logging::{debug, error, info, warn};
+use agrocore_logging::info;
 use agrocore_messaging::{Event, GlobalEvent};
 use agrocore_shared::SharedError;
 use validator::Validate;

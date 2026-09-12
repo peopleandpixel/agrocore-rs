@@ -376,3 +376,93 @@ Neue Traits: `Publisher`, `Subscriber`, `MessageStream` in `agrocore-messaging`.
 - [ ] Phase 8: Monitoring & Observability (P2)
 - [ ] Phase 9: Catalog Import Script (P3)
 - [ ] Module 17: KI-Analytics (P4)
+
+---
+
+## Phase 8: Dev Environment & Demo Mode (P0 - KRITISCH)
+
+**Status:** Geplant · **Priorität:** P0 · **Aufwand:** 3–5 Tage
+
+### 1. dev.sh — Port-Konflikt-Erkennung & Auto-Fallback
+**Ziel:** Das `scripts/dev.sh` Script muss **immer** eine lauffähige Umgebung starten, egal ob Standard-Ports belegt sind.
+
+**Anforderungen:**
+- [ ] Vor Container-Start: Prüfen ob Ports 5432 (PostgreSQL), 4222 (NATS), 1883/9001 (MQTT), 6379 (Redis), 3000 (API), 8080 (Admin UI) belegt sind
+- [ ] Bei Konflikt: Automatisch nächste freie Ports finden (z.B. 5433, 4223, 1884/9002, 6380, 3001, 8081)
+- [ ] Gefundene Ports in `.env.dev` schreiben (oder direkt an docker-compose übergeben via `-p`)
+- [ ] Health-Checks warten bis alle Services `healthy` sind
+- [ ] Am Ende: Zusammenfassung aller Services mit **tatsächlichen** Ports ausgeben
+- [ ] `docker-compose.dev.yml` muss variable Ports unterstützen (`${POSTGRES_PORT:-5432}` etc.)
+
+**Akzeptanzkriterium:** `./scripts/dev.sh` läuft auf einem System wo alle Standard-Ports belegt sind → startet trotzdem erfolgreich auf Alternativ-Ports.
+
+### 2. Demo-Modus / Demo-Switch
+**Ziel:** Ein Flag (`--demo` oder `DEMO_MODE=true`) um eine sofort nutzbare Demo-Umgebung zu starten.
+
+**Features:**
+- [ ] `DEMO_MODE=true ./scripts/dev.sh` oder `./scripts/dev.sh --demo`
+- [ ] Erstellt automatisch: 1 Demo-Tenant, 1 Demo-User (admin/demo), Demo-Felder (Sites), Demo-Aufträge (Orders), Demo-Equipment, Demo-Tiere, Demo-Wetterstationen
+- [ ] Daten über SQL-Seed-Datei (`migrations/demo_seed.sql`) oder Rust-Seed-Binary (`crates/backup-service` / eigenes `demo-seed` Binary)
+- [ ] Demo-Daten sind realistisch (deutsche/portugiesische Feldnamen, Kulturen, Maschinen)
+- [ ] Admin UI zeigt sofort Inhalte ohne manuelle Einrichtung
+- [ ] Optional: Demo-Reset-Endpunkt (`POST /api/v1/demo/reset`) für Tests
+
+### 3. Externe Benachrichtigungen im Messaging Service
+**Ziel:** `agrocore-messaging` erweitert um Notification-Dispatcher für externe Kanäle.
+
+**Kanäle (jeweils optional, via Feature-Flags):**
+- [ ] **Email** — SMTP (bzw. SendGrid, Mailgun, Postmark API)
+- [ ] **WhatsApp** — WhatsApp Business API (Meta) oder `wacli` CLI
+- [ ] **SMS** — Twilio, Vonage, Plivo, Sms77
+- [ ] **Telegram** — Bot API
+- [ ] **ntfy** — ntfy.sh (Self-hosted oder Cloud)
+- [ ] **Push** — Firebase (FCM), APNs, WebPush
+- [ ] **Webhook** — Generischer HTTP POST mit Retry/Signatur
+
+**Architektur:**
+- [ ] `NotificationChannel` Trait + Implementierungen pro Kanal
+- [ ] `NotificationDispatcher` — routet nach Tenant-Config & User-Preferences
+- [ ] Template-System (Handlebars/Tera) für Betreff/Body pro Event-Typ
+- [ ] Queue-basiert (NATS Subject `notifications.send`) → Dispatcher consummt & versendet
+- [ ] Retry-Policy + Dead-Letter-Queue für fehlgeschlagene Versände
+- [ ] Inbound: Webhook-Endpunkte für Empfang (WhatsApp/Telegram/Email Reply)
+
+**Konfiguration (pro Tenant):**
+```yaml
+notifications:
+  email:
+    enabled: true
+    provider: smtp  # smtp | sendgrid | mailgun
+    smtp_host: "smtp.example.com"
+    smtp_port: 587
+    from: "noreply@agrocore.local"
+  whatsapp:
+    enabled: false
+    provider: meta  # meta | wacli
+    phone_number_id: "..."
+    access_token: "..."
+  telegram:
+    enabled: true
+    bot_token: "..."
+    webhook_secret: "..."
+  ntfy:
+    enabled: true
+    topic: "agrocore-tenant-123"
+```
+
+### 4. Backup Service — Vollständige Funktionalität & Verifikation
+**Ziel:** Sicherstellen, dass **alle** in Phase 5 dokumenten Features **tatsächlich** funktionieren (nicht nur "Framework").
+
+**Checkliste — alles muss grün sein:**
+- [ ] **Automatisches Scheduling** — Cron-Jobs laufen zuverlässig (Scheduler-Integration verifiziert)
+- [ ] **Alle 9 Backends** — Mindestens: Local, S3 (MinIO), Azure Blob, GCS funktionieren im Integrationstest
+- [ ] **pg_dump / pg_restore Streaming** — Kein Shell-out, funktioniert mit großen DBs (>10GB)
+- [ ] **Verschlüsselung** — AES-256-GCM für Backup-Files, Age für Secrets — Roundtrip Test
+- [ ] **Retention (GFS)** — Auto-Cleanup löscht korrekt nach Policy (Integrationstest mit Time-Mock)
+- [ ] **Verifizierung** — Test-Restore in isolierter DB, Row-Counts matchen, Checksums OK
+- [ ] **One-Click Backup** — API `POST /api/v1/backup/create` → NATS Progress Events 0-100%
+- [ ] **Restore API** — `POST /api/v1/backup/restore` mit Manifest-Validation + Dry-Run
+- [ ] **Monitoring** — Metriken (`backup_duration_seconds`, `backup_size_bytes`, `backup_success_total`, `backup_failed_total`) + NATS Events
+- [ ] **Disaster Recovery Test** — Dokumentierter Runbook: RTO < 15 Min für 50GB DB (Single Tenant)
+
+**Tests:** Neue Integrationstests in `crates/backup-service/tests/integration_tests.rs` die oben Szenarien gegen echte MinIO/PostgreSQL im CI abdecken.

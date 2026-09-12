@@ -1579,10 +1579,10 @@ pub trait InventoryLocationRepo: Send + Sync {
 }
 
 use crate::entities::{Breed, CreateBreedDto, Species, UpdateBreedDto};
-use crate::entities::{Building, BuildingType, CreateBuildingDto, UpdateBuildingDto};
-use crate::entities::{CreateGroupDto, Group, GroupType, UpdateGroupDto};
-use crate::entities::{CreateLivestockDto, Livestock, LivestockType, UpdateLivestockDto};
-use crate::entities::{CreateTreeDto, Tree, TreeType, UpdateTreeDto};
+use crate::entities::{Building, CreateBuildingDto, UpdateBuildingDto};
+use crate::entities::{CreateGroupDto, Group, UpdateGroupDto};
+use crate::entities::{CreateLivestockDto, Livestock, UpdateLivestockDto};
+use crate::entities::{CreateTreeDto, Tree, UpdateTreeDto};
 use crate::entities::{CreateVarietyDto, UpdateVarietyDto, Variety, VarietyCategory};
 
 #[cfg_attr(feature = "mocks", automock)]

@@ -1,18 +1,10 @@
 use crate::config::BackupConfig;
-use crate::encryption::EncryptionManager;
 use crate::error::{BackupError, BackupResult};
-use crate::manifest::ManifestManager;
-use crate::nats_client::NatsClient;
-use crate::pg_dump::PgDump;
-use crate::retention::RetentionManager;
-use crate::storage::{StorageBackend, StorageBackendTrait};
-use crate::verification::VerificationManager;
-use agrocore_logging::{debug, error, info, warn};
+use crate::storage::StorageBackendTrait;
+use agrocore_logging::{error, info, warn};
 use agrocore_scheduler::{JobDefinition, JobType, SchedulerConfig, SchedulerService};
-use async_nats::Client as NatsClientInner;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
@@ -130,6 +122,8 @@ impl BackupService {
         ));
         let verification = Arc::new(crate::verification::VerificationManager::new(
             config.verification.clone(),
+            pg_dump.clone(),
+            db_pool.clone(),
         ));
         let manifest = Arc::new(crate::manifest::ManifestManager::new(
             config.metadata.clone(),
@@ -362,7 +356,12 @@ impl BackupService {
             self.update_job_progress(job_id, 0.95).await;
             if let Err(e) = self
                 .verification
-                .verify_backup(&target_ids, &backup_type)
+                .verify_backup(
+                    &target_ids,
+                    &backup_type,
+                    &self.storage,
+                    &self.config.targets,
+                )
                 .await
             {
                 error!("Backup verification failed: {}", e);
@@ -457,7 +456,7 @@ impl BackupService {
         &self,
         target: &crate::config::BackupTarget,
         prefix: &str,
-        job_id: Uuid,
+        _job_id: Uuid,
     ) -> BackupResult<u64> {
         let temp_dir = tempfile::tempdir().map_err(|e| BackupError::Io(e))?;
         let config_path = temp_dir.path().join("config_backup.tar.gz");
@@ -566,7 +565,7 @@ impl BackupService {
         self.run_backup(backup_type).await
     }
 
-    pub async fn restore(&self, backup_id: Uuid, target_db: Option<String>) -> BackupResult<()> {
+    pub async fn restore(&self, backup_id: Uuid, _target_db: Option<String>) -> BackupResult<()> {
         info!("Starting restore for backup: {}", backup_id);
         // TODO: Implement restore logic
         Err(BackupError::InvalidState(

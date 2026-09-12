@@ -1,8 +1,6 @@
-use crate::config::{BackupConfig, BackupMetadataConfig, BackupTarget};
-use crate::error::{BackupError, BackupResult};
-use crate::service::{BackupStatus, BackupType};
+use crate::config::BackupMetadataConfig;
+use crate::error::BackupResult;
 use crate::storage::StorageBackendTrait;
-use agrocore_logging::{debug, info, warn};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -62,7 +60,7 @@ impl ManifestManager {
         &self,
         backup_id: Uuid,
         backup_type: &crate::service::BackupType,
-        target_ids: &[String],
+        _target_ids: &[String],
         total_size_bytes: u64,
         started_at: chrono::DateTime<Utc>,
         completed_at: chrono::DateTime<Utc>,
@@ -106,9 +104,9 @@ impl ManifestManager {
 
     pub async fn save_manifest(
         &self,
-        storage: &Arc<dyn StorageBackendTrait>,
-        target: &crate::config::BackupTarget,
-        manifest: &BackupManifest,
+        _storage: &Arc<dyn StorageBackendTrait>,
+        _target: &crate::config::BackupTarget,
+        _manifest: &BackupManifest,
     ) -> crate::error::BackupResult<()> {
         // TODO: Serialize and save manifest to storage
         Ok(())

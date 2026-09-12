@@ -36,6 +36,8 @@ pub mod water;
 pub mod weather;
 pub mod workforce;
 
+pub mod demo;
+
 // Re-exports for handlers
 pub use backup::*;
 pub use breed::*;
@@ -43,6 +45,7 @@ pub use building::*;
 pub use calculations::*;
 pub use common::*;
 pub use compliance::*;
+pub use demo::*;
 pub use equipment::*;
 pub use finance::*;
 pub use group::*;

@@ -11,7 +11,7 @@ use agrocore_domain::entities::workforce::CreateWorkLogDto;
 #[allow(unused_imports)]
 use agrocore_domain::repositories::WorkerTaskStatusRepository;
 use agrocore_domain::services::workflow::WorkflowService;
-use agrocore_logging::{debug, error, info, warn};
+use agrocore_logging::{error, info, warn};
 use agrocore_messaging::{Event, GlobalEvent};
 use agrocore_shared::SharedError;
 use chrono::Utc;

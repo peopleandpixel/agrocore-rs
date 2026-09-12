@@ -2,7 +2,7 @@ use prometheus::{
     HistogramOpts, HistogramVec, IntCounter, IntCounterVec, IntGauge, Opts, Registry,
 };
 
-use agrocore_logging::{debug, error, info, warn};
+use agrocore_logging::warn;
 
 /// Toggle monitoring at runtime via env `AGROCORE_METRICS_ENABLED`.
 pub fn is_enabled() -> bool {

@@ -8,6 +8,7 @@ pub mod building;
 pub mod calculation;
 pub mod compliance;
 pub mod customers;
+pub mod demo;
 pub mod equipment;
 pub mod finance;
 pub mod group;
@@ -250,7 +251,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .configure(variety::configure)
             .configure(breed::configure)
             .configure(backup::configure)
-            .configure(calculation::configure),
+            .configure(calculation::configure)
+            .configure(demo::configure),
     );
 }
 

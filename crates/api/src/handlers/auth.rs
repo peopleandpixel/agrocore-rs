@@ -11,7 +11,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-use agrocore_logging::{debug, error, info, warn};
+use agrocore_logging::info;
 #[derive(Deserialize, Validate, ToSchema)]
 pub struct LoginRequest {
     #[validate(email)]

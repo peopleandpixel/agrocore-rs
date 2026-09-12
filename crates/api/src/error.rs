@@ -9,7 +9,7 @@ use crate::dto::ErrorResponse;
 use actix_web::{HttpResponse, ResponseError, http::StatusCode};
 use agrocore_shared::SharedError;
 
-use agrocore_logging::{debug, error, info, warn};
+use agrocore_logging::error;
 #[cfg(feature = "sqlx")]
 use sqlx;
 

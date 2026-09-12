@@ -29,7 +29,7 @@ use std::sync::Arc;
 // Re-export for admin-ui
 pub use agrocore_shared::lpis::LpisProviderConfig;
 
-use agrocore_logging::{debug, error as logging_error, info, warn};
+use agrocore_logging::{error as logging_error, warn};
 
 #[derive(Clone)]
 pub struct AppState {

@@ -10,7 +10,7 @@ use std::path::PathBuf;
 use utoipa::ToSchema;
 use validator::Validate;
 
-use agrocore_logging::{debug, error, info, warn};
+use agrocore_logging::{info, warn};
 /// Find the config file by searching from current directory up to project root
 fn find_config_file() -> PathBuf {
     let mut current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));

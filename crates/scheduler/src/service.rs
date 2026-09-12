@@ -2,14 +2,11 @@ use crate::config::{JobDefinition, JobRunStatus, JobStatus, JobType, SchedulerCo
 use crate::error::{SchedulerError, SchedulerResult};
 use agrocore_logging::{debug, error, info, warn};
 use async_nats::Client as NatsClient;
-use async_trait::async_trait;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
-use cron::Schedule;
 use reqwest;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::process::Command;
@@ -265,7 +262,7 @@ impl SchedulerService {
         }
 
         let mut retries = 0;
-        let mut last_error = None;
+        let mut _last_error = None;
 
         while retries <= max_retries {
             if retries > 0 {
@@ -295,11 +292,11 @@ impl SchedulerService {
                     return;
                 }
                 Ok(Err(e)) => {
-                    last_error = Some(e.to_string());
-                    error!("Job {} failed: {}", job_id, last_error.as_ref().unwrap());
+                    _last_error = Some(e.to_string());
+                    error!("Job {} failed: {}", job_id, _last_error.as_ref().unwrap());
                 }
                 Err(_) => {
-                    last_error = Some(format!("Job timed out after {} seconds", timeout));
+                    _last_error = Some(format!("Job timed out after {} seconds", timeout));
                     error!("Job {} timed out", job_id);
                 }
             }

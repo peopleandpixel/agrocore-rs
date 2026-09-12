@@ -4,19 +4,10 @@ use agrocore_domain::entities::site::{GeoPoint, Site};
 use agrocore_domain::entities::spatial::SpatialObjectType;
 use agrocore_domain::entities::user::User;
 use agrocore_domain::entities::weather::{PhenologyRecord, WeatherData, WeatherStation};
-use agrocore_logging::{debug, error, info, warn};
-use async_nats::Client;
-use bytes::Bytes;
+use agrocore_logging::warn;
 use chrono::{DateTime, Utc};
-use failsafe::Config;
 use futures_util::StreamExt;
-use rumqttc::{
-    AsyncClient, Event as MqttEvent, EventLoop, MqttOptions, QoS, TlsConfiguration, Transport,
-};
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
-use tokio::sync::RwLock as AsyncRwLock;
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
@@ -695,7 +686,7 @@ pub fn generate_ha_discovery_configs(
 
     for measurement in measurements {
         let capability = &measurement.capability;
-        let unit = &measurement.unit;
+        let _unit = &measurement.unit;
 
         // Map capability to Home Assistant device class and unit
         let (device_class, ha_unit) = match capability {

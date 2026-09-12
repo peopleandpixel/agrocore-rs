@@ -5,11 +5,6 @@ use crate::dto::{
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
-use agrocore_domain::entities::livestock::{
-    CreateLivestockDto as DomainCreateLivestockDto, Livestock, LivestockType,
-    UpdateLivestockDto as DomainUpdateLivestockDto,
-};
-use agrocore_domain::repositories::LivestockRepository;
 use agrocore_shared::SharedError;
 use uuid::Uuid;
 

@@ -9,12 +9,10 @@ use crate::{
     NATS_SUBJECT_TELEMETRY,
 };
 use agrocore_logging::{error, info};
-use async_nats::Subject;
 use futures_util::StreamExt;
 use rumqttc::{Event as MqttEvent, MqttOptions, Packet, QoS};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::sync::Arc;
-use std::time::Duration;
 use tokio::sync::{RwLock, mpsc};
 
 // Custom serde implementation for QoS

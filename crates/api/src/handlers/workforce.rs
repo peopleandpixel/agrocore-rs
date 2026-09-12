@@ -16,7 +16,7 @@ use agrocore_domain::entities::workforce::{
     CreateClockEntryDto, CreateWorkLogDto, CreateWorkerDto, CreateWorkerLocationDto,
     ReportLocationDto, UpdateClockEntryDto, UpdateWorkLogDto, UpdateWorkerDto,
 };
-use agrocore_logging::{debug, error, info, warn};
+use agrocore_logging::warn;
 use agrocore_messaging::{Event, GlobalEvent, SpatialPolygonEventKind, SpatialPresenceEvent};
 use agrocore_shared::{Pagination, SharedError};
 use chrono::Utc;

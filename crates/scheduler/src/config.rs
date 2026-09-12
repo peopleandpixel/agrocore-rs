@@ -1,9 +1,8 @@
 use crate::error::{SchedulerError, SchedulerResult};
-use cron::Schedule;
+use chrono::FixedOffset;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::str::FromStr;
-use std::time::Duration;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SchedulerConfig {
@@ -33,9 +32,68 @@ impl Default for SchedulerConfig {
 impl SchedulerConfig {
     pub fn validate(&self) -> SchedulerResult<()> {
         if self.enabled {
-            cron::Schedule::from_str(&self.timezone).map_err(|e| {
-                SchedulerError::Config(format!("Invalid timezone cron expression: {e}"))
-            })?;
+            // Validate timezone using chrono's FixedOffset or standard timezone names
+            // Try parsing as a fixed offset first (e.g., "+02:00", "-05:00")
+            if self.timezone.parse::<FixedOffset>().is_err() {
+                // If not a fixed offset, check if it's a known IANA timezone
+                // For now, accept common names; full IANA validation would require chrono-tz
+                let known_timezones = [
+                    "UTC",
+                    "GMT",
+                    "EST",
+                    "EDT",
+                    "CST",
+                    "CDT",
+                    "MST",
+                    "MDT",
+                    "PST",
+                    "PDT",
+                    "Europe/Berlin",
+                    "Europe/London",
+                    "Europe/Paris",
+                    "Europe/Madrid",
+                    "Europe/Lisbon",
+                    "Europe/Rome",
+                    "Europe/Warsaw",
+                    "Europe/Vienna",
+                    "Europe/Amsterdam",
+                    "Europe/Brussels",
+                    "Europe/Zurich",
+                    "Europe/Oslo",
+                    "Europe/Stockholm",
+                    "Europe/Copenhagen",
+                    "Europe/Helsinki",
+                    "Europe/Athens",
+                    "America/New_York",
+                    "America/Chicago",
+                    "America/Denver",
+                    "America/Los_Angeles",
+                    "America/Toronto",
+                    "America/Vancouver",
+                    "America/Mexico_City",
+                    "America/Sao_Paulo",
+                    "America/Argentina/Buenos_Aires",
+                    "Asia/Tokyo",
+                    "Asia/Shanghai",
+                    "Asia/Singapore",
+                    "Asia/Dubai",
+                    "Asia/Hong_Kong",
+                    "Asia/Seoul",
+                    "Asia/Taipei",
+                    "Asia/Kolkata",
+                    "Australia/Sydney",
+                    "Australia/Melbourne",
+                    "Australia/Perth",
+                    "Pacific/Auckland",
+                    "Pacific/Honolulu",
+                ];
+                if !known_timezones.contains(&self.timezone.as_str()) {
+                    return Err(SchedulerError::Config(format!(
+                        "Invalid timezone: '{}'. Use a fixed offset (e.g., +02:00) or known IANA name.",
+                        self.timezone
+                    )));
+                }
+            }
         }
 
         if self.default_job_timeout_seconds == 0 {
@@ -90,7 +148,7 @@ impl JobDefinition {
                 ));
             }
 
-            let tz = self.timezone.as_deref().unwrap_or("UTC");
+            let _tz = self.timezone.as_deref().unwrap_or("UTC");
             cron::Schedule::from_str(&self.schedule).map_err(|e| {
                 SchedulerError::Config(format!("Invalid schedule cron expression: {e}"))
             })?;

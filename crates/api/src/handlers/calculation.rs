@@ -22,7 +22,6 @@ use agrocore_domain::services::weather::{WeatherFetchResult, WeatherServiceType}
 use agrocore_domain::services::workflow::WorkflowService;
 use agrocore_shared::SharedError;
 use chrono::Utc;
-use serde_json::json;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -506,7 +505,7 @@ pub async fn fetch_weather(
         .map_err(|e| ApiError::validation(e.to_string()))?;
 
     let provider = dto.provider.as_deref().unwrap_or("openmeteo");
-    let service_type = match provider.to_lowercase().as_str() {
+    let _service_type = match provider.to_lowercase().as_str() {
         "openweather" => WeatherServiceType::OpenWeather,
         "wunderground" | "weatherunderground" => WeatherServiceType::WeatherUnderground,
         _ => WeatherServiceType::OpenMeteo,

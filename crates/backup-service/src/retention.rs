@@ -1,7 +1,7 @@
-use crate::config::{BackupConfig, BackupTarget, RetentionConfig};
-use crate::error::{BackupError, BackupResult};
+use crate::config::RetentionConfig;
+use crate::error::BackupResult;
 use crate::storage::StorageBackendTrait;
-use agrocore_logging::{debug, info, warn};
+use agrocore_logging::{info, warn};
 use chrono::{DateTime, Duration, Utc};
 use std::sync::Arc;
 use uuid::Uuid;
@@ -17,7 +17,7 @@ impl RetentionManager {
 
     pub async fn cleanup(
         &self,
-        storage: &Arc<dyn StorageBackendTrait>,
+        _storage: &Arc<dyn StorageBackendTrait>,
         targets: &[crate::config::BackupTarget],
     ) -> BackupResult<()> {
         info!("Starting retention cleanup");
@@ -103,7 +103,7 @@ impl RetentionManager {
 
     async fn list_backups(
         &self,
-        target: &crate::config::BackupTarget,
+        _target: &crate::config::BackupTarget,
     ) -> BackupResult<Vec<BackupInfo>> {
         // TODO: Implement actual listing from storage
         Ok(vec![])

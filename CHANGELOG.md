@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-09-10
+
+### Added
+- **agrocore-backup CLI** — Full command-line interface for backup operations:
+  - `agrocore-backup run` — Daemon mode (scheduler + MQTT bridge)  
+  - `agrocore-backup backup <database|config|full>` — Manual backup execution
+  - `agrocore-backup restore <id> [--target-db]` — Restore from backup
+  - `agrocore-backup list [--type] [--limit]` — List backups with filtering
+  - `agrocore-backup verify <id>` — Verify backup integrity
+  - `agrocore-backup status <job-id>` — Show backup job status
+
+- **Complete Backup Verification Pipeline** (`VerificationManager`):
+  - Test database creation/dropping via PostgreSQL
+  - Automated restore to test database using `pg_restore`
+  - SHA256 checksum verification for all manifest objects (target objects + file checksums)
+  - Row count verification across all tables
+  - Schema comparison (columns, types) between source and restored database
+  - Full integration with `StorageBackendTrait::download_bytes()`
+
+- **Restore Implementation** in `PgDump`:
+  - `restore_from_storage()` — Downloads dump and pipes to `pg_restore --clean --if-exists`
+  - Supports target database parameter
+
+- **StorageBackendTrait::download_bytes()** implemented for all backends:
+  - S3/MinIO/B2/Wasabi, Azure, GCS, Local filesystem
+
+- **Quality Gates**: All 15 Crates pass `cargo fmt`, `cargo check`, `cargo clippy`, `cargo test`
+
+### Changed
+- **Version bump**: 0.14.0 → 0.15.0 (Minor bump for backup CLI + verification features)
+- **agrocore-backup**: Main function refactored to use `BackupService::start_scheduler()` instead of inline scheduler
+- **BackupService::verify_backup()** now receives `storage` and `targets` for full verification
+
+### Fixed
+- **sha2** dependency added to backup-service for checksum verification
+- **Unused imports** removed across all crates (logging, messaging, lpis-providers, scheduler, api, domain)
+- **Dead code warnings** resolved by implementing verification/restore/CLI features
+
 ## [0.14.0] - 2026-09-08
 
 ### Added

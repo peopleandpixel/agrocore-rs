@@ -3,10 +3,6 @@ use crate::dto::{CreateTreeDto, PaginatedTreeResponse, TreeDto, UpdateTreeDto};
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
-use agrocore_domain::entities::tree::{
-    CreateTreeDto as DomainCreateTreeDto, Tree, TreeType, UpdateTreeDto as DomainUpdateTreeDto,
-};
-use agrocore_domain::repositories::TreeRepository;
 use agrocore_shared::SharedError;
 use uuid::Uuid;
 

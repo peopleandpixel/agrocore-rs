@@ -1,4 +1,4 @@
-use agrocore_scheduler::error::{SchedulerError, SchedulerResult};
+use agrocore_scheduler::error::SchedulerError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

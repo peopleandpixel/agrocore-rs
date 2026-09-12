@@ -1,4 +1,4 @@
-use crate::error::{LoggingError, LoggingResult};
+use crate::error::LoggingResult;
 use config::{Config, Environment, File};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -104,7 +104,7 @@ impl Default for RotationConfig {
 
 impl LoggingConfig {
     pub fn from_env() -> LoggingResult<Self> {
-        let mut config = Config::builder()
+        let config = Config::builder()
             .add_source(File::with_name("logging").required(false))
             .add_source(Environment::with_prefix("AGROCORE_LOG").separator("__"))
             .build()?;

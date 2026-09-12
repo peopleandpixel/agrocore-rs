@@ -4,6 +4,7 @@ Priorität: P0 zuerst, dann P1, P2, P3, P4.
 
 P0 (kritisch / höchster Nutzen):
 - **Phase 7: Migration auf externe Services — ERLEDIGT (v0.14.0)**
+- **Phase 8: Dev Environment & Demo Mode — GEPLANT (P0)**
 
 P1 (wichtig / kleiner Aufwand):
 - 3. Profiling-Skript erstellen. Datei: scripts/profile.sh. Status: Offen.

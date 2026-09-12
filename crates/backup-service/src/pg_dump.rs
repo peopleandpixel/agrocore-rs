@@ -1,7 +1,7 @@
 use crate::config::{BackupTarget, PgDumpConfig};
 use crate::error::{BackupError, BackupResult};
 use crate::storage::StorageBackendTrait;
-use agrocore_logging::{debug, info, warn};
+use agrocore_logging::info;
 use std::sync::Arc;
 use uuid::Uuid;
 

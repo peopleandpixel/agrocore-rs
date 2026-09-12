@@ -1,2 +1,3 @@
 /target
 /crates/admin-ui/dist/*
+/.env.dev
