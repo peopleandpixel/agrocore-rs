@@ -20,10 +20,10 @@ tracing-log = { version = "0.2", optional = true }  # log -> tracing bridge
 tracing-appender = { version = "0.2", optional = true, features = ["parking_lot"] }
 
 # Optional features
-opentelemetry = { version = "0.27", features = ["trace"], optional = true }
-opentelemetry_sdk = { version = "0.27", features = ["rt-tokio", "trace"], optional = true }
-opentelemetry-otlp = { version = "0.17", features = ["tonic"], optional = true }
-tracing-opentelemetry = { version = "0.25", optional = true }
+opentelemetry = { version = "0.32", features = ["trace"], optional = true }
+opentelemetry_sdk = { version = "0.32", features = ["rt-tokio", "trace"], optional = true }
+opentelemetry-otlp = { version = "0.32", features = ["tonic"], optional = true }
+tracing-opentelemetry = { version = "0.33", optional = true }
 
 # Config
 config = { workspace = true }
