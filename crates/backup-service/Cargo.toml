@@ -31,18 +31,18 @@ clap = { version = "4", features = ["derive", "env"] }
 # PostgreSQL
 sqlx = { workspace = true, features = ["postgres", "runtime-tokio-rustls", "uuid", "chrono", "json", "tls-rustls"] }
 postgres = { version = "0.19", features = ["with-chrono-0_4", "with-serde_json-1", "with-uuid-0_8"] }
-cron = "0.9"
+cron = "0.17"
 
 # Object Storage (pluggable backends)
-object_store = { version = "0.11", features = ["aws", "azure", "gcp", "http"] }
+object_store = { version = "0.14", features = ["aws", "azure", "gcp", "http"] }
 aws-config = { version = "1.0" }
 aws-sdk-s3 = { version = "1.0", features = ["default"] }
 aws-sdk-kms = { version = "1.0", features = ["default"] }
-google-cloud-storage = "0.12"
+google-cloud-storage = "1.18"
 
 # SFTP/SSH
 async-ssh2 = { version = "0.1.2-beta" }
-smol = "0.3"
+smol = "2.0"
 
 # WebDAV (NextCloud, ownCloud, etc.)
 webdav = "0.1"
@@ -50,12 +50,12 @@ reqwest = { workspace = true }
 
 # Encryption
 age = "0.12"
-aes-gcm = { version = "0.10", features = ["aes"] }
+aes-gcm = { version = "0.11", features = ["aes"] }
 zeroize = "1.8"
-rand_core = "0.6"
+rand_core = "0.10"
 
 # Hashing
-sha2 = "0.10"
+sha2 = "0.11"
 
 # Scheduling
 # tokio-cron-scheduler = { version = "0.13", features = ["signal"] }

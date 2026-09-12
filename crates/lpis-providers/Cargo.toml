@@ -15,7 +15,7 @@ reqwest = { workspace = true, features = ["json", "rustls"], default-features = 
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 geo = { workspace = true }
 geojson = "1.0"
-quick-xml = { version = "0.41", features = ["serialize"] }
+quick-xml = { version = "0.42", features = ["serialize"] }
 urlencoding = "2.1"
 chrono = { workspace = true }
 uuid = { workspace = true }
@@ -27,7 +27,7 @@ bytes = "1.5"
 
 # Configuration
 config = { workspace = true }
-toml = "0.8"
+toml = "1.1"
 
 # Caching
 moka = { workspace = true, features = ["future"] }
@@ -37,9 +37,9 @@ redis = { workspace = true }
 governor = { workspace = true }
 
 # Retry logic
-retry = { version = "0.1" }
+retry = { version = "2.2" }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util"] }
-mockall = "0.13"
+mockall = "0.15"
 wiremock = "0.6"
