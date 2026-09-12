@@ -20,7 +20,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.17.0"
+version = "0.18.0"
 authors = ["Jens Reinemuth <jens@reinemuth.pt>"]
 license = "GPL-3.0-or-later"
 edition = "2024"
@@ -77,7 +77,7 @@ quick-xml = { version = "0.41", features = ["serialize"] }
 urlencoding = "2.1"
 
 moka = { version = "0.12", features = ["sync", "future"] }
-redis = { version = "0.24", features = ["tokio-comp", "connection-manager", "json"] }
+redis = { version = "1.7.0", features = ["tokio-comp", "connection-manager", "json"] }
 governor = { version = "0.6", features = ["jitter"] }
 retry = { version = "0.1" }
 rumqttc = { version = "0.25", features = ["use-rustls-no-provider"] }

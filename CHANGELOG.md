@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-09-12
+
+### Fixed
+- **Dependency Updates (Phase 2 continued)**: Updated `redis` to 1.7.0 — complete async API rewrite
+- **API Migration**: Updated `TokenRevocationList` in `api/middleware.rs` to use `get_multiplexed_async_connection()` and `AsyncCommands` trait
+- **Quality Gates**: All 15 crates pass `cargo fmt`, `cargo check`, `cargo clippy`, `cargo test`
+
 ## [0.17.0] - 2026-09-12
 
 ### Fixed

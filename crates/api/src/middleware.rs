@@ -75,7 +75,7 @@ impl TokenRevocationList {
     pub async fn revoke(&self, jti: &str, ttl: Duration) -> Result<(), redis::RedisError> {
         match &*self.inner {
             TRLInner::Redis(client) => {
-                let mut conn = client.get_async_connection().await?;
+                let mut conn = client.get_multiplexed_async_connection().await?;
                 let _: () = conn
                     .set_ex(format!("revoked_jti:{}", jti), "1", ttl.as_secs())
                     .await?;
@@ -90,7 +90,7 @@ impl TokenRevocationList {
     pub async fn is_revoked(&self, jti: &str) -> bool {
         match &*self.inner {
             TRLInner::Redis(client) => {
-                let mut conn = match client.get_async_connection().await {
+                let mut conn = match client.get_multiplexed_async_connection().await {
                     Ok(c) => c,
                     Err(_) => return false,
                 };
