@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-09-12
+
+### Fixed
+- **Dependency Updates (Phase 3)**: Updated 30+ dependencies to latest patch/minor versions
+  - actix-web 4.15.0, actix-cors 0.7.2, reqwest 0.13.5
+  - serde 1.0.229, serde_json 1.0.151
+  - validator 0.21.0, thiserror 2.0.20, anyhow 1.0.104
+  - tracing 0.1.44, tracing-subscriber 0.3.23, tracing-actix-web 0.7.22
+  - utoipa 5.5.0, utoipa-swagger-ui 9.0.2
+  - actix-web-prometheus 0.1.2, prometheus 0.14.0
+  - chrono 0.4.45, uuid 1.26.1, config 0.15.25, dotenvy 0.15.7, log 0.4.34
+  - geo 0.33.1, geojson 1.0.0, rust_xlsxwriter 0.99.0
+  - actix-files 0.7.0, actix-governor 0.10.0, futures 0.3.34
+  - async-nats 0.50.0, mockall 0.15.0
+  - sqlx 0.8.6 (kept for geozero compatibility), geozero 0.15.1
+  - strum 0.28.0, quick-xml 0.42.0, urlencoding 2.1.3
+  - moka 0.12.16, bytes 1.12.1, rumqttc 0.25.1
+- **Quality Gates**: All 15 crates pass `cargo fmt`, `cargo check`, `cargo clippy`, `cargo test`
+
 ## [0.18.0] - 2026-09-12
 
 ### Fixed
