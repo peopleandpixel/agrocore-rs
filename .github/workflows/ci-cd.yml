@@ -140,9 +140,9 @@ jobs:
 
       - name: Build Admin UI WASM
         run: |
-          wasm-pack build --target no-bundler --release --package admin-ui --out-dir target/wasm32-unknown-unknown/release
+          cargo build --target wasm32-unknown-unknown --release --lib -p admin-ui
           # Copy .wasm to expected artifact path
-          cp target/wasm32-unknown-unknown/release/admin_ui_bg.wasm target/wasm32-unknown-unknown/release/admin-ui.wasm
+          cp target/wasm32-unknown-unknown/release/admin_ui.wasm target/wasm32-unknown-unknown/release/admin-ui.wasm
 
       - name: Upload WASM artifact
         uses: actions/upload-artifact@v4

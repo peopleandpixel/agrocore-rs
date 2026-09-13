@@ -38,9 +38,11 @@ RUN if [ -n "$PREBUILT_WASM_PATH" ] && [ -f "$PREBUILT_WASM_PATH" ]; then \
       cp "$PREBUILT_WASM_PATH" /app/crates/admin-ui/target/wasm32-unknown-unknown/release/admin-ui.wasm; \
     else \
       echo "Building WASM from source..."; \
-      cargo build --target wasm32-unknown-unknown --release -p admin-ui; \
-      # cargo build outputs admin_ui.wasm, copy to expected name \
-      cp /app/crates/admin-ui/target/wasm32-unknown-unknown/release/admin_ui.wasm \
+      cd /app/crates/admin-ui && \
+      cargo build --target wasm32-unknown-unknown --release --lib -p admin-ui; \
+      # cargo build outputs admin_ui.wasm (package name with underscore) to workspace target dir \
+      mkdir -p /app/crates/admin-ui/target/wasm32-unknown-unknown/release/; \
+      cp /app/target/wasm32-unknown-unknown/release/admin_ui.wasm \
          /app/crates/admin-ui/target/wasm32-unknown-unknown/release/admin-ui.wasm; \
     fi
 

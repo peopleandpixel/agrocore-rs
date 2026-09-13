@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-09-12
+
+### Fixed
+- **Admin UI Docker Build**: Fixed WASM build in Dockerfile — use `cargo build --target wasm32-unknown-unknown --lib` instead of `wasm-pack` (target `no-bundler` not available in wasm-pack 0.13.1)
+- **CI/CD Pipeline**: Updated `build-wasm` job to use `cargo build` directly
+- **Workspace Target Dir**: Copy WASM from `/app/target/` (workspace-level) to crate-level target dir
+- **Quality Gates**: All 15 crates pass `cargo fmt`, `cargo check`, `cargo clippy`, `cargo test`
+
 ## [0.19.0] - 2026-09-12
 
 ### Fixed
