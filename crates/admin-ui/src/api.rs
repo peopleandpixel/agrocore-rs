@@ -217,20 +217,21 @@ fn api_base_url() -> String {
     option_env!("AGROCORE_API_BASE_URL")
         .filter(|value| !value.is_empty())
         .map(str::to_owned)
-        .unwrap_or_else(|| {
-            window()
-                .location()
-                .origin()
-                .unwrap_or_else(|_| "http://localhost:3000".to_string())
-        })
+        .unwrap_or_default()
 }
 
 fn api_url(path: &str) -> String {
-    format!(
-        "{}/{}",
-        api_base_url().trim_end_matches('/'),
-        path.trim_start_matches('/')
-    )
+    let base = api_base_url();
+    if base.is_empty() {
+        // Use relative path for nginx proxy
+        format!("/{}", path.trim_start_matches('/'))
+    } else {
+        format!(
+            "{}/{}",
+            base.trim_end_matches('/'),
+            path.trim_start_matches('/')
+        )
+    }
 }
 
 fn storage() -> Option<web_sys::Storage> {
