@@ -14,7 +14,7 @@ async fn main() -> std::io::Result<()> {
         agrocore_shared::config::AgroCoreConfig::from_env(),
     );
     let database_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgresql://agrocore:***@localhost:5432/agrocore".into());
+        .unwrap_or_else(|_| "postgresql://agrocore:agrocore@localhost:5432/agrocore".into());
     let bind_addr = std::env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:3000".into());
 
     info!("Connecting to PostgreSQL at {}", database_url);

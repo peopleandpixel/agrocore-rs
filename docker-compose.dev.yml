@@ -2,12 +2,11 @@ services:
   postgres:
     image: postgis/postgis:16-3.4
     container_name: agrocore-postgres
+    network_mode: host
     environment:
       POSTGRES_DB: agrocore
       POSTGRES_USER: agrocore
       POSTGRES_PASSWORD: agrocore
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - dev_postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -19,8 +18,7 @@ services:
   nats:
     image: nats:2.10-alpine
     container_name: agrocore-nats
-    ports:
-      - "${NATS_PORT:-4222}:4222"
+    network_mode: host
     command: ["-js", "-m", "8222"]
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8222/healthz"]
@@ -32,9 +30,7 @@ services:
   mqtt:
     image: eclipse-mosquitto:2.0
     container_name: agrocore-mqtt
-    ports:
-      - "${MQTT_PORT:-1883}:1883"
-      - "${MQTT_WS_PORT:-9001}:9001"
+    network_mode: host
     volumes:
       - ./config/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - dev_mqtt_data:/mosquitto/data
@@ -49,8 +45,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: agrocore-redis
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
+    network_mode: host
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - dev_redis_data:/data
@@ -66,26 +61,19 @@ services:
       context: .
       dockerfile: Dockerfile.api
     container_name: agrocore-api
+    network_mode: host
     environment:
-      DATABASE_URL: postgresql://agrocore:***@postgres:5432/agrocore
-      MQTT_BROKER_HOST: mqtt
+      DATABASE_URL: "postgresql://agrocore:***@localhost:5432/agrocore"
+      NATS_URL: "nats://localhost:4222"
+      MQTT_BROKER_HOST: localhost
       MQTT_BROKER_PORT: "1883"
       MQTT_CLIENT_ID: agrocore-api
       MQTT_TOPIC_PREFIX: agrocore
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: "redis://localhost:6379"
       JWT_SECRET: dev-secret-change-in-production
       RUST_LOG: info
-    ports:
-      - "${API_PORT:-8080}:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      nats:
-        condition: service_started
-      mqtt:
-        condition: service_started
-      redis:
-        condition: service_started
+      SKIP_MIGRATIONS: "1"
+      LISTEN_ADDR: "0.0.0.0:8080"
     volumes:
       - ./config:/app/config:ro
     healthcheck:
@@ -93,55 +81,24 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 15s
+      start_period: 180s
 
   admin-ui:
-    build:
-      context: .
-      dockerfile: Dockerfile.admin-ui
+    image: nginx:alpine
     container_name: agrocore-admin-ui
-    ports:
-      - "${ADMIN_UI_PORT:-8081}:80"
-    depends_on:
-      api:
-        condition: service_healthy
+    network_mode: host
+    volumes:
+      - ./crates/admin-ui/dist:/usr/share/nginx/html:ro
+      - ./crates/admin-ui/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8081/"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 10s
-
-  notification-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.service
-    image: agrocore-service
-    container_name: agrocore-notification-service
-    environment:
-      DATABASE_URL: postgresql://agrocore:***@postgres:5432/agrocore
-      NATS_URL: nats://nats:4222
-      JWT_SECRET: dev-secret-change-in-production
-      RUST_LOG: info
-      SERVICE_NAME: agrocore-notification-service
-    depends_on:
-      nats:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "pgrep -f agrocore-notification-service || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+      start_period: 5s
 
 volumes:
   dev_postgres_data:
   dev_mqtt_data:
   dev_mqtt_logs:
   dev_redis_data:
-
-networks:
-  default:
-    name: agrocore-dev-network

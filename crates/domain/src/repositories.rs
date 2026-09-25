@@ -214,7 +214,7 @@ pub trait SpatialObjectRepository: Send + Sync {
     fn find_containing_point(
         &self,
         tid: TenantId,
-        point: crate::entities::site::GeoPoint,
+        point: crate::entities::spatial::types::GeoPoint,
         site_id: Option<Uuid>,
     ) -> RepositoryFuture<Vec<SpatialObject>>;
 }

@@ -3,6 +3,7 @@ use agrocore_shared::config::jwt_secret;
 use chrono::{Duration, Utc};
 use jsonwebtoken::{EncodingKey, Header, encode};
 use serde::Serialize;
+use uuid::Uuid;
 
 #[derive(Debug, Serialize)]
 pub struct Claims {
@@ -13,11 +14,10 @@ pub struct Claims {
     pub jti: String,
 }
 
-pub fn generate_jwt(user: &User) -> anyhow::Result<String> {
+pub fn generate_jwt(user_id: Uuid, tenant_id: Uuid, roles: &[UserRole]) -> anyhow::Result<String> {
     let expiration = Utc::now() + Duration::minutes(30);
 
-    let roles = user
-        .roles
+    let roles = roles
         .iter()
         .map(|r| match r {
             UserRole::Admin => "Admin".to_string(),
@@ -29,8 +29,8 @@ pub fn generate_jwt(user: &User) -> anyhow::Result<String> {
         .collect();
 
     let claims = Claims {
-        sub: user.id.to_string(),
-        tenant_id: user.tenant_id.to_string(),
+        sub: user_id.to_string(),
+        tenant_id: tenant_id.to_string(),
         roles,
         exp: expiration.timestamp() as usize,
         jti: uuid::Uuid::new_v4().to_string(),

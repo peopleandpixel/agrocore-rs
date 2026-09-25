@@ -346,9 +346,15 @@ pub async fn calculate_material(
     let treated_area = dto.method.calculate_treated_area(
         site.area,
         site.gross_area,
-        site.row_config.as_ref().map(|rc| rc.lane_width),
-        site.row_config.as_ref().map(|rc| rc.total_strike_length),
-        site.slope.map(|s| s > 15.0).unwrap_or(false), // Annahme: Steil ab 15% Steigung
+        site.row_config
+            .as_ref()
+            .and_then(|rc| rc.get("lane_width"))
+            .and_then(|v| v.as_f64()),
+        site.row_config
+            .as_ref()
+            .and_then(|rc| rc.get("total_strike_length"))
+            .and_then(|v| v.as_f64()),
+        site.slope.map(|s| s > 15.0).unwrap_or(false),
         application_date,
     );
 
@@ -356,8 +362,16 @@ pub async fn calculate_material(
         method: dto.method.clone(),
         net_area: site.area,
         gross_area: site.gross_area,
-        lane_width: site.row_config.as_ref().map(|rc| rc.lane_width),
-        total_strike_length: site.row_config.as_ref().map(|rc| rc.total_strike_length),
+        lane_width: site
+            .row_config
+            .as_ref()
+            .and_then(|rc| rc.get("lane_width"))
+            .and_then(|v| v.as_f64()),
+        total_strike_length: site
+            .row_config
+            .as_ref()
+            .and_then(|rc| rc.get("total_strike_length"))
+            .and_then(|v| v.as_f64()),
         is_steep: site.slope.map(|s| s > 15.0).unwrap_or(false),
         dosage_per_ha: dto.dose_per_ha,
         application_date,

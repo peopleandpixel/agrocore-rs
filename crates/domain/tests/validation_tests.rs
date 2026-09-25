@@ -1,9 +1,9 @@
 use agrocore_domain::entities::compliance::CreateFertilizerRecordDto;
 use agrocore_domain::entities::order::CreateOrderDto;
-use agrocore_domain::entities::site::{CreateSiteDto, GeoPoint};
+use agrocore_domain::entities::site::CreateSiteDto;
 use agrocore_domain::entities::user::CreateUserDto;
 use agrocore_domain::entities::workforce::CreateWorkLogDto;
-use agrocore_domain::entities::{CropType, OrderType, SiteType};
+use agrocore_domain::entities::{CropType, GeoPoint, OrderType, SiteType};
 use chrono::Utc;
 use uuid::Uuid;
 use validator::Validate;
@@ -42,19 +42,15 @@ fn test_site_label_validation() {
         row_config: None,
         bbch_stage: None,
         planted_date: None,
+        cleared_date: None,
         soil_type: None,
         slope: None,
         slope_facing: None,
         altitude: None,
         organic: None,
         center: None,
-        sigpac_data: None,
-        regepac_id: None,
         boundary: None,
         properties: None,
-        custom_fields: None,
-        note1: None,
-        note2: None,
     };
     assert!(dto.validate().is_err());
 

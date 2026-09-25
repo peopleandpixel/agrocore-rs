@@ -7,8 +7,8 @@ use crate::dto::{
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
+use agrocore_domain::entities::GeoPoint;
 use agrocore_domain::entities::order::TaskExecutionMode;
-use agrocore_domain::entities::site::GeoPoint;
 use agrocore_domain::entities::worker_task_status::{
     CreateWorkerTaskStatusDto as DomainCreateWorkerTaskStatusDto, WorkerTaskStatus,
 };

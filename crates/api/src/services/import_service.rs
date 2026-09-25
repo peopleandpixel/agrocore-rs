@@ -5,6 +5,10 @@ use agrocore_shared::SharedError;
 use agrocore_shared::lpis::{LpisCountry, LpisRegistry};
 use base64::{Engine as _, engine::general_purpose};
 use geo::{Coord, Geometry, LineString, Polygon, coord};
+use geo_types::Geometry as GeoTypesGeometry;
+use geozero::ProcessorSink;
+use geozero::ToGeo;
+use geozero::geo_types::GeoWriter;
 use geozero::shp::ShpReader;
 use serde_json;
 use sqlx::Row;
@@ -97,110 +101,119 @@ impl ImportService {
         Ok(result)
     }
 
-    async fn process_site(
+    pub async fn process_site(
         &self,
-        _tenant_id: Uuid,
+        tenant_id: Uuid,
         import_site: ImportSiteDto,
         skip_duplicates: bool,
         update_existing: bool,
         validate_lpis: bool,
         lpis_country: Option<LpisCountry>,
     ) -> Result<SiteProcessResult, SharedError> {
-        let _ = &self.pool;
-        // Check for duplicates
-        let duplicate_check = self.check_duplicates(_tenant_id, &import_site).await?;
-
-        if duplicate_check.is_duplicate {
-            if skip_duplicates && !update_existing {
+        // Check for duplicates first
+        if skip_duplicates {
+            let duplicate_check = self.check_duplicates(tenant_id, &import_site).await?;
+            if duplicate_check.is_duplicate {
+                if update_existing {
+                    if let Some(existing_id) = duplicate_check.existing_site_id {
+                        self.update_existing_site(existing_id, import_site).await?;
+                        return Ok(SiteProcessResult::Updated);
+                    }
+                }
                 return Ok(SiteProcessResult::Skipped(
                     duplicate_check.existing_site_id.unwrap(),
                 ));
             }
-
-            #[allow(clippy::collapsible_if)]
-            if update_existing {
-                if let Some(_existing_id) = duplicate_check.existing_site_id {
-                    let _update_dto = self.convert_to_update_dto(import_site)?;
-                    // Update would be done via repository
-                    return Ok(SiteProcessResult::Updated);
-                }
-            }
-
-            return Err(SharedError::Validation(format!(
-                "Duplicate site detected: {:?}",
-                duplicate_check.match_type
-            )));
         }
 
-        // Validate LPIS if requested using the multi-country provider
-        #[allow(clippy::collapsible_if)]
+        // Validate against LPIS if requested
         if validate_lpis {
-            let country = lpis_country.unwrap_or(LpisCountry::Es); // Default to Spain for backwards compatibility
-
-            // Try to get provider for the country
-            if let Some(provider) = self.lpis_registry.get_arc(country) {
-                // Build geometry for validation
-                let geometry = if let Some(boundary) = &import_site.boundary {
-                    let points: Vec<Coord<f64>> = boundary
-                        .0
-                        .iter()
-                        .map(|p| coord! { x: p.lng, y: p.lat })
-                        .collect();
-                    if points.len() >= 4 {
-                        let mut coords = points.clone();
-                        if coords.first() != coords.last() {
-                            coords.push(points[0]);
-                        }
-                        let ring = LineString::new(coords);
-                        Some(Geometry::Polygon(Polygon::new(ring, vec![])))
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                };
-
-                if let Some(geom) = geometry {
-                    let validation = provider
-                        .validate_geometry(_tenant_id, &geom)
-                        .await
-                        .map_err(SharedError::Validation)?;
-
-                    if !validation.is_valid {
-                        return Err(SharedError::Validation(format!(
-                            "LPIS validation failed for {}: {}",
-                            country,
-                            validation.warnings.join(", ")
-                        )));
-                    }
-                } else if let Some(sigpac) = &import_site.sigpac_data {
-                    // Fallback to SIGPAC data-based validation for Spain
-                    let validation = self
-                        .validate_against_lpis(sigpac, &import_site.boundary)
-                        .await?;
-                    if !validation.is_valid {
-                        return Err(SharedError::Validation(format!(
-                            "LPIS validation failed: {}",
-                            validation.warnings.join(", ")
-                        )));
-                    }
-                }
-            } else if let Some(sigpac) = &import_site.sigpac_data {
-                // No provider for this country, fallback to SIGPAC SQL function
-                let validation = self
-                    .validate_against_lpis(sigpac, &import_site.boundary)
+            if let Some(country) = lpis_country {
+                self.validate_against_lpis(tenant_id, &import_site, country)
                     .await?;
-                if !validation.is_valid {
-                    return Err(SharedError::Validation(format!(
-                        "LPIS validation failed: {}",
-                        validation.warnings.join(", ")
-                    )));
-                }
             }
         }
 
         // Create new site
         Ok(SiteProcessResult::Created)
+    }
+
+    pub async fn update_existing_site(
+        &self,
+        site_id: Uuid,
+        import_site: ImportSiteDto,
+    ) -> Result<(), SharedError> {
+        let update_dto = self.convert_to_update_dto(import_site)?;
+
+        sqlx::query(
+            r#"UPDATE sites SET
+               label = COALESCE($1, label),
+               site_type = COALESCE($2, site_type),
+               crop_type = COALESCE($3, crop_type),
+               variety = COALESCE($4, variety),
+               area = COALESCE($5, area),
+               gross_area = COALESCE($6, gross_area),
+               plots = COALESCE($7, plots),
+               row_config = COALESCE($8, row_config),
+               bbch_stage = COALESCE($9, bbch_stage),
+               planted_date = COALESCE($10, planted_date),
+               cleared_date = COALESCE($11, cleared_date),
+               soil_type = COALESCE($12, soil_type),
+               slope = COALESCE($13, slope),
+               slope_facing = COALESCE($14, slope_facing),
+               altitude = COALESCE($15, altitude),
+               organic = COALESCE($16, organic),
+               organic_eligible = COALESCE($17, organic_eligible),
+               sigpac_data = COALESCE($18, sigpac_data),
+               regepac_id = COALESCE($19, regepac_id),
+               lpis_country = COALESCE($20, lpis_country),
+               lpis_data = COALESCE($21, lpis_data),
+               properties = COALESCE($22, properties),
+               custom_fields = COALESCE($23, custom_fields),
+               note1 = COALESCE($24, note1),
+               note2 = COALESCE($25, note2),
+               is_active = COALESCE($26, is_active),
+               is_temporary = COALESCE($27, is_temporary),
+               updated_at = NOW(),
+               center = ST_SetSRID(ST_MakePoint($28.lng, $28.lat), 4326)::geometry,
+               boundary = $29::geometry
+               WHERE id = $30"#,
+        )
+        .bind(update_dto.label)
+        .bind(update_dto.site_type)
+        .bind(update_dto.crop_type)
+        .bind(update_dto.variety)
+        .bind(update_dto.area)
+        .bind(update_dto.gross_area)
+        .bind(update_dto.plots)
+        .bind(update_dto.row_config)
+        .bind(update_dto.bbch_stage)
+        .bind(update_dto.planted_date)
+        .bind(update_dto.cleared_date)
+        .bind(update_dto.soil_type)
+        .bind(update_dto.slope)
+        .bind(update_dto.slope_facing)
+        .bind(update_dto.altitude)
+        .bind(update_dto.organic)
+        .bind(update_dto.organic_eligible)
+        .bind(update_dto.sigpac_data)
+        .bind(update_dto.regepac_id)
+        .bind(update_dto.lpis_country)
+        .bind(update_dto.lpis_data)
+        .bind(update_dto.properties)
+        .bind(update_dto.custom_fields)
+        .bind(update_dto.note1)
+        .bind(update_dto.note2)
+        .bind(update_dto.is_active)
+        .bind(update_dto.is_temporary)
+        .bind(update_dto.center)
+        .bind(update_dto.boundary)
+        .bind(Uuid::nil())
+        .execute(&self.pool)
+        .await
+        .map_err(|e| SharedError::Database(e.to_string()))?;
+
+        Ok(())
     }
 
     fn convert_to_update_dto(
@@ -209,12 +222,18 @@ impl ImportService {
     ) -> Result<UpdateSiteDto, SharedError> {
         Ok(UpdateSiteDto {
             label: Some(import_site.label),
+            site_type: Some(import_site.site_type),
+            crop_type: Some(import_site.crop_type),
             variety: import_site.variety,
             area: Some(import_site.area),
             gross_area: import_site.gross_area,
-            plots: import_site.plots,
-            row_config: import_site.row_config,
-            bbch_stage: import_site.bbch_stage,
+            plots: import_site.plots.map(|p| serde_json::to_value(p).unwrap()),
+            row_config: import_site
+                .row_config
+                .map(|r| serde_json::to_value(r).unwrap()),
+            bbch_stage: import_site
+                .bbch_stage
+                .map(|b| serde_json::to_string(&b).unwrap()),
             planted_date: import_site.planted_date,
             cleared_date: import_site.cleared_date,
             soil_type: import_site.soil_type,
@@ -222,19 +241,25 @@ impl ImportService {
             slope_facing: import_site.slope_facing,
             altitude: import_site.altitude,
             organic: import_site.organic,
+            organic_eligible: import_site.organic_eligible,
             center: import_site.center,
             sigpac_data: import_site.sigpac_data,
             regepac_id: import_site.regepac_id,
-            boundary: import_site.boundary.map(|b| b.0), // Convert Boundary to Vec<GeoPoint>
-            properties: import_site.properties,
+            boundary: import_site.boundary,
+            properties: import_site
+                .properties
+                .map(|p| serde_json::to_value(p).unwrap()),
             custom_fields: import_site.custom_fields,
             note1: import_site.note1,
             note2: import_site.note2,
             is_active: import_site.is_active,
+            is_temporary: import_site.is_temporary,
+            lpis_country: None,
+            lpis_data: None,
         })
     }
 
-    async fn check_duplicates(
+    pub async fn check_duplicates(
         &self,
         tenant_id: Uuid,
         import_site: &ImportSiteDto,
@@ -242,8 +267,8 @@ impl ImportService {
         // Check by SIGPAC data
         if let Some(sigpac) = &import_site.sigpac_data {
             let result = sqlx::query!(
-                r#"SELECT id FROM sites 
-                   WHERE tenant_id = $1 
+                r#"SELECT id FROM sites
+                   WHERE tenant_id = $1
                    AND sigpac_data->>'province' = $2
                    AND sigpac_data->>'municipality' = $3
                    AND sigpac_data->>'aggregate' = $4
@@ -297,141 +322,74 @@ impl ImportService {
             }
         }
 
-        // Check by exact boundary match using PostGIS
-        if let Some(boundary) = &import_site.boundary {
-            // Convert boundary to PostGIS geometry
-            let points: Vec<(f64, f64)> = boundary.0.iter().map(|p| (p.lng, p.lat)).collect();
-            if points.len() >= 4 {
-                // Ensure closed ring
-                let mut coords = points.clone();
-                if coords.first() != coords.last() {
-                    coords.push(coords[0]);
-                }
-                let wkt = format!(
-                    "POLYGON(({}))",
-                    coords
-                        .iter()
-                        .map(|(lng, lat)| format!("{} {}", lng, lat))
-                        .collect::<Vec<_>>()
-                        .join(",")
-                );
+        // Check by boundary overlap (simplified - just check if any site contains the center point)
+        if let Some(center) = &import_site.center {
+            let result = sqlx::query!(
+                r#"SELECT id FROM sites
+                   WHERE tenant_id = $1
+                   AND is_active = true
+                   AND ST_Contains(boundary::geometry, ST_SetSRID(ST_MakePoint($2, $3), 4326))
+                   LIMIT 1"#,
+                tenant_id,
+                center.lng,
+                center.lat
+            )
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
-                let result = sqlx::query!(
-                    r#"SELECT id FROM sites 
-                       WHERE tenant_id = $1 
-                       AND boundary IS NOT NULL
-                       AND ST_Equals(boundary, ST_GeomFromText($2, 4326))
-                       AND is_active = true
-                       LIMIT 1"#,
-                    tenant_id,
-                    wkt
-                )
-                .fetch_optional(&self.pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
-
-                if let Some(row) = result {
-                    return Ok(DuplicateDetectionResult {
-                        is_duplicate: true,
-                        existing_site_id: Some(row.id),
-                        match_type: DuplicateMatchType::ExactBoundary,
-                        similarity_score: 1.0,
-                    });
-                }
+            if let Some(row) = result {
+                return Ok(DuplicateDetectionResult {
+                    is_duplicate: true,
+                    existing_site_id: Some(row.id),
+                    match_type: DuplicateMatchType::BoundaryOverlap,
+                    similarity_score: 0.8,
+                });
             }
         }
 
         Ok(DuplicateDetectionResult {
             is_duplicate: false,
             existing_site_id: None,
-            match_type: DuplicateMatchType::HighSimilarity,
+            match_type: DuplicateMatchType::None,
             similarity_score: 0.0,
         })
     }
 
-    async fn validate_against_lpis(
+    pub async fn validate_against_lpis(
         &self,
-        sigpac: &SigpacData,
-        boundary: &Option<Boundary>,
-    ) -> Result<LpisValidationResult, SharedError> {
-        // Build boundary WKT if present
-        let boundary_wkt = boundary.as_ref().and_then(|b| {
-            let points: Vec<(f64, f64)> = b.0.iter().map(|p| (p.lng, p.lat)).collect();
-            if points.len() >= 4 {
-                let mut coords = points.clone();
-                if coords.first() != coords.last() {
-                    coords.push(coords[0]);
-                }
-                Some(format!(
-                    "POLYGON(({}))",
-                    coords
-                        .iter()
-                        .map(|(lng, lat)| format!("{} {}", lng, lat))
-                        .collect::<Vec<_>>()
-                        .join(",")
-                ))
-            } else {
-                None
+        tenant_id: Uuid,
+        import_site: &ImportSiteDto,
+        country: LpisCountry,
+    ) -> Result<(), SharedError> {
+        if let Some(center) = &import_site.center {
+            let provider = self.lpis_registry.get(country).ok_or_else(|| {
+                SharedError::Validation(format!("No LPIS provider for country: {:?}", country))
+            })?;
+
+            let query = agrocore_shared::lpis::LpisNearPointQuery {
+                country,
+                lng: center.lng,
+                lat: center.lat,
+                radius_m: Some(100.0),
+            };
+
+            let result = provider
+                .search_near_point(tenant_id, query)
+                .await
+                .map_err(|e| SharedError::Validation(format!("LPIS search failed: {}", e)))?;
+
+            if result.data.is_empty() {
+                return Err(SharedError::Validation(format!(
+                    "No LPIS parcel found near site center for country {:?}",
+                    country
+                )));
             }
-        });
-
-        let boundary_geom = boundary_wkt
-            .map(|wkt| format!("ST_GeomFromText('{}', 4326)::geometry", wkt))
-            .unwrap_or_else(|| "NULL".to_string());
-
-        let query = format!(
-            r#"SELECT * FROM validate_parcel_against_lpis(
-                $1, $2, $3, $4, $5, $6, $7, {}, $9
-            )"#,
-            boundary_geom
-        );
-
-        let result = sqlx::query(&query)
-            .bind(sigpac.province as i16)
-            .bind(sigpac.municipality as i16)
-            .bind(sigpac.aggregate as i16)
-            .bind(sigpac.zone as i16)
-            .bind(sigpac.polygon as i16)
-            .bind(sigpac.parcel as i16)
-            .bind(sigpac.enclosure as i16)
-            .fetch_one(&self.pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
-
-        let validation: serde_json::Value = serde_json::from_value(
-            result
-                .try_get("validate_parcel_against_lpis")
-                .map_err(|e| SharedError::Database(e.to_string()))?,
-        )
-        .map_err(|e| SharedError::Database(format!("Failed to parse validation result: {}", e)))?;
-
-        Ok(LpisValidationResult {
-            is_valid: validation
-                .get("is_valid")
-                .and_then(|v| v.as_bool())
-                .unwrap_or(false),
-            sigpac_reference: validation
-                .get("sigpac_reference")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string()),
-            area_difference: validation.get("area_difference").and_then(|v| v.as_f64()),
-            boundary_difference: validation
-                .get("boundary_difference")
-                .and_then(|v| v.as_f64()),
-            warnings: validation
-                .get("warnings")
-                .and_then(|v| v.as_array())
-                .map(|arr| {
-                    arr.iter()
-                        .filter_map(|v| v.as_str())
-                        .map(|s| s.to_string())
-                        .collect()
-                })
-                .unwrap_or_default(),
-        })
+        }
+        Ok(())
     }
 
-    /// Import from GeoJSON features
+    /// Import from GeoJSON
     pub async fn import_geojson(
         &self,
         tenant_id: Uuid,
@@ -443,7 +401,7 @@ impl ImportService {
         let _ = tenant_id;
 
         let mut result = ImportResult {
-            total: request.features.len(),
+            total: 0,
             created: 0,
             updated: 0,
             skipped: 0,
@@ -452,59 +410,45 @@ impl ImportService {
             duplicate_ids: Vec::new(),
         };
 
-        let skip_duplicates = request.skip_duplicates.unwrap_or(true);
-        let update_existing = request.update_existing.unwrap_or(false);
-        let validate_lpis = request.validate_lpis.unwrap_or(false);
-        let lpis_country = request.lpis_country;
+        let features = request.features;
+        result.total = features.len();
 
-        for (_index, feature) in request.features.into_iter().enumerate() {
-            if feature.geometry.geometry_type != "Polygon"
-                && feature.geometry.geometry_type != "MultiPolygon"
-            {
-                result.errors.push(ImportError {
-                    index: _index,
-                    label: feature
-                        .properties
-                        .get("label")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("unknown")
-                        .to_string(),
-                    error: "Only Polygon and MultiPolygon geometries are supported".to_string(),
-                    field: Some("geometry".to_string()),
-                });
-                continue;
-            }
+        for (index, feature) in features.into_iter().enumerate() {
+            let geometry = feature.geometry;
 
-            let label = feature
-                .properties
+            let properties = feature.properties;
+
+            let label = properties
                 .get("label")
                 .and_then(|v| v.as_str())
-                .unwrap_or(&format!("Imported Site {}", _index))
+                .unwrap_or(&format!("Imported Site {}", index))
                 .to_string();
 
-            let sigpac_data = feature
-                .properties
-                .get("sigpac_data")
-                .and_then(|v| serde_json::from_value(v.clone()).ok());
+            let area = properties
+                .get("area")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
 
-            let regepac_id = feature
-                .properties
-                .get("regepac_id")
+            let site_type = properties
+                .get("site_type")
                 .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
+                .and_then(|s| s.parse::<SiteType>().ok())
+                .unwrap_or(SiteType::Other("unknown".to_string()));
 
-            let boundary = self.geojson_to_boundary(&feature.geometry).ok();
+            let crop_type = properties
+                .get("crop_type")
+                .and_then(|v| v.as_str())
+                .and_then(|s| s.parse::<CropType>().ok())
+                .unwrap_or(CropType::Unknown);
+
+            let boundary = self.geojson_value_to_boundary(&geometry)?;
 
             let import_site = ImportSiteDto {
                 label,
-                site_type: SiteType::Field,
-                crop_type: CropType::Unknown, // Now this exists!
+                site_type,
+                crop_type,
                 variety: None,
-                area: feature
-                    .properties
-                    .get("area")
-                    .and_then(|v| v.as_f64())
-                    .unwrap_or(0.0),
+                area,
                 gross_area: None,
                 plots: None,
                 row_config: None,
@@ -517,29 +461,26 @@ impl ImportService {
                 altitude: None,
                 organic: None,
                 organic_eligible: None,
-                center: None,
-                sigpac_data,
-                regepac_id,
-                boundary,
+                center: boundary.polygon.first().cloned(),
+                sigpac_data: None,
+                regepac_id: None,
+                boundary: Some(Boundary {
+                    polygon: boundary.polygon,
+                    holes: boundary.holes,
+                }),
                 properties: None,
-                custom_fields: Some(feature.properties.clone()),
+                custom_fields: Some(properties),
                 note1: None,
                 note2: None,
                 is_active: Some(true),
                 is_temporary: Some(false),
             };
 
-            match self
-                .process_site(
-                    Uuid::nil(),
-                    import_site,
-                    skip_duplicates,
-                    update_existing,
-                    validate_lpis,
-                    lpis_country,
-                )
-                .await
-            {
+            let site_result = self
+                .process_site(tenant_id, import_site, true, false, false, None)
+                .await;
+
+            match site_result {
                 Ok(site_result) => match site_result {
                     SiteProcessResult::Created => result.created += 1,
                     SiteProcessResult::Updated => result.updated += 1,
@@ -550,10 +491,10 @@ impl ImportService {
                 },
                 Err(e) => {
                     result.errors.push(ImportError {
-                        index: _index,
+                        index,
                         label: "unknown".to_string(),
                         error: e.to_string(),
-                        field: Some("geometry".to_string()),
+                        field: Some("general".to_string()),
                     });
                 }
             }
@@ -562,34 +503,74 @@ impl ImportService {
         Ok(result)
     }
 
-    fn geojson_to_boundary(&self, geometry: &GeoJsonGeometry) -> Result<Boundary, String> {
-        let coords = match &geometry.coordinates {
-            serde_json::Value::Array(arr) => arr,
-            _ => return Err("Invalid coordinates format".to_string()),
-        };
+    fn geojson_value_to_boundary(
+        &self,
+        geometry: &GeoJsonGeometry,
+    ) -> Result<Boundary, SharedError> {
+        let geometry_type = &geometry.geometry_type;
+        let coordinates = &geometry.coordinates;
 
-        #[allow(clippy::collapsible_if)]
-        // Handle Polygon (first ring is exterior)
-        if let Some(serde_json::Value::Array(rings)) = coords.first() {
-            if let Some(serde_json::Value::Array(exterior)) = rings.first() {
-                let mut points = Vec::new();
-                for coord in exterior {
-                    #[allow(clippy::collapsible_if)]
-                    if let serde_json::Value::Array(pair) = coord {
-                        if pair.len() >= 2 {
-                            if let (Some(lng), Some(lat)) = (pair.first(), pair.get(1)) {
-                                if let (Some(lng), Some(lat)) = (lng.as_f64(), lat.as_f64()) {
-                                    points.push(GeoPoint { lng, lat });
+        let coords_array = coordinates
+            .as_array()
+            .ok_or_else(|| SharedError::Validation("Missing coordinates".to_string()))?;
+
+        match geometry_type.as_str() {
+            "Polygon" => {
+                if let Some(serde_json::Value::Array(rings)) = coords_array.first() {
+                    if let Some(serde_json::Value::Array(exterior)) = rings.first() {
+                        let mut points = Vec::new();
+                        for coord in exterior {
+                            if let serde_json::Value::Array(pair) = coord {
+                                if pair.len() >= 2 {
+                                    if let (Some(lng), Some(lat)) = (pair.first(), pair.get(1)) {
+                                        if let (Some(lng), Some(lat)) = (lng.as_f64(), lat.as_f64())
+                                        {
+                                            points.push(GeoPoint { lng, lat });
+                                        }
+                                    }
                                 }
                             }
                         }
+                        return Ok(Boundary {
+                            polygon: points,
+                            holes: None,
+                        });
                     }
                 }
-                return Ok(Boundary(points));
             }
+            "MultiPolygon" => {
+                if let Some(serde_json::Value::Array(polygons)) = coords_array.first() {
+                    if let Some(serde_json::Value::Array(rings)) = polygons.first() {
+                        if let Some(serde_json::Value::Array(exterior)) = rings.first() {
+                            let mut points = Vec::new();
+                            for coord in exterior {
+                                if let serde_json::Value::Array(pair) = coord {
+                                    if pair.len() >= 2 {
+                                        if let (Some(lng), Some(lat)) = (pair.first(), pair.get(1))
+                                        {
+                                            if let (Some(lng), Some(lat)) =
+                                                (lng.as_f64(), lat.as_f64())
+                                            {
+                                                points.push(GeoPoint { lng, lat });
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            return Ok(Boundary {
+                                polygon: points,
+                                holes: None,
+                            });
+                        }
+                    }
+                }
+            }
+            _ => {}
         }
 
-        Err("Invalid polygon geometry".to_string())
+        Err(SharedError::Validation(
+            "Invalid polygon geometry".to_string(),
+        ))
     }
 
     /// Import from Shapefile (base64 encoded .shp + .dbf + .shx files)
@@ -623,186 +604,133 @@ impl ImportService {
             .decode(&request.file_base64)
             .map_err(|e| SharedError::Validation(format!("Invalid base64 shapefile: {}", e)))?;
 
-        // Parse shapefile using geozero
-        let cursor = Cursor::new(shp_data);
-        let reader = ShpReader::new(cursor)
+        // Parse shapefile
+        let mut reader = ShpReader::new(Cursor::new(shp_data.clone()))
             .map_err(|e| SharedError::Validation(format!("Failed to read shapefile: {}", e)))?;
 
-        // Convert shapefile features to GeoJSON
-        let mut geojson_buffer: Vec<u8> = Vec::new();
-        let mut json_writer = geozero::geojson::GeoJsonWriter::new(&mut geojson_buffer);
+        // Read DBF records
+        let records = reader
+            .read_records()
+            .map_err(|e| SharedError::Validation(format!("Shapefile record read error: {}", e)))?;
 
-        reader.iter_features(&mut json_writer).map_err(|e| {
-            SharedError::Validation(format!("Failed to parse shapefile features: {}", e))
-        })?;
+        // Use iter_geometries with GeoWriter to get geometries (need a new reader)
+        let mut geo_reader = ShpReader::new(Cursor::new(shp_data))
+            .map_err(|e| SharedError::Validation(format!("Failed to read shapefile: {}", e)))?;
+        let mut geo_writer = GeoWriter::new();
+        let _ = geo_reader.iter_geometries(&mut geo_writer);
+        let geometry_collection = geo_writer.take_geometry();
 
-        let geojson_str = String::from_utf8(geojson_buffer)
-            .map_err(|e| SharedError::Validation(format!("Invalid UTF-8 in shapefile: {}", e)))?;
-
-        let geojson: serde_json::Value = serde_json::from_str(&geojson_str).map_err(|e| {
-            SharedError::Validation(format!("Failed to parse shapefile GeoJSON: {}", e))
-        })?;
-
-        if let Some(features_array) = geojson.get("features").and_then(|v| v.as_array()) {
-            result.total = features_array.len();
-
-            for (_index, feature) in features_array.iter().enumerate() {
-                let properties = feature
-                    .get("properties")
-                    .and_then(|v| v.as_object())
-                    .cloned()
-                    .unwrap_or_default();
-
-                let geometry = feature
-                    .get("geometry")
-                    .and_then(|v| v.as_object())
-                    .cloned()
-                    .unwrap_or_default();
-
-                let geometry_type = geometry
-                    .get("type")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("Unknown");
-
-                if geometry_type != "Polygon" && geometry_type != "MultiPolygon" {
-                    result.errors.push(ImportError {
-                        index: _index,
-                        label: properties
-                            .get("label")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("unknown")
-                            .to_string(),
-                        error: "Only Polygon and MultiPolygon geometries are supported".to_string(),
-                        field: Some("geometry".to_string()),
-                    });
-                    continue;
-                }
-
-                let label = properties
-                    .get("label")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or(&format!("Imported Site {}", _index))
-                    .to_string();
-
-                let sigpac_data = properties
-                    .get("sigpac_data")
-                    .and_then(|v| serde_json::from_value(v.clone()).ok());
-
-                let regepac_id = properties
-                    .get("regepac_id")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
-
-                // Convert geometry to boundary
-                let boundary = self.geojson_value_to_boundary(&geometry).ok();
-
-                let area = properties
-                    .get("area")
-                    .and_then(|v| v.as_f64())
-                    .unwrap_or(0.0);
-
-                let import_site = ImportSiteDto {
-                    label,
-                    site_type: SiteType::Field,
-                    crop_type: CropType::Unknown,
-                    variety: None,
-                    area,
-                    gross_area: None,
-                    plots: None,
-                    row_config: None,
-                    bbch_stage: None,
-                    planted_date: None,
-                    cleared_date: None,
-                    soil_type: None,
-                    slope: None,
-                    slope_facing: None,
-                    altitude: None,
-                    organic: None,
-                    organic_eligible: None,
-                    center: None,
-                    sigpac_data,
-                    regepac_id,
-                    boundary,
-                    properties: None,
-                    custom_fields: Some(serde_json::Value::Object(properties)),
-                    note1: None,
-                    note2: None,
-                    is_active: Some(true),
-                    is_temporary: Some(false),
-                };
-
-                match self
-                    .process_site(
-                        Uuid::nil(),
-                        import_site,
-                        skip_duplicates,
-                        update_existing,
-                        validate_lpis,
-                        lpis_country,
-                    )
-                    .await
-                {
-                    Ok(site_result) => match site_result {
-                        SiteProcessResult::Created => result.created += 1,
-                        SiteProcessResult::Updated => result.updated += 1,
-                        SiteProcessResult::Skipped(id) => {
-                            result.skipped += 1;
-                            result.duplicate_ids.push(id);
-                        }
-                    },
-                    Err(e) => {
-                        result.errors.push(ImportError {
-                            index: _index,
-                            label: "unknown".to_string(),
-                            error: e.to_string(),
-                            field: Some("geometry".to_string()),
-                        });
-                    }
-                }
-            }
-        }
-
-        Ok(result)
-    }
-
-    fn geojson_value_to_boundary(
-        &self,
-        geometry: &serde_json::Map<String, serde_json::Value>,
-    ) -> Result<Boundary, String> {
-        let coordinates = geometry.get("coordinates").ok_or("Missing coordinates")?;
-
-        let coords = match coordinates {
-            serde_json::Value::Array(arr) => arr,
-            _ => return Err("Invalid coordinates format".to_string()),
+        // Extract polygons from geometry collection
+        let polygons: Vec<GeoTypesGeometry> = match geometry_collection {
+            Some(GeoTypesGeometry::GeometryCollection(gc)) => gc.0,
+            Some(geom) => vec![geom],
+            None => vec![],
         };
 
-        #[allow(clippy::collapsible_if)]
-        // Handle Polygon (first ring is exterior)
-        if let Some(serde_json::Value::Array(rings)) = coords.first() {
-            if let Some(serde_json::Value::Array(exterior)) = rings.first() {
-                let mut points = Vec::new();
-                for coord in exterior {
-                    #[allow(clippy::collapsible_if)]
-                    if let serde_json::Value::Array(pair) = coord {
-                        if pair.len() >= 2 {
-                            if let (Some(lng), Some(lat)) = (pair.first(), pair.get(1)) {
-                                if let (Some(lng), Some(lat)) = (lng.as_f64(), lat.as_f64()) {
-                                    points.push(GeoPoint { lng, lat });
-                                }
-                            }
-                        }
+        let mut sites_to_import = Vec::new();
+
+        for (idx, (polygon, record)) in polygons.into_iter().zip(records.into_iter()).enumerate() {
+            // Extract boundary from polygon
+            let boundary = match polygon {
+                GeoTypesGeometry::Polygon(polygon) => {
+                    let exterior = polygon.exterior();
+                    let mut points = Vec::new();
+                    for coord in exterior.coords() {
+                        points.push(GeoPoint {
+                            lng: coord.x,
+                            lat: coord.y,
+                        });
+                    }
+                    Boundary {
+                        polygon: points,
+                        holes: None,
                     }
                 }
-                return Ok(Boundary(points));
+                GeoTypesGeometry::MultiPolygon(multi_polygon) => {
+                    // Take first polygon's exterior ring
+                    if let Some(polygon) = multi_polygon.into_iter().next() {
+                        let exterior = polygon.exterior();
+                        let mut points = Vec::new();
+                        for coord in exterior.coords() {
+                            points.push(GeoPoint {
+                                lng: coord.x,
+                                lat: coord.y,
+                            });
+                        }
+                        Boundary {
+                            polygon: points,
+                            holes: None,
+                        }
+                    } else {
+                        continue;
+                    }
+                }
+                _ => continue, // Skip non-polygon geometries
+            };
+
+            let center = boundary.polygon.first().cloned();
+
+            // Get properties from record
+            let mut properties = std::collections::HashMap::new();
+            for (name, value) in record.into_iter() {
+                properties.insert(name, value.to_string());
             }
+
+            let label = properties
+                .get("name")
+                .or_else(|| properties.get("label"))
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| format!("Shapefile Import {}", idx));
+
+            let area = properties
+                .get("area")
+                .and_then(|v| v.parse::<f64>().ok())
+                .unwrap_or(0.0);
+
+            let import_site = ImportSiteDto {
+                label,
+                site_type: SiteType::Field,
+                crop_type: CropType::Unknown,
+                variety: None,
+                area,
+                gross_area: None,
+                plots: None,
+                row_config: None,
+                bbch_stage: None,
+                planted_date: None,
+                cleared_date: None,
+                soil_type: None,
+                slope: None,
+                slope_facing: None,
+                altitude: None,
+                organic: None,
+                organic_eligible: None,
+                center,
+                sigpac_data: None,
+                regepac_id: None,
+                boundary: Some(boundary),
+                properties: None,
+                custom_fields: Some(serde_json::to_value(properties).unwrap_or_default()),
+                note1: None,
+                note2: None,
+                is_active: Some(true),
+                is_temporary: Some(false),
+            };
+
+            sites_to_import.push(import_site);
         }
 
-        Err("Invalid polygon geometry".to_string())
-    }
-}
+        result.total = sites_to_import.len();
 
-enum SiteProcessResult {
-    Created,
-    Updated,
-    Skipped(Uuid),
+        let import_request = ImportSitesRequest {
+            sites: sites_to_import,
+            skip_duplicates: Some(skip_duplicates),
+            update_existing: Some(update_existing),
+            validate_lpis: Some(validate_lpis),
+            source: ImportSource::Shapefile,
+            lpis_country,
+        };
+
+        self.import_sites(tenant_id, import_request, user_id).await
+    }
 }

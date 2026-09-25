@@ -1,4 +1,4 @@
-use agrocore_domain::entities::site::GeoPoint;
+use agrocore_domain::entities::spatial::types::GeoPoint;
 use agrocore_domain::entities::spatial::{SpatialObject, SpatialObjectType};
 use agrocore_domain::entities::tenant::TenantId;
 use chrono::Utc;

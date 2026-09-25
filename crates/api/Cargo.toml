@@ -57,6 +57,7 @@ validator = { workspace = true }
 rust_xlsxwriter = { workspace = true }
 geojson = { workspace = true }
 geozero = { workspace = true, features = ["with-shp"] }
+geo-types = { workspace = true }
 sqlx = { workspace = true, optional = true }
 argon2 = { workspace = true }
 password-hash = { workspace = true }

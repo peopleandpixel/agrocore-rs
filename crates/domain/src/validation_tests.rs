@@ -1,4 +1,4 @@
-use crate::entities::site::GeoPoint;
+use crate::entities::spatial::types::GeoPoint;
 use validator::Validate;
 
 #[test]

@@ -1,5 +1,4 @@
-use agrocore_domain::entities::site::{Site, SiteProperty};
-use agrocore_domain::entities::tenant::TenantId;
+use agrocore_domain::entities::site::Site;
 use agrocore_domain::entities::{CropType, SiteType};
 use agrocore_shared::lpis::LpisCountry;
 use chrono::Utc;
@@ -9,7 +8,7 @@ use uuid::Uuid;
 fn sample_site() -> Site {
     Site {
         id: Uuid::new_v4(),
-        tenant_id: TenantId(Uuid::new_v4()),
+        tenant_id: Uuid::new_v4(),
         business_id: None,
         label: String::from("North Field"),
         site_type: SiteType::Field,
@@ -17,7 +16,7 @@ fn sample_site() -> Site {
         variety: Some(String::from("Syrah")),
         area: 12.5,
         gross_area: Some(13.0),
-        plots: vec![],
+        plots: json!([]),
         row_config: None,
         bbch_stage: None,
         planted_date: None,
@@ -32,21 +31,20 @@ fn sample_site() -> Site {
         sigpac_data: None,
         lpis_country: Some(LpisCountry::Es),
         lpis_data: None,
-        #[allow(deprecated)]
         regepac_id: None,
         boundary: None,
-        properties: Some(vec![
-            SiteProperty {
-                key: String::from("soil_ph"),
-                value: json!(6.4),
-                group: Some(String::from("soil")),
+        properties: Some(json!([
+            {
+                "key": "soil_ph",
+                "value": 6.4,
+                "group": "soil"
             },
-            SiteProperty {
-                key: String::from("note"),
-                value: json!("north block"),
-                group: None,
-            },
-        ]),
+            {
+                "key": "note",
+                "value": "north block",
+                "group": null
+            }
+        ])),
         custom_fields: None,
         note1: None,
         note2: None,
@@ -62,7 +60,28 @@ fn sample_site() -> Site {
 #[test]
 fn site_property_helpers_return_expected_values() {
     let site = sample_site();
-    assert_eq!(site.get_property_as_f64("soil_ph"), Some(6.4));
-    assert_eq!(site.get_property_as_str("note"), Some("north block"));
-    assert!(site.get_property("missing").is_none());
+
+    // Access properties via JSON directly
+    let props = site
+        .properties
+        .as_ref()
+        .expect("properties should be present");
+    let soil_ph = props
+        .get(0)
+        .and_then(|p| p.get("value"))
+        .and_then(|v| v.as_f64());
+    let note = props
+        .get(1)
+        .and_then(|p| p.get("value"))
+        .and_then(|v| v.as_str());
+
+    assert_eq!(soil_ph, Some(6.4));
+    assert_eq!(note, Some("north block"));
+
+    // Test missing property
+    let missing = props.as_array().and_then(|arr| {
+        arr.iter()
+            .find(|p| p.get("key").and_then(|k| k.as_str()) == Some("missing"))
+    });
+    assert!(missing.is_none());
 }

@@ -20,6 +20,8 @@ pub mod mocks {
 }
 
 pub use agrocore_shared::{PaginatedResponse, Pagination, Result};
+pub use entities::site::{LpisData, RowConfig, SigpacData, SiteProperty};
+pub use entities::spatial::types::{Boundary, GeoPoint, Plot};
 pub use entities::tenant::TenantId;
 pub use entities::user::UserRole;
 pub use repositories::{

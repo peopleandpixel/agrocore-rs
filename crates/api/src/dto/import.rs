@@ -103,6 +103,15 @@ pub enum DuplicateMatchType {
     SigpacMatch,
     RegepacMatch,
     HighSimilarity,
+    BoundaryOverlap,
+    None,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub enum SiteProcessResult {
+    Created,
+    Updated,
+    Skipped(Uuid),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]

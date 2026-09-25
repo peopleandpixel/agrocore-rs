@@ -730,14 +730,9 @@ impl PostgresDb {
         let pool_options = config.pg_pool_options();
         let connect_timeout_secs = config.database_connect_timeout_secs;
 
-        // Append connect_timeout to the database URL as a query parameter
-        let database_url_with_timeout = if database_url.contains('?') {
-            format!("{}&connect_timeout={}", database_url, connect_timeout_secs)
-        } else {
-            format!("{}?connect_timeout={}", database_url, connect_timeout_secs)
-        };
+        let database_url_with_timeout = database_url.to_string();
 
-        let pool = agrocore_shared::with_retry("connect to database", 10, 1, || {
+        let pool = agrocore_shared::with_retry("connect to database", 30, 2, || {
             let opts = pool_options.clone();
             let url = database_url_with_timeout.clone();
             Box::pin(async move {
@@ -759,7 +754,13 @@ impl PostgresDb {
         // Monthly depreciation automation via scheduler
         // Depreciation will be registered as scheduler job below
 
-        sqlx::migrate!("../../migrations").run(&pool).await?;
+        // Run migrations only if SKIP_MIGRATIONS is not set (for dev workflow)
+        if std::env::var("SKIP_MIGRATIONS")
+            .map(|v| v != "1" && v != "true")
+            .unwrap_or(true)
+        {
+            sqlx::migrate!("../../migrations").run(&pool).await?;
+        }
 
         // Pre-instantiate all repositories once — Arc::clone is cheap (refcount increment)
         // compared to Arc::new(Repo::new(pool.clone())) which allocates on every call.

@@ -30,7 +30,7 @@ mod pac_application;
 mod pest_risk;
 mod phenology_record;
 mod plant_protection_record;
-mod site;
+pub mod site;
 mod soil_moisture_config;
 mod task_data;
 mod tenant;

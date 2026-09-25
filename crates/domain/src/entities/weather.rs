@@ -1,4 +1,5 @@
 use crate::entities::BbchStage;
+use crate::entities::spatial::types::GeoPoint;
 use crate::entities::tenant::TenantId;
 // use crate::entities::user::UserRole;
 use crate::repositories::VisibilityAwareEntity;
@@ -34,7 +35,7 @@ pub struct WeatherStation {
     #[sqlx(json)]
     pub station_type: WeatherStationType,
     #[sqlx(skip)]
-    pub location: Option<crate::entities::site::GeoPoint>,
+    pub location: Option<GeoPoint>,
     pub manufacturer: Option<String>,
     pub model: Option<String>,
     pub serial_number: Option<String>,
@@ -263,7 +264,7 @@ pub struct CreateWeatherStationDto {
     #[validate(length(min = 1, max = 100))]
     pub label: String,
     pub station_type: WeatherStationType,
-    pub location: Option<crate::entities::site::GeoPoint>,
+    pub location: Option<GeoPoint>,
     pub manufacturer: Option<String>,
     pub model: Option<String>,
     pub serial_number: Option<String>,
@@ -337,7 +338,7 @@ pub struct CreatePhenologyRecordDto {
 pub struct UpdateWeatherStationDto {
     pub label: Option<String>,
     pub station_type: Option<WeatherStationType>,
-    pub location: Option<crate::entities::site::GeoPoint>,
+    pub location: Option<GeoPoint>,
     pub manufacturer: Option<String>,
     pub model: Option<String>,
     pub serial_number: Option<String>,

@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-09-24
+
+### Added
+- **Spatial Type System Refactoring** — Complete extraction of spatial types (`GeoPoint`, `Boundary`, `Plot`, `RowConfig`, `SigpacData`, `LpisCountry`) to dedicated `spatial/types.rs` module to resolve circular dependencies
+- **SQLx Postgres Support for All Spatial Types** — Full `Type`, `Encode`, `Decode` implementations for `GeoPoint`, `Boundary`, `RowConfig`, `SigpacData`, `LpisCountry`, `SiteType`, `CropType`, `LpisParcel` enabling direct database storage as JSONB/TEXT
+- **FromStr Implementations for Enums** — Added `FromStr` for `SiteType` and `CropType` with snake_case parsing for flat-string serialization compatibility
+- **LPIS Data Public Re-export** — `LpisParcel` now publicly re-exported as `LpisData` from domain crate
+
+### Changed
+- **API DTOs Use Domain Types Directly** — `CreateSiteDto`, `UpdateSiteDto`, `SiteDto` now use `SiteType`, `CropType`, `RowConfig`, `SigpacData`, `Boundary`, `GeoPoint` directly from domain (eliminates conversion layer)
+- **Flat String Enum Serialization** — All enums serialize as flat strings (`"field"`) instead of tagged format (`{"Field":{}}`) via `#[serde(rename_all = "snake_case")]`
+- **Complex JSONB Fields Use `serde_json::Value`** — `SigpacData`, `RowConfig`, `LpisData`, `plots`, `properties` use flexible JSON Value instead of strict structs
+- **Import Service Rewrite** — Complete rewrite of GeoJSON/Shapefile import with correct geozero 0.15.1 API:
+  - Shapefile: `read_records()` for DBF properties + `iter_geometries()` with `GeoWriter` for geometries
+  - GeoJSON: Proper `Option<Vec>` handling, `GeoJsonGeometry` struct usage
+- **JWT Generation Fixed** — `generate_jwt` now accepts `(user_id, tenant_id, roles)` 3-argument signature
+- **Dependency Updates** — Pinned `geo-types = 0.7.11` (workspace) to match geozero 0.15.1 re-export; added `tokio` as optional feature to domain crate
+
+### Fixed
+- **Circular Dependency Resolution** — Broke `site.rs` ↔ `spatial.rs` cycle via `spatial/types.rs` extraction
+- **SQLX_OFFLINE Query Metadata** — All 3 import service queries now cached via `cargo sqlx prepare` with live PostGIS database
+- **Site Repository Visibility** — `PgSiteRepo` now public (macro generates public struct)
+- **UserRole Import Paths** — Fixed all `UserRole` imports to correct `agrocore_domain::entities::user::UserRole` path
+- **Boundary Deserialization** — Fixed deserialization from JSONB in site repository
+- **Shapefile Import** — Fixed geozero 0.15.1 API usage (`iter_features()` returns `ProcessorSink` iterator; correct approach uses `read_records()` + `iter_geometries()`)
+- **GeoJSON Import** — Fixed `Option<Vec>` unwrapping, `GeoJsonGeometry` struct handling, error type consistency (`SharedError`)
+- **JWT Argument Count** — Fixed `generate_jwt` calls in auth handlers to pass 3 arguments
+- **Test Updates** — Updated validation tests (`validation_tests.rs`, `dto_validation_tests.rs`, `spatial_tests.rs`, `site_tests.rs`) to match new DTO structure
+
+### Quality Gates
+- `cargo fmt --check` ✅
+- `cargo check --workspace` ✅
+- `cargo test --workspace` ✅ (187+ tests passing)
+- `cargo clippy --workspace` ✅ (warnings only, no errors)
+
+### Dependencies
+- `geo-types = 0.7.11` (workspace, matches geozero 0.15.1)
+- `tokio` optional feature in domain crate for async traits
+
 ## [0.20.0] - 2026-09-12
 
 ### Fixed

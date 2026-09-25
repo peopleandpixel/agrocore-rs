@@ -8,11 +8,12 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-use crate::entities::site::GeoPoint;
 use crate::entities::tenant::TenantId;
 use crate::repositories::VisibilityAwareEntity;
 
-// use crate::entities::user::UserRole;
+pub mod types;
+
+use crate::entities::spatial::types::{Boundary, GeoPoint, Plot};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum SpatialObjectType {
@@ -240,7 +241,7 @@ pub struct SpatialObject {
     pub updated_by: Option<Uuid>,
 }
 
-impl VisibilityAwareEntity for SpatialObject {}
+impl crate::repositories::VisibilityAwareEntity for SpatialObject {}
 
 impl SpatialObject {
     pub fn contains_point(&self, point: &GeoPoint) -> bool {
@@ -497,4 +498,17 @@ mod tests {
         assert!(tree.contains_point(&point(14.0001, 47.0001)));
         assert!(!tree.contains_point(&point(14.01, 47.01)));
     }
+}
+
+fn point(lng: f64, lat: f64) -> GeoPoint {
+    GeoPoint { lng, lat }
+}
+
+fn square(min_lng: f64, min_lat: f64, max_lng: f64, max_lat: f64) -> Vec<GeoPoint> {
+    vec![
+        point(min_lng, min_lat),
+        point(max_lng, min_lat),
+        point(max_lng, max_lat),
+        point(min_lng, max_lat),
+    ]
 }

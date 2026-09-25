@@ -87,6 +87,7 @@ impl ReportingService {
         for site in sites {
             if let Some(boundary) = site.boundary {
                 let ring = boundary
+                    .polygon
                     .iter()
                     .map(|p| vec![p.lng, p.lat].into())
                     .collect::<Vec<geojson::Position>>();

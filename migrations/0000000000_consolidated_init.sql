@@ -3,6 +3,7 @@
 -- No ALTER TABLE statements. Fresh schema each time (dev.sh destroys Docker).
 
 -- Clean slate: drop all existing tables (for dev re-runs)
+-- Exclude _sqlx_migrations to preserve migration history
 DROP TABLE IF EXISTS
     sites, user_sites, order_sites, users, tenants, equipment, orders, cost_centers,
     customers, weather_data, weather_stations, animals, grazing_records,
@@ -14,8 +15,11 @@ DROP TABLE IF EXISTS
     lpis_reference_parcels, sigpac_parcels, iot_devices, inventory_transactions,
     inventory_items, inventory_locations, clock_entries, workers,
     worker_locations, work_logs, frost_warnings, growing_degree_days, pest_risks,
- soil_moisture_configs, soil_moisture_readings, soil_moisture_alerts,
- phenology_records, equipment_maintenance_log
+    soil_moisture_configs, soil_moisture_readings, soil_moisture_alerts,
+    phenology_records, equipment_maintenance_log, equipment_fuel_consumption,
+    equipment_usage_log, equipment_depreciation_schedule,
+    varieties, breeds,
+    sites_history, task_data, tasks
 CASCADE;
 
 DROP TYPE IF EXISTS license_type CASCADE;
@@ -76,7 +80,7 @@ BEGIN
     IF p_geometry IS NULL THEN
         RETURN NULL;
     END IF;
-    RETURN ROUND(ST_Area(p_geometry::GEOGRAPHY) / 10000.0, 4);
+    RETURN ROUND((ST_Area(p_geometry::GEOGRAPHY) / 10000.0)::numeric, 4);
 END;
 $$ LANGUAGE plpgsql;
 
@@ -325,6 +329,165 @@ CREATE TABLE IF NOT EXISTS equipment_maintenance_log (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+
+
+-- Equipment fuel tracking columns
+ALTER TABLE IF EXISTS equipment
+    ADD COLUMN IF NOT EXISTS fuel_capacity_liters NUMERIC(10,2) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS fuel_type TEXT;
+
+-- Equipment maintenance cost tracking
+ALTER TABLE IF EXISTS equipment_maintenance_log
+    ADD COLUMN IF NOT EXISTS parts_cost NUMERIC(10,2) DEFAULT 0.00 NOT NULL,
+    ADD COLUMN IF NOT EXISTS labor_hours NUMERIC(10,2) DEFAULT 0.00 NOT NULL,
+    ADD COLUMN IF NOT EXISTS downtime_hours NUMERIC(10,2) DEFAULT 0.00 NOT NULL;
+
+-- Index for cost analysis queries
+CREATE INDEX IF NOT EXISTS idx_equipment_maintenance_cost_equipment
+    ON equipment_maintenance_log(equipment_id, tenant_id);
+
+CREATE INDEX IF NOT EXISTS idx_equipment_maintenance_performed_at
+    ON equipment_maintenance_log(performed_at DESC);
+
+-- Equipment usage log table
+CREATE TABLE IF NOT EXISTS equipment_usage_log (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    equipment_id    UUID NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
+    tenant_id       UUID NOT NULL,
+    worker_id       UUID,
+    task_id         UUID,
+    operation_type  VARCHAR(100),
+    started_at      TIMESTAMPTZ NOT NULL,
+    ended_at        TIMESTAMPTZ,
+    hours_operated  NUMERIC(8,2) DEFAULT 0.00,
+    note            TEXT,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_equipment_usage_log_equipment_id ON equipment_usage_log(equipment_id);
+CREATE INDEX IF NOT EXISTS idx_equipment_usage_log_tenant_id ON equipment_usage_log(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_equipment_usage_log_worker_id ON equipment_usage_log(worker_id);
+CREATE INDEX IF NOT EXISTS idx_equipment_usage_log_task_id ON equipment_usage_log(task_id);
+CREATE INDEX IF NOT EXISTS idx_equipment_usage_log_started_at ON equipment_usage_log(started_at);
+CREATE INDEX IF NOT EXISTS idx_equipment_usage_log_ended_at ON equipment_usage_log(ended_at);
+CREATE INDEX IF NOT EXISTS idx_equipment_usage_log_operation_type ON equipment_usage_log(operation_type);
+CREATE INDEX IF NOT EXISTS idx_equipment_usage_log_equipment_started ON equipment_usage_log(equipment_id, started_at DESC);
+
+CREATE TRIGGER update_equipment_usage_log_updated_at
+    BEFORE UPDATE ON equipment_usage_log
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+COMMENT ON TABLE equipment_usage_log IS 'Tracks equipment usage: who, what operation, when started/finished, duration.';
+
+-- Equipment depreciation tracking
+ALTER TABLE IF EXISTS equipment
+    ADD COLUMN IF NOT EXISTS original_cost NUMERIC(12,2) DEFAULT 0.0 NOT NULL,
+    ADD COLUMN IF NOT EXISTS salvage_value NUMERIC(12,2) DEFAULT 0.0 NOT NULL,
+    ADD COLUMN IF NOT EXISTS purchase_date DATE,
+    ADD COLUMN IF NOT EXISTS depreciation_method VARCHAR(20) DEFAULT 'straight_line' NOT NULL,
+    ADD COLUMN IF NOT EXISTS useful_life_years INTEGER DEFAULT 5 NOT NULL;
+
+CREATE TABLE IF NOT EXISTS equipment_depreciation_schedule (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    equipment_id UUID NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
+    tenant_id UUID NOT NULL,
+    year INTEGER NOT NULL,
+    depreciation_amount NUMERIC(12,2) NOT NULL DEFAULT 0.0,
+    accumulated_depreciation NUMERIC(12,2) NOT NULL DEFAULT 0.0,
+    net_book_value NUMERIC(12,2) NOT NULL DEFAULT 0.0,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    UNIQUE(equipment_id, tenant_id, year)
+);
+
+CREATE INDEX IF NOT EXISTS idx_equipment_depreciation_equipment ON equipment_depreciation_schedule(equipment_id);
+CREATE INDEX IF NOT EXISTS idx_equipment_depreciation_tenant ON equipment_depreciation_schedule(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_equipment_depreciation_year ON equipment_depreciation_schedule(year);
+
+-- Varieties table
+CREATE TABLE IF NOT EXISTS varieties (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    category VARCHAR(50) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    origin VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_varieties_category ON varieties(category);
+
+-- Breeds table
+CREATE TABLE IF NOT EXISTS breeds (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    species VARCHAR(50) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    origin VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_breeds_species ON breeds(species);
+
+-- Varieties seed data
+INSERT INTO varieties (category, name, origin) VALUES
+('Grape', 'Cabernet Sauvignon', 'Bordeaux'),
+('Grape', 'Merlot', 'Bordeaux'),
+('Grape', 'Chardonnay', 'Burgundy'),
+('Grape', 'Sauvignon Blanc', 'Loire'),
+('Grape', 'Pinot Noir', 'Burgundy'),
+('Grape', 'Syrah / Shiraz', 'Rhone'),
+('Grape', 'Tempranillo', 'Spain'),
+('Grape', 'Garnacha / Grenache', 'Spain'),
+('Grape', 'Sangiovese', 'Tuscany'),
+('Grape', 'Nebbiolo', 'Piedmont'),
+('Grape', 'Riesling', 'Germany'),
+('Grape', 'Zinfandel', 'California'),
+('Olive', 'Picual', 'Spain'),
+('Olive', 'Arbequina', 'Spain'),
+('Olive', 'Hojiblanca', 'Spain'),
+('Olive', 'Cornicabra', 'Spain'),
+('Olive', 'Koroneiki', 'Greece'),
+('Olive', 'Frantoio', 'Italy'),
+('Olive', 'Leccino', 'Italy'),
+('Olive', 'Manzanilla', 'Spain'),
+('Olive', 'Galega', 'Portugal'),
+('Olive', 'Cobrançosa', 'Portugal'),
+('Olive', 'Kalamata', 'Greece'),
+('Olive', 'Nocellara del Belice', 'Italy'),
+('Nut', 'Almond', 'Mediterranean'),
+('Nut', 'Hazelnut', 'Turkey'),
+('Nut', 'Walnut', 'Persia'),
+('Nut', 'Chestnut', 'Europe'),
+('Berry', 'Strawberry', 'Europe'),
+('Berry', 'Blueberry', 'North America'),
+('Berry', 'Raspberry', 'Europe'),
+('Fruit', 'Apple', 'Central Asia'),
+('Fruit', 'Pear', 'Central Asia'),
+('Fruit', 'Peach', 'China'),
+('Fruit', 'Plum', 'Europe'),
+('Citrus', 'Orange', 'China'),
+('Citrus', 'Lemon', 'Asia'),
+('Citrus', 'Lime', 'Asia'),
+('Citrus', 'Mandarin', 'China'),
+('Vegetable', 'Tomato', 'Americas'),
+('Vegetable', 'Potato', 'South America'),
+('Vegetable', 'Onion', 'Central Asia'),
+('Grain', 'Wheat', 'Fertile Crescent'),
+('Grain', 'Barley', 'Fertile Crescent'),
+('Grain', 'Corn / Maize', 'Americas'),
+('Grain', 'Rice', 'Asia');
+
+-- Breeds seed data
+INSERT INTO breeds (species, name, origin) VALUES
+('Goat', 'Murciano-Granadina', 'Spain'), ('Goat', 'Alpine', 'France'), ('Goat', 'Saanen', 'Switzerland'), ('Goat', 'Boer', 'South Africa'), ('Goat', 'Nubian', 'UK'),
+('Chicken', 'Rhode Island Red', 'USA'), ('Chicken', 'Leghorn', 'Italy'), ('Chicken', 'Sussex', 'UK'), ('Chicken', 'Plymouth Rock', 'USA'), ('Chicken', 'Orpington', 'UK'),
+('Duck', 'Pekin', 'China'), ('Duck', 'Muscovy', 'South America'), ('Duck', 'Khaki Campbell', 'UK'), ('Duck', 'Indian Runner', 'Indonesia'),
+('Turkey', 'Broad Breasted White', 'USA'), ('Turkey', 'Bourbon Red', 'USA'), ('Turkey', 'Narragansett', 'USA'),
+('Goose', 'Toulouse', 'France'), ('Goose', 'Embden', 'Germany'), ('Goose', 'Chinese', 'China'),
+('Sheep', 'Merino', 'Spain'), ('Sheep', 'Dorset', 'UK'), ('Sheep', 'Suffolk', 'UK'), ('Sheep', 'Texel', 'Netherlands'),
+('Cattle', 'Holstein', 'Netherlands'), ('Cattle', 'Angus', 'Scotland'), ('Cattle', 'Hereford', 'England'), ('Cattle', 'Charolais', 'France'), ('Cattle', 'Limousin', 'France'),
+('Horse', 'Arabian', 'Arabia'), ('Horse', 'Thoroughbred', 'UK'), ('Horse', 'Andalusian', 'Spain'), ('Horse', 'Lusitano', 'Portugal');
+
 CREATE TABLE IF NOT EXISTS sites (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -367,6 +530,33 @@ CREATE TABLE IF NOT EXISTS sites (
     lpis_country VARCHAR(2),
     lpis_data JSONB
 );
+
+-- Equipment fuel consumption table
+CREATE TABLE IF NOT EXISTS equipment_fuel_consumption (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    equipment_id UUID NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
+    tenant_id UUID NOT NULL,
+    liters NUMERIC(10,3) NOT NULL,
+    cost_per_liter NUMERIC(10,2) DEFAULT 0,
+    total_cost NUMERIC(10,2) GENERATED ALWAYS AS (liters * cost_per_liter) STORED,
+    operation_type TEXT,
+    field_id UUID REFERENCES sites(id) ON DELETE SET NULL,
+    hours_operated NUMERIC(10,2) DEFAULT 0,
+    consumed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    recorded_by UUID,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_fuel_consumption_equipment ON equipment_fuel_consumption(equipment_id);
+CREATE INDEX IF NOT EXISTS idx_fuel_consumption_tenant ON equipment_fuel_consumption(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_fuel_consumption_date ON equipment_fuel_consumption(consumed_at);
+CREATE INDEX IF NOT EXISTS idx_equipment_fuel_capacity ON equipment(fuel_capacity_liters);
+
+COMMENT ON TABLE equipment_fuel_consumption IS 'Tracks fuel usage per equipment with operation context and optional field association';
+COMMENT ON COLUMN equipment.fuel_capacity_liters IS 'Maximum fuel tank capacity in liters';
+
+
 
 CREATE TABLE IF NOT EXISTS orders (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -1581,6 +1771,21 @@ CREATE TRIGGER audit_trigger_order_sites
 -- ============================================================
 -- 7. RLS Policies
 -- ============================================================
+-- Drop all existing policies to make idempotent (run after tables exist, before creating new ones)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN SELECT schemaname, tablename, policyname FROM pg_policies WHERE schemaname = 'public' LOOP
+        EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I', r.policyname, r.schemaname, r.tablename);
+    END LOOP;
+END $$;
+
+-- Explicitly drop policies for tasks table (most commonly duplicated)
+DROP POLICY IF EXISTS tasks_select ON tasks;
+DROP POLICY IF EXISTS tasks_insert ON tasks;
+DROP POLICY IF EXISTS tasks_update ON tasks;
+DROP POLICY IF EXISTS tasks_delete ON tasks;
 
 CREATE POLICY tenants_select ON tenants FOR SELECT USING (is_superadmin() OR id = get_current_tenant_id());
 CREATE POLICY tenants_insert ON tenants FOR INSERT WITH CHECK (is_superadmin());

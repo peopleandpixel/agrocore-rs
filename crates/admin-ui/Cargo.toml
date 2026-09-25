@@ -3,9 +3,14 @@ name = "admin-ui"
 version.workspace = true
 edition = "2024"
 license.workspace = true
+build = "build.rs"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+
+[[bin]]
+name = "admin-ui"
 path = "src/main.rs"
 
 [dependencies]

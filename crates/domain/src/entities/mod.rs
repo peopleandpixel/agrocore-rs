@@ -62,10 +62,8 @@ pub use olive::{
     UpdateOliveGroveDto, UpdateOliveOilRecordDto,
 };
 pub use plant_protection::PlantProtectionAreaMethod;
-pub use site::{
-    Boundary, CreateSiteDto, GeoPoint, Plot, RowConfig, SigpacData, Site, SiteProperty,
-    UpdateSiteDto,
-};
+pub use site::{CreateSiteDto, LpisData, RowConfig, SigpacData, Site, SiteProperty, UpdateSiteDto};
+pub use spatial::types::{Boundary, GeoPoint, Plot};
 pub use spatial::{PolygonGeometry, SpatialGeometry, SpatialObject, SpatialObjectType};
 pub use sync::{
     ClientId, ClientSyncState, ConflictResolution, ConflictType, SyncBatch, SyncBatchResult,
@@ -220,6 +218,69 @@ impl BbchStage {
             BbchStage::AfterHarvest => 91,
             BbchStage::WinterDormancy => 97,
             BbchStage::Custom(_) => 100, // Or whatever default
+        }
+    }
+}
+
+impl std::str::FromStr for SiteType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "vineyard" => Ok(SiteType::Vineyard),
+            "field" => Ok(SiteType::Field),
+            "cork_oak_montado" => Ok(SiteType::CorkOakMontado),
+            "holm_oak_montado" => Ok(SiteType::HolmOakMontado),
+            "olive_grove" => Ok(SiteType::OliveGrove),
+            "orchard" => Ok(SiteType::Orchard),
+            "almond_orchard" => Ok(SiteType::AlmondOrchard),
+            "citrus_grove" => Ok(SiteType::CitrusGrove),
+            "pasture" => Ok(SiteType::Pasture),
+            "greenhouse" => Ok(SiteType::Greenhouse),
+            _ => Ok(SiteType::Other(s.to_string())),
+        }
+    }
+}
+
+impl std::str::FromStr for CropType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "grape" => Ok(CropType::Grape),
+            "olive" => Ok(CropType::Olive),
+            "apple" => Ok(CropType::Apple),
+            "citrus" => Ok(CropType::Citrus),
+            "nut" => Ok(CropType::Nut),
+            "cork_oak" => Ok(CropType::CorkOak),
+            "almond" => Ok(CropType::Almond),
+            "hazelnut" => Ok(CropType::Hazelnut),
+            "chestnut" => Ok(CropType::Chestnut),
+            "berry" => Ok(CropType::Berry),
+            "tropical" => Ok(CropType::Tropical),
+            "poultry" => Ok(CropType::Poultry),
+            "livestock" => Ok(CropType::Livestock),
+            "fallow" => Ok(CropType::Fallow),
+            "forest" => Ok(CropType::Forest),
+            "pasture" => Ok(CropType::Pasture),
+            "unknown" => Ok(CropType::Unknown),
+            _ => {
+                if s.starts_with("vegetable:") || s.starts_with("vegetable_") {
+                    let name = s
+                        .strip_prefix("vegetable:")
+                        .or_else(|| s.strip_prefix("vegetable_"))
+                        .unwrap_or(s);
+                    Ok(CropType::Vegetable(name.to_string()))
+                } else if s.starts_with("grain:") || s.starts_with("grain_") {
+                    let name = s
+                        .strip_prefix("grain:")
+                        .or_else(|| s.strip_prefix("grain_"))
+                        .unwrap_or(s);
+                    Ok(CropType::Grain(name.to_string()))
+                } else {
+                    Ok(CropType::Other(s.to_string()))
+                }
+            }
         }
     }
 }

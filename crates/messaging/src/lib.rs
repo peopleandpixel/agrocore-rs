@@ -1,7 +1,8 @@
 use agrocore_domain::entities::compliance::AuditLog;
 use agrocore_domain::entities::order::Order;
-use agrocore_domain::entities::site::{GeoPoint, Site};
+use agrocore_domain::entities::site::Site;
 use agrocore_domain::entities::spatial::SpatialObjectType;
+use agrocore_domain::entities::spatial::types::GeoPoint;
 use agrocore_domain::entities::user::User;
 use agrocore_domain::entities::weather::{PhenologyRecord, WeatherData, WeatherStation};
 use agrocore_logging::warn;

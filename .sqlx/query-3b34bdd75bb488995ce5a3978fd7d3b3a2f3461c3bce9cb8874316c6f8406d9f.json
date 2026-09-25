@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id FROM sites\n                   WHERE tenant_id = $1\n                   AND is_active = true\n                   AND ST_Contains(boundary::geometry, ST_SetSRID(ST_MakePoint($2, $3), 4326))\n                   LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Float8",
+        "Float8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "3b34bdd75bb488995ce5a3978fd7d3b3a2f3461c3bce9cb8874316c6f8406d9f"
+}

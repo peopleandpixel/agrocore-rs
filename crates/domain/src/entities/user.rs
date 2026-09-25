@@ -109,7 +109,7 @@ impl UserRole {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct CreateUserDto {
     #[validate(length(min = 1, max = 100))]
     pub firstname: String,

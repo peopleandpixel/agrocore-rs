@@ -17,9 +17,10 @@ mockall = { workspace = true, optional = true }
 sqlx = { workspace = true, features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono", "ipnetwork", "bigdecimal", "json"], optional = true }
 geozero = { workspace = true }
 strum = { version = "0.26", features = ["derive"] }
+tokio = { workspace = true, optional = true }
 
 [features]
 default = ["sqlx"]
 sqlx = ["dep:sqlx", "agrocore-shared/sqlx"]
 mocks = ["dep:mockall"]
-depreciation = []
+depreciation = ["dep:tokio"]

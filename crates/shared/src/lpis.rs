@@ -8,6 +8,11 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+#[cfg(feature = "sqlx")]
+use sqlx::postgres::{PgArgumentBuffer, PgTypeInfo, PgValueRef};
+#[cfg(feature = "sqlx")]
+use sqlx::{Encode, Type};
+
 /// Country code for LPIS systems
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
@@ -63,6 +68,62 @@ impl std::str::FromStr for LpisCountry {
             "AT" => Ok(LpisCountry::At),
             _ => Ok(LpisCountry::Other),
         }
+    }
+}
+
+#[cfg(feature = "sqlx")]
+// sqlx Postgres support for LpisCountry (stored as TEXT)
+impl Type<sqlx::Postgres> for LpisCountry {
+    fn type_info() -> PgTypeInfo {
+        PgTypeInfo::with_name("text")
+    }
+}
+
+#[cfg(feature = "sqlx")]
+impl<'q> Encode<'q, sqlx::Postgres> for LpisCountry {
+    fn encode_by_ref(
+        &self,
+        buf: &mut PgArgumentBuffer,
+    ) -> Result<sqlx::encode::IsNull, Box<dyn std::error::Error + Send + Sync>> {
+        let s = self.to_string();
+        let s_str: &str = s.as_str();
+        <&str as Encode<'q, sqlx::Postgres>>::encode_by_ref(&s_str, buf)
+    }
+}
+
+#[cfg(feature = "sqlx")]
+impl<'r> sqlx::Decode<'r, sqlx::Postgres> for LpisCountry {
+    fn decode(value: PgValueRef<'r>) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        let s: &str = <&str as sqlx::Decode<'r, sqlx::Postgres>>::decode(value)?;
+        Ok(s.parse().unwrap_or(LpisCountry::Other))
+    }
+}
+
+// sqlx Postgres support for LpisParcel (stored as JSONB)
+#[cfg(feature = "sqlx")]
+impl Type<sqlx::Postgres> for LpisParcel {
+    fn type_info() -> PgTypeInfo {
+        PgTypeInfo::with_name("jsonb")
+    }
+}
+
+#[cfg(feature = "sqlx")]
+impl<'q> Encode<'q, sqlx::Postgres> for LpisParcel {
+    fn encode_by_ref(
+        &self,
+        buf: &mut PgArgumentBuffer,
+    ) -> Result<sqlx::encode::IsNull, Box<dyn std::error::Error + Send + Sync>> {
+        let json = serde_json::to_string(self)?;
+        let json_str: &str = json.as_str();
+        <&str as Encode<'q, sqlx::Postgres>>::encode_by_ref(&json_str, buf)
+    }
+}
+
+#[cfg(feature = "sqlx")]
+impl<'r> sqlx::Decode<'r, sqlx::Postgres> for LpisParcel {
+    fn decode(value: PgValueRef<'r>) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        let json: &str = <&str as sqlx::Decode<'r, sqlx::Postgres>>::decode(value)?;
+        Ok(serde_json::from_str(json)?)
     }
 }
 
