@@ -1,5 +1,5 @@
 # Base build image for AgroCore Rust services
-FROM rust:1.91-slim-bookworm
+FROM rust:1.98-slim-bookworm
 
 # Install common build dependencies
 RUN apt-get update && apt-get install -y \
