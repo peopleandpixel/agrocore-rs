@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -30,18 +31,22 @@ impl VarietyCategory {
             VarietyCategory::Other => "Other",
         }
     }
+}
 
-    pub fn from_str(s: &str) -> Self {
+impl FromStr for VarietyCategory {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Grape" => VarietyCategory::Grape,
-            "Olive" => VarietyCategory::Olive,
-            "Apple" => VarietyCategory::Apple,
-            "Citrus" => VarietyCategory::Citrus,
-            "Nut" => VarietyCategory::Nut,
-            "Berry" => VarietyCategory::Berry,
-            "Vegetable" => VarietyCategory::Vegetable,
-            "Grain" => VarietyCategory::Grain,
-            _ => VarietyCategory::Other,
+            "Grape" => Ok(VarietyCategory::Grape),
+            "Olive" => Ok(VarietyCategory::Olive),
+            "Apple" => Ok(VarietyCategory::Apple),
+            "Citrus" => Ok(VarietyCategory::Citrus),
+            "Nut" => Ok(VarietyCategory::Nut),
+            "Berry" => Ok(VarietyCategory::Berry),
+            "Vegetable" => Ok(VarietyCategory::Vegetable),
+            "Grain" => Ok(VarietyCategory::Grain),
+            _ => Ok(VarietyCategory::Other),
         }
     }
 }

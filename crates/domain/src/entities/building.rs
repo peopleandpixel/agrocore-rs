@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -20,13 +21,17 @@ impl BuildingType {
             BuildingType::Other(s) => s,
         }
     }
+}
 
-    pub fn from_str(s: &str) -> Self {
+impl FromStr for BuildingType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "ChickenCoop" => BuildingType::ChickenCoop,
-            "GoatStable" => BuildingType::GoatStable,
-            "Barn" => BuildingType::Barn,
-            other => BuildingType::Other(other.to_string()),
+            "ChickenCoop" => Ok(BuildingType::ChickenCoop),
+            "GoatStable" => Ok(BuildingType::GoatStable),
+            "Barn" => Ok(BuildingType::Barn),
+            other => Ok(BuildingType::Other(other.to_string())),
         }
     }
 }

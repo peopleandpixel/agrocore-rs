@@ -14,10 +14,6 @@ RUN apt-get update && apt-get install -y \
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 
-# Copy REAL logging crate (needed for macro exports in dependent crates)
-RUN rm -rf crates/logging
-COPY crates/logging ./crates/logging
-
 # Copy migrations directory (needed for sqlx::migrate! in infrastructure)
 COPY migrations ./migrations
 

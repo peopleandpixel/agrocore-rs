@@ -17,6 +17,7 @@ pub struct LoggingConfig {
 
     // File output (JSON)
     pub file_enabled: bool,
+    pub log_dir: Option<PathBuf>,
     pub file_path: PathBuf,
     pub file_rotation: RotationConfig,
     pub file_max_files: usize,
@@ -33,19 +34,16 @@ pub struct LoggingConfig {
     pub prometheus_endpoint: String,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum EnvironmentType {
+    #[default]
     Development,
     Staging,
     Production,
 }
 
-impl Default for EnvironmentType {
-    fn default() -> Self {
-        EnvironmentType::Development
-    }
-}
+// Default is now derived via #[derive(Default)] and #[default] on Development variant
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RotationConfig {
@@ -76,6 +74,7 @@ impl Default for LoggingConfig {
             console_thread_names: true,
 
             file_enabled: false,
+            log_dir: None,
             file_path: PathBuf::from("logs/agrocore.json"),
             file_rotation: RotationConfig::default(),
             file_max_files: 30,

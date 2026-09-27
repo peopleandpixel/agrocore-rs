@@ -32,7 +32,10 @@ impl From<Group> for GroupDto {
             id: g.id,
             plot_id: g.plot_id,
             parent_group_id: g.parent_group_id,
-            group_type: GroupType::from_str(&g.group_type),
+            group_type: g
+                .group_type
+                .parse()
+                .unwrap_or(GroupType::Other(g.group_type)),
             label: g.label,
         }
     }

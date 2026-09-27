@@ -221,8 +221,6 @@ impl UserRepository for PgUserRepo {
     ) -> RepositoryFuture<Option<User>> {
         // Extract all owned data from dto and self to avoid lifetime issues
         let pool = self.pool.clone();
-        let tid = tid;
-        let id = id;
         let firstname = dto.firstname;
         let lastname = dto.lastname;
         let email = dto.email;

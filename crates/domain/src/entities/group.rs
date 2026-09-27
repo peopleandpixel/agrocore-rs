@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -24,15 +25,19 @@ impl GroupType {
             GroupType::Other(s) => s,
         }
     }
+}
 
-    pub fn from_str(s: &str) -> Self {
+impl FromStr for GroupType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Herd" => GroupType::Herd,
-            "Flock" => GroupType::Flock,
-            "Grove" => GroupType::Grove,
-            "Coop" => GroupType::Coop,
-            "Barn" => GroupType::Barn,
-            other => GroupType::Other(other.to_string()),
+            "Herd" => Ok(GroupType::Herd),
+            "Flock" => Ok(GroupType::Flock),
+            "Grove" => Ok(GroupType::Grove),
+            "Coop" => Ok(GroupType::Coop),
+            "Barn" => Ok(GroupType::Barn),
+            other => Ok(GroupType::Other(other.to_string())),
         }
     }
 }

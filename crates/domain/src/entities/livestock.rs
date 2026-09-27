@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -31,19 +32,23 @@ impl AnimalSpecies {
             AnimalSpecies::Other(s) => s,
         }
     }
+}
 
-    pub fn from_str(s: &str) -> Self {
+impl FromStr for AnimalSpecies {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "goat" => AnimalSpecies::Goat,
-            "chicken" => AnimalSpecies::Chicken,
-            "sheep" => AnimalSpecies::Sheep,
-            "cattle" => AnimalSpecies::Cattle,
-            "pig" => AnimalSpecies::Pig,
-            "horse" => AnimalSpecies::Horse,
-            "duck" => AnimalSpecies::Duck,
-            "turkey" => AnimalSpecies::Turkey,
-            "goose" => AnimalSpecies::Goose,
-            other => AnimalSpecies::Other(other.to_string()),
+            "goat" => Ok(AnimalSpecies::Goat),
+            "chicken" => Ok(AnimalSpecies::Chicken),
+            "sheep" => Ok(AnimalSpecies::Sheep),
+            "cattle" => Ok(AnimalSpecies::Cattle),
+            "pig" => Ok(AnimalSpecies::Pig),
+            "horse" => Ok(AnimalSpecies::Horse),
+            "duck" => Ok(AnimalSpecies::Duck),
+            "turkey" => Ok(AnimalSpecies::Turkey),
+            "goose" => Ok(AnimalSpecies::Goose),
+            other => Ok(AnimalSpecies::Other(other.to_string())),
         }
     }
 }
@@ -67,14 +72,18 @@ impl AnimalStatus {
             AnimalStatus::Other(s) => s,
         }
     }
+}
 
-    pub fn from_str(s: &str) -> Self {
+impl FromStr for AnimalStatus {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Active" => AnimalStatus::Active,
-            "Inactive" => AnimalStatus::Inactive,
-            "Sold" => AnimalStatus::Sold,
-            "Deceased" => AnimalStatus::Deceased,
-            other => AnimalStatus::Other(other.to_string()),
+            "Active" => Ok(AnimalStatus::Active),
+            "Inactive" => Ok(AnimalStatus::Inactive),
+            "Sold" => Ok(AnimalStatus::Sold),
+            "Deceased" => Ok(AnimalStatus::Deceased),
+            other => Ok(AnimalStatus::Other(other.to_string())),
         }
     }
 }

@@ -5,7 +5,6 @@ use crate::entities::{CropType, SiteType};
 pub use agrocore_shared::lpis::{LpisCountry, LpisParcel as LpisData};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
 use sqlx::postgres::{PgArgumentBuffer, PgTypeInfo, PgValueRef};
 use sqlx::{Encode, Type};
 use utoipa::ToSchema;

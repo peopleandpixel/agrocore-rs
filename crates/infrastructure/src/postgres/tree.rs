@@ -60,8 +60,8 @@ impl TreeRepository for PgTreeRepo {
             Ok(PaginatedResponse {
                 data,
                 total: total as u64,
-                page: page as u64,
-                per_page: per_page as u64,
+                page,
+                per_page,
                 total_pages,
             })
         })
@@ -109,8 +109,8 @@ impl TreeRepository for PgTreeRepo {
             Ok(PaginatedResponse {
                 data,
                 total: total as u64,
-                page: page as u64,
-                per_page: per_page as u64,
+                page,
+                per_page,
                 total_pages,
             })
         })
@@ -202,7 +202,7 @@ impl TreeRepository for PgTreeRepo {
                 )
                 .bind(&tree.group_id)
                 .bind(&tree.tree_type)
-                .bind(tree.count as i32)
+                .bind(tree.count)
                 .bind(&tree.label)
                 .bind(id)
                 .bind(tid)

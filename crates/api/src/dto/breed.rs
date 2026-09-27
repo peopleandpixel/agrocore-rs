@@ -28,7 +28,7 @@ impl From<Breed> for BreedDto {
     fn from(b: Breed) -> Self {
         Self {
             id: b.id,
-            species: Species::from_str(&b.species),
+            species: b.species.parse().unwrap_or(Species::Other(b.species)),
             name: b.name,
             origin: b.origin,
         }

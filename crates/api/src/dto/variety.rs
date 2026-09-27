@@ -29,7 +29,7 @@ impl From<Variety> for VarietyDto {
     fn from(v: Variety) -> Self {
         Self {
             id: v.id,
-            category: VarietyCategory::from_str(&v.category),
+            category: v.category.parse().unwrap_or(VarietyCategory::Other),
             name: v.name,
             origin: v.origin,
         }

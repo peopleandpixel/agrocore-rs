@@ -32,7 +32,7 @@ impl From<Tree> for TreeDto {
             id: t.id,
             plot_id: t.plot_id,
             group_id: t.group_id,
-            tree_type: TreeType::from_str(&t.tree_type),
+            tree_type: t.tree_type.parse().unwrap_or(TreeType::Other(t.tree_type)),
             count: t.count,
             label: t.label,
         }

@@ -30,7 +30,10 @@ impl From<Building> for BuildingDto {
         Self {
             id: b.id,
             plot_id: b.plot_id,
-            building_type: BuildingType::from_str(&b.building_type),
+            building_type: b
+                .building_type
+                .parse()
+                .unwrap_or(BuildingType::Other(b.building_type)),
             label: b.label,
         }
     }

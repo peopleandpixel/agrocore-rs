@@ -4,6 +4,7 @@ use crate::error::ApiError;
 use actix_web::{HttpResponse, web};
 use agrocore_domain::entities::tenant::CreateTenantDto;
 use agrocore_domain::entities::user::UserRole;
+use agrocore_logging::{error, info, warn};
 use agrocore_shared::SharedError;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -55,31 +56,40 @@ pub async fn initial_setup(
     state: web::Data<AppState>,
     dto: web::Json<InitialSetupRequest>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.admin
-        .validate()
-        .map_err(|e| SharedError::Validation(e.to_string()))?;
-    dto.tenant
-        .validate()
-        .map_err(|e| SharedError::Validation(e.to_string()))?;
+    info!("Starting initial system setup");
+
+    dto.admin.validate().map_err(|e| {
+        warn!("Admin validation failed: {}", e);
+        SharedError::Validation(e.to_string())
+    })?;
+    dto.tenant.validate().map_err(|e| {
+        warn!("Tenant validation failed: {}", e);
+        SharedError::Validation(e.to_string())
+    })?;
 
     let pool = state.db.pool();
-    let mut tx = pool
-        .begin()
-        .await
-        .map_err(|e| SharedError::Database(e.to_string()))?;
+    let mut tx = pool.begin().await.map_err(|e| {
+        error!("Failed to begin transaction: {}", e);
+        SharedError::Database(e.to_string())
+    })?;
 
     // 1. Check if already initialized (within transaction for safety)
     let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users")
         .fetch_one(&mut *tx)
         .await
-        .map_err(|e| SharedError::Database(e.to_string()))?;
+        .map_err(|e| {
+            error!("Failed to check initialization status: {}", e);
+            SharedError::Database(e.to_string())
+        })?;
 
     if count > 0 {
+        warn!("Setup attempted on already initialized system");
         return Err(SharedError::Validation("System is already initialized".into()).into());
     }
 
     // 2. Create Tenant
     let tenant_id = Uuid::new_v4();
+    info!("Creating tenant with id: {}", tenant_id);
     let tenant = sqlx::query_as::<_, agrocore_domain::entities::tenant::Tenant>(
         r#"INSERT INTO tenants (id, name, slug, config, is_active, created_at, updated_at)
            VALUES ($1, $2, $3, $4, true, NOW(), NOW())
@@ -91,10 +101,14 @@ pub async fn initial_setup(
     .bind(serde_json::to_value(dto.tenant.config.clone().unwrap_or_default()).unwrap())
     .fetch_one(&mut *tx)
     .await
-    .map_err(agrocore_infrastructure::PostgresDb::map_db_error)?;
+    .map_err(|e| {
+        error!("Failed to create tenant: {}", e);
+        agrocore_infrastructure::PostgresDb::map_db_error(e)
+    })?;
 
     // 3. Create Admin User
     let admin_id = Uuid::new_v4();
+    info!("Creating admin user with id: {}", admin_id);
     // Replicating Argon2 hashing from PgUserRepo to ensure atomicity within the transaction
     use argon2::PasswordHasher;
     use password_hash::phc::SaltString;
@@ -102,7 +116,10 @@ pub async fn initial_setup(
     let _salt = SaltString::generate();
     let password_hash = argon2::Argon2::default()
         .hash_password(dto.admin.password.as_bytes())
-        .map_err(|e| SharedError::Internal(format!("Hashing error: {}", e)))?
+        .map_err(|e| {
+            error!("Password hashing failed: {}", e);
+            SharedError::Internal(format!("Hashing error: {}", e))
+        })?
         .to_string();
 
     let roles = vec![UserRole::Admin];
@@ -119,13 +136,18 @@ pub async fn initial_setup(
     .bind(serde_json::to_value(&roles).unwrap())
     .execute(&mut *tx)
     .await
-    .map_err(agrocore_infrastructure::PostgresDb::map_db_error)?;
+    .map_err(|e| {
+        error!("Failed to create admin user: {}", e);
+        agrocore_infrastructure::PostgresDb::map_db_error(e)
+    })?;
 
-    tx.commit()
-        .await
-        .map_err(|e| SharedError::Database(e.to_string()))?;
+    tx.commit().await.map_err(|e| {
+        error!("Failed to commit transaction: {}", e);
+        SharedError::Database(e.to_string())
+    })?;
 
     // 4 Publish TenantCreated event after successful commit
+    info!("Publishing TenantCreated event for tenant: {}", tenant.id);
     let _ = state
         .messaging
         .publish(
@@ -137,6 +159,7 @@ pub async fn initial_setup(
         )
         .await;
 
+    info!("Initial setup completed successfully");
     Ok(HttpResponse::Created().finish())
 }
 

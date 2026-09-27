@@ -6,7 +6,7 @@ license.workspace = true
 
 [features]
 default = ["dev-console"]
-dev-console = ["tracing", "tracing-subscriber", "tracing-log"]           # pretty console for local dev
+dev-console = ["tracing", "tracing-subscriber", "tracing-log", "tracing-appender"]           # pretty console for local dev
 otlp = ["opentelemetry", "opentelemetry-otlp", "opentelemetry_sdk", "tracing-opentelemetry", "tracing", "tracing-subscriber"]  # distributed tracing
 
 [dependencies]
@@ -15,9 +15,9 @@ log = "0.4"
 
 # Internal - tracing only for OTLP/console output (optional features)
 tracing = { version = "0.1", features = ["std"], optional = true }
-tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"], optional = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"], optional = true }
 tracing-log = { version = "0.2", optional = true }  # log -> tracing bridge
-tracing-appender = { version = "0.2", optional = true, features = ["parking_lot"] }
+tracing-appender = { version = "0.2", features = ["parking_lot"], optional = true }
 
 # Optional features
 opentelemetry = { version = "0.27", features = ["trace"], optional = true }

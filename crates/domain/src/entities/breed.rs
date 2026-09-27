@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -26,16 +27,20 @@ impl Species {
             Species::Other(s) => s,
         }
     }
+}
 
-    pub fn from_str(s: &str) -> Self {
+impl FromStr for Species {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Goat" => Species::Goat,
-            "Sheep" => Species::Sheep,
-            "Cattle" => Species::Cattle,
-            "Chicken" => Species::Chicken,
-            "Pig" => Species::Pig,
-            "Horse" => Species::Horse,
-            other => Species::Other(other.to_string()),
+            "Goat" => Ok(Species::Goat),
+            "Sheep" => Ok(Species::Sheep),
+            "Cattle" => Ok(Species::Cattle),
+            "Chicken" => Ok(Species::Chicken),
+            "Pig" => Ok(Species::Pig),
+            "Horse" => Ok(Species::Horse),
+            other => Ok(Species::Other(other.to_string())),
         }
     }
 }

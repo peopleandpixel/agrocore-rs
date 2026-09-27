@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
-use geo::prelude::{Contains, Intersects};
-use geo::{Coord, Distance, Haversine, LineString, MultiPolygon, Point, Polygon};
+use geo::{
+    Contains, Coord, Distance, Haversine, Intersects, LineString, MultiPolygon, Point, Polygon,
+};
 use geozero::wkb;
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgTypeInfo;
@@ -9,11 +10,10 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::entities::tenant::TenantId;
-use crate::repositories::VisibilityAwareEntity;
 
 pub mod types;
 
-use crate::entities::spatial::types::{Boundary, GeoPoint, Plot};
+use crate::entities::spatial::types::GeoPoint;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum SpatialObjectType {
@@ -241,8 +241,6 @@ pub struct SpatialObject {
     pub updated_by: Option<Uuid>,
 }
 
-impl crate::repositories::VisibilityAwareEntity for SpatialObject {}
-
 impl SpatialObject {
     pub fn contains_point(&self, point: &GeoPoint) -> bool {
         self.geometry.contains_point(point, self.buffer_meters)
@@ -372,10 +370,12 @@ where
 mod tests {
     use super::*;
 
+    #[allow(dead_code)]
     fn point(lng: f64, lat: f64) -> GeoPoint {
         GeoPoint { lng, lat }
     }
 
+    #[allow(dead_code)]
     fn square(min_lng: f64, min_lat: f64, max_lng: f64, max_lat: f64) -> Vec<GeoPoint> {
         vec![
             point(min_lng, min_lat),
@@ -500,10 +500,12 @@ mod tests {
     }
 }
 
+#[allow(dead_code)]
 fn point(lng: f64, lat: f64) -> GeoPoint {
     GeoPoint { lng, lat }
 }
 
+#[allow(dead_code)]
 fn square(min_lng: f64, min_lat: f64, max_lng: f64, max_lat: f64) -> Vec<GeoPoint> {
     vec![
         point(min_lng, min_lat),

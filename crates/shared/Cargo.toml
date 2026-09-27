@@ -10,7 +10,7 @@ chrono = { workspace = true }
 uuid = { workspace = true }
 thiserror = { workspace = true }
 validator = { workspace = true }
-agrocore-logging = { path = "../logging", features = ["dev-console"] }
+agrocore-logging = { path = "../logging", default-features = false }
 utoipa = { workspace = true, features = ["actix_extras", "uuid", "chrono"] }
 sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono", "migrate"], optional = true }
 async-trait = "0.1"

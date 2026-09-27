@@ -22,17 +22,12 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 COPY crates/ ./crates/
 
-# Copy REAL logging crate (needed for macro exports in dependent crates)
-RUN rm -rf crates/logging
-COPY crates/logging ./crates/logging
-
 # Copy SQLx query cache (needed for offline builds)
 COPY .sqlx ./.sqlx
 
 # Build the Admin UI with Trunk (this produces proper WASM + JS + HTML + CSS)
 WORKDIR /app/crates/admin-ui
-# Remove any cached dist folder
-RUN rm -rf dist
+
 # Create Trunk.toml with correct config format to disable wasm-opt
 RUN echo '[tools]' > Trunk.toml && echo 'wasm_opt = "0"' >> Trunk.toml
 RUN cat Trunk.toml

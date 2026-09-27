@@ -1,12 +1,8 @@
-use crate::config::LoggingConfig;
+use crate::config::{LoggingConfig, RotationType};
 use crate::error::{LoggingError, LoggingResult};
 
 #[cfg(any(feature = "dev-console", feature = "otlp"))]
-use tracing_subscriber::layer::Layer;
-#[cfg(any(feature = "dev-console", feature = "otlp"))]
-use tracing_subscriber::layer::SubscriberExt;
-#[cfg(any(feature = "dev-console", feature = "otlp"))]
-use tracing_subscriber::registry::LookupSpan;
+use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt as SubscriberExt;
 
 #[cfg(feature = "otlp")]
 use opentelemetry::KeyValue;
@@ -17,7 +13,80 @@ use opentelemetry_otlp::WithExportConfig;
 #[cfg(feature = "otlp")]
 use tracing_opentelemetry::OpenTelemetryLayer;
 
-/// Guard for file writer - must be kept alive
+use std::fs;
+use std::io::{self, Write};
+
+#[cfg(feature = "dev-console")]
+use tracing_appender::rolling::{RollingFileAppender, Rotation};
+#[cfg(feature = "dev-console")]
+use tracing_appender::{
+    non_blocking,
+    non_blocking::{NonBlocking, WorkerGuard},
+};
+
+/// A writer that discards all data (like /dev/null) - always available
+struct NoOpWriter;
+
+impl Write for NoOpWriter {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+impl<'a> tracing_subscriber::fmt::MakeWriter<'a> for NoOpWriter {
+    type Writer = NoOpWriter;
+
+    fn make_writer(&'a self) -> Self::Writer {
+        NoOpWriter
+    }
+}
+
+/// Unified file writer that works whether file logging is enabled or not
+#[cfg(feature = "dev-console")]
+enum FileWriter {
+    Enabled(NonBlocking),
+    Disabled,
+}
+
+#[cfg(feature = "dev-console")]
+impl<'a> tracing_subscriber::fmt::MakeWriter<'a> for FileWriter {
+    type Writer = Box<dyn Write + Send + Sync>;
+
+    fn make_writer(&'a self) -> Self::Writer {
+        match self {
+            FileWriter::Enabled(nb) => Box::new(nb.make_writer()),
+            FileWriter::Disabled => Box::new(NoOpWriter),
+        }
+    }
+}
+
+/// Unified console writer that works whether console logging is enabled or not
+#[cfg(feature = "dev-console")]
+enum ConsoleWriter {
+    Enabled,
+    Disabled,
+}
+
+#[cfg(feature = "dev-console")]
+impl<'a> tracing_subscriber::fmt::MakeWriter<'a> for ConsoleWriter {
+    type Writer = Box<dyn Write + Send + Sync>;
+
+    fn make_writer(&'a self) -> Self::Writer {
+        match self {
+            ConsoleWriter::Enabled => Box::new(std::io::stdout()),
+            ConsoleWriter::Disabled => Box::new(NoOpWriter),
+        }
+    }
+}
+
+#[cfg(feature = "dev-console")]
+pub type FileGuard = Option<WorkerGuard>;
+
+#[cfg(not(feature = "dev-console"))]
 pub type FileGuard = Option<()>;
 
 /// Result of logging initialization
@@ -48,6 +117,11 @@ impl LoggingHandle {
         if let Some(shutdown) = self.otlp_shutdown {
             shutdown();
         }
+        // Drop the guard to flush file buffers
+        #[cfg(feature = "dev-console")]
+        if let Some(guard) = self.guard {
+            drop(guard);
+        }
     }
 }
 
@@ -60,94 +134,216 @@ pub fn init_logging(config: LoggingConfig) -> LoggingResult<LoggingHandle> {
         return Ok(LoggingHandle::new(None));
     }
 
-    #[cfg(any(feature = "dev-console", feature = "otlp"))]
+    #[cfg(all(feature = "dev-console", not(feature = "otlp")))]
     {
+        // Only dev-console enabled - use registry with all layers in single chain
         let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
             .unwrap_or_else(|_| config.level.clone().into());
 
-        let subscriber = tracing_subscriber::registry().with(env_filter);
-
-        // Install log -> tracing bridge
         tracing_log::LogTracer::init().ok();
 
-        // 1. Console layer (dev)
-        if config.console_enabled {
-            let console_layer = build_console_layer(&config);
-            let subscriber = subscriber.with(console_layer);
+        // Build file layer
+        let (file_guard, file_writer) = if config.file_enabled {
+            let log_path = if let Some(log_dir) = &config.log_dir {
+                log_dir.join(
+                    config
+                        .file_path
+                        .file_name()
+                        .unwrap_or_else(|| "agrocore.json".as_ref()),
+                )
+            } else {
+                config.file_path.clone()
+            };
 
-            // 3. OTLP layer (distributed tracing)
-            #[cfg(feature = "otlp")]
-            if config.otlp_enabled {
-                let otlp_layer = build_otlp_layer(&config)?;
-                let subscriber = subscriber.with(otlp_layer);
-
-                let _ = tracing::subscriber::set_global_default(subscriber)
-                    .map_err(|e| LoggingError::InvalidConfig(e.to_string()))?;
-
-                let handle = LoggingHandle::new(None);
-                return Ok(handle);
+            // Ensure log directory exists
+            if let Some(parent) = log_path.parent() {
+                fs::create_dir_all(parent).map_err(LoggingError::Io)?;
             }
 
-            let _ = tracing::subscriber::set_global_default(subscriber)
-                .map_err(|e| LoggingError::InvalidConfig(e.to_string()))?;
+            let rotation = match config.file_rotation.rotation {
+                RotationType::Daily => Rotation::DAILY,
+                RotationType::Hourly => Rotation::HOURLY,
+                RotationType::Never => Rotation::NEVER,
+                RotationType::Size => Rotation::DAILY,
+            };
 
-            let handle = LoggingHandle::new(None);
-            return Ok(handle);
-        }
+            let file_appender = RollingFileAppender::new(
+                rotation,
+                log_path
+                    .parent()
+                    .unwrap_or_else(|| std::path::Path::new(".")),
+                log_path
+                    .file_name()
+                    .unwrap_or_else(|| "agrocore.json".as_ref()),
+            );
 
-        // No console, just try to set minimal logging
-        let _ = tracing::subscriber::set_global_default(subscriber)
+            let (non_blocking, guard) = non_blocking(file_appender);
+
+            (Some(guard), FileWriter::Enabled(non_blocking))
+        } else {
+            (None, FileWriter::Disabled)
+        };
+
+        // Build console layer
+        let console_writer = if config.console_enabled {
+            ConsoleWriter::Enabled
+        } else {
+            ConsoleWriter::Disabled
+        };
+
+        // Build subscriber using registry - chain all in single expression
+        let subscriber = tracing_subscriber::registry()
+            .with(env_filter)
+            .with(
+                tracing_subscriber::fmt::layer()
+                    .with_writer(file_writer)
+                    .with_ansi(false)
+                    .json(),
+            )
+            .with(
+                tracing_subscriber::fmt::layer()
+                    .with_writer(console_writer)
+                    .with_ansi(false)
+                    .pretty(),
+            );
+
+        tracing::subscriber::set_global_default(subscriber)
+            .map_err(|e| LoggingError::InvalidConfig(e.to_string()))?;
+
+        let handle = LoggingHandle::new(file_guard);
+        Ok(handle)
+    }
+
+    #[cfg(all(not(feature = "dev-console"), feature = "otlp"))]
+    {
+        // Only otlp enabled - use registry pattern
+        let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| config.level.clone().into());
+
+        tracing_log::LogTracer::init().ok();
+
+        let otlp_layer = if config.otlp_enabled {
+            Some(build_otlp_layer(&config)?)
+        } else {
+            None
+        };
+
+        let subscriber = {
+            let base = tracing_subscriber::registry().with(env_filter);
+
+            let subscriber = if let Some(layer) = otlp_layer {
+                base.with(layer)
+            } else {
+                base.with(tracing_subscriber::fmt::layer().with_writer(NoOpWriter))
+            };
+
+            subscriber
+        };
+
+        tracing::subscriber::set_global_default(subscriber)
             .map_err(|e| LoggingError::InvalidConfig(e.to_string()))?;
 
         let handle = LoggingHandle::new(None);
         Ok(handle)
     }
-}
 
-/// Console layer builder - uses conditional compilation to handle pretty
-#[cfg(any(feature = "dev-console", feature = "otlp"))]
-fn build_console_layer<S>(config: &LoggingConfig) -> impl Layer<S> + Send + Sync
-where
-    S: tracing::Subscriber + for<'a> LookupSpan<'a>,
-{
-    if config.console_pretty {
-        let builder = tracing_subscriber::fmt::layer()
-            .with_writer(std::io::stdout)
-            .pretty();
+    #[cfg(all(feature = "dev-console", feature = "otlp"))]
+    {
+        // Both features enabled - use registry with all layers in single chain
+        let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| config.level.clone().into());
 
-        let builder = if config.console_thread_ids {
-            builder.with_thread_ids(true)
+        tracing_log::LogTracer::init().ok();
+
+        // Build file layer
+        let (file_guard, file_writer) = if config.file_enabled {
+            let log_path = if let Some(log_dir) = &config.log_dir {
+                log_dir.join(
+                    config
+                        .file_path
+                        .file_name()
+                        .unwrap_or_else(|| "agrocore.json".as_ref()),
+                )
+            } else {
+                config.file_path.clone()
+            };
+
+            if let Some(parent) = log_path.parent() {
+                fs::create_dir_all(parent).map_err(LoggingError::Io)?;
+            }
+
+            let rotation = match config.file_rotation.rotation {
+                RotationType::Daily => Rotation::DAILY,
+                RotationType::Hourly => Rotation::HOURLY,
+                RotationType::Never => Rotation::NEVER,
+                RotationType::Size => Rotation::DAILY,
+            };
+
+            let file_appender = RollingFileAppender::new(
+                rotation,
+                log_path
+                    .parent()
+                    .unwrap_or_else(|| std::path::Path::new(".")),
+                log_path
+                    .file_name()
+                    .unwrap_or_else(|| "agrocore.json".as_ref()),
+            );
+
+            let (non_blocking, guard) = non_blocking(file_appender);
+
+            (Some(guard), FileWriter::Enabled(non_blocking))
         } else {
-            builder
+            (None, FileWriter::Disabled)
         };
 
-        let builder = if config.console_thread_names {
-            builder.with_thread_names(true)
+        // Build console layer
+        let console_writer = if config.console_enabled {
+            ConsoleWriter::Enabled
         } else {
-            builder
+            ConsoleWriter::Disabled
         };
 
-        builder.boxed()
-    } else {
-        let builder = tracing_subscriber::fmt::layer().with_writer(std::io::stdout);
-
-        let builder = if config.console_thread_ids {
-            builder.with_thread_ids(true)
+        // Build OTLP layer
+        let otlp_layer = if config.otlp_enabled {
+            Some(build_otlp_layer(&config)?)
         } else {
-            builder
+            None
         };
 
-        let builder = if config.console_thread_names {
-            builder.with_thread_names(true)
-        } else {
-            builder
+        // Build subscriber - chain all in single expression
+        let subscriber = {
+            let base = tracing_subscriber::registry().with(env_filter);
+            let subscriber = base.with(
+                tracing_subscriber::fmt::layer()
+                    .with_writer(file_writer)
+                    .with_ansi(false)
+                    .json(),
+            );
+            let subscriber = subscriber.with(
+                tracing_subscriber::fmt::layer()
+                    .with_writer(console_writer)
+                    .with_ansi(false)
+                    .pretty(),
+            );
+
+            let subscriber = if let Some(layer) = otlp_layer {
+                subscriber.with(layer)
+            } else {
+                subscriber.with(tracing_subscriber::fmt::layer().with_writer(NoOpWriter))
+            };
+
+            subscriber
         };
 
-        builder.boxed()
+        tracing::subscriber::set_global_default(subscriber)
+            .map_err(|e| LoggingError::InvalidConfig(e.to_string()))?;
+
+        let handle = LoggingHandle::new(file_guard);
+        Ok(handle)
     }
 }
 
-/// OTLP layer builder
+/// OTLP layer builder - returns concrete layer type
 #[cfg(feature = "otlp")]
 fn build_otlp_layer(config: &LoggingConfig) -> LoggingResult<impl Layer<Registry> + Send + Sync> {
     let endpoint = config.otlp_endpoint.clone();

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -20,13 +21,17 @@ impl TreeType {
             TreeType::Other(s) => s,
         }
     }
+}
 
-    pub fn from_str(s: &str) -> Self {
+impl FromStr for TreeType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "CorkOak" => TreeType::CorkOak,
-            "Olive" => TreeType::Olive,
-            "Almond" => TreeType::Almond,
-            other => TreeType::Other(other.to_string()),
+            "CorkOak" => Ok(TreeType::CorkOak),
+            "Olive" => Ok(TreeType::Olive),
+            "Almond" => Ok(TreeType::Almond),
+            other => Ok(TreeType::Other(other.to_string())),
         }
     }
 }

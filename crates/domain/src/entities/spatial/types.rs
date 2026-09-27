@@ -1,12 +1,8 @@
 //! Shared spatial types used by both site and spatial modules
 
-use chrono::{DateTime, Utc};
-use geo::prelude::{Contains, Intersects};
-use geo::{Coord, Distance, Haversine, LineString, MultiPolygon, Point, Polygon};
-use geozero::wkb;
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::{PgArgumentBuffer, PgTypeInfo, PgValueRef};
-use sqlx::{Database, Encode, Type};
+use sqlx::{Encode, Type};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
