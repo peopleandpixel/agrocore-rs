@@ -1,11 +1,12 @@
 use crate::AppState;
 use crate::dto::{
     ErrorResponse, PaginatedResponseDto, PaginatedUserResponse, UserDto,
-    user::{CreateUserDto, UpdateUserDto},
+    user::{CreateUserDto, UpdateOwnProfileDto, UpdateUserDto},
 };
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
+use agrocore_domain::entities::user::UpdateUserDto as DomainUpdateUserDto;
 use agrocore_logging::info;
 use agrocore_messaging::{Event, GlobalEvent};
 use agrocore_shared::SharedError;
@@ -150,11 +151,15 @@ pub async fn update_user(
     dto: web::Json<UpdateUserDto>,
 ) -> Result<HttpResponse, ApiError> {
     let user_id = *path;
-    if let Err(e) = auth.require_admin()
-        && auth.0.user_id != user_id
-    {
-        return Err(e.into());
+
+    // Changing roles or the active flag is an administrative action. The
+    // previous check allowed it whenever the target was the caller's own id,
+    // which let any authenticated user promote themselves via
+    // PUT /api/v1/users/{own_id} with {"roles":["Admin"]}.
+    if dto.0.roles.is_some() || dto.0.is_active.is_some() {
+        auth.require_admin()?;
     }
+
     info!(
         "Updating user {} for tenant: {}",
         user_id,
@@ -174,6 +179,66 @@ pub async fn update_user(
         )
         .await?
         .ok_or_else(|| SharedError::NotFound("User not found".into()))?;
+    let event = Event::new("api".into(), GlobalEvent::UserUpdated(u.clone()));
+    let _ = state
+        .messaging
+        .publish("events.users".to_string(), &event)
+        .await;
+    Ok(HttpResponse::Ok().json(UserDto::from(u)))
+}
+
+/// Update the caller's own profile.
+///
+/// Only fields a user may change about themselves are accepted. Roles,
+/// `is_active` and the cost fields are deliberately absent: they are
+/// administrative and belong behind `PUT /users/{id}` with an admin role.
+#[utoipa::path(
+    put,
+    path = "/api/v1/users/me",
+    request_body = UpdateOwnProfileDto,
+    responses(
+        (status = 200, description = "Profile updated", body = UserDto),
+        (status = 400, description = "Validation failed", body = ErrorResponse),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "User not found", body = ErrorResponse)
+    ),
+    tag = "users",
+    security(("bearer_auth" = []))
+)]
+pub async fn update_own_profile(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    dto: web::Json<UpdateOwnProfileDto>,
+) -> Result<HttpResponse, ApiError> {
+    let user_id = auth.0.user_id;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
+
+    // Map the whitelisted fields onto the domain DTO; everything else stays
+    // None so the repository leaves the columns untouched.
+    let domain_dto = DomainUpdateUserDto {
+        firstname: dto.0.firstname,
+        lastname: dto.0.lastname,
+        password: dto.0.password,
+        language: dto.0.language,
+        color: dto.0.color,
+        ..Default::default()
+    };
+
+    let u = state
+        .db
+        .user_repo()
+        .update(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            user_id,
+            domain_dto,
+            user_id,
+        )
+        .await?
+        .ok_or_else(|| SharedError::NotFound("User not found".into()))?;
+
+    info!("User {} updated own profile", user_id);
     let event = Event::new("api".into(), GlobalEvent::UserUpdated(u.clone()));
     let _ = state
         .messaging

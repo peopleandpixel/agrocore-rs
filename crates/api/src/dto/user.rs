@@ -93,6 +93,9 @@ pub struct UpdateUserDto {
     pub lastname: Option<String>,
     #[validate(email)]
     pub email: Option<String>,
+    /// Min 12 instead of the 8 used at creation: an update can otherwise
+    /// downgrade an existing strong password without any strength check.
+    #[validate(length(min = 12, max = 128))]
     pub password: Option<String>,
     pub roles: Option<Vec<UserRole>>,
     pub is_active: Option<bool>,
@@ -101,6 +104,24 @@ pub struct UpdateUserDto {
     pub color: Option<String>,
     pub language: Option<String>,
     pub assigned_site_ids: Option<Vec<Uuid>>,
+}
+
+/// Fields a user may change on their own account.
+///
+/// Deliberately excludes `roles`, `is_active` and both cost fields: those are
+/// administrative and require an admin role on `PUT /users/{id}`.
+#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
+pub struct UpdateOwnProfileDto {
+    #[validate(length(max = 128))]
+    pub firstname: Option<String>,
+    #[validate(length(max = 128))]
+    pub lastname: Option<String>,
+    #[validate(length(min = 12, max = 128))]
+    pub password: Option<String>,
+    #[validate(length(max = 16))]
+    pub language: Option<String>,
+    #[validate(length(max = 32))]
+    pub color: Option<String>,
 }
 
 impl From<UpdateUserDto> for DomainUpdateUserDto {

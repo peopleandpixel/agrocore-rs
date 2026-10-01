@@ -110,6 +110,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route(web::get().to(users::list_users))
                     .route(web::post().to(users::create_user)),
             )
+            // /users/me must be registered before /users/{id}: otherwise the
+            // {id} pattern swallows "me" and the parse fails.
+            .service(web::resource("/users/me").route(web::put().to(users::update_own_profile)))
             .service(
                 web::resource("/users/{id}")
                     .route(web::get().to(users::get_user))

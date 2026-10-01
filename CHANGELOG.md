@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-10-01
+
+Behebt die Privilege Escalation aus dem Audit vom 2026-10-01 (`tasks.md` A1, D3) —
+die am leichtesten ausnutzbare Schwachstelle des Projekts.
+
+### Fixed
+- **Privilege Escalation: jeder User konnte sich zum Admin machen** — `handlers/users.rs:153-157`. Die Autorisierung las:
+
+  ```rust
+  if let Err(e) = auth.require_admin()
+      && auth.0.user_id != user_id
+  { return Err(e.into()); }
+  ```
+
+  Die Admin-Prüfung entfiel, sobald der Ziel-Account die eigene ID war. Da `UpdateUserDto` ein `roles`-Feld mitbringt und `PgUserRepo::update` es ungeprüft bindet (`postgres/user.rs:318`), genügte `PUT /api/v1/users/{eigene_id}` mit `{"roles":["Admin"]}` — voller Admin-Zugriff beim nächsten Login. Nicht sichtbar, weil die Bedingung in der negativen Testform eine Begründung für sich zu haben scheint.
+
+  Jetzt gilt: Rollenwechsel und Änderung von `is_active` erfordern Admin, unabhängig vom Ziel. Ein Self-Service-Pfad mit eng definierter Feldliste ersetzt die bisherige Möglichkeit, den eigenen Account zu bearbeiten.
+
+- **Passwort-Update ohne Mindestlänge** — `dto/user.rs`. `UpdateUserDto.password` hatte keine `validate`-Angabe, während `CreateUserDto` `min = 8` setzte. Über die Eskalation konnte ein bestehendes Passwort damit auf einen leeren String gesetzt werden. Beide Update-Pfade verlangen jetzt 12 bis 128 Zeichen; `CreateUserDto` bleibt bei 8, damit bestehende Konten gültig bleiben.
+
+### Added
+- **`PUT /api/v1/users/me`** — `handlers/users.rs:update_own_profile` mit `UpdateOwnProfileDto`. Nimmt ausschließlich `firstname`, `lastname`, `password`, `language` und `color` entgegen. `roles`, `is_active`, `internal_cost_per_hour` und `external_cost_per_hour` existieren im DTO nicht; die Zuordnung auf den Domain-DTO setzt alle übrigen Felder explizit auf `None`, damit `PgUserRepo::update` die Spalten unangetastet lässt statt sie zu überschreiben. Die Route ist bewusst **vor** `/users/{id}` registriert — sonst hätte das `{id}`-Muster den Pfad „me" als UUID zu parsen versucht.
+- **Neun Regressionstests** (`crates/api/tests/privilege_escalation_tests.rs`) — DTO-Ebene: die Abwesenheit privilegierter Felder im Self-Service-DTO, Passwort-Policy auf beiden Update-Pfaden (leer, ein Zeichen, 22 Zeichen, nicht gesetzt), und dass die bestehende E-Mail-Validierung durch die Änderung nicht abgeschwächt wurde.
+
+### Tests
+- 258 Tests im Workspace, 0 Fehler (249 + 9 neue).
+
 ## [0.24.0] - 2026-10-01
 
 Erster Teil des Code-Audits vom 2026-10-01 (Block I und J). Behebt den schwerwiegendsten
