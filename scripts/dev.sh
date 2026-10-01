@@ -26,6 +26,11 @@ NC='\033[0m' # No Color
 # Parse arguments
 # ════════════════════════════════════════════════════════════════
 DEMO_MODE=${DEMO_MODE:-false}
+# Demo endpoints now require an admin token and this flag (tasks.md A2). The
+# password is shared with scripts/demo_seed.sql and crates/api/handlers/demo.rs.
+DEMO_ADMIN_PASSWORD=${DEMO_ADMIN_PASSWORD:-demo1234-agrocore}
+export ALLOW_DEMO_ENDPOINTS=1
+export DEMO_ADMIN_PASSWORD
 NO_DASHBOARD=${NO_DASHBOARD:-false}
 STOP_ONLY=false
 for arg in "$@"; do
@@ -206,6 +211,8 @@ API_PORT=$API_PORT
 ADMIN_UI_PORT=$ADMIN_UI_PORT
 NOTIFICATION_PORT=$NOTIFICATION_PORT
 DEMO_MODE=$DEMO_MODE
+ALLOW_DEMO_ENDPOINTS=1
+DEMO_ADMIN_PASSWORD=$DEMO_ADMIN_PASSWORD
 EOF
 
 echo -e "${GREEN}  ✅ Ports reserviert:${NC}"
@@ -408,10 +415,21 @@ if [[ "$DEMO_MODE" == true ]]; then
         exit 1
     fi
 
-    # Try API-based seeding first (preferred)
+    # Try API-based seeding first (preferred).
+    # The endpoint requires an admin role (tasks.md A2), so log in first and
+    # reuse the JWT. The demo admin does not exist yet at this point, so the
+    # very first seed falls back to SQL; afterwards the API path works.
     api_url="http://localhost:${API_PORT}"
-    if curl -sf -X POST "${api_url}/api/v1/demo/seed" \
+
+    demo_admin_email="${DEMO_ADMIN_EMAIL:-admin@demo.local}"
+    demo_token=$(curl -sf -X POST "${api_url}/api/v1/auth/login" \
         -H "Content-Type: application/json" \
+        -d "{\"email\":\"${demo_admin_email}\",\"password\":\"${DEMO_ADMIN_PASSWORD}\"}" 2>/dev/null \
+        | sed -n 's/.*"token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+
+    if [[ -n "$demo_token" ]] && curl -sf -X POST "${api_url}/api/v1/demo/seed" \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer ${demo_token}" \
         -d '{"tenant": "demo", "user": "admin", "reset": true}' >/dev/null 2>&1
     then
         echo -e "${GREEN}    Demo data seeded via API${NC}"
@@ -468,7 +486,7 @@ if [[ "$DEMO_MODE" == true ]]; then
     echo -e "${CYAN}║${NC}                                                                   ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC} ${GREEN}Login:${NC}                                                            ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC}   ${YELLOW}E-Mail:${NC}    admin@demo.local                                         ${CYAN}║${NC}"
-    echo -e "${CYAN}║${NC}   ${YELLOW}Passwort:${NC}  demo1234                                ${CYAN}║${NC}"
+    echo -e "${CYAN}║${NC}   ${YELLOW}Passwort:${NC}  ${DEMO_ADMIN_PASSWORD}                             ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC}                                                                   ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC} ${GREEN}Demo-Inhalt:${NC}                                                     ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC}   • 1 Tenant (demo) + 1 Admin-User                                 ${CYAN}║${NC}"

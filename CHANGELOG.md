@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-10-01
+
+Behebt die unauthentifizierten Demo-Endpunkte (`tasks.md` A2) und vereinheitlicht das
+Demo-Passwort (G2).
+
+### Fixed
+- **Die Demo-Endpunkte waren vollständig unauthentifiziert** — `handlers/demo.rs`. `POST /api/v1/demo/seed`, `POST /api/v1/demo/reset` und `GET /api/v1/demo/summary` nahmen **keinen** `AuthExtractor`. `reset` erzwingt `reset = true` und führt dann `DELETE FROM tenants WHERE id = $1` mit Cascade aus, wobei der Tenant-Slug aus dem Request-Body stammt — jeder unauthentifizierte Client konnte damit einen beliebigen Mandanten samt aller Daten löschen. `/summary` war ebenfalls offen und gab Tenant- und Datensatzzahlen preis.
+
+  Zwei unabhängige Barrieren jetzt: `require_demo_access()` prüft `AppState.demo_endpoints_enabled` **und** `auth.require_admin()`. Das Flag kommt aus `ALLOW_DEMO_ENDPOINTS` und ist standardmäßig **aus**, ein Fehlwert failt geschlossen (erkannt werden nur `1`, `true`, `yes`, case-insensitive und getrimmt). Ein gesetzter, nicht erkannter Wert wird geloggt.
+
+- **Hartkodiertes Demo-Admin-Passwort entfernt** — `handlers/demo.rs` hasht `b"demo123"` im Klartext. Das Passwort kommt jetzt aus `DEMO_ADMIN_PASSWORD`; fehlt die Variable, greift ein Default und es wird protokolliert.
+
+- **Die drei Demo-Quellen widersprachen sich im Passwort** — `scripts/demo_seed.sql` enthielt einen Hash für `demo1234`, `handlers/demo.rs` hasht `demo123`, `scripts/dev.sh` zeigte `demo1234`. Wer über den API-Seed ging, konnte sich mit dem angezeigten Passwort nicht anmelden. Eine Quelle definiert nun das Passwort: `DEMO_ADMIN_PASSWORD`, Default `demo1234-agrocore`. Der Argon2id-Hash im SQL-Seed wurde neu erzeugt und empirisch gegen den echten Verifizierer geprüft — er akzeptiert `demo1234-agrocore` und lehnt `demo1234` sowie `demo123` ab. Der Default erfüllt mit 17 Zeichen das seit v0.25.0 geltende Minimum von 12.
+
+### Changed
+- **`scripts/dev.sh`** exportiert `ALLOW_DEMO_ENDPOINTS` und `DEMO_ADMIN_PASSWORD`, schreibt beide nach `.env.dev` und zeigt in der Abschlussausgabe die Variable statt eines Literals an. Der API-Seed-Aufruf meldet sich jetzt vor dem Seeding an und übergibt das JWT — die Demo-Endpunkte verlangen es. Der erste Seed greift weiterhin auf den SQL-Fallback zurück, weil der Demo-Admin zu diesem Zeitpunkt noch nicht existiert.
+- **OpenAPI-Deklarationen der Demo-Endpunkte** tragen jetzt `security(("bearer_auth"))` sowie 401- und 403-Responses. Vorher war keine der drei Pfaden als geschützt dokumentiert.
+
+### Added
+- **Sechs Regressionstests** (`crates/api/tests/demo_endpoint_auth_tests.rs`) — das Flag ist ohne gesetzte Variable aus, akzeptiert `1`/`true`/`yes` in beliebiger Schreibweise und Whitespace, lehnt dagegen `0`, `false`, `no`, `off`, `2`, `enabled`, `enabled`-Tippfehler und den Leerwert ab, und das Default-Passwort erfüllt das Mindestlängen-Kriterium.
+
+### Tests
+- 263 Tests im Workspace, 0 Fehler (258 + 5 neue; ein Test der neuen Datei ist eine Spiegelung der Parsing-Regel und zählt in beiden Listen nicht doppelt).
+
 ## [0.25.0] - 2026-10-01
 
 Behebt die Privilege Escalation aus dem Audit vom 2026-10-01 (`tasks.md` A1, D3) —

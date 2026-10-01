@@ -41,6 +41,29 @@ pub struct AppState {
     pub business_metrics: BusinessMetrics,
     pub metrics_registry: Arc<Registry>,
     pub backup_service: Option<Arc<BackupService>>,
+    /// Whether the demo endpoints are enabled. Read from `ALLOW_DEMO_ENDPOINTS`.
+    ///
+    /// The demo endpoints create and delete tenants, so they must not be
+    /// reachable in production. They additionally require an admin role; this
+    /// flag is the second, independent barrier.
+    pub demo_endpoints_enabled: bool,
+}
+
+/// Whether the demo endpoints are enabled.
+///
+/// Defaults to false. Set `ALLOW_DEMO_ENDPOINTS=1` to enable; the dev
+/// environment does this itself when `--demo` is passed.
+fn demo_endpoints_enabled() -> bool {
+    match std::env::var("ALLOW_DEMO_ENDPOINTS") {
+        Ok(v) => {
+            let enabled = matches!(v.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes");
+            if !enabled {
+                warn!("ALLOW_DEMO_ENDPOINTS is set to '{v}' but not recognised as enabled");
+            }
+            enabled
+        }
+        Err(_) => false,
+    }
 }
 
 /// Builds a CORS configuration from the `CORS_ALLOWED_ORIGINS` environment variable.
@@ -117,6 +140,9 @@ pub async fn run_server(
         business_metrics,
         metrics_registry: metrics_registry.clone(),
         backup_service,
+        // Demo endpoints stay off unless explicitly enabled. They create and
+        // delete tenants, so production must never have them reachable.
+        demo_endpoints_enabled: demo_endpoints_enabled(),
     });
 
     let prometheus = PrometheusMetricsBuilder::new("agrocore")

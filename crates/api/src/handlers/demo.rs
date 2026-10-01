@@ -5,6 +5,7 @@ use crate::dto::demo::{DemoDataSummary, DemoSeedRequest, DemoSeedResponse};
 use crate::error::ApiError;
 use actix_web::{HttpResponse, web};
 use agrocore_domain::entities::user::UserRole;
+use agrocore_logging::warn;
 use agrocore_shared::SharedError;
 use serde_json::json;
 use sqlx::query;
@@ -21,6 +22,31 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     );
 }
 
+/// Password used for the seeded demo admin when `DEMO_ADMIN_PASSWORD` is unset.
+///
+/// Must stay in sync with `scripts/demo_seed.sql` and the value printed by
+/// `scripts/dev.sh`; the three disagreed before (tasks.md G2).
+const DEMO_DEFAULT_PASSWORD: &str = "demo1234-agrocore";
+
+/// Gate for every demo endpoint.
+///
+/// Two independent barriers, because these endpoints create and delete tenants:
+/// the caller must hold an admin role, and the endpoints must be enabled
+/// explicitly via `ALLOW_DEMO_ENDPOINTS`. Previously there was neither, so any
+/// unauthenticated client could call `POST /demo/reset` with a tenant slug from
+/// the request body and delete that tenant with `DELETE FROM tenants WHERE id = $1`
+/// cascading to all its data.
+fn require_demo_access(
+    state: &web::Data<AppState>,
+    auth: &crate::middleware::AuthExtractor,
+) -> Result<(), ApiError> {
+    if !state.demo_endpoints_enabled {
+        return Err(ApiError::not_found("Demo endpoints are disabled"));
+    }
+    auth.require_admin()?;
+    Ok(())
+}
+
 /// Seed demo data
 #[utoipa::path(
     post,
@@ -30,14 +56,20 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         (status = 201, description = "Demo data seeded", body = DemoSeedResponse),
         (status = 400, description = "Invalid request"),
         (status = 409, description = "Demo data already exists"),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden - demo endpoints disabled or admin role required"),
         (status = 500, description = "Internal server error")
     ),
-    tag = "demo"
+    tag = "demo",
+    security(("bearer_auth" = []))
 )]
 pub async fn seed_demo(
     state: web::Data<AppState>,
+    auth: crate::middleware::AuthExtractor,
     dto: web::Json<DemoSeedRequest>,
 ) -> Result<HttpResponse, ApiError> {
+    require_demo_access(&state, &auth)?;
+
     let req = dto.into_inner();
     req.validate()
         .map_err(|e| ApiError::validation(e.to_string()))?;
@@ -113,8 +145,19 @@ pub async fn seed_demo(
     use password_hash::phc::SaltString;
 
     let _salt = SaltString::generate();
+    // The demo password comes from the environment. It previously was a
+    // literal `demo123`, which is also below the minimum the application
+    // enforces elsewhere and had diverged from the SQL seed (`demo1234`) and
+    // from what scripts/dev.sh prints.
+    let demo_password = std::env::var("DEMO_ADMIN_PASSWORD").unwrap_or_else(|_| {
+        warn!(
+            "DEMO_ADMIN_PASSWORD not set, falling back to the default demo password. \
+             Set it explicitly to avoid a predictable admin account."
+        );
+        DEMO_DEFAULT_PASSWORD.to_string()
+    });
     let password_hash = argon2::Argon2::default()
-        .hash_password(b"demo123")
+        .hash_password(demo_password.as_bytes())
         .map_err(|e| SharedError::Internal(format!("Hashing error: {}", e)))?
         .to_string();
 
@@ -552,17 +595,21 @@ pub async fn seed_demo(
     responses(
         (status = 200, description = "Demo data reset and reseeded", body = DemoSeedResponse),
         (status = 400, description = "Invalid request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden - demo endpoints disabled or admin role required"),
         (status = 500, description = "Internal server error")
     ),
-    tag = "demo"
+    tag = "demo",
+    security(("bearer_auth" = []))
 )]
 pub async fn reset_demo(
     state: web::Data<AppState>,
+    auth: crate::middleware::AuthExtractor,
     dto: web::Json<DemoSeedRequest>,
 ) -> Result<HttpResponse, ApiError> {
     let mut req = dto.into_inner();
     req.reset = true;
-    seed_demo(state, web::Json(req)).await
+    seed_demo(state, auth, web::Json(req)).await
 }
 
 /// Get demo data summary
@@ -572,11 +619,19 @@ pub async fn reset_demo(
     responses(
         (status = 200, description = "Demo data summary", body = DemoDataSummary),
         (status = 404, description = "Demo tenant not found"),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden - demo endpoints disabled or admin role required"),
         (status = 500, description = "Internal server error")
     ),
-    tag = "demo"
+    tag = "demo",
+    security(("bearer_auth" = []))
 )]
-pub async fn demo_summary(state: web::Data<AppState>) -> Result<HttpResponse, ApiError> {
+pub async fn demo_summary(
+    state: web::Data<AppState>,
+    auth: crate::middleware::AuthExtractor,
+) -> Result<HttpResponse, ApiError> {
+    require_demo_access(&state, &auth)?;
+
     let pool = state.db.pool();
 
     // Find demo tenant

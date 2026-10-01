@@ -36,18 +36,19 @@ INSERT INTO tenants (id, name, slug, config, is_active, created_at, updated_at)
 VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Demo Farm', 'demo', '{}', true, NOW(), NOW())
 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, updated_at = NOW();
 
--- Admin User
+-- Admin User. Password: demo1234-agrocore (must match DEMO_ADMIN_PASSWORD in
+-- scripts/dev.sh and DEMO_DEFAULT_PASSWORD in crates/api/src/handlers/demo.rs).
 INSERT INTO users (id, tenant_id, firstname, lastname, email, password_hash, language, color, is_active, roles, created_at, updated_at)
-VALUES ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Demo', 'Admin', 'admin@demo.local', '$argon2id$v=19$m=19456,t=2,p=1$mlXjcxk6oKpk+dJKbDnvXQ$vnHWSwRtfQo2wUeurbh3b7qm1qcFC4uuIX5Z+P1oDxU', 'de', '#3B82F6', true, '["Admin"]'::jsonb, NOW(), NOW())
+VALUES ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Demo', 'Admin', 'admin@demo.local', '$argon2id$v=19$m=19456,t=2,p=1$D64+rL2hziARrbXCSZtVoQ$CniAVPik4wd4H5hmYu3r6XxOSQveEV2CQsFN044W/D4', 'de', '#3B82F6', true, '["Admin"]'::jsonb, NOW(), NOW())
 ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, password_hash = EXCLUDED.password_hash, updated_at = NOW();
 
 -- Worker Users
 INSERT INTO users (id, tenant_id, firstname, lastname, email, password_hash, language, color, is_active, roles, created_at, updated_at)
-VALUES ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Hans', 'Müller', 'hans@demo.local', '$argon2id$v=19$m=19456,t=2,p=1$mlXjcxk6oKpk+dJKbDnvXQ$vnHWSwRtfQo2wUeurbh3b7qm1qcFC4uuIX5Z+P1oDxU', 'de', '#10B981', true, '["Worker"]'::jsonb, NOW(), NOW())
+VALUES ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Hans', 'Müller', 'hans@demo.local', '$argon2id$v=19$m=19456,t=2,p=1$D64+rL2hziARrbXCSZtVoQ$CniAVPik4wd4H5hmYu3r6XxOSQveEV2CQsFN044W/D4', 'de', '#10B981', true, '["Worker"]'::jsonb, NOW(), NOW())
 ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, password_hash = EXCLUDED.password_hash, updated_at = NOW();
 
 INSERT INTO users (id, tenant_id, firstname, lastname, email, password_hash, language, color, is_active, roles, created_at, updated_at)
-VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Maria', 'Schmidt', 'maria@demo.local', '$argon2id$v=19$m=19456,t=2,p=1$mlXjcxk6oKpk+dJKbDnvXQ$vnHWSwRtfQo2wUeurbh3b7qm1qcFC4uuIX5Z+P1oDxU', 'de', '#F59E0B', true, '["Worker"]'::jsonb, NOW(), NOW())
+VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Maria', 'Schmidt', 'maria@demo.local', '$argon2id$v=19$m=19456,t=2,p=1$D64+rL2hziARrbXCSZtVoQ$CniAVPik4wd4H5hmYu3r6XxOSQveEV2CQsFN044W/D4', 'de', '#F59E0B', true, '["Worker"]'::jsonb, NOW(), NOW())
 ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, password_hash = EXCLUDED.password_hash, updated_at = NOW();
 
 -- Worker records
