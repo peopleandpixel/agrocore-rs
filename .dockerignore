@@ -1,20 +1,37 @@
+# Keep the Docker build context small — every included file is transferred on
+# each build and can invalidate cache layers.
 target/
+**/target/
 .git/
 .gitignore
-*.log
-*.md
-!README.md
-.env*
+
+# Local dev artifacts
+.env
+.env.dev
+.env.*
 !.env.example
+
+# Editor / IDE
 .idea/
 .vscode/
-*.swp
-*~
-.DS_Store
-node_modules/
-dist/
-build/
-coverage/
-*.wasm
-*.map
+*.iml
+
+# Docs and references are not needed for compilation
+docs/
+references/
+*.md
+!README.md
+
+# Test fixtures and coverage output
 lcov.info
+**/*.log
+
+# Docker / CI
+docker-compose*.yml
+scripts/*.sh
+!scripts/dev.sh
+!docker-entrypoint.sh
+
+# Frontend build output is mounted at runtime, not baked in
+crates/admin-ui/dist/
+crates/dashboard/target/

@@ -1,36 +1,123 @@
-# Multi-stage Dockerfile for services
+# syntax=docker/dockerfile:1.7
+# Multi-stage Dockerfile for services.
+#
+# Build performance notes:
+#   * Only the files that actually affect the build are copied before the
+#     compile step. `COPY . .` would invalidate every cache layer on any repo
+#     change (docs, .env.dev, migrations, target/, …).
+#   * cargo registry/git caches and the target directory live in BuildKit cache
+#     mounts, so rebuilds reuse previously compiled dependencies.
+#   * Only the requested binary is built (`--bin`), not the whole workspace.
+
 FROM rust:1.97-bookworm AS builder
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# System dependencies (stable layer, rarely changes)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     libssl-dev \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy workspace files
+# Dependency manifests first: this layer is only invalidated when Cargo.toml
+# or Cargo.lock change, not on ordinary source edits.
 COPY Cargo.toml Cargo.lock ./
-COPY crates ./crates
+COPY crates/domain/Cargo.toml crates/domain/
+COPY crates/shared/Cargo.toml crates/shared/
+COPY crates/logging/Cargo.toml crates/logging/
+COPY crates/i18n-shared/Cargo.toml crates/i18n-shared/
+COPY crates/messaging/Cargo.toml crates/messaging/
+COPY crates/infrastructure/Cargo.toml crates/infrastructure/
+COPY crates/scheduler/Cargo.toml crates/scheduler/
+COPY crates/asset-registry/Cargo.toml crates/asset-registry/
+COPY crates/lpis-providers/Cargo.toml crates/lpis-providers/
+COPY crates/geometry-service/Cargo.toml crates/geometry-service/
+COPY crates/backup-service/Cargo.toml crates/backup-service/
+COPY crates/weather-service/Cargo.toml crates/weather-service/
+COPY crates/reporting-service/Cargo.toml crates/reporting-service/
+COPY crates/notification-service/Cargo.toml crates/notification-service/
+COPY crates/api/Cargo.toml crates/api/
+COPY crates/admin-ui/Cargo.toml crates/admin-ui/
+COPY crates/dashboard/Cargo.toml crates/dashboard/
 
-# Copy migrations directory (needed for sqlx::migrate! in infrastructure)
+ARG SERVICE_NAME
+ENV SERVICE_NAME=${SERVICE_NAME}
+
+# Fetch dependencies into a cache mount so `cargo build` below does not have
+# to download crates again. Stub sources keep this from compiling real code.
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
+    mkdir -p crates/domain/src \
+        crates/shared/src \
+        crates/logging/src \
+        crates/i18n-shared/src \
+        crates/messaging/src \
+        crates/infrastructure/src \
+        crates/scheduler/src \
+        crates/asset-registry/src \
+        crates/lpis-providers/src \
+        crates/geometry-service/src \
+        crates/backup-service/src \
+        crates/weather-service/src \
+        crates/reporting-service/src \
+        crates/notification-service/src \
+        crates/api/src \
+        crates/admin-ui/src \
+        crates/dashboard/src \
+    && \
+        : > "crates/domain/src/lib.rs" && \
+        : > "crates/shared/src/lib.rs" && \
+        : > "crates/logging/src/lib.rs" && \
+        : > "crates/i18n-shared/src/lib.rs" && \
+        : > "crates/messaging/src/lib.rs" && \
+        : > "crates/infrastructure/src/lib.rs" && \
+        : > "crates/scheduler/src/lib.rs" && \
+        : > "crates/asset-registry/src/lib.rs" && \
+        : > "crates/lpis-providers/src/lib.rs" && \
+        : > "crates/geometry-service/src/lib.rs" && \
+        : > "crates/backup-service/src/lib.rs" && \
+        : > "crates/weather-service/src/lib.rs" && \
+        : > "crates/reporting-service/src/lib.rs" && \
+        : > "crates/notification-service/src/lib.rs" && \
+        : > "crates/api/src/lib.rs" && \
+        : > "crates/admin-ui/src/lib.rs" && \
+        : > "crates/dashboard/src/lib.rs" \
+    && cargo fetch --locked
+
+# Assets required at compile time: sqlx::migrate! embeds migrations, and the
+# SQLx offline query cache avoids a live database during the build.
 COPY migrations ./migrations
-
-# Copy SQLx query cache (needed for offline builds)
 COPY .sqlx ./.sqlx
 
-# Build dependencies first (caching layer)
-RUN cargo build --release --workspace --exclude admin-ui 2>/dev/null || true
+# Real sources (only what the compile actually reads)
+COPY crates/domain/src crates/domain/src
+COPY crates/shared/src crates/shared/src
+COPY crates/logging/src crates/logging/src
+COPY crates/i18n-shared/src crates/i18n-shared/src
+COPY crates/messaging/src crates/messaging/src
+COPY crates/infrastructure/src crates/infrastructure/src
+COPY crates/scheduler/src crates/scheduler/src
+COPY crates/asset-registry/src crates/asset-registry/src
+COPY crates/lpis-providers/src crates/lpis-providers/src
+COPY crates/geometry-service/src crates/geometry-service/src
+COPY crates/backup-service/src crates/backup-service/src
+COPY crates/weather-service/src crates/weather-service/src
+COPY crates/reporting-service/src crates/reporting-service/src
+COPY crates/notification-service/src crates/notification-service/src
+COPY crates/api/src crates/api/src
+COPY crates/dashboard/src crates/dashboard/src
 
-# Copy source and build
-COPY . .
-RUN cargo build --release --workspace --exclude admin-ui
+# Build only the requested binary. The target dir is a real layer (so the
+# runtime stage can COPY from it); the registry/git caches are mounted so
+# crates are not re-downloaded on every build.
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
+    cargo build --release --locked --bin "${SERVICE_NAME}"
 
-# Runtime stage
+# ── Runtime ────────────────────────────────────────────────────
 FROM debian:bookworm-slim AS runtime
 
-# Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
@@ -38,19 +125,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user
 RUN useradd -m -u 1000 -s /bin/bash appuser
 
 WORKDIR /app
 
-# Copy binary (the service name will be passed as build arg)
 ARG SERVICE_NAME
+ENV SERVICE_NAME=${SERVICE_NAME}
+
 COPY --from=builder /app/target/release/${SERVICE_NAME} /app/${SERVICE_NAME}
 
-# Set ownership
 RUN chown -R appuser:appuser /app
 
 USER appuser
 
-# Run
-CMD ["/app/${SERVICE_NAME}"]
+# Entrypoint resolves the binary from SERVICE_NAME and `exec`s it, so the
+# service keeps PID 1 semantics and receives SIGTERM for graceful shutdown.
+COPY --chmod=0755 docker-entrypoint.sh /usr/local/bin/entrypoint.sh
+CMD ["/usr/local/bin/entrypoint.sh"]

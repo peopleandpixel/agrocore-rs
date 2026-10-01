@@ -12,7 +12,7 @@ pub struct NotificationConfig {
     pub enabled: bool,
     /// Channel configurations, keyed by channel name (e.g. "email", "telegram").
     #[serde(default)]
-    pub channels: HashMap<String, super::ChannelConfig>,
+    pub channels: HashMap<String, super::types::ChannelConfig>,
     /// Notification templates, keyed by event type.
     #[serde(default)]
     pub templates: HashMap<String, TemplateConfig>,

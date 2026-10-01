@@ -50,11 +50,11 @@ impl TemplateEngine {
         // Check for unreplaced placeholders
         if result.contains("{{") {
             // Extract the first missing variable name for error reporting
-            if let Some(start) = result.find("{{") {
-                if let Some(end) = result[start..].find("}}") {
-                    let var = &result[start + 2..start + end].trim();
-                    return Err(TemplateError::MissingVariable(var.to_string()));
-                }
+            if let Some(start) = result.find("{{")
+                && let Some(end) = result[start..].find("}}")
+            {
+                let var = &result[start + 2..start + end].trim();
+                return Err(TemplateError::MissingVariable(var.to_string()));
             }
         }
         Ok(result)
@@ -78,13 +78,12 @@ impl TemplateEngine {
             }
         }
 
-        if result.contains("{{") {
-            if let Some(start) = result.find("{{") {
-                if let Some(end) = result[start..].find("}}") {
-                    let var = &result[start + 2..start + end].trim();
-                    return Err(TemplateError::MissingVariable(var.to_string()));
-                }
-            }
+        if result.contains("{{")
+            && let Some(start) = result.find("{{")
+            && let Some(end) = result[start..].find("}}")
+        {
+            let var = &result[start + 2..start + end].trim();
+            return Err(TemplateError::MissingVariable(var.to_string()));
         }
         Ok(result)
     }

@@ -377,7 +377,7 @@ CREATE INDEX IF NOT EXISTS idx_equipment_usage_log_equipment_started ON equipmen
 CREATE TRIGGER update_equipment_usage_log_updated_at
     BEFORE UPDATE ON equipment_usage_log
     FOR EACH ROW
-    EXECUTE FUNCTION trigger_updated_at();
+    EXECUTE FUNCTION set_updated_at();
 
 COMMENT ON TABLE equipment_usage_log IS 'Tracks equipment usage: who, what operation, when started/finished, duration.';
 

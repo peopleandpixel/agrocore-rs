@@ -1,13 +1,15 @@
 //! Notification dispatcher: consumes from NATS and routes to configured channels.
 
-use super::channel::{ChannelError, ChannelMessage, NotificationChannel, create_channel};
+use super::channel::create_channel;
 use super::config::{NotificationConfig, RetryConfig, TemplateConfig};
 use super::template::TemplateEngine;
+use super::types::{ChannelError, ChannelMessage, NotificationChannel};
 use agrocore_logging::{debug, error, info, warn};
 use async_nats::Client as NatsClient;
-use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -52,7 +54,7 @@ pub struct NotificationResult {
 pub struct NotificationDispatcher {
     config: NotificationConfig,
     nats: NatsClient,
-    channels: Arc<RwLock<HashMap<String, Box<dyn NotificationChannel>>>>,
+    channels: Arc<RwLock<HashMap<String, Arc<dyn NotificationChannel>>>>,
     template_engine: TemplateEngine,
     retry_config: RetryConfig,
 }
@@ -60,7 +62,7 @@ pub struct NotificationDispatcher {
 impl NotificationDispatcher {
     pub async fn new(config: NotificationConfig, nats: NatsClient) -> Result<Self, ChannelError> {
         let retry_config = config.retry.clone();
-        let mut channels: HashMap<String, Box<dyn NotificationChannel>> = HashMap::new();
+        let mut channels: HashMap<String, Arc<dyn NotificationChannel>> = HashMap::new();
 
         for (name, channel_config) in &config.channels {
             match create_channel(channel_config) {
@@ -87,7 +89,7 @@ impl NotificationDispatcher {
     pub async fn start(&self) -> Result<(), ChannelError> {
         info!("NotificationDispatcher started — consuming from notifications.send");
 
-        let subscriber = self
+        let mut subscriber = self
             .nats
             .subscribe("notifications.send".to_string())
             .await
@@ -96,9 +98,12 @@ impl NotificationDispatcher {
         let dispatcher = self.clone_inner();
         let dlq_subject = self.config.dead_letter_subject.clone();
 
-        tokio::spawn(async move {
+        // Must run on the actix LocalSet (the service runs on actix's
+        // single-threaded runtime); `tokio::spawn` panics there.
+        actix_web::rt::spawn(async move {
             while let Some(msg) = subscriber.next().await {
-                let request: Option<NotificationRequest> = serde_json::from_slice(&msg.payload).ok();
+                let request: Option<NotificationRequest> =
+                    serde_json::from_slice(&msg.payload).ok();
 
                 if let Some(request) = request {
                     dispatcher.process_notification(request, &dlq_subject).await;
@@ -111,12 +116,11 @@ impl NotificationDispatcher {
         Ok(())
     }
 
+    /// Cheap handle for the spawned consumer task. Every field is either
+    /// `Clone`-able (config, NATS client, template engine) or already shared
+    /// (`Arc`), so no deep copy of the channel map happens.
     fn clone_inner(&self) -> Arc<Self> {
-        // We need Arc<Self> for the spawned task, but NotificationDispatcher
-        // contains Box<dyn NotificationChannel> which is not Clone.
-        // We'll wrap the channels in Arc<RwLock<...>> instead of cloning.
-        // For the async consumer, we use a different approach:
-        Arc::new(DispatcherRef {
+        Arc::new(Self {
             config: self.config.clone(),
             nats: self.nats.clone(),
             channels: self.channels.clone(),
@@ -126,11 +130,7 @@ impl NotificationDispatcher {
     }
 
     /// Process a single notification request with retry logic.
-    async fn process_notification(
-        &self,
-        request: NotificationRequest,
-        dlq_subject: &str,
-    ) {
+    async fn process_notification(&self, request: NotificationRequest, dlq_subject: &str) {
         let request_id = Uuid::new_v4();
         let started_at = Utc::now();
 
@@ -189,7 +189,10 @@ impl NotificationDispatcher {
                 });
                 let _ = self
                     .nats
-                    .publish_raw(dlq_subject.to_string(), serde_json::to_vec(&dlq_msg).unwrap_or_default())
+                    .publish(
+                        dlq_subject.to_string(),
+                        serde_json::to_vec(&dlq_msg).unwrap_or_default().into(),
+                    )
                     .await;
 
                 self.publish_result(NotificationResult {
@@ -207,13 +210,20 @@ impl NotificationDispatcher {
             }
 
             let message = ChannelMessage {
+                channel: request.channel.clone(),
+                event_type: request.event_type.clone(),
                 recipient: request.recipient.clone(),
                 subject: subject.clone(),
                 body: body.clone(),
-                is_html: request.metadata.get("is_html").and_then(|v| v.as_bool()).unwrap_or(false),
+                is_html: request
+                    .data
+                    .get("is_html")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false),
                 correlation_id: request.correlation_id.clone(),
                 timestamp: started_at,
                 metadata: request.data.clone(),
+                attempt: 0,
             };
 
             match channel.send(message).await {
@@ -238,9 +248,7 @@ impl NotificationDispatcher {
                 Err(e) => {
                     last_error = Some(e.to_string());
                     if attempts < self.retry_config.max_attempts {
-                        let delay_ms = self
-                            .retry_config
-                            .initial_delay_ms
+                        let delay_ms = self.retry_config.initial_delay_ms
                             * (self.retry_config.backoff_multiplier as u64).pow(attempts - 1);
                         let delay_ms = delay_ms.min(self.retry_config.max_delay_ms);
                         debug!(
@@ -313,39 +321,8 @@ impl NotificationDispatcher {
         };
 
         let payload = serde_json::to_vec(&result).unwrap_or_default();
-        if let Err(e) = self
-            .nats
-            .publish_raw(subject.to_string(), payload)
-            .await
-        {
+        if let Err(e) = self.nats.publish(subject.to_string(), payload.into()).await {
             warn!("Failed to publish notification result: {}", e);
         }
-    }
-}
-
-/// Lightweight reference for async consumption (avoids Clone on Box<dyn>).
-struct DispatcherRef {
-    config: NotificationConfig,
-    nats: NatsClient,
-    channels: Arc<RwLock<HashMap<String, Box<dyn NotificationChannel>>>>,
-    template_engine: TemplateEngine,
-    retry_config: RetryConfig,
-}
-
-impl DispatcherRef {
-    async fn process_notification(
-        &self,
-        request: NotificationRequest,
-        dlq_subject: &str,
-    ) {
-        // Delegate to Dispatcher logic (shared implementation)
-        let dispatcher = NotificationDispatcher {
-            config: self.config.clone(),
-            nats: self.nats.clone(),
-            channels: self.channels.clone(),
-            template_engine: self.template_engine.clone(),
-            retry_config: self.retry_config.clone(),
-        };
-        dispatcher.process_notification(request, dlq_subject).await;
     }
 }

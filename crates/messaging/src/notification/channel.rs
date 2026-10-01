@@ -1,13 +1,12 @@
 //! Concrete notification channel implementations.
 
-use super::channel::{
-    ChannelError, ChannelMessage, ChannelConfig,
-    NotificationChannel, SmtpChannelConfig, SendgridChannelConfig,
-    MailgunChannelConfig, TelegramChannelConfig, NtfyChannelConfig,
-    WebhookChannelConfig, TwilioChannelConfig, WacliChannelConfig,
+use super::types::{
+    ChannelConfig, ChannelError, ChannelMessage, MailgunChannelConfig, NotificationChannel,
+    NtfyChannelConfig, SendgridChannelConfig, SmtpChannelConfig, TelegramChannelConfig,
+    TwilioChannelConfig, WacliChannelConfig, WebhookChannelConfig,
 };
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
+use std::sync::Arc;
 
 // ── SMTP Channel ──────────────────────────────────────────────
 
@@ -32,7 +31,9 @@ impl NotificationChannel for SmtpChannel {
             message.recipient, self.config.from, message.subject, message.body
         );
         // SMTP send would go here — using lettre crate in full impl
-        Err(ChannelError::Unavailable)
+        Err(ChannelError::Unavailable(
+            "SMTP delivery is not implemented yet".to_string(),
+        ))
     }
 
     fn name(&self) -> &'static str {
@@ -84,7 +85,10 @@ impl NotificationChannel for SendgridChannel {
         if resp.status().is_success() {
             Ok(())
         } else {
-            Err(ChannelError::Api(format!("SendGrid API error: {}", resp.status())))
+            Err(ChannelError::Api(format!(
+                "SendGrid API error: {}",
+                resp.status()
+            )))
         }
     }
 
@@ -123,8 +127,17 @@ impl NotificationChannel for MailgunChannel {
 
         let resp = self
             .client
-            .post(format!("https://api.mailgun.net/v3/{}/messages", self.config.domain))
-            .header("Authorization", format!("Basic {}", base64_encode(&format!("api:{}", self.config.api_key))))
+            .post(format!(
+                "https://api.mailgun.net/v3/{}/messages",
+                self.config.domain
+            ))
+            .header(
+                "Authorization",
+                format!(
+                    "Basic {}",
+                    base64_encode(&format!("api:{}", self.config.api_key))
+                ),
+            )
             .json(&form)
             .send()
             .await
@@ -133,7 +146,10 @@ impl NotificationChannel for MailgunChannel {
         if resp.status().is_success() {
             Ok(())
         } else {
-            Err(ChannelError::Api(format!("Mailgun API error: {}", resp.status())))
+            Err(ChannelError::Api(format!(
+                "Mailgun API error: {}",
+                resp.status()
+            )))
         }
     }
 
@@ -187,7 +203,10 @@ impl TelegramChannel {
         if resp.status().is_success() {
             Ok(())
         } else {
-            Err(ChannelError::Api(format!("Telegram API error: {}", resp.status())))
+            Err(ChannelError::Api(format!(
+                "Telegram API error: {}",
+                resp.status()
+            )))
         }
     }
 }
@@ -247,7 +266,7 @@ impl NotificationChannel for NtfyChannel {
 
         let mut req = self
             .client
-            .publish(&url)
+            .post(&url)
             .header("Title", &message.subject)
             .header("Tags", "warning")
             .header("Priority", "urgent")
@@ -268,7 +287,10 @@ impl NotificationChannel for NtfyChannel {
         if resp.status().is_success() {
             Ok(())
         } else {
-            Err(ChannelError::Api(format!("ntfy API error: {}", resp.status())))
+            Err(ChannelError::Api(format!(
+                "ntfy API error: {}",
+                resp.status()
+            )))
         }
     }
 
@@ -294,14 +316,20 @@ impl WebhookChannel {
     }
 
     /// Compute HMAC-SHA256 signature for webhook payload.
-    fn sign_payload(&self, payload: &[u8]) -> String {
+    fn sign_payload(&self, payload: &[u8]) -> Option<String> {
         use hmac::{Hmac, Mac};
         type HmacSha256 = Hmac<sha2::Sha256>;
-        let mut mac = HmacSha256::new_from_slice(self.config.secret.as_bytes())
-            .expect("HMAC accepted empty key");
+        let secret = self.config.secret.as_ref()?;
+        let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).ok()?;
         mac.update(payload);
         let result = mac.finalize();
-        hex::encode(result.into_bytes())
+        Some(
+            result
+                .into_bytes()
+                .iter()
+                .map(|b| format!("{b:02x}"))
+                .collect(),
+        )
     }
 }
 
@@ -318,10 +346,12 @@ impl NotificationChannel for WebhookChannel {
             .to_string();
 
         let url = if target_url.is_empty() {
-            self.config
-                .default_url
-                .clone()
-                .ok_or_else(|| ChannelError::Config("No webhook URL provided".to_string()))?
+            if self.config.default_url.trim().is_empty() {
+                return Err(ChannelError::Config(
+                    "webhook.default_url must be configured".to_string(),
+                ));
+            }
+            self.config.default_url.clone()
         } else {
             target_url
         };
@@ -336,16 +366,24 @@ impl NotificationChannel for WebhookChannel {
             "correlation_id": message.correlation_id,
         });
 
-        let body = serde_json::to_vec(&payload).map_err(|e| ChannelError::Serialization(e.to_string()))?;
+        let body =
+            serde_json::to_vec(&payload).map_err(|e| ChannelError::Serialization(e.to_string()))?;
 
         let signature = self.sign_payload(&body);
 
-        let resp = self
+        let mut req = self
             .client
             .post(&url)
             .header("Content-Type", "application/json")
-            .header("X-AgroCore-Signature", signature)
-            .header("X-AgroCore-Timestamp", timestamp.to_string())
+            .header("X-AgroCore-Timestamp", timestamp.to_string());
+
+        // Only sign when a secret is configured; an unsigned request must not
+        // carry an empty signature header.
+        if let Some(signature) = signature {
+            req = req.header("X-AgroCore-Signature", signature);
+        }
+
+        let resp = req
             .body(body)
             .send()
             .await
@@ -354,7 +392,10 @@ impl NotificationChannel for WebhookChannel {
         if resp.status().is_success() {
             Ok(())
         } else {
-            Err(ChannelError::Api(format!("Webhook API error: {}", resp.status())))
+            Err(ChannelError::Api(format!(
+                "Webhook API error: {}",
+                resp.status()
+            )))
         }
     }
 
@@ -394,7 +435,10 @@ impl NotificationChannel for TwilioChannel {
             self.config.account_sid
         );
 
-        let auth = base64_encode(&format!("{}:{}", self.config.account_sid, self.config.auth_token));
+        let auth = base64_encode(&format!(
+            "{}:{}",
+            self.config.account_sid, self.config.auth_token
+        ));
 
         let resp = self
             .client
@@ -408,7 +452,10 @@ impl NotificationChannel for TwilioChannel {
         if resp.status().is_success() {
             Ok(())
         } else {
-            Err(ChannelError::Api(format!("Twilio API error: {}", resp.status())))
+            Err(ChannelError::Api(format!(
+                "Twilio API error: {}",
+                resp.status()
+            )))
         }
     }
 
@@ -469,15 +516,17 @@ fn base64_encode(input: &str) -> String {
 // ── Channel factory ───────────────────────────────────────────
 
 /// Create a channel instance from its configuration enum variant.
-pub fn create_channel(config: &ChannelConfig) -> Result<Box<dyn NotificationChannel>, ChannelError> {
+pub fn create_channel(
+    config: &ChannelConfig,
+) -> Result<Arc<dyn NotificationChannel>, ChannelError> {
     match config {
-        ChannelConfig::Smtp(cfg) => Ok(Box::new(SmtpChannel::new(cfg.clone()))),
-        ChannelConfig::Sendgrid(cfg) => Ok(Box::new(SendgridChannel::new(cfg.clone()))),
-        ChannelConfig::Mailgun(cfg) => Ok(Box::new(MailgunChannel::new(cfg.clone()))),
-        ChannelConfig::Telegram(cfg) => Ok(Box::new(TelegramChannel::new(cfg.clone()))),
-        ChannelConfig::Ntfy(cfg) => Ok(Box::new(NtfyChannel::new(cfg.clone()))),
-        ChannelConfig::Webhook(cfg) => Ok(Box::new(WebhookChannel::new(cfg.clone()))),
-        ChannelConfig::Twilio(cfg) => Ok(Box::new(TwilioChannel::new(cfg.clone()))),
-        ChannelConfig::Wacli(cfg) => Ok(Box::new(WacliChannel::new(cfg.clone()))),
+        ChannelConfig::Smtp(cfg) => Ok(Arc::new(SmtpChannel::new(cfg.clone()))),
+        ChannelConfig::Sendgrid(cfg) => Ok(Arc::new(SendgridChannel::new(cfg.clone()))),
+        ChannelConfig::Mailgun(cfg) => Ok(Arc::new(MailgunChannel::new(cfg.clone()))),
+        ChannelConfig::Telegram(cfg) => Ok(Arc::new(TelegramChannel::new(cfg.clone()))),
+        ChannelConfig::Ntfy(cfg) => Ok(Arc::new(NtfyChannel::new(cfg.clone()))),
+        ChannelConfig::Webhook(cfg) => Ok(Arc::new(WebhookChannel::new(cfg.clone()))),
+        ChannelConfig::Twilio(cfg) => Ok(Arc::new(TwilioChannel::new(cfg.clone()))),
+        ChannelConfig::Wacli(cfg) => Ok(Arc::new(WacliChannel::new(cfg.clone()))),
     }
 }

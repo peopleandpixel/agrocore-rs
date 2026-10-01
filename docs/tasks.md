@@ -381,50 +381,53 @@ Neue Traits: `Publisher`, `Subscriber`, `MessageStream` in `agrocore-messaging`.
 
 ## Phase 8: Dev Environment & Demo Mode (P0 - KRITISCH)
 
-**Status:** Geplant · **Priorität:** P0 · **Aufwand:** 3–5 Tage
+**Status:** Abschnitt 1 + 2 + 3 abgeschlossen · Abschnitt 4 offen · **Priorität:** P0 · **Aufwand:** 3–5 Tage
 
 ### 1. dev.sh — Port-Konflikt-Erkennung & Auto-Fallback
 **Ziel:** Das `scripts/dev.sh` Script muss **immer** eine lauffähige Umgebung starten, egal ob Standard-Ports belegt sind.
 
 **Anforderungen:**
-- [ ] Vor Container-Start: Prüfen ob Ports 5432 (PostgreSQL), 4222 (NATS), 1883/9001 (MQTT), 6379 (Redis), 3000 (API), 8080 (Admin UI) belegt sind
-- [ ] Bei Konflikt: Automatisch nächste freie Ports finden (z.B. 5433, 4223, 1884/9002, 6380, 3001, 8081)
-- [ ] Gefundene Ports in `.env.dev` schreiben (oder direkt an docker-compose übergeben via `-p`)
-- [ ] Health-Checks warten bis alle Services `healthy` sind
-- [ ] Am Ende: Zusammenfassung aller Services mit **tatsächlichen** Ports ausgeben
-- [ ] `docker-compose.dev.yml` muss variable Ports unterstützen (`${POSTGRES_PORT:-5432}` etc.)
+- [x] Vor Container-Start: Prüfen ob Ports 5432 (PostgreSQL), 4222 (NATS), 1883/9001 (MQTT), 6379 (Redis), 3000 (API), 8080 (Admin UI) belegt sind
+- [x] Bei Konflikt: Automatisch nächste freie Ports finden (z.B. 5433, 4223, 1884/9002, 6380, 3001, 8081)
+- [x] Gefundene Ports in `.env.dev` schreiben (oder direkt an docker-compose übergeben via `-p`)
+- [x] Health-Checks warten bis alle Services `healthy` sind
+- [x] Am Ende: Zusammenfassung aller Services mit **tatsächlichen** Ports ausgeben
+- [x] `docker-compose.dev.yml` unterstützt variable Ports (`${POSTGRES_PORT:-5432}` etc.)
 
-**Akzeptanzkriterium:** `./scripts/dev.sh` läuft auf einem System wo alle Standard-Ports belegt sind → startet trotzdem erfolgreich auf Alternativ-Ports.
+**Akzeptanzkriterium:** ✅ Verifiziert (2026-09-30). Mit belegten Ports 5432/4222/8222/1883/9001/6379/8080/8081/8082 startet `./scripts/dev.sh --demo` erfolgreich auf 5433/4223/8223/1884/9002/6380/8083/8084/8085; Healthchecks grün, Login und UI 200. Ohne Konflikt werden die Standard-Ports genutzt.
 
 ### 2. Demo-Modus / Demo-Switch
 **Ziel:** Ein Flag (`--demo` oder `DEMO_MODE=true`) um eine sofort nutzbare Demo-Umgebung zu starten.
 
 **Features:**
-- [ ] `DEMO_MODE=true ./scripts/dev.sh` oder `./scripts/dev.sh --demo`
-- [ ] Erstellt automatisch: 1 Demo-Tenant, 1 Demo-User (admin/demo), Demo-Felder (Sites), Demo-Aufträge (Orders), Demo-Equipment, Demo-Tiere, Demo-Wetterstationen
-- [ ] Daten über SQL-Seed-Datei (`migrations/demo_seed.sql`) oder Rust-Seed-Binary (`crates/backup-service` / eigenes `demo-seed` Binary)
-- [ ] Demo-Daten sind realistisch (deutsche/portugiesische Feldnamen, Kulturen, Maschinen)
-- [ ] Admin UI zeigt sofort Inhalte ohne manuelle Einrichtung
-- [ ] Optional: Demo-Reset-Endpunkt (`POST /api/v1/demo/reset`) für Tests
+- [x] `DEMO_MODE=true ./scripts/dev.sh` oder `./scripts/dev.sh --demo`
+- [x] Erstellt automatisch: 1 Demo-Tenant, 1 Demo-User (admin/demo), Demo-Felder (Sites), Demo-Aufträge (Orders), Demo-Equipment, Demo-Tiere, Demo-Wetterstationen
+- [x] Daten über SQL-Seed-Datei (`scripts/demo_seed.sql`) oder Rust-Seed-Binary (`crates/backup-service` / eigenes `demo-seed` Binary)
+- [x] Demo-Daten sind realistisch (deutsche/portugiesische Feldnamen, Kulturen, Maschinen)
+- [x] Admin UI zeigt sofort Inhalte ohne manuelle Einrichtung
+- [x] Optional: Demo-Reset-Endpunkt (`POST /api/v1/demo/reset`) für Tests
 
+**Akzeptanzkriterium:** ✅ Verifiziert (2026-09-30). `DEMO_MODE=true ./scripts/dev.sh` und `./scripts/dev.sh --demo` erzeugen 1 Tenant, 3 Users, 2 Workers, 3 Sites, 3 Equipment, 2 Orders, 3 Inventory-Items, 3 Tiere, 3 Grazing-Records, 3 Kostenstellen, 2 Kunden und 3 Buchungen. Login `admin@demo.local` / `demo1234` liefert HTTP 200 mit JWT. Seed ist idempotent (Zweitlauf ohne Duplikate).
+
+**Hinweis:** Der Seed liegt in `scripts/demo_seed.sql` statt `migrations/`, weil `sqlx::migrate!` dort ausschließlich nummerierte Migrations akzeptiert. Passwörter werden als Argon2id gespeichert (passend zum Verify-Pfad in `crates/infrastructure/src/postgres/user.rs`).
 ### 3. Externe Benachrichtigungen im Messaging Service
 **Ziel:** `agrocore-messaging` erweitert um Notification-Dispatcher für externe Kanäle.
 
 **Kanäle (jeweils optional, via Feature-Flags):**
-- [ ] **Email** — SMTP (bzw. SendGrid, Mailgun, Postmark API)
-- [ ] **WhatsApp** — WhatsApp Business API (Meta) oder `wacli` CLI
-- [ ] **SMS** — Twilio, Vonage, Plivo, Sms77
-- [ ] **Telegram** — Bot API
-- [ ] **ntfy** — ntfy.sh (Self-hosted oder Cloud)
+- [x] **Email** — SMTP, SendGrid, Mailgun (Postmark API offen)
+- [x] **WhatsApp** — `wacli` CLI (Meta Business API offen)
+- [x] **SMS** — Twilio (Vonage, Plivo, Sms77 offen)
+- [x] **Telegram** — Bot API
+- [x] **ntfy** — ntfy.sh (Self-hosted oder Cloud)
 - [ ] **Push** — Firebase (FCM), APNs, WebPush
-- [ ] **Webhook** — Generischer HTTP POST mit Retry/Signatur
+- [x] **Webhook** — HTTP POST mit HMAC-SHA256-Signatur
 
 **Architektur:**
-- [ ] `NotificationChannel` Trait + Implementierungen pro Kanal
-- [ ] `NotificationDispatcher` — routet nach Tenant-Config & User-Preferences
-- [ ] Template-System (Handlebars/Tera) für Betreff/Body pro Event-Typ
-- [ ] Queue-basiert (NATS Subject `notifications.send`) → Dispatcher consummt & versendet
-- [ ] Retry-Policy + Dead-Letter-Queue für fehlgeschlagene Versände
+- [x] `NotificationChannel` Trait + Implementierungen pro Kanal
+- [x] `NotificationDispatcher` — routet nach Tenant-Config
+- [x] Template-System (`{{variable}}`-Substitution) für Betreff/Body pro Event-Typ
+- [x] Queue-basiert (NATS Subject `notifications.send`) → Dispatcher konsumiert & versendet
+- [x] Retry-Policy + Dead-Letter-Queue für fehlgeschlagene Versände
 - [ ] Inbound: Webhook-Endpunkte für Empfang (WhatsApp/Telegram/Email Reply)
 
 **Konfiguration (pro Tenant):**
@@ -449,6 +452,11 @@ notifications:
     enabled: true
     topic: "agrocore-tenant-123"
 ```
+
+**Akzeptanzkriterium:** ✅ Verifiziert (2026-09-30). `agrocore-notification-service` läuft als Docker-Container (`healthy`), konsumiert `notifications.send`, `/health` liefert Status, konfigurierbare Kanäle über YAML/JSON oder `NOTIFY_<CHANNEL>_*`, exponentielles Backoff und Dead-Letter-Subject. 10 Tests decken Channel-Konstruktion, YAML-Roundtrip und Konfigurationsvalidierung ab.
+
+**Offen:** Inbound-Webhooks (WhatsApp/Telegram/Email-Reply), Push-Kanäle (FCM/APNs/WebPush), Postmark/Vonage/Plivo/Sms77 und Tenant-User-Preferences.
+
 
 ### 4. Backup Service — Vollständige Funktionalität & Verifikation
 **Ziel:** Sicherstellen, dass **alle** in Phase 5 dokumenten Features **tatsächlich** funktionieren (nicht nur "Framework").

@@ -25,8 +25,8 @@ NC='\033[0m' # No Color
 # ════════════════════════════════════════════════════════════════
 # Parse arguments
 # ════════════════════════════════════════════════════════════════
-DEMO_MODE=false
-NO_DASHBOARD=false
+DEMO_MODE=${DEMO_MODE:-false}
+NO_DASHBOARD=${NO_DASHBOARD:-false}
 STOP_ONLY=false
 for arg in "$@"; do
     case "$arg" in
@@ -99,17 +99,34 @@ port_in_use() {
 }
 
 # Find next free port starting from base_port
+# Ports already handed out during this run. Checked in addition to real
+# sockets, otherwise several services fall back onto the same port because
+# none of them is actually bound yet when the next one is probed.
+RESERVED_PORTS=()
+
+port_reserved() {
+    local candidate=$1
+    local p
+    for p in "${RESERVED_PORTS[@]:-}"; do
+        [[ "$p" == "$candidate" ]] && return 0
+    done
+    return 1
+}
+
+# Sets FREE_PORT. Must not print the result: callers used to capture it with
+# $(...), which runs in a subshell and would discard the reservation.
 find_free_port() {
     local base_port=$1
     local port=$base_port
-    while port_in_use "$port"; do
+    while port_in_use "$port" || port_reserved "$port"; do
         ((port++))
         if [[ $port -gt $((base_port + 100)) ]]; then
             echo -e "${RED}❌ Could not find free port near $base_port${NC}" >&2
             exit 1
         fi
     done
-    echo "$port"
+    RESERVED_PORTS+=("$port")
+    FREE_PORT=$port
 }
 
 # ════════════════════════════════════════════════════════════════
@@ -155,14 +172,15 @@ docker compose -f docker-compose.dev.yml rm -f 2>/dev/null || true
 # ════════════════════════════════════════════════════════════════
 echo -e "${BLUE}  🔍 Suche freie Ports...${NC}"
 
-POSTGRES_PORT=$(find_free_port 5432)
-NATS_PORT=$(find_free_port 4222)
-NATS_MON_PORT=$(find_free_port 8222)
-MQTT_PORT=$(find_free_port 1883)
-MQTT_WS_PORT=$(find_free_port 9001)
-REDIS_PORT=$(find_free_port 6379)
-API_PORT=$(find_free_port 8080)
-ADMIN_UI_PORT=$(find_free_port 8081)
+find_free_port 5432; POSTGRES_PORT=$FREE_PORT
+find_free_port 4222; NATS_PORT=$FREE_PORT
+find_free_port 8222; NATS_MON_PORT=$FREE_PORT
+find_free_port 1883; MQTT_PORT=$FREE_PORT
+find_free_port 9001; MQTT_WS_PORT=$FREE_PORT
+find_free_port 6379; REDIS_PORT=$FREE_PORT
+find_free_port 8080; API_PORT=$FREE_PORT
+find_free_port 8081; ADMIN_UI_PORT=$FREE_PORT
+find_free_port 8082; NOTIFICATION_PORT=$FREE_PORT
 
 # Export for docker-compose
 export POSTGRES_PORT
@@ -173,6 +191,7 @@ export MQTT_WS_PORT
 export REDIS_PORT
 export API_PORT
 export ADMIN_UI_PORT
+export NOTIFICATION_PORT
 
 # Write .env.dev for reference
 cat > .env.dev <<EOF
@@ -185,6 +204,7 @@ MQTT_WS_PORT=$MQTT_WS_PORT
 REDIS_PORT=$REDIS_PORT
 API_PORT=$API_PORT
 ADMIN_UI_PORT=$ADMIN_UI_PORT
+NOTIFICATION_PORT=$NOTIFICATION_PORT
 DEMO_MODE=$DEMO_MODE
 EOF
 
@@ -195,6 +215,7 @@ echo -e "    MQTT:        ${CYAN}$MQTT_PORT${NC} (WS: ${CYAN}$MQTT_WS_PORT${NC})
 echo -e "    Redis:       ${CYAN}$REDIS_PORT${NC}"
 echo -e "    API:         ${CYAN}$API_PORT${NC}"
 echo -e "    Admin UI:    ${CYAN}$ADMIN_UI_PORT${NC}"
+echo -e "    Notification: ${CYAN}$NOTIFICATION_PORT${NC}"
 
 # ════════════════════════════════════════════════════════════════
 # Start infrastructure services (PostgreSQL, NATS, MQTT, Redis)
@@ -210,10 +231,19 @@ echo -e "${YELLOW}  ⏳ Waiting for infra services to be healthy...${NC}"
 wait_for_health() {
     local container_name=$1
     local display_name=$2
-    local timeout_s=60
+    local timeout_s=${3:-60}
     local elapsed=0
 
     echo -n "    $display_name ... "
+
+    # A container with no healthcheck reports "none" forever, so fail fast
+    # instead of spinning until the timeout.
+    local healthcheck
+    healthcheck=$(docker inspect --format='{{json .Config.Healthcheck}}' "$container_name" 2>/dev/null)
+    if [[ -z "$healthcheck" || "$healthcheck" == "null" ]]; then
+        echo -e "${YELLOW}no healthcheck defined${NC}"
+        return 1
+    fi
 
     while [[ $elapsed -lt $timeout_s ]]; do
         local health
@@ -228,11 +258,6 @@ wait_for_health() {
                 echo -e "${RED}unhealthy${NC}"
                 return 1
                 ;;
-            starting|none)
-                # service may not have a healthcheck yet or is still starting
-                sleep 2
-                elapsed=$((elapsed + 2))
-                ;;
             *)
                 sleep 2
                 elapsed=$((elapsed + 2))
@@ -240,8 +265,8 @@ wait_for_health() {
         esac
     done
 
-    echo -e "${YELLOW}timeout (continuing anyway)${NC}"
-    return 0
+    echo -e "${YELLOW}timeout${NC}"
+    return 1
 }
 
 # Wait for each infra service - verify both Docker healthcheck AND host port reachability
@@ -316,8 +341,16 @@ fi
 # Start Notification Service
 # ════════════════════════════════════════════════════════════════
 echo -e "${BLUE}  🐳 Starting Notification Service...${NC}"
-docker compose -f docker-compose.dev.yml up -d notification-service 2>/dev/null || true
-wait_for_health "agrocore-notification-service" "Notification Service" || true
+if ! docker compose -f docker-compose.dev.yml up -d notification-service 2>/dev/null; then
+    echo -e "${YELLOW}    Notification service image not available, skipping${NC}"
+else
+    if wait_for_health "agrocore-notification-service" "Notification Service" 60; then
+        :
+    else
+        echo -e "${YELLOW}    Notification Service not healthy, continuing${NC}"
+        docker compose -f docker-compose.dev.yml logs notification-service --tail=20 || true
+    fi
+fi
 
 # ═════════════════════════════════════════════════════════════════
 # Start Admin UI
@@ -352,25 +385,52 @@ wait_for_health "agrocore-admin-ui" "Admin UI (healthcheck)" || true
 # ════════════════════════════════════════════════════════════════
 if [[ "$DEMO_MODE" == true ]]; then
     echo -e "${CYAN}  🌱 Seeding demo data...${NC}"
-    sleep 3  # Give API a moment to be fully ready
+
+    # Migrations must have run before seeding; without the `tenants` table the
+    # API seed endpoint returns 500 and there is nothing for the SQL fallback
+    # to insert into either.
+    echo -e "${YELLOW}    Waiting for migrations to be applied...${NC}"
+    migration_waited=0
+    while [[ $migration_waited -lt 90 ]]; do
+        if docker exec agrocore-postgres psql -U agrocore -d agrocore \
+            -tAc "SELECT to_regclass('public.tenants') IS NOT NULL" 2>/dev/null | grep -q t
+        then
+            echo -e "${GREEN}    Migrations applied${NC}"
+            break
+        fi
+        sleep 2
+        migration_waited=$((migration_waited + 2))
+    done
+
+    if [[ $migration_waited -ge 90 ]]; then
+        echo -e "${RED}    ❌ Migrations did not complete - 'tenants' table missing${NC}"
+        echo -e "${YELLOW}    Check API logs: docker compose -f docker-compose.dev.yml logs api --tail=50${NC}"
+        exit 1
+    fi
 
     # Try API-based seeding first (preferred)
     api_url="http://localhost:${API_PORT}"
     if curl -sf -X POST "${api_url}/api/v1/demo/seed" \
         -H "Content-Type: application/json" \
-        -d '{"tenant": "demo", "user": "admin"}' 2>/dev/null
+        -d '{"tenant": "demo", "user": "admin", "reset": true}' >/dev/null 2>&1
     then
         echo -e "${GREEN}    Demo data seeded via API${NC}"
     else
         echo -e "${YELLOW}    API seed failed, trying SQL fallback...${NC}"
-        # SQL fallback: run demo_seed.sql directly against the DB container
-        if [[ -f migrations/demo_seed.sql ]]; then
-            docker exec -i agrocore-postgres psql -U agrocore -d agrocore \
-                < migrations/demo_seed.sql 2>/dev/null && \
-                echo -e "${GREEN}    Demo data seeded via SQL${NC}" || \
-                echo -e "${YELLOW}    SQL seed also failed (maybe already seeded)${NC}"
+        # SQL fallback: run the demo seed directly against the DB. It lives in
+        # scripts/ because sqlx::migrate! requires every file in migrations/ to
+        # be a numbered migration; demo data is opt-in via --demo.
+        seed_sql="scripts/demo_seed.sql"
+        if [[ -f "$seed_sql" ]]; then
+            if docker exec -i agrocore-postgres psql -v ON_ERROR_STOP=1 -U agrocore -d agrocore \
+                < "$seed_sql" >/dev/null 2>&1
+            then
+                echo -e "${GREEN}    Demo data seeded via SQL${NC}"
+            else
+                echo -e "${YELLOW}    SQL seed failed (check $seed_sql for schema mismatch)${NC}"
+            fi
         else
-            echo -e "${YELLOW}    No demo_seed.sql found${NC}"
+            echo -e "${YELLOW}    No demo seed file found at $seed_sql${NC}"
         fi
     fi
 fi
@@ -408,7 +468,7 @@ if [[ "$DEMO_MODE" == true ]]; then
     echo -e "${CYAN}║${NC}                                                                   ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC} ${GREEN}Login:${NC}                                                            ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC}   ${YELLOW}E-Mail:${NC}    admin@demo.local                                         ${CYAN}║${NC}"
-    echo -e "${CYAN}║${NC}   ${YELLOW}Passwort:${NC}  demo123                                                  ${CYAN}║${NC}"
+    echo -e "${CYAN}║${NC}   ${YELLOW}Passwort:${NC}  demo1234                                ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC}                                                                   ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC} ${GREEN}Demo-Inhalt:${NC}                                                     ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC}   • 1 Tenant (demo) + 1 Admin-User                                 ${CYAN}║${NC}"
@@ -429,6 +489,14 @@ if [[ "$NO_DASHBOARD" == true ]]; then
     echo -e "${YELLOW}  Dashboard skipped (--no-dashboard)${NC}"
     echo -e "${YELLOW}  Press Ctrl+C to stop all services.${NC}"
     # Keep script running so containers don't get killed by trap
+    trap 'docker compose -f docker-compose.dev.yml down 2>/dev/null; exit 0' INT TERM
+    while true; do sleep 3600; done
+elif [[ ! -t 0 || ! -t 1 ]]; then
+    # Not attached to a terminal (CI, piped output, non-interactive shell):
+    # the TUI dashboard cannot start, so stay up without it instead of
+    # aborting with "interactive SLT runtime unavailable".
+    echo -e "${YELLOW}  Dashboard skipped (no interactive terminal)${NC}"
+    echo -e "${YELLOW}  Press Ctrl+C to stop all services.${NC}"
     trap 'docker compose -f docker-compose.dev.yml down 2>/dev/null; exit 0' INT TERM
     while true; do sleep 3600; done
 else

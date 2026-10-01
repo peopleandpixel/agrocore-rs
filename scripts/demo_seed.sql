@@ -1,276 +1,207 @@
--- demo_seed.sql ── Demo data for AgroCore development
--- Run with: docker exec -i agrocore-postgres psql -U agrocore -d agrocore < scripts/demo_seed.sql
+-- Demo Seed Data for AgroCore
+-- This file creates a complete demo setup with:
+-- 1 Tenant (demo) + 1 Admin User
+-- 3 Sites (Weizen, Mais, Weide)
+-- 3 Equipment (Traktor, Mähdrescher, Spritze)
+-- 2 Workers (Hans, Maria)
+-- 2 Orders (Aussaat, Gülle)
+-- 3 Inventory Items + Lagerort
+-- 3 Tiere (Bella, Lotte, Bruno)
 
--- Create demo tenant
-INSERT INTO tenants (name, slug, is_active, created_at, updated_at)
-VALUES ('Demo Farm', 'demo', true, NOW(), NOW())
-ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name;
 
--- Create users
-INSERT INTO users (tenant_id, firstname, lastname, email, password_hash, roles, is_active, internal_cost_per_hour, external_cost_per_hour, color, language, created_at, updated_at)
-SELECT t.id, u.firstname, u.lastname, u.email, u.password_hash, u.roles, u.is_active, u.internal_cost_per_hour, u.external_cost_per_hour, u.color, u.language, NOW(), NOW()
-FROM (SELECT id FROM tenants WHERE slug = 'demo') t
-CROSS JOIN (
-    VALUES
-        ('Admin', 'User', 'admin@demo.local', '$argon2id$v=19$m=19456,t=2,p=1$demo123', '["Admin"]'::jsonb, true, 50.00, 80.00, '#3B82F6', 'de'),
-        ('Worker', 'Demo', 'worker@demo.local', '$argon2id$v=19$m=19456,t=2,p=1$demo123', '["Worker"]'::jsonb, true, 30.00, 50.00, '#22C55E', 'de')
-) AS u(firstname, lastname, email, password_hash, roles, is_active, internal_cost_per_hour, external_cost_per_hour, color, language)
-ON CONFLICT (email) DO UPDATE SET
-    tenant_id = EXCLUDED.tenant_id,
-    roles = EXCLUDED.roles;
 
--- Create demo sites (3 sites) - each as separate INSERT
--- Disable trigger temporarily to avoid round() issue
-SET session_replication_role = 'replica';
 
-INSERT INTO sites (
-    tenant_id, business_id, label, code, description, site_type, crop_type, variety,
-    area, gross_area, center_lng, center_lat, boundary, center,
-    is_active, is_temporary, created_at, updated_at, created_by, updated_by,
-    plots, row_config, bbch_stage, planted_date, cleared_date,
-    soil_type, slope, slope_facing, altitude, organic, organic_eligible,
-    sigpac_data, regepac_id, properties, custom_fields, note1, note2,
-    lpis_country, lpis_data
-)
-SELECT
-    t.id, NULL,
-    'Weizenfeld Nord'::text, 'WHEAT-N'::text, 'Hauptweizenfeld im Norden'::text,
-    '{"type": "arable", "subtype": "wheat"}'::jsonb,
-    '{"name": "Winterweizen", "variety": "Bavaria"}'::jsonb, 'Bavaria'::text,
-    12.5::numeric, 13.0::numeric, 8.682127::numeric, 50.110922::numeric,
-    ST_SetSRID(ST_MakePolygon(ST_GeomFromText('LINESTRING(8.681 50.111, 8.683 50.111, 8.683 50.110, 8.681 50.110, 8.681 50.111)')), 4326),
-    ST_SetSRID(ST_MakePoint(8.682127, 50.110922), 4326),
-    true, false, NOW(), NOW(),
-    (SELECT id FROM users WHERE email = 'admin@demo.local' AND tenant_id = (SELECT id FROM tenants WHERE slug = 'demo')),
-    (SELECT id FROM users WHERE email = 'admin@demo.local' AND tenant_id = (SELECT id FROM tenants WHERE slug = 'demo')),
-    '[]'::jsonb, NULL::jsonb,
-    '{"stage": "00", "description": "Trockenlegung"}'::jsonb,
-    '2024-10-15'::timestamp, NULL::timestamp,
-    'Lehmboden'::text, 2.5::numeric, 'S'::text, 120::numeric, true, false,
-    NULL::jsonb, NULL::text, '[]'::jsonb, '{}'::jsonb,
-    'Hauptfrucht 2024'::text, 'Gute Bodenqualität'::text,
-    'DE'::text, NULL::jsonb
-FROM (SELECT id FROM tenants WHERE slug = 'demo') t
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- ============================================================
+-- 1. TENANT & USERS
+-- ============================================================
+
+-- Tenant
+INSERT INTO tenants (id, name, slug, config, is_active, created_at, updated_at)
+VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Demo Farm', 'demo', '{}', true, NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, updated_at = NOW();
+
+-- Admin User
+INSERT INTO users (id, tenant_id, firstname, lastname, email, password_hash, language, color, is_active, roles, created_at, updated_at)
+VALUES ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Demo', 'Admin', 'admin@demo.local', '$argon2id$v=19$m=19456,t=2,p=1$mlXjcxk6oKpk+dJKbDnvXQ$vnHWSwRtfQo2wUeurbh3b7qm1qcFC4uuIX5Z+P1oDxU', 'de', '#3B82F6', true, '["Admin"]'::jsonb, NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, password_hash = EXCLUDED.password_hash, updated_at = NOW();
+
+-- Worker Users
+INSERT INTO users (id, tenant_id, firstname, lastname, email, password_hash, language, color, is_active, roles, created_at, updated_at)
+VALUES ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Hans', 'Müller', 'hans@demo.local', '$argon2id$v=19$m=19456,t=2,p=1$mlXjcxk6oKpk+dJKbDnvXQ$vnHWSwRtfQo2wUeurbh3b7qm1qcFC4uuIX5Z+P1oDxU', 'de', '#10B981', true, '["Worker"]'::jsonb, NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, password_hash = EXCLUDED.password_hash, updated_at = NOW();
+
+INSERT INTO users (id, tenant_id, firstname, lastname, email, password_hash, language, color, is_active, roles, created_at, updated_at)
+VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Maria', 'Schmidt', 'maria@demo.local', '$argon2id$v=19$m=19456,t=2,p=1$mlXjcxk6oKpk+dJKbDnvXQ$vnHWSwRtfQo2wUeurbh3b7qm1qcFC4uuIX5Z+P1oDxU', 'de', '#F59E0B', true, '["Worker"]'::jsonb, NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, password_hash = EXCLUDED.password_hash, updated_at = NOW();
+
+-- Worker records
+INSERT INTO workers (id, tenant_id, user_id, employee_id, firstname, lastname, email, phone, role_in_company, hourly_rate, social_security_number, bank_account, is_active, created_at, updated_at)
+VALUES ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'cccccccc-cccc-cccc-cccc-cccccccccccc', 'EMP-001', 'Hans', 'Müller', 'hans@demo.local', '+49 170 1234567', 'operator', 18.50, 'DE123456789', 'DE89370400440532013000', true, NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET updated_at = NOW();
+
+INSERT INTO workers (id, tenant_id, user_id, employee_id, firstname, lastname, email, phone, role_in_company, hourly_rate, social_security_number, bank_account, is_active, created_at, updated_at)
+VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'dddddddd-dddd-dddd-dddd-dddddddddddd', 'EMP-002', 'Maria', 'Schmidt', 'maria@demo.local', '+49 170 7654321', 'operator', 16.00, 'DE987654321', 'DE89370400440532013001', true, NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET updated_at = NOW();
+
+-- ============================================================
+-- 2. SITES
+-- ============================================================
+
+-- Site 1: Weizenfeld (Field)
+INSERT INTO sites (id, tenant_id, business_id, label, site_type, crop_type, variety, area, gross_area, planted_date, soil_type, slope, slope_facing, altitude, organic, is_active, is_temporary, created_at, updated_at, created_by, updated_by)
+VALUES ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, 'Nordfeld - Weizen', '"field"', '{"vegetable":"Wheat"}', 'Winterweizen', 15.5, 17.0, '2024-10-15'::date, 'Lehmboden', 2.5, 'Süd', 180.0, false, true, false, NOW(), NOW(), 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')
+ON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label, updated_at = NOW();
+
+-- Site 2: Maisfeld (Field)
+INSERT INTO sites (id, tenant_id, business_id, label, site_type, crop_type, variety, area, gross_area, planted_date, soil_type, slope, slope_facing, altitude, organic, is_active, is_temporary, created_at, updated_at, created_by, updated_by)
+VALUES ('ffffffff-ffff-ffff-ffff-ffffffffffff', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, 'Südhang - Mais', '"field"', '{"grain":"Corn"}', 'Silomais DKC 3505', 12.0, 13.5, '2024-05-01'::date, 'Sandiger Lehm', 5.0, 'Südwest', 165.0, false, true, false, NOW(), NOW(), 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')
+ON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label, updated_at = NOW();
+
+-- Site 3: Weide (Pasture)
+INSERT INTO sites (id, tenant_id, business_id, label, site_type, crop_type, variety, area, gross_area, planted_date, soil_type, slope, slope_facing, altitude, organic, is_active, is_temporary, created_at, updated_at, created_by, updated_by)
+VALUES ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL, 'Westweide - Rinder', '"pasture"', '{"other":"Grassland"}', 'Dauergrünland', 25.0, 27.0, '2020-03-01'::date, 'Toniger Lehm', 3.0, 'West', 170.0, true, true, false, NOW(), NOW(), 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')
+ON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label, updated_at = NOW();
+
+-- ============================================================
+-- 3. EQUIPMENT
+-- ============================================================
+
+-- Equipment 1: Traktor (Fendt 724 Vario)
+INSERT INTO equipment (id, tenant_id, label, code, equipment_type, in_usage, next_maintenance_date, last_maintenance_hours, is_active, fuel_type, fuel_capacity_liters, original_cost, salvage_value, purchase_date, depreciation_method, useful_life_years, created_at, updated_at)
+VALUES ('22222222-2222-2222-2222-222222222222', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Traktor Fendt 724', 'FEN724-2023-001', '"Tractor"', false, '2025-05-15'::date, 450, true, 'diesel', 300, 185000.00, 35000.00, '2023-03-15'::date, 'straight_line', 10, NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET updated_at = NOW();
+
+-- Equipment 2: Mähdrescher (Claas Lexion 7600)
+INSERT INTO equipment (id, tenant_id, label, code, equipment_type, in_usage, next_maintenance_date, last_maintenance_hours, is_active, fuel_type, fuel_capacity_liters, original_cost, salvage_value, purchase_date, depreciation_method, useful_life_years, created_at, updated_at)
+VALUES ('33333333-3333-3333-3333-333333333333', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Mähdrescher Claas 7600', 'CLA7600-2022-003', '"Harvester"', false, '2025-06-01'::date, 890, true, 'diesel', 500, 380000.00, 90000.00, '2022-07-20'::date, 'straight_line', 12, NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET updated_at = NOW();
+
+-- Equipment 3: Spritze (Amazone UX 5201)
+INSERT INTO equipment (id, tenant_id, label, code, equipment_type, in_usage, next_maintenance_date, last_maintenance_hours, is_active, fuel_type, fuel_capacity_liters, original_cost, salvage_value, purchase_date, depreciation_method, useful_life_years, created_at, updated_at)
+VALUES ('44444444-4444-4444-4444-444444444444', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Spritze Amazone UX 5201', 'AMA5201-2023-007', '"Sprayer"', true, '2025-03-01'::date, 120, true, 'diesel', 150, 65000.00, 15000.00, '2023-02-10'::date, 'straight_line', 8, NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET updated_at = NOW();
+
+-- ============================================================
+-- 4. ORDERS
+-- ============================================================
+INSERT INTO orders (id, tenant_id, label, title, description, priority, status, order_type, assigned_worker_ids, site_ids, scheduled_start, scheduled_end, deadline_date, planned_date, execution_policy, is_active, created_at, updated_at, created_by)
+VALUES ('55555555-5555-5555-5555-555555555555', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Aussaat Winterweizen Nordfeld', 'Aussaat Winterweizen Nordfeld', 'Aussaat von Winterweizen auf dem Nordfeld (15.5 ha). Saatstärke: 350 Koerner/m2. Reihe: 12.5 cm.', 1, '"planned"', 'seeding', jsonb_build_array('cccccccc-cccc-cccc-cccc-cccccccccccc'::uuid), jsonb_build_array('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'::uuid), '2024-10-20'::timestamptz, NULL::timestamptz, '2024-10-25'::date, '2024-10-20'::date, '{"mode": "Manual"}'::jsonb, true, NOW(), NOW(), 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')
+ON CONFLICT (id) DO UPDATE SET updated_at = NOW();
+
+INSERT INTO orders (id, tenant_id, label, title, description, priority, status, order_type, assigned_worker_ids, site_ids, scheduled_start, scheduled_end, deadline_date, planned_date, execution_policy, is_active, created_at, updated_at, created_by)
+VALUES ('66666666-6666-6666-6666-666666666666', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Guelleausbringung Westweide', 'Guelleausbringung Westweide', 'Ausbringung von Rinderguelle auf der Westweide (25 ha). 30 m3/ha. Bodennah mit Schleppschlauch.', 2, '"in_progress"', 'fertilizing', jsonb_build_array('dddddddd-dddd-dddd-dddd-dddddddddddd'::uuid), jsonb_build_array('11111111-1111-1111-1111-111111111111'::uuid), '2024-11-10'::timestamptz, NULL::timestamptz, '2024-11-15'::date, '2024-11-10'::date, '{"mode": "Manual"}'::jsonb, true, NOW(), NOW(), 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')
+ON CONFLICT (id) DO UPDATE SET updated_at = NOW();
+
+-- ============================================================
+-- 5. INVENTORY LOCATION & ITEMS
+-- ============================================================
+INSERT INTO inventory_locations (id, tenant_id, name, code, description, is_active, created_at, updated_at)
+VALUES ('77777777-7777-7777-7777-777777777777', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Haupthalle', 'HALLE-01', 'Zentrale Lagerhalle für Betriebsmittel', true, NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET updated_at = NOW();
+
+INSERT INTO inventory_items (id, tenant_id, name, sku, description, category, unit, minimum_stock, inventory_method, is_active, created_at, updated_at)
+VALUES ('88888888-8888-8888-8888-888888888888', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Winterweizensaatgut DKC 3505', 'SEED-WW-3505', 'Winterweizensaatgut DKC 3505', '"seed"', '"kg"', 1000.0, '"FIFO"', true, NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET updated_at = NOW();
+
+INSERT INTO inventory_items (id, tenant_id, name, sku, description, category, unit, minimum_stock, inventory_method, is_active, created_at, updated_at)
+VALUES ('99999999-9999-9999-9999-999999999999', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'NPK Dünger 20-10-10', 'FERT-NPK-201010', 'NPK Dünger 20-10-10', '"fertilizer"', '"kg"', 500.0, '"FIFO"', true, NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET updated_at = NOW();
+
+INSERT INTO inventory_items (id, tenant_id, name, sku, description, category, unit, minimum_stock, inventory_method, is_active, created_at, updated_at)
+VALUES ('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Herbizid Mais - MaisTer', 'CHEM-HERB-MAISTER', 'Herbizid Mais - MaisTer', '"herbicide"', '"l"', 50.0, '"FIFO"', true, NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET updated_at = NOW();
+
+-- ============================================================
+-- 6. ANIMALS (Rinder)
+-- ============================================================
+INSERT INTO animals (id, tenant_id, tag_number, species, breed, birth_date, gender, current_site_id, mother_id, father_id, is_active, created_at, updated_at)
+VALUES ('bbbbbbbb-cccc-dddd-eeee-ffffffffffff', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'DE0912345678', 'Cattle', 'Fleckvieh', '2022-03-15'::date, 'female', '11111111-1111-1111-1111-111111111111', NULL, NULL, true, NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET updated_at = NOW();
+
+INSERT INTO animals (id, tenant_id, tag_number, species, breed, birth_date, gender, current_site_id, mother_id, father_id, is_active, created_at, updated_at)
+VALUES ('cccccccc-dddd-eeee-ffff-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'DE0912345679', 'Cattle', 'Fleckvieh', '2021-07-22'::date, 'female', '11111111-1111-1111-1111-111111111111', NULL, NULL, true, NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET updated_at = NOW();
+
+INSERT INTO animals (id, tenant_id, tag_number, species, breed, birth_date, gender, current_site_id, mother_id, father_id, is_active, created_at, updated_at)
+VALUES ('dddddddd-eeee-ffff-aaaa-bbbbbbbbbbbb', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'DE0912345680', 'Cattle', 'Fleckvieh', '2023-01-10'::date, 'male', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff', NULL, true, NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET updated_at = NOW();
+
+-- ============================================================
+-- 7. LIVESTOCK SUMMARY (Counts per plot)
+-- ============================================================
+-- The `livestock` aggregate table does not exist in the current schema;
+-- per-animal data lives in `animals` and `grazing_records`.
+
+-- ============================================================
+-- 8. GRAZING RECORDS (for the animals on pasture)
+-- ============================================================
+INSERT INTO grazing_records (id, tenant_id, animal_id, site_id, start_date, end_date, notes, created_at)
+VALUES (gen_random_uuid(), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff', '11111111-1111-1111-1111-111111111111', NOW() - interval '30 days', NULL, 'Bella auf Westweide aufgetrieben', NOW() - interval '30 days')
 ON CONFLICT DO NOTHING;
 
--- Second site
-INSERT INTO sites (
-    tenant_id, business_id, label, code, description, site_type, crop_type, variety,
-    area, gross_area, center_lng, center_lat, boundary, center,
-    is_active, is_temporary, created_at, updated_at, created_by, updated_by,
-    plots, row_config, bbch_stage, planted_date, cleared_date,
-    soil_type, slope, slope_facing, altitude, organic, organic_eligible,
-    sigpac_data, regepac_id, properties, custom_fields, note1, note2,
-    lpis_country, lpis_data
-)
-SELECT
-    t.id, NULL,
-    'Maisfeld Süd'::text, 'MAIZE-S'::text, 'Maisfeld für Silomais'::text,
-    '{"type": "arable", "subtype": "maize"}'::jsonb,
-    '{"name": "Silomais", "variety": "DKC 3972"}'::jsonb, 'DKC 3972'::text,
-    8.3::numeric, 8.5::numeric, 8.678900::numeric, 50.108500::numeric,
-    ST_SetSRID(ST_MakePolygon(ST_GeomFromText('LINESTRING(8.678 50.109, 8.680 50.109, 8.680 50.108, 8.678 50.108, 8.678 50.109)')), 4326),
-    ST_SetSRID(ST_MakePoint(8.678900, 50.108500), 4326),
-    true, false, NOW(), NOW(),
-    (SELECT id FROM users WHERE email = 'admin@demo.local' AND tenant_id = (SELECT id FROM tenants WHERE slug = 'demo')),
-    (SELECT id FROM users WHERE email = 'admin@demo.local' AND tenant_id = (SELECT id FROM tenants WHERE slug = 'demo')),
-    '[]'::jsonb, NULL::jsonb,
-    '{"stage": "00", "description": "Bodenvorbereitung"}'::jsonb,
-    '2024-04-20'::timestamp, NULL::timestamp,
-    'Sandiger Lehm'::text, 1.8::numeric, 'W'::text, 115::numeric, true, false,
-    NULL::jsonb, NULL::text, '[]'::jsonb, '{}'::jsonb,
-    'Nachfrucht nach Weizen'::text, 'Gute Entwässerung'::text,
-    'DE'::text, NULL::jsonb
-FROM (SELECT id FROM tenants WHERE slug = 'demo') t
+INSERT INTO grazing_records (id, tenant_id, animal_id, site_id, start_date, end_date, notes, created_at)
+VALUES (gen_random_uuid(), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'cccccccc-dddd-eeee-ffff-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', NOW() - interval '30 days', NULL, 'Lotte auf Westweide aufgetrieben', NOW() - interval '30 days')
 ON CONFLICT DO NOTHING;
 
--- Third site
-INSERT INTO sites (
-    tenant_id, business_id, label, code, description, site_type, crop_type, variety,
-    area, gross_area, center_lng, center_lat, boundary, center,
-    is_active, is_temporary, created_at, updated_at, created_by, updated_by,
-    plots, row_config, bbch_stage, planted_date, cleared_date,
-    soil_type, slope, slope_facing, altitude, organic, organic_eligible,
-    sigpac_data, regepac_id, properties, custom_fields, note1, note2,
-    lpis_country, lpis_data
-)
-SELECT
-    t.id, NULL,
-    'Dauergrünland Weide'::text, 'GRASS-P'::text, 'Dauerhaftes Grünland für Rinderhaltung'::text,
-    '{"type": "grassland", "subtype": "pasture"}'::jsonb,
-    '{"name": "Dauergrünland", "variety": "Mischung"}'::jsonb, 'Deutsches Weidegras'::text,
-    5.2::numeric, 5.5::numeric, 8.685000::numeric, 50.112000::numeric,
-    ST_SetSRID(ST_MakePolygon(ST_GeomFromText('LINESTRING(8.684 50.112, 8.686 50.112, 8.686 50.111, 8.684 50.111, 8.684 50.112)')), 4326),
-    ST_SetSRID(ST_MakePoint(8.685000, 50.112000), 4326),
-    true, false, NOW(), NOW(),
-    (SELECT id FROM users WHERE email = 'admin@demo.local' AND tenant_id = (SELECT id FROM tenants WHERE slug = 'demo')),
-    (SELECT id FROM users WHERE email = 'admin@demo.local' AND tenant_id = (SELECT id FROM tenants WHERE slug = 'demo')),
-    '[]'::jsonb, NULL::jsonb,
-    '{"stage": "00", "description": "Dauergrünland"}'::jsonb,
-    NULL::timestamp, NULL::timestamp,
-    'Torflehm'::text, 0.5::numeric, 'N'::text, 110::numeric, false, true,
-    NULL::jsonb, NULL::text, '[]'::jsonb, '{}'::jsonb,
-    'Extensive Beweidung'::text, 'NATURA 2000 Gebiet in der Nähe'::text,
-    'DE'::text, NULL::jsonb
-FROM (SELECT id FROM tenants WHERE slug = 'demo') t
+INSERT INTO grazing_records (id, tenant_id, animal_id, site_id, start_date, end_date, notes, created_at)
+VALUES (gen_random_uuid(), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'dddddddd-eeee-ffff-aaaa-bbbbbbbbbbbb', '11111111-1111-1111-1111-111111111111', NOW() - interval '30 days', NULL, 'Bruno auf Westweide aufgetrieben', NOW() - interval '30 days')
 ON CONFLICT DO NOTHING;
 
-SET session_replication_role = 'origin';
+-- ============================================================
+-- 9. COST CENTERS (for financial tracking)
+-- ============================================================
 
--- Create demo equipment
-INSERT INTO equipment (
-    tenant_id, label, code, equipment_type, in_usage, maintenance_intervals,
-    next_maintenance_date, last_maintenance_hours, is_active,
-    fuel_capacity_liters, fuel_type, original_cost, salvage_value,
-    purchase_date, depreciation_method, useful_life_years,
-    created_at, updated_at
-)
-SELECT
-    t.id,
-    e.label, e.code, e.equipment_type, e.in_usage, e.maintenance_intervals,
-    e.next_maintenance_date::date, e.last_maintenance_hours, e.is_active,
-    e.fuel_capacity_liters, e.fuel_type, e.original_cost, e.salvage_value,
-    e.purchase_date::date, e.depreciation_method, e.useful_life_years,
-    NOW(), NOW()
-FROM (SELECT id FROM tenants WHERE slug = 'demo') t
-CROSS JOIN (
-    VALUES
-        ('John Deere 6R 185', 'JD-6R-185',
-         '{"category": "tractor", "power_kw": 136, "transmission": "AutoQuad Plus"}'::jsonb,
-         false, '{"interval_hours": 500, "last_service_hours": 1200}'::jsonb,
-         '2024-12-01', 1350, true,
-         250, 'diesel', 145000.00, 15000.00, '2020-03-15',
-         'straight_line', 10
-        ),
-        ('Claas Lexion 7700', 'CLX-7700',
-         '{"category": "combine", "cutting_width_m": 9.0, "tank_capacity_l": 12000}'::jsonb,
-         false, '{"interval_hours": 250, "last_service_hours": 850}'::jsonb,
-         '2024-07-15', 920, true,
-         800, 'diesel', 380000.00, 40000.00, '2019-02-20',
-         'straight_line', 8
-        ),
-        ('Amazone UX 5200', 'AMZ-UX5200',
-         '{"category": "sprayer", "working_width_m": 36, "tank_capacity_l": 5200}'::jsonb,
-         false, '{"interval_hours": 300, "last_service_hours": 400}'::jsonb,
-         '2024-06-01', 450, true,
-         150, 'diesel', 95000.00, 10000.00, '2021-01-10',
-         'straight_line', 7
-        )
-) AS e(label, code, equipment_type, in_usage, maintenance_intervals,
-       next_maintenance_date, last_maintenance_hours, is_active,
-       fuel_capacity_liters, fuel_type, original_cost, salvage_value,
-       purchase_date, depreciation_method, useful_life_years)
+INSERT INTO cost_centers (id, tenant_id, code, label, description, parent_id, is_active, created_at, updated_at)
+VALUES (gen_random_uuid(), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'CC001', 'Pflanzenbau', 'Kosten für Ackerbau und Pflanzenbau', NULL, true, NOW(), NOW())
 ON CONFLICT DO NOTHING;
 
--- Create equipment maintenance logs
-INSERT INTO equipment_maintenance_log (
-    equipment_id, tenant_id, hours, note, performed_at, created_at,
-    parts_cost, labor_hours, downtime_hours
-)
-SELECT
-    e.id, t.id, m.hours, m.note, m.performed_at::timestamptz, NOW(),
-    m.parts_cost, m.labor_hours, m.downtime_hours
-FROM equipment e
-JOIN tenants t ON t.slug = 'demo'
-CROSS JOIN (
-    VALUES
-        (100.0, 850.00, 4.5, 8.0, 'Großwartung: Ölwechsel, Filterwechsel, Hydrauliköl', '2024-03-15 09:00:00+01'),
-        (200.0, 1200.00, 6.0, 12.0, 'Saisonende-Wartung: Siebe reinigen, Messer schärfen', '2023-11-20 14:30:00+01'),
-        (300.0, 350.00, 2.5, 4.0, 'Düsencheck, Druckeinstellung, Schlauchprüfung', '2024-03-10 10:00:00+01')
-) AS m(hours, parts_cost, labor_hours, downtime_hours, note, performed_at)
-WHERE e.id IN (SELECT id FROM equipment WHERE tenant_id = (SELECT id FROM tenants WHERE slug = 'demo'))
+INSERT INTO cost_centers (id, tenant_id, code, label, description, parent_id, is_active, created_at, updated_at)
+VALUES (gen_random_uuid(), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'CC002', 'Tierhaltung', 'Kosten für Rinderhaltung und Weide', NULL, true, NOW(), NOW())
 ON CONFLICT DO NOTHING;
 
--- Create demo workers (linked to users)
-INSERT INTO workers (
-    tenant_id, user_id, employee_id, firstname, lastname,
-    email, phone, role_in_company, hourly_rate, social_security_number,
-    bank_account, is_active, created_at, updated_at
-)
-SELECT
-    t.id,
-    u.id,
-    w.employee_id, w.firstname, w.lastname,
-    w.email, w.phone, w.role_in_company, w.hourly_rate, w.social_security_number,
-    w.bank_account, w.is_active, NOW(), NOW()
-FROM (SELECT id FROM tenants WHERE slug = 'demo') t
-JOIN users u ON u.tenant_id = (SELECT id FROM tenants WHERE slug = 'demo')
-CROSS JOIN (
-    VALUES
-        ('EMP-001', 'Hans', 'Müller', 'worker@demo.local', '+49 170 1234567',
-         'Maschinist', 32.50, '12 123456 A 123', 'DE89 3704 0044 0532 0130 00', true),
-        ('EMP-002', 'Maria', 'Schmidt', 'admin@demo.local', '+49 171 9876543',
-         'Betriebsleiterin', 45.00, '12 654321 B 456', 'DE89 3704 0044 0532 0130 01', true)
-) AS w(employee_id, firstname, lastname, email, phone, role_in_company, hourly_rate, social_security_number, bank_account, is_active)
+INSERT INTO cost_centers (id, tenant_id, code, label, description, parent_id, is_active, created_at, updated_at)
+VALUES (gen_random_uuid(), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'CC003', 'Maschinen', 'Kosten für Traktor, Mähdrescher, Spritze', NULL, true, NOW(), NOW())
 ON CONFLICT DO NOTHING;
 
--- Create worker locations
-INSERT INTO worker_locations (
-    tenant_id, worker_id, location, timestamp, accuracy_meters, created_at
-)
-SELECT
-    t.id,
-    w.id,
-    ST_SetSRID(ST_MakePoint(8.682127, 50.110922), 4326),
-    NOW() - INTERVAL '2 hours', 5.0, NOW() - INTERVAL '2 hours'
-FROM (SELECT id FROM tenants WHERE slug = 'demo') t
-JOIN workers w ON w.tenant_id = (SELECT id FROM tenants WHERE slug = 'demo')
-WHERE w.employee_id = 'EMP-001'
+-- ============================================================
+-- 10. CUSTOMERS (for orders/sales)
+-- ============================================================
+
+INSERT INTO customers (id, tenant_id, name, company, email, phone, address, customer_number, vat_rate, payment_terms, is_active, created_at, updated_at)
+VALUES (gen_random_uuid(), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Raiffeisen Waren GmbH', 'Raiffeisen Waren GmbH', 'einkauf@raiffeisen.de', '+49 89 12345678', 'Musterstraße 10, 80333 München', 'CUST-001', 19.00, '30 Tage', true, NOW(), NOW())
 ON CONFLICT DO NOTHING;
 
--- Create demo orders (cast timestamps properly)
-INSERT INTO orders (
-    tenant_id, label, title, description, priority, status, order_type,
-    assigned_to, assigned_worker_ids, site_ids, scheduled_start, scheduled_end,
-    actual_start, actual_end, deadline_date, planned_date, recurrence,
-    last_completed_at, execution_policy, automation_state, articles,
-    quantities, results, weather, custom_fields, parent_order_id,
-    workflow_config, cost_center_id, customer_id, created_by, updated_by,
-    is_active, created_at, updated_at
-)
-SELECT
-    t.id,
-    o.label, o.title, o.description, o.priority, o.status, o.order_type,
-    (SELECT id FROM users WHERE email = 'worker@demo.local' AND tenant_id = (SELECT id FROM tenants WHERE slug = 'demo')),
-    o.assigned_worker_ids, o.site_ids, o.scheduled_start::timestamptz, o.scheduled_end::timestamptz,
-    o.actual_start::timestamptz, o.actual_end::timestamptz, o.deadline_date::date, o.planned_date::date, o.recurrence::jsonb,
-    o.last_completed_at::timestamptz, o.execution_policy::jsonb, o.automation_state::jsonb, o.articles::jsonb,
-    o.quantities::jsonb, o.results, o.weather::jsonb, o.custom_fields::jsonb, o.parent_order_id::uuid,
-        o.workflow_config::jsonb, o.cost_center_id::uuid, NULL::uuid,
-    (SELECT id FROM users WHERE email = 'admin@demo.local' AND tenant_id = (SELECT id FROM tenants WHERE slug = 'demo')),
-    (SELECT id FROM users WHERE email = 'admin@demo.local' AND tenant_id = (SELECT id FROM tenants WHERE slug = 'demo')),
-    o.is_active, NOW(), NOW()
-FROM (SELECT id FROM tenants WHERE slug = 'demo') t
-CROSS JOIN (
-    VALUES
-        ('Aussaat Weizen 2024', 'Winterweizen aussäen', 'Aussaat von Winterweizen Sorte Bavaria auf Feld Nord',
-         1, '{"state": "planned"}'::jsonb, 'field_work',
-         '["gggggggg-gggg-gggg-gggg-gggggggggggg"]'::jsonb,
-         '["aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"]'::jsonb,
-         '2024-10-15 08:00:00+01', '2024-10-16 18:00:00+01',
-         NULL, NULL, '2024-10-16', '2024-10-15', NULL,
-         NULL, NULL, '[{"item": "Winterweizen Bavaria", "qty": 250, "unit": "kg"}]'::jsonb,
-         '[{"item": "Dünger NPK 20-10-10", "qty": 800, "unit": "kg"}]'::jsonb,
-         NULL, NULL, '{"field": "Weizenfeld Nord", "variety": "Bavaria"}'::jsonb,
-         NULL, NULL, NULL, '22222222-2222-2222-2222-222222222222'::uuid, '22222222-2222-2222-2222-222222222222'::uuid,
-                 true
-                ),
-                ('Gülleausbringung Maisfeld', 'Gülle auf Maisfeld Süd', 'Organische Düngung vor Maisaussaat',
-                  2, '{"state": "planned"}'::jsonb, 'field_work',
-                  '["gggggggg-gggg-gggg-gggg-gggggggggggg", "hhhhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhhhh"]'::jsonb,
-                  '["bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"]'::jsonb,
-                  '2024-04-18 06:00:00+01', '2024-04-18 14:00:00+01',
-                  NULL, NULL, '2024-04-18', '2024-04-18', NULL,
-                  NULL, NULL, '[{"item": "Rindergülle", "qty": 40, "unit": "m³"}]'::jsonb,
-                  '[{"item": "Schleppschlauch", "qty": 1, "unit": "Stück"}]'::jsonb,
-                  NULL, NULL, '{"field": "Maisfeld Süd", "method": "Schleppschlauch"}'::jsonb,
-                  NULL, NULL, NULL, '22222222-2222-2222-2222-222222222222'::uuid, '22222222-2222-2222-2222-222222222222'::uuid,
-                  true
-                 )
-) AS o(label, title, description, priority, status, order_type,
-       assigned_worker_ids, site_ids, scheduled_start, scheduled_end,
-       actual_start, actual_end, deadline_date, planned_date, recurrence,
-       last_completed_at, execution_policy, automation_state, articles,
-       quantities, results, weather, custom_fields, parent_order_id,
-       workflow_config, cost_center_id, customer_id, is_active)
+INSERT INTO customers (id, tenant_id, name, company, email, phone, address, customer_number, vat_rate, payment_terms, is_active, created_at, updated_at)
+VALUES (gen_random_uuid(), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'BayWa AG', 'BayWa AG', 'procurement@baywa.de', '+49 89 87654321', 'Arabellastraße 4, 81925 München', 'CUST-002', 19.00, '30 Tage', true, NOW(), NOW())
+ON CONFLICT DO NOTHING;
+
+-- ============================================================
+-- 11. FINANCIAL RECORDS (sample)
+-- ============================================================
+INSERT INTO financial_records (id, tenant_id, cost_center_id, site_id, record_type, amount_eur, currency, date, description, external_id, created_at, updated_at)
+VALUES (gen_random_uuid(), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', (SELECT id FROM cost_centers WHERE code = 'CC001' AND tenant_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'), NULL, 'expense', -4250.00, 'EUR', '2024-10-01'::timestamptz, 'Saatgut Winterweizen, 5000 kg DKC 3505', NULL, NOW(), NOW())
+ON CONFLICT DO NOTHING;
+
+INSERT INTO financial_records (id, tenant_id, cost_center_id, site_id, record_type, amount_eur, currency, date, description, external_id, created_at, updated_at)
+VALUES (gen_random_uuid(), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', (SELECT id FROM cost_centers WHERE code = 'CC003' AND tenant_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'), NULL, 'expense', -1250.00, 'EUR', '2024-11-15'::timestamptz, 'Grosswartung Fendt 724 nach 450 Bh', NULL, NOW(), NOW())
+ON CONFLICT DO NOTHING;
+
+INSERT INTO financial_records (id, tenant_id, cost_center_id, site_id, record_type, amount_eur, currency, date, description, external_id, created_at, updated_at)
+VALUES (gen_random_uuid(), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', (SELECT id FROM cost_centers WHERE code = 'CC002' AND tenant_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'), NULL, 'expense', -180.00, 'EUR', '2024-11-05'::timestamptz, 'Tierarzt Bella', NULL, NOW(), NOW())
 ON CONFLICT DO NOTHING;

@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-09-30
+
+### Added
+- **Notification Dispatcher** (`agrocore-messaging::notification`) — Der bereits vorhandene, aber nie eingebundene Dispatcher ist jetzt vollständig verdrahtet: `NotificationChannel`-Trait mit acht Kanälen (SMTP, SendGrid, Mailgun, Telegram, ntfy, Webhook, Twilio SMS, `wacli` WhatsApp), Template-Engine, exponentielles Backoff und Dead-Letter-Queue auf `notifications.failed`.
+- **Fehlende Kerntypen** (`notification/types.rs`) — `ChannelConfig`, `ChannelMessage`, `NotificationChannel`, `ChannelError`, `DeliveryReport` sowie die Konfigurationsstructs pro Kanal. Das Modul referenzierte 12 Typen, die nie existiert haben.
+- **`agrocore-notification-service`** — Service mit NATS-Consumer für `notifications.send`, Konfiguration aus YAML/JSON oder `NOTIFY_<CHANNEL>_<SETTING>`, `/health`-Endpoint und Graceful Shutdown. Läuft als Docker-Container.
+- **Port-Konflikt-Erkennung** (`scripts/dev.sh`) — Reserviert Ports gegen Doppelvergabe innerhalb eines Laufs und schreibt die tatsächlichen Ports nach `.env.dev`.
+- **Docker-Build-Caching** — BuildKit-Cache-Mounts, gezielte COPY-Schritte, `.dockerignore` und `cargo build --bin`. Rebuild von ~7 min auf ~2,5 s.
+- **10 Notification-Tests** — Channel-Konstruktion, YAML-Roundtrip, Konfigurationsvalidierung, Readiness-Default und Dead-Letter-Konfiguration.
+
+### Fixed
+- **`Dockerfile.service` war funktional kaputt** — `CMD ["/app/${SERVICE_NAME}"]` expandiert Build-Argumente in Exec-Form nicht, der Container startete mit `exec: "/app/${SERVICE_NAME}": no such file or directory`. Neues Entrypoint-Skript löst den Service zur Laufzeit auf und erhält per `exec` PID 1, damit SIGTERM für Graceful Shutdown ankommt.
+- **Runtime-Mismatch im Notification-Service** — `#[tokio::main]` startet Tokio, aber `actix_web::rt::spawn` benötigt ein `LocalSet`; der Dispatcher panickte mit `spawn_local called from outside of a task::LocalSet`. Auf `#[actix_web::main]` umgestellt.
+- **Dev-Umgebung startete nie mit belegten Ports** — `docker-compose.dev.yml` nutzte durchgängig `network_mode: host`, es gab keine Port-Mappings, die berechneten Alternativports wurden nie angewendet. Auf Bridge-Netz mit `${VAR:-default}` umgestellt.
+- **Port-Kollision im Fallback** — API, Admin UI und Notification landeten alle auf 8083, weil jede Prüfung denselben noch nicht gebundenen Port sah. Reservierungsliste eingeführt; die Zuweisung lief zudem in einer Command-Subshell, wodurch die Reservierung wirkungslos war.
+- **`DATABASE_URL` enthielt den Literal-Platzhalter `***`** statt eines Passworts. Mit `network_mode: host` fiel das nicht auf, weil der Container die URL nie selbst auflöste. Jetzt `${POSTGRES_PASSWORD:-agrocore}`.
+- **`agrocore-logging` Build Failure** — `lib.rs` re-exportierte `ServiceContextLayer` und `SpanExt` unbedingt, obwohl beide die optionale `tracing`-Abhängigkeit brauchen; Crates mit `default-features = false` (`admin-ui`, `dashboard`) schlugen fehl.
+- **Migration schlug fehl** — `0000000000_consolidated_init.sql` rief `trigger_updated_at()` auf, das nie definiert war (korrekt: `set_updated_at()`). Durch `SKIP_MIGRATIONS=1` jahrelang verdeckt.
+- **Demo-Seed entsprach nicht dem Schema** — `roles` war `text[]` statt JSONB, `site_type`/`crop_type`/`equipment_type` in veralteten Formaten; die Tabellen `orders`, `equipment`, `inventory_*`, `animals`, `grazing_records`, `customers`, `financial_records` hatten abweichende Spalten; `livestock` existiert nicht. Zwei UUIDs enthielten Nicht-Hex-Zeichen.
+- **Demo-Passwörter waren ungültig** — der Seed speicherte bcrypt-Hashes, die Anwendung verifiziert mit Argon2id (`crates/infrastructure/src/postgres/user.rs`), Ergebnis `Invalid password hash: salt too short`. Hashes mit der `argon2 0.6`/`password-hash 0.6`-Version aus `Cargo.lock` neu erzeugt. `demo123` verletzte außerdem `min=8`, jetzt `demo1234`.
+- **`sqlx::migrate!` lehnte den Seed ab** — psql-Syntax (`\set`, `:'var'`) wird von SQLx nicht ausgeführt; alle 79 Variablen durch echte UUID-Literale ersetzt.
+- **Healthcheck-Logik invertiert** — `grep -q null` lieferte bei vorhandenen Healthchecks fälschlich „no healthcheck defined"; zusätzlich gab `wait_for_health` bei Timeout fälschlich Erfolg zurück.
+- **nginx lauschte auf 8081** statt auf den gemappten Port 80, und der API-Proxy zeigte auf `localhost:8080` statt auf den Service-Namen `api` im Bridge-Netz.
+- **TUI-Dashboard brach ohne TTY ab** — endete mit `interactive SLT runtime unavailable` und Exit 1; wird jetzt übersprungen, das Script bleibt aktiv.
+
+### Changed
+- **Demo-Seed nach `scripts/demo_seed.sql`** — `sqlx::migrate!` akzeptiert im Verzeichnis `migrations/` ausschließlich nummerierte Migrationen. Dadurch liefen die Demo-Daten bei jedem API-Start mit; der Seed ist jetzt opt-in über `--demo` bzw. `DEMO_MODE=true`.
+- **Enum-Varianten** — `BackupTarget::GCS` → `Gcs` und `BackupTarget::SFTP` → `Sftp` (`clippy::upper_case_acronyms`). Das Wire-Format bleibt unverändert (`rename_all = "lowercase"`).
+- **Demo-Modus** — unterstützt jetzt sowohl `DEMO_MODE=true ./scripts/dev.sh` als auch `./scripts/dev.sh --demo`; der Seed wartet auf `public.tenants` und nutzt `reset: true`.
+- **Messaging-Dispatcher teilt Kanäle per `Arc<dyn NotificationChannel>`** statt `Clone` als Trait-Supertrait, das die Dyn-Kompatibilität verhindert hätte.
+
+### Removed
+- **Nicht existierende `livestock`-Tabelle** aus dem Demo-Seed entfernt.
+- **Redundanter `DispatcherRef`-Wrapper** im Dispatcher, der nur einen zweiten `NotificationDispatcher` zum Delegieren konstruierte.
+
+### Quality Gates
+- `cargo fmt --all -- --check` ✅
+- `cargo check --workspace --all-targets` ✅
+- `cargo test --workspace` ✅ (211 passed, 0 failed)
+- `cargo clippy --workspace --all-targets -- -D warnings` ✅ (zero warnings)
+
+
 ## [0.21.1] - 2026-09-30
 
 ### Fixed

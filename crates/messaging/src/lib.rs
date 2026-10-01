@@ -61,8 +61,14 @@ pub const NATS_SUBJECT_COMMANDS_BRIDGE: &str = "commands.bridge";
 pub const NATS_SUBJECT_COMMANDS_BRIDGE_BROADCAST: &str = "commands.bridge.broadcast";
 
 pub mod bridge;
+pub mod notification;
 
 pub use bridge::{BridgeConfig, BridgeRoute, BridgeStats, MqttBridge, MqttBridgeBuilder};
+pub use notification::{
+    ChannelConfig, ChannelError, ChannelMessage, NATS_SUBJECT_NOTIFICATIONS_FAILED,
+    NATS_SUBJECT_NOTIFICATIONS_SEND, NATS_SUBJECT_NOTIFICATIONS_SENT, NotificationChannel,
+    NotificationConfig, NotificationDispatcher, TelegramChannel, TemplateEngine, WebhookChannel,
+};
 
 /// Simple NATS messaging client wrapper
 #[derive(Clone)]
