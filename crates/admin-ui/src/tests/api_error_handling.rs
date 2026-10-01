@@ -1,54 +1,70 @@
-//! Admin UI Error Handling Tests
+//! Admin UI API Layer Tests
 //!
-//! These tests verify that the Admin UI gracefully handles API errors
-//! instead of crashing with 500s.
+//! The network-backed helpers (`get_json`, `with_auth`) require a browser, so
+//! what is verified natively here is the pure request-construction logic that
+//! feeds them: `api_url`.
 //!
-//! Run: `cargo test --package agrocore-admin-ui -- --nocapture`
+//! Note: `build.rs` always emits `cargo:rustc-env=AGROCORE_API_BASE_URL`, so
+//! `api_url` normally runs with a base URL present. These tests therefore
+//! assert on the *invariants* that must hold in either mode (base configured or
+//! not) rather than on one specific output shape.
+//!
+//! Run: `cargo test -p admin-ui --lib`
 
 #![cfg(test)]
 
 #[cfg(test)]
 mod tests {
-    /// Test that all fetch_ functions return Err(String) on API failures
-    /// instead of panicking. This is a compile-time guarantee via the return type.
+    use crate::api::{api_base_url, api_url};
 
+    /// Whatever the base, a relative path must never gain or lose its leading
+    /// slash, and must never produce a doubled separator.
     #[test]
-    fn test_all_fetch_functions_return_result() {
-        // This is a compile-time check: all API functions must return Result<T, String>
-        // to handle errors gracefully. If any function panics on error,
-        // it will fail to compile with this assertion.
-        //
-        // The actual runtime testing is done via integration tests below.
-        // This test ensures the API surface is error-safe.
-        assert!(
-            true,
-            "All fetch functions return Result<T, String> — compile-time verified"
-        );
+    fn test_api_url_never_doubles_or_drops_separator() {
+        for path in ["/api/v1/tasks", "api/v1/tasks", "//api/v1/tasks"] {
+            let url = api_url(path);
+            assert!(
+                !url.contains("//api"),
+                "unexpected doubled separator for {path:?}: {url}"
+            );
+        }
     }
 
-    /// Test that the get_json helper handles non-OK responses gracefully
+    /// With a base configured, the result must be prefixed by that base and
+    /// keep the path intact after it.
     #[test]
-    fn test_get_json_handles_http_errors() {
-        // This test documents the error-handling contract for get_json:
-        // - Network errors → Err("Network error: ...")
-        // - HTTP errors (4xx, 5xx) → Err("Error: {status_code}")
-        // - Invalid JSON → Err("JSON deserialization: ...")
-        //
-        // The implementation at crates/admin-ui/src/api.rs:265 follows this pattern.
-        assert!(true, "get_json error contract: returns Err on !resp.ok()");
+    fn test_api_url_prefixes_configured_base() {
+        let base = api_base_url();
+        if base.is_empty() {
+            // No base baked in at compile time; nothing to prefix.
+            return;
+        }
+        let url = api_url("/api/v1/tasks");
+        assert!(
+            url.starts_with(&base),
+            "expected {url:?} to start with base {base:?}"
+        );
+        assert!(url.ends_with("/api/v1/tasks"), "path mangled: {url}");
     }
 
-    /// Test that auth token is properly attached
+    /// Absolute URLs must pass through untouched, otherwise external providers
+    /// such as Open-Meteo would be rewritten onto the configured API base.
     #[test]
-    fn test_with_auth_adds_bearer_token() {
-        // The with_auth function must:
-        // 1. Return the request unchanged if no token is set
-        // 2. Add Authorization: Bearer *** header if token exists
-        //
-        // This is verified by the type system — RequestBuilder chain is safe.
-        assert!(
-            true,
-            "with_auth contract: Bearer token header added correctly"
-        );
+    fn test_api_url_preserves_absolute_urls() {
+        for url in [
+            "https://api.open-meteo.com/v1/forecast",
+            "http://example.com/api/v1/weather",
+        ] {
+            assert_eq!(api_url(url), url);
+        }
+    }
+
+    /// Query strings must survive URL building, since paginated and filtered
+    /// endpoints depend on them.
+    #[test]
+    fn test_api_url_preserves_query_strings() {
+        let url = api_url("/api/v1/sites?page=2&per_page=50");
+        assert!(url.ends_with("?page=2&per_page=50"), "query lost: {url}");
+        assert_eq!(url.matches('?').count(), 1, "double '?': {url}");
     }
 }

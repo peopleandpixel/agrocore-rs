@@ -499,18 +499,3 @@ mod tests {
         assert!(!tree.contains_point(&point(14.01, 47.01)));
     }
 }
-
-#[allow(dead_code)]
-fn point(lng: f64, lat: f64) -> GeoPoint {
-    GeoPoint { lng, lat }
-}
-
-#[allow(dead_code)]
-fn square(min_lng: f64, min_lat: f64, max_lng: f64, max_lat: f64) -> Vec<GeoPoint> {
-    vec![
-        point(min_lng, min_lat),
-        point(max_lng, min_lat),
-        point(max_lng, max_lat),
-        point(min_lng, max_lat),
-    ]
-}

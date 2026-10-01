@@ -62,11 +62,11 @@ impl ProviderRegistry {
                 let parsed: serde_json::Value = serde_json::from_str(config).ok()?;
                 let provider_type = parsed
                     .get("provider")
-                    .and_then(|v| Some(v.to_string()))
+                    .map(|v| v.to_string())
                     .and_then(|s| s.parse::<WeatherServiceType>().ok())?;
                 let api_key = parsed
                     .get("api_key")
-                    .and_then(|v| Some(v.to_string()))
+                    .map(|v| v.to_string())
                     .map(|s| s.to_string());
                 Some((provider_type, api_key))
             }
@@ -386,7 +386,7 @@ async fn process_tenant_weather(
             .as_ref()
             .and_then(|v| v.get("company_profile"))
             .and_then(|v| v.get("address"))
-            .and_then(|v| Some(v.to_string()))
+            .map(|v| v.to_string())
         {
             Some(a) if !a.trim().is_empty() => a,
             _ => continue,

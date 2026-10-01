@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.1] - 2026-09-30
+
+### Fixed
+- **`agrocore-logging` Build Failure with `default-features = false`** — `lib.rs` re-exported `ServiceContextLayer` and `SpanExt` unconditionally, but both require the optional `tracing` dependency. Crates that disable default features (`admin-ui`, `dashboard`) failed to compile because the re-exported items did not exist. The gate was hidden by `cargo check -p agrocore-logging` passing standalone — it only surfaced through a dependent crate. Re-exports are now gated on the same features as their definitions.
+- **Admin UI Mangled Absolute API URLs** — `api_url()` unconditionally joined the base with the path, rewriting external endpoints such as `https://api.open-meteo.com/v1/forecast` onto the local API base. Absolute URLs now pass through untouched.
+- **Backup Service Duplicated the Entire Library** — `main.rs` re-declared all 10 modules (`mod config; mod encryption; …`) alongside a complete library target, producing two divergent copies of the code and a separate dead-code analysis that yielded 5 phantom errors. The binary now imports from the `agrocore_backup` library crate.
+- **Local Backup Target Bypassed Registration** — `upload_bytes` / `download_bytes` read `target.path` directly instead of the registered `local_paths` table, leaving `find_local` dead. Both now resolve through the registration table, which removes the dead code and adds a validation check.
+- **Duplicate Test Helpers in Domain Crate** — `point()` / `square()` were defined both inside and after `mod tests` in `domain/src/entities/spatial/mod.rs`; the trailing copies were removed.
+
+### Removed
+- **Placeholder Tests** — Removed three tests that could never fail: three `assert!(true, "…")` in `admin-ui/src/tests/api_error_handling.rs` and `assert!(x.is_ok() || x.is_err())` in the backup-service integration tests. Replaced with assertions on real behavior.
+- **Unused Imports and Dead Arms** — Removed unused imports across `api`, `backup-service`, and `infrastructure`; removed an unreachable wildcard match arm in `backup-service/src/storage.rs`.
+
+### Changed
+- **Enum Variant Naming** — `BackupTarget::GCS` → `Gcs` and `BackupTarget::SFTP` → `Sftp` for Rust naming conventions (`clippy::upper_case_acronyms`). Wire format is unaffected: the enum uses `rename_all = "lowercase"`.
+- **`sort_by` → `sort_by_key`** — Descending sorts in `backup-service/src/retention.rs` and `verification.rs` now use `std::cmp::Reverse` keys.
+
+### Added
+- **AES-256-GCM Encryption Test Coverage** — New `backup-service/tests/encryption_tests.rs` covering the previously untested encryption path: encrypt/decrypt round-trip fidelity, nonce uniqueness across identical inputs, GCM authentication rejection of tampered ciphertext, truncated-input rejection, plaintext passthrough mode, and error messages for the four unimplemented backends (Age, AWS KMS, Azure Key Vault, GCP KMS).
+- **Admin UI API URL Tests** — Real assertions on `api_url` invariants: no doubled or dropped path separators, base-URL prefixing, absolute-URL preservation, and query-string retention. Verified against both configured-base and empty-base (nginx proxy) modes.
+- **Strengthened Backup Config Tests** — `test_backup_config_validation_valid` now asserts both the failing case (default `Age` encryption with no recipients) and the passing case; `test_load_config_from_env` asserts a concrete outcome instead of `is_ok() || is_err()`.
+
+### Quality Gates
+- `cargo fmt --all -- --check` ✅
+- `cargo check --workspace` ✅
+- `cargo test --workspace` ✅ (201 passed, 0 failed, 60 suites)
+- `cargo clippy --workspace --all-targets -- -D warnings` ✅ (zero warnings)
+
 ## [0.21.0] - 2026-09-24
 
 ### Added

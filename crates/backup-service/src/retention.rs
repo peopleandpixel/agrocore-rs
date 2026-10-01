@@ -97,7 +97,7 @@ impl RetentionManager {
             return Vec::new();
         }
         let mut sorted = backups.to_vec();
-        sorted.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
+        sorted.sort_by_key(|a| std::cmp::Reverse(a.timestamp));
         sorted.into_iter().skip(keep).collect()
     }
 
@@ -114,6 +114,10 @@ impl RetentionManager {
 struct BackupInfo {
     id: Uuid,
     timestamp: DateTime<Utc>,
+    /// Populated once `list_backups` reads real storage listings; used for
+    /// reporting and quota decisions during retention cleanup.
+    #[allow(dead_code)]
     size_bytes: u64,
+    #[allow(dead_code)]
     backup_type: crate::service::BackupType,
 }

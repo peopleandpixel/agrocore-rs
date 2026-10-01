@@ -2,9 +2,8 @@
 
 use agrocore_shared::telemetry::init_telemetry;
 use anyhow::Result;
-use async_nats;
 use futures::StreamExt;
-use tracing::{error, info};
+use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<()> {

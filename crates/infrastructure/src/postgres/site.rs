@@ -149,7 +149,7 @@ impl SiteRepository for PgSiteRepo {
             let id = Uuid::new_v4();
             let site_type_val = serde_json::to_value(&dto.site_type).unwrap();
             let crop_type_val = serde_json::to_value(&dto.crop_type).unwrap();
-            let plots_val = serde_json::to_value(&dto.plots.unwrap_or_default()).unwrap();
+            let plots_val = serde_json::to_value(dto.plots.unwrap_or_default()).unwrap();
             let row_config_val = dto.row_config.map(|r| serde_json::to_value(r).unwrap());
             let bbch_stage_val = dto.bbch_stage.map(|b| serde_json::to_value(b).unwrap());
             let properties_val = dto
@@ -182,35 +182,35 @@ impl SiteRepository for PgSiteRepo {
             .bind(Uuid::new_v4())
             .bind(tid)
             .bind(None::<Uuid>)
-            .bind(&dto.label)
-            .bind(&site_type_val)
-            .bind(&crop_type_val)
-            .bind(&dto.variety)
+            .bind(dto.label)
+            .bind(site_type_val)
+            .bind(crop_type_val)
+            .bind(dto.variety)
             .bind(dto.area)
-            .bind(&dto.gross_area)
-            .bind(&plots_val)
-            .bind(&row_config_val)
-            .bind(&bbch_stage_val)
-            .bind(&dto.planted_date)
-            .bind(&dto.cleared_date)
-            .bind(&dto.soil_type)
-            .bind(&dto.slope)
-            .bind(&dto.slope_facing)
-            .bind(&dto.altitude)
-            .bind(&dto.organic)
-            .bind(&None::<bool>)
-            .bind(&serde_json::json!(null))
-            .bind(&None::<String>)
-            .bind(&None::<agrocore_shared::lpis::LpisCountry>)
-            .bind(&serde_json::json!(null))
-            .bind(&properties_val)
-            .bind(&serde_json::json!({}))
-            .bind(&None::<String>)
-            .bind(&None::<String>)
-            .bind(&None::<Uuid>)
-            .bind(&None::<Uuid>)
-            .bind(&dto.center)
-            .bind(&boundary_val)
+            .bind(dto.gross_area)
+            .bind(plots_val)
+            .bind(row_config_val)
+            .bind(bbch_stage_val)
+            .bind(dto.planted_date)
+            .bind(dto.cleared_date)
+            .bind(dto.soil_type)
+            .bind(dto.slope)
+            .bind(dto.slope_facing)
+            .bind(dto.altitude)
+            .bind(dto.organic)
+            .bind(None::<bool>)
+            .bind(serde_json::json!(null))
+            .bind(None::<String>)
+            .bind(None::<agrocore_shared::lpis::LpisCountry>)
+            .bind(serde_json::json!(null))
+            .bind(properties_val)
+            .bind(serde_json::json!({}))
+            .bind(None::<String>)
+            .bind(None::<String>)
+            .bind(None::<Uuid>)
+            .bind(None::<Uuid>)
+            .bind(dto.center)
+            .bind(boundary_val)
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -269,7 +269,7 @@ impl SiteRepository for PgSiteRepo {
                 .as_ref()
                 .map(|b| serde_json::to_value(b).unwrap());
 
-            let mut query = r#"UPDATE sites SET 
+            let query = r#"UPDATE sites SET 
                    label = COALESCE($1, label),
                    site_type = COALESCE($2, site_type),
                    crop_type = COALESCE($3, crop_type),
@@ -311,35 +311,35 @@ impl SiteRepository for PgSiteRepo {
                 .to_string();
 
             let mut q = sqlx::query_as::<_, SiteDb>(&query);
-            q = q.bind(&dto.label);
-            q = q.bind(&site_type_val);
-            q = q.bind(&crop_type_val);
-            q = q.bind(&dto.variety);
-            q = q.bind(&dto.area);
-            q = q.bind(&dto.gross_area);
-            q = q.bind(&plots_val);
-            q = q.bind(&row_config_val);
-            q = q.bind(&bbch_stage_val);
-            q = q.bind(&dto.planted_date);
-            q = q.bind(&dto.cleared_date);
-            q = q.bind(&dto.soil_type);
-            q = q.bind(&dto.slope);
-            q = q.bind(&dto.slope_facing);
-            q = q.bind(&dto.altitude);
-            q = q.bind(&dto.organic);
-            q = q.bind(&dto.organic_eligible);
-            q = q.bind(&sigpac_data_val);
-            q = q.bind(&dto.regepac_id);
-            q = q.bind(&lpis_country_val);
-            q = q.bind(&lpis_data_val);
-            q = q.bind(&properties_val);
-            q = q.bind(&custom_fields_val);
-            q = q.bind(&dto.note1);
-            q = q.bind(&dto.note2);
-            q = q.bind(&dto.is_active);
-            q = q.bind(&dto.is_temporary);
-            q = q.bind(&dto.center);
-            q = q.bind(&boundary_val);
+            q = q.bind(dto.label);
+            q = q.bind(site_type_val);
+            q = q.bind(crop_type_val);
+            q = q.bind(dto.variety);
+            q = q.bind(dto.area);
+            q = q.bind(dto.gross_area);
+            q = q.bind(plots_val);
+            q = q.bind(row_config_val);
+            q = q.bind(bbch_stage_val);
+            q = q.bind(dto.planted_date);
+            q = q.bind(dto.cleared_date);
+            q = q.bind(dto.soil_type);
+            q = q.bind(dto.slope);
+            q = q.bind(dto.slope_facing);
+            q = q.bind(dto.altitude);
+            q = q.bind(dto.organic);
+            q = q.bind(dto.organic_eligible);
+            q = q.bind(sigpac_data_val);
+            q = q.bind(dto.regepac_id);
+            q = q.bind(lpis_country_val);
+            q = q.bind(lpis_data_val);
+            q = q.bind(properties_val);
+            q = q.bind(custom_fields_val);
+            q = q.bind(dto.note1);
+            q = q.bind(dto.note2);
+            q = q.bind(dto.is_active);
+            q = q.bind(dto.is_temporary);
+            q = q.bind(dto.center);
+            q = q.bind(boundary_val);
             q = q.bind(id);
             q = q.bind(tid);
 
@@ -408,7 +408,7 @@ impl From<SiteDb> for Site {
     fn from(db: SiteDb) -> Self {
         Site {
             id: db.id,
-            tenant_id: db.tenant_id.into(),
+            tenant_id: db.tenant_id,
             business_id: db.business_id,
             label: db.label,
             site_type: serde_json::from_value(db.site_type)
@@ -539,11 +539,9 @@ impl SpatialObjectRepository for PgSiteRepo {
                    is_temporary, created_at, updated_at, created_by, updated_by
                    FROM spatial_objects WHERE tenant_id = $1 AND is_active = true"#
                     .to_string();
-            let mut param_idx = 2;
 
             if let Some(site_id) = site_id {
-                query.push_str(&format!(" AND site_id = ${}", param_idx));
-                param_idx += 1;
+                query.push_str(" AND site_id = $2");
             }
 
             let mut q =

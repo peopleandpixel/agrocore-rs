@@ -130,3 +130,7 @@ required-features = ["mocks"]
 name = "api_contract_test"
 path = "tests/api_contract_test.rs"
 required-features = ["mocks"]
+
+[[test]]
+name = "app_setup_test"
+path = "tests/app_setup_tests.rs"

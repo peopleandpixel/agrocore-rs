@@ -89,3 +89,4 @@ agrocore-scheduler = { path = "../scheduler" }
 [dev-dependencies]
 testcontainers = "0.27"
 testcontainers-modules = { version = "0.15", features = ["postgres"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

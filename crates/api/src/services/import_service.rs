@@ -1,17 +1,13 @@
 use crate::dto::import::*;
 use crate::dto::site::UpdateSiteDto;
-use agrocore_domain::entities::{Boundary, CropType, GeoPoint, SigpacData, SiteType};
+use agrocore_domain::entities::{Boundary, CropType, GeoPoint, SiteType};
 use agrocore_shared::SharedError;
 use agrocore_shared::lpis::{LpisCountry, LpisRegistry};
 use base64::{Engine as _, engine::general_purpose};
-use geo::{Coord, Geometry, LineString, Polygon, coord};
 use geo_types::Geometry as GeoTypesGeometry;
-use geozero::ProcessorSink;
-use geozero::ToGeo;
 use geozero::geo_types::GeoWriter;
 use geozero::shp::ShpReader;
 use serde_json;
-use sqlx::Row;
 use std::io::Cursor;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -114,11 +110,9 @@ impl ImportService {
         if skip_duplicates {
             let duplicate_check = self.check_duplicates(tenant_id, &import_site).await?;
             if duplicate_check.is_duplicate {
-                if update_existing {
-                    if let Some(existing_id) = duplicate_check.existing_site_id {
-                        self.update_existing_site(existing_id, import_site).await?;
-                        return Ok(SiteProcessResult::Updated);
-                    }
+                if update_existing && let Some(existing_id) = duplicate_check.existing_site_id {
+                    self.update_existing_site(existing_id, import_site).await?;
+                    return Ok(SiteProcessResult::Updated);
                 }
                 return Ok(SiteProcessResult::Skipped(
                     duplicate_check.existing_site_id.unwrap(),
@@ -127,11 +121,9 @@ impl ImportService {
         }
 
         // Validate against LPIS if requested
-        if validate_lpis {
-            if let Some(country) = lpis_country {
-                self.validate_against_lpis(tenant_id, &import_site, country)
-                    .await?;
-            }
+        if validate_lpis && let Some(country) = lpis_country {
+            self.validate_against_lpis(tenant_id, &import_site, country)
+                .await?;
         }
 
         // Create new site
@@ -140,7 +132,7 @@ impl ImportService {
 
     pub async fn update_existing_site(
         &self,
-        site_id: Uuid,
+        _site_id: Uuid,
         import_site: ImportSiteDto,
     ) -> Result<(), SharedError> {
         let update_dto = self.convert_to_update_dto(import_site)?;
@@ -516,53 +508,44 @@ impl ImportService {
 
         match geometry_type.as_str() {
             "Polygon" => {
-                if let Some(serde_json::Value::Array(rings)) = coords_array.first() {
-                    if let Some(serde_json::Value::Array(exterior)) = rings.first() {
-                        let mut points = Vec::new();
-                        for coord in exterior {
-                            if let serde_json::Value::Array(pair) = coord {
-                                if pair.len() >= 2 {
-                                    if let (Some(lng), Some(lat)) = (pair.first(), pair.get(1)) {
-                                        if let (Some(lng), Some(lat)) = (lng.as_f64(), lat.as_f64())
-                                        {
-                                            points.push(GeoPoint { lng, lat });
-                                        }
-                                    }
-                                }
-                            }
+                if let Some(serde_json::Value::Array(rings)) = coords_array.first()
+                    && let Some(serde_json::Value::Array(exterior)) = rings.first()
+                {
+                    let mut points = Vec::new();
+                    for coord in exterior {
+                        if let serde_json::Value::Array(pair) = coord
+                            && pair.len() >= 2
+                            && let (Some(lng), Some(lat)) = (pair.first(), pair.get(1))
+                            && let (Some(lng), Some(lat)) = (lng.as_f64(), lat.as_f64())
+                        {
+                            points.push(GeoPoint { lng, lat });
                         }
-                        return Ok(Boundary {
-                            polygon: points,
-                            holes: None,
-                        });
                     }
+                    return Ok(Boundary {
+                        polygon: points,
+                        holes: None,
+                    });
                 }
             }
             "MultiPolygon" => {
-                if let Some(serde_json::Value::Array(polygons)) = coords_array.first() {
-                    if let Some(serde_json::Value::Array(rings)) = polygons.first() {
-                        if let Some(serde_json::Value::Array(exterior)) = rings.first() {
-                            let mut points = Vec::new();
-                            for coord in exterior {
-                                if let serde_json::Value::Array(pair) = coord {
-                                    if pair.len() >= 2 {
-                                        if let (Some(lng), Some(lat)) = (pair.first(), pair.get(1))
-                                        {
-                                            if let (Some(lng), Some(lat)) =
-                                                (lng.as_f64(), lat.as_f64())
-                                            {
-                                                points.push(GeoPoint { lng, lat });
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            return Ok(Boundary {
-                                polygon: points,
-                                holes: None,
-                            });
+                if let Some(serde_json::Value::Array(polygons)) = coords_array.first()
+                    && let Some(serde_json::Value::Array(rings)) = polygons.first()
+                    && let Some(serde_json::Value::Array(exterior)) = rings.first()
+                {
+                    let mut points = Vec::new();
+                    for coord in exterior {
+                        if let serde_json::Value::Array(pair) = coord
+                            && pair.len() >= 2
+                            && let (Some(lng), Some(lat)) = (pair.first(), pair.get(1))
+                            && let (Some(lng), Some(lat)) = (lng.as_f64(), lat.as_f64())
+                        {
+                            points.push(GeoPoint { lng, lat });
                         }
                     }
+                    return Ok(Boundary {
+                        polygon: points,
+                        holes: None,
+                    });
                 }
             }
             _ => {}
@@ -605,7 +588,7 @@ impl ImportService {
             .map_err(|e| SharedError::Validation(format!("Invalid base64 shapefile: {}", e)))?;
 
         // Parse shapefile
-        let mut reader = ShpReader::new(Cursor::new(shp_data.clone()))
+        let reader = ShpReader::new(Cursor::new(shp_data.clone()))
             .map_err(|e| SharedError::Validation(format!("Failed to read shapefile: {}", e)))?;
 
         // Read DBF records
@@ -614,7 +597,7 @@ impl ImportService {
             .map_err(|e| SharedError::Validation(format!("Shapefile record read error: {}", e)))?;
 
         // Use iter_geometries with GeoWriter to get geometries (need a new reader)
-        let mut geo_reader = ShpReader::new(Cursor::new(shp_data))
+        let geo_reader = ShpReader::new(Cursor::new(shp_data))
             .map_err(|e| SharedError::Validation(format!("Failed to read shapefile: {}", e)))?;
         let mut geo_writer = GeoWriter::new();
         let _ = geo_reader.iter_geometries(&mut geo_writer);
@@ -629,7 +612,7 @@ impl ImportService {
 
         let mut sites_to_import = Vec::new();
 
-        for (idx, (polygon, record)) in polygons.into_iter().zip(records.into_iter()).enumerate() {
+        for (idx, (polygon, record)) in polygons.into_iter().zip(records).enumerate() {
             // Extract boundary from polygon
             let boundary = match polygon {
                 GeoTypesGeometry::Polygon(polygon) => {

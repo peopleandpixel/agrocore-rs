@@ -1,9 +1,9 @@
 //! Site DTOs
 
-use agrocore_domain::entities::{BbchStage, CropType, SiteType};
 use agrocore_domain::entities::{
     Boundary, GeoPoint, LpisData, Plot, RowConfig, SigpacData, SiteProperty,
 };
+use agrocore_domain::entities::{CropType, SiteType};
 use agrocore_shared::lpis::LpisCountry;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

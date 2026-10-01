@@ -3,7 +3,6 @@ use crate::error::{BackupError, BackupResult};
 use crate::pg_dump::PgDump;
 use crate::storage::StorageBackendTrait;
 use agrocore_logging::{error, info, warn};
-use chrono::Utc;
 use sqlx::PgPool;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -97,7 +96,7 @@ impl VerificationManager {
         storage: &Arc<dyn StorageBackendTrait>,
     ) -> BackupResult<Option<Uuid>> {
         // List manifests to find latest backup
-        let prefix = format!("manifests/");
+        let prefix = "manifests/".to_string();
         let backups = self.list_manifests(target, &prefix, storage).await?;
 
         // Filter by backup type and find latest
@@ -106,7 +105,7 @@ impl VerificationManager {
             .filter(|m| m.backup_type == *backup_type)
             .collect();
 
-        typed_backups.sort_by(|a, b| b.started_at.cmp(&a.started_at));
+        typed_backups.sort_by_key(|a| std::cmp::Reverse(a.started_at));
 
         Ok(typed_backups.first().map(|m| m.backup_id))
     }
@@ -130,7 +129,7 @@ impl VerificationManager {
         sqlx::query(&sql)
             .execute(&self.db_pool)
             .await
-            .map_err(|e| BackupError::Database(e))?;
+            .map_err(BackupError::Database)?;
 
         info!("Created test database: {}", test_db_name);
         Ok(test_db_name)
@@ -145,14 +144,14 @@ impl VerificationManager {
         sqlx::query(&terminate_sql)
             .execute(&self.db_pool)
             .await
-            .map_err(|e| BackupError::Database(e))?;
+            .map_err(BackupError::Database)?;
 
         // Drop database
         let drop_sql = format!("DROP DATABASE IF EXISTS \"{}\"", db_name);
         sqlx::query(&drop_sql)
             .execute(&self.db_pool)
             .await
-            .map_err(|e| BackupError::Database(e))?;
+            .map_err(BackupError::Database)?;
 
         info!("Dropped test database: {}", db_name);
         Ok(())
@@ -190,7 +189,7 @@ impl VerificationManager {
         let manifest_data = storage.download_bytes(target, &manifest_name).await?;
 
         let manifest: crate::manifest::BackupManifest =
-            serde_json::from_slice(&manifest_data).map_err(|e| BackupError::Serialization(e))?;
+            serde_json::from_slice(&manifest_data).map_err(BackupError::Serialization)?;
 
         // Verify each object checksum from targets
         for target_manifest in &manifest.targets {
@@ -247,7 +246,7 @@ impl VerificationManager {
 
         let test_pool = PgPool::connect(&test_db_url)
             .await
-            .map_err(|e| BackupError::Database(e))?;
+            .map_err(BackupError::Database)?;
 
         // Get all tables
         let tables: Vec<(String,)> = sqlx::query_as(
@@ -256,13 +255,13 @@ impl VerificationManager {
         )
         .fetch_all(&test_pool)
         .await
-        .map_err(|e| BackupError::Database(e))?;
+        .map_err(BackupError::Database)?;
 
         for (table_name,) in tables {
             let count: (i64,) = sqlx::query_as(&format!("SELECT COUNT(*) FROM \"{}\"", table_name))
                 .fetch_one(&test_pool)
                 .await
-                .map_err(|e| BackupError::Database(e))?;
+                .map_err(BackupError::Database)?;
 
             info!("Table {}: {} rows", table_name, count.0);
         }
@@ -281,7 +280,7 @@ impl VerificationManager {
 
         let test_pool = PgPool::connect(&test_db_url)
             .await
-            .map_err(|e| BackupError::Database(e))?;
+            .map_err(BackupError::Database)?;
 
         // Compare schema with source database
         let source_schema: Vec<(String, String, String)> = sqlx::query_as(
@@ -292,7 +291,7 @@ impl VerificationManager {
         )
         .fetch_all(&self.db_pool)
         .await
-        .map_err(|e| BackupError::Database(e))?;
+        .map_err(BackupError::Database)?;
 
         let test_schema: Vec<(String, String, String)> = sqlx::query_as(
             "SELECT table_name, column_name, data_type 
@@ -302,7 +301,7 @@ impl VerificationManager {
         )
         .fetch_all(&test_pool)
         .await
-        .map_err(|e| BackupError::Database(e))?;
+        .map_err(BackupError::Database)?;
 
         if source_schema != test_schema {
             error!("Schema mismatch between source and restored database");

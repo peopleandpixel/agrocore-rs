@@ -65,7 +65,7 @@ impl PgDump {
             cmd.arg("--jobs").arg(jobs.to_string());
         }
 
-        let output = cmd.output().await.map_err(|e| BackupError::Io(e))?;
+        let output = cmd.output().await.map_err(BackupError::Io)?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -106,21 +106,15 @@ impl PgDump {
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
             .spawn()
-            .map_err(|e| BackupError::Io(e))?;
+            .map_err(BackupError::Io)?;
 
         // Write dump data to stdin
         if let Some(mut stdin) = child.stdin.take() {
             use tokio::io::AsyncWriteExt;
-            stdin
-                .write_all(&dump_data)
-                .await
-                .map_err(|e| BackupError::Io(e))?;
+            stdin.write_all(&dump_data).await.map_err(BackupError::Io)?;
         }
 
-        let output = child
-            .wait_with_output()
-            .await
-            .map_err(|e| BackupError::Io(e))?;
+        let output = child.wait_with_output().await.map_err(BackupError::Io)?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -130,5 +124,3 @@ impl PgDump {
         Ok(())
     }
 }
-
-use sqlx;

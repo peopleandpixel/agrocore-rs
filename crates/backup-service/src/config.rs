@@ -2,7 +2,6 @@ use crate::error::{BackupError, BackupResult};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::str::FromStr;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BackupConfig {
@@ -124,13 +123,13 @@ pub enum BackupTarget {
         encryption: TargetEncryption,
         credentials: Option<AzureCredentials>,
     },
-    GCS {
+    Gcs {
         bucket: String,
         prefix: String,
         encryption: TargetEncryption,
         credentials_path: Option<PathBuf>,
     },
-    SFTP {
+    Sftp {
         host: String,
         port: u16,
         username: String,
@@ -265,14 +264,14 @@ impl BackupTarget {
                     ));
                 }
             }
-            Self::GCS { bucket, .. } => {
+            Self::Gcs { bucket, .. } => {
                 if bucket.is_empty() {
                     return Err(BackupError::Config(
                         "GCS bucket cannot be empty".to_string(),
                     ));
                 }
             }
-            Self::SFTP {
+            Self::Sftp {
                 host,
                 port,
                 username,
@@ -331,8 +330,8 @@ impl BackupTarget {
             } => {
                 format!("azure://{account}/{container}{prefix}")
             }
-            Self::GCS { bucket, prefix, .. } => format!("gcs://{bucket}{prefix}"),
-            Self::SFTP { host, path, .. } => format!("sftp://{host}{path}"),
+            Self::Gcs { bucket, prefix, .. } => format!("gcs://{bucket}{prefix}"),
+            Self::Sftp { host, path, .. } => format!("sftp://{host}{path}"),
             Self::WebDAV { url, prefix, .. } => format!("webdav://{url}{prefix}"),
         }
     }
@@ -356,19 +355,25 @@ pub struct AzureCredentials {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
+#[derive(Default)]
 pub enum TargetEncryption {
+    #[default]
     None,
-    Age { recipients: Vec<String> },
-    Aes256Gcm { key: String },
-    AwsKms { key_id: String },
-    AzureKeyVault { key_url: String },
-    GcpKms { key_name: String },
-}
-
-impl Default for TargetEncryption {
-    fn default() -> Self {
-        Self::None
-    }
+    Age {
+        recipients: Vec<String>,
+    },
+    Aes256Gcm {
+        key: String,
+    },
+    AwsKms {
+        key_id: String,
+    },
+    AzureKeyVault {
+        key_url: String,
+    },
+    GcpKms {
+        key_name: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

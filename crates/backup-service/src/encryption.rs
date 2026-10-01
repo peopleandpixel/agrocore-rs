@@ -11,6 +11,9 @@ use std::path::Path;
 
 pub struct EncryptionManager {
     default_method: EncryptionMethod,
+    /// Age recipients are captured from config and will be consumed once
+    /// `EncryptionMethod::Age` is implemented (currently returns an error).
+    #[allow(dead_code)]
     age_recipients: Vec<String>,
     aes_key: Option<[u8; 32]>,
 }
@@ -46,7 +49,7 @@ impl EncryptionManager {
     pub async fn encrypt_file(&self, input_path: &Path, output_path: &Path) -> BackupResult<()> {
         match self.default_method {
             EncryptionMethod::None => {
-                fs::copy(input_path, output_path).map_err(|e| BackupError::Io(e))?;
+                fs::copy(input_path, output_path).map_err(BackupError::Io)?;
             }
             EncryptionMethod::Age => {
                 return Err(BackupError::Encryption(
@@ -78,7 +81,7 @@ impl EncryptionManager {
     pub async fn decrypt_file(&self, input_path: &Path, output_path: &Path) -> BackupResult<()> {
         match self.default_method {
             EncryptionMethod::None => {
-                fs::copy(input_path, output_path).map_err(|e| BackupError::Io(e))?;
+                fs::copy(input_path, output_path).map_err(BackupError::Io)?;
             }
             EncryptionMethod::Age => {
                 return Err(BackupError::Encryption(
@@ -103,7 +106,7 @@ impl EncryptionManager {
             .ok_or_else(|| BackupError::Encryption("AES key not configured".to_string()))?;
         let cipher = Aes256Gcm::new(GenericArray::from_slice(&key));
 
-        let input_data = fs::read(input_path).map_err(|e| BackupError::Io(e))?;
+        let input_data = fs::read(input_path).map_err(BackupError::Io)?;
 
         let mut nonce_bytes = [0u8; 12];
         OsRng
@@ -119,7 +122,7 @@ impl EncryptionManager {
         output.extend_from_slice(&nonce_bytes);
         output.extend_from_slice(&ciphertext);
 
-        fs::write(output_path, output).map_err(|e| BackupError::Io(e))?;
+        fs::write(output_path, output).map_err(BackupError::Io)?;
         Ok(())
     }
 
@@ -129,7 +132,7 @@ impl EncryptionManager {
             .ok_or_else(|| BackupError::Encryption("AES key not configured".to_string()))?;
         let cipher = Aes256Gcm::new(GenericArray::from_slice(&key));
 
-        let encrypted_data = fs::read(input_path).map_err(|e| BackupError::Io(e))?;
+        let encrypted_data = fs::read(input_path).map_err(BackupError::Io)?;
 
         if encrypted_data.len() < 12 {
             return Err(BackupError::Encryption(
@@ -144,7 +147,7 @@ impl EncryptionManager {
             .decrypt(nonce, ciphertext)
             .map_err(|e| BackupError::Encryption(format!("AES decryption failed: {e}")))?;
 
-        fs::write(output_path, plaintext).map_err(|e| BackupError::Io(e))?;
+        fs::write(output_path, plaintext).map_err(BackupError::Io)?;
         Ok(())
     }
 }

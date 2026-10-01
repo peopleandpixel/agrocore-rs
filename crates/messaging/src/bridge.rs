@@ -147,7 +147,7 @@ impl MqttBridge {
         // Try to connect MQTT if config provided
         let (mqtt_client, mqtt_event_loop) = if let Some(config) = mqtt_config {
             let mut mqtt_options = MqttOptions::new(
-                &format!("agrocore-{}", uuid::Uuid::new_v4()),
+                format!("agrocore-{}", uuid::Uuid::new_v4()),
                 &config.broker_host,
                 config.broker_port,
             );

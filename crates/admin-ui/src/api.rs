@@ -213,14 +213,19 @@ pub async fn fetch_weather_for_company_profile() -> Result<Option<WeatherSnapsho
         .map(Some)
 }
 
-fn api_base_url() -> String {
+pub(crate) fn api_base_url() -> String {
     option_env!("AGROCORE_API_BASE_URL")
         .filter(|value| !value.is_empty())
         .map(str::to_owned)
         .unwrap_or_default()
 }
 
-fn api_url(path: &str) -> String {
+pub(crate) fn api_url(path: &str) -> String {
+    // Absolute URLs pass through untouched so external APIs
+    // (e.g. Open-Meteo) are not rewritten onto the local proxy.
+    if path.starts_with("http://") || path.starts_with("https://") {
+        return path.to_string();
+    }
     let base = api_base_url();
     if base.is_empty() {
         // Use relative path for nginx proxy

@@ -126,7 +126,7 @@ impl StorageBackend {
                 BackupTarget::Local { path, .. } => {
                     tokio::fs::create_dir_all(&path)
                         .await
-                        .map_err(|e| BackupError::Io(e))?;
+                        .map_err(BackupError::Io)?;
                     local_paths.push((target_for_storage.clone(), path.clone()));
                 }
                 BackupTarget::Azure {
@@ -143,7 +143,7 @@ impl StorageBackend {
                         Arc::new(client) as Arc<dyn ObjectStore>,
                     ));
                 }
-                BackupTarget::GCS {
+                BackupTarget::Gcs {
                     bucket,
                     credentials_path,
                     ..
@@ -154,14 +154,11 @@ impl StorageBackend {
                         Arc::new(client) as Arc<dyn ObjectStore>,
                     ));
                 }
-                BackupTarget::SFTP { .. } => {
+                BackupTarget::Sftp { .. } => {
                     warn!("SFTP backend not yet implemented");
                 }
                 BackupTarget::WebDAV { .. } => {
                     warn!("WebDAV backend not yet implemented");
-                }
-                _ => {
-                    warn!("Storage backend for target not yet implemented");
                 }
             }
         }
@@ -200,7 +197,7 @@ impl StorageBackend {
             }
         }
 
-        let client = builder.build().map_err(|e| BackupError::ObjectStore(e))?;
+        let client = builder.build().map_err(BackupError::ObjectStore)?;
         Ok(Arc::new(client))
     }
 
@@ -216,13 +213,13 @@ impl StorageBackend {
             .with_account(account)
             .with_container_name(container);
 
-        if let Some(creds) = credentials {
-            if let Some(key) = creds.account_key {
-                builder = builder.with_access_key(key);
-            }
+        if let Some(creds) = credentials
+            && let Some(key) = creds.account_key
+        {
+            builder = builder.with_access_key(key);
         }
 
-        let client = builder.build().map_err(|e| BackupError::ObjectStore(e))?;
+        let client = builder.build().map_err(BackupError::ObjectStore)?;
         Ok(Arc::new(client))
     }
 
@@ -239,7 +236,7 @@ impl StorageBackend {
             builder = builder.with_service_account_path(path.to_string_lossy().to_string());
         }
 
-        let client = builder.build().map_err(|e| BackupError::ObjectStore(e))?;
+        let client = builder.build().map_err(BackupError::ObjectStore)?;
         Ok(Arc::new(client))
     }
 
@@ -299,7 +296,7 @@ impl StorageBackendTrait for StorageBackend {
                     store
                         .put(&path, PutPayload::from(data.to_vec()))
                         .await
-                        .map_err(|e| BackupError::ObjectStore(e))?;
+                        .map_err(BackupError::ObjectStore)?;
                 }
             }
             BackupTarget::Azure { .. } => {
@@ -308,28 +305,32 @@ impl StorageBackendTrait for StorageBackend {
                     store
                         .put(&path, PutPayload::from(data.to_vec()))
                         .await
-                        .map_err(|e| BackupError::ObjectStore(e))?;
+                        .map_err(BackupError::ObjectStore)?;
                 }
             }
-            BackupTarget::GCS { .. } => {
+            BackupTarget::Gcs { .. } => {
                 if let Some((_, store)) = self.find_gcs_store(target) {
                     let path = Path::from(object_name);
                     store
                         .put(&path, PutPayload::from(data.to_vec()))
                         .await
-                        .map_err(|e| BackupError::ObjectStore(e))?;
+                        .map_err(BackupError::ObjectStore)?;
                 }
             }
             BackupTarget::Local { path, .. } => {
-                let full_path = path.join(object_name);
+                let base = self
+                    .find_local(target)
+                    .map(|(_, p)| p)
+                    .unwrap_or_else(|| path.clone());
+                let full_path = base.join(object_name);
                 if let Some(parent) = full_path.parent() {
                     tokio::fs::create_dir_all(parent)
                         .await
-                        .map_err(|e| BackupError::Io(e))?;
+                        .map_err(BackupError::Io)?;
                 }
                 tokio::fs::write(full_path, data)
                     .await
-                    .map_err(|e| BackupError::Io(e))?;
+                    .map_err(BackupError::Io)?;
             }
             _ => {
                 return Err(BackupError::Config(format!(
@@ -347,9 +348,7 @@ impl StorageBackendTrait for StorageBackend {
         object_name: &str,
         file_path: &std::path::Path,
     ) -> BackupResult<u64> {
-        let data = tokio::fs::read(file_path)
-            .await
-            .map_err(|e| BackupError::Io(e))?;
+        let data = tokio::fs::read(file_path).await.map_err(BackupError::Io)?;
         let size = data.len() as u64;
         self.upload_bytes(target, object_name, &data).await?;
         Ok(size)
@@ -367,14 +366,8 @@ impl StorageBackendTrait for StorageBackend {
             | BackupTarget::Wasabi { .. } => {
                 if let Some((_, store)) = self.find_s3_store(target) {
                     let path = Path::from(object_name);
-                    let result = store
-                        .get(&path)
-                        .await
-                        .map_err(|e| BackupError::ObjectStore(e))?;
-                    let bytes = result
-                        .bytes()
-                        .await
-                        .map_err(|e| BackupError::ObjectStore(e))?;
+                    let result = store.get(&path).await.map_err(BackupError::ObjectStore)?;
+                    let bytes = result.bytes().await.map_err(BackupError::ObjectStore)?;
                     Ok(bytes.to_vec())
                 } else {
                     Err(BackupError::Config(format!(
@@ -386,14 +379,8 @@ impl StorageBackendTrait for StorageBackend {
             BackupTarget::Azure { .. } => {
                 if let Some((_, store)) = self.find_azure_store(target) {
                     let path = Path::from(object_name);
-                    let result = store
-                        .get(&path)
-                        .await
-                        .map_err(|e| BackupError::ObjectStore(e))?;
-                    let bytes = result
-                        .bytes()
-                        .await
-                        .map_err(|e| BackupError::ObjectStore(e))?;
+                    let result = store.get(&path).await.map_err(BackupError::ObjectStore)?;
+                    let bytes = result.bytes().await.map_err(BackupError::ObjectStore)?;
                     Ok(bytes.to_vec())
                 } else {
                     Err(BackupError::Config(format!(
@@ -402,17 +389,11 @@ impl StorageBackendTrait for StorageBackend {
                     )))
                 }
             }
-            BackupTarget::GCS { .. } => {
+            BackupTarget::Gcs { .. } => {
                 if let Some((_, store)) = self.find_gcs_store(target) {
                     let path = Path::from(object_name);
-                    let result = store
-                        .get(&path)
-                        .await
-                        .map_err(|e| BackupError::ObjectStore(e))?;
-                    let bytes = result
-                        .bytes()
-                        .await
-                        .map_err(|e| BackupError::ObjectStore(e))?;
+                    let result = store.get(&path).await.map_err(BackupError::ObjectStore)?;
+                    let bytes = result.bytes().await.map_err(BackupError::ObjectStore)?;
                     Ok(bytes.to_vec())
                 } else {
                     Err(BackupError::Config(format!(
@@ -422,10 +403,12 @@ impl StorageBackendTrait for StorageBackend {
                 }
             }
             BackupTarget::Local { path, .. } => {
-                let full_path = path.join(object_name);
-                let data = tokio::fs::read(full_path)
-                    .await
-                    .map_err(|e| BackupError::Io(e))?;
+                let base = self
+                    .find_local(target)
+                    .map(|(_, p)| p)
+                    .unwrap_or_else(|| path.clone());
+                let full_path = base.join(object_name);
+                let data = tokio::fs::read(full_path).await.map_err(BackupError::Io)?;
                 Ok(data)
             }
             _ => Err(BackupError::Config(format!(
@@ -441,7 +424,7 @@ impl StorageBackendTrait for StorageBackend {
         manifest: &crate::manifest::BackupManifest,
     ) -> BackupResult<()> {
         let manifest_json =
-            serde_json::to_vec_pretty(manifest).map_err(|e| BackupError::Serialization(e))?;
+            serde_json::to_vec_pretty(manifest).map_err(BackupError::Serialization)?;
         let object_name = format!("manifests/{}.json", manifest.backup_id);
         self.upload_bytes(target, &object_name, &manifest_json)
             .await

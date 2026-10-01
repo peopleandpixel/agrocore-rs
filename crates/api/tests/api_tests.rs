@@ -133,7 +133,7 @@ async fn test_workforce_task_status_routes_are_registered() {
     // POST create status
     let req = TestRequest::post()
         .uri(&format!("/api/v1/workforce/tasks/{}/status", task_id))
-        .set_json(&serde_json::json!({
+        .set_json(serde_json::json!({
             "task_id": task_id,
             "worker_id": worker_id,
             "tenant_id": task_id, // dummy UUID, ignored by handler
@@ -148,7 +148,7 @@ async fn test_workforce_task_status_routes_are_registered() {
             "/api/v1/workforce/tasks/{}/status/{}",
             task_id, worker_id
         ))
-        .set_json(&serde_json::json!({
+        .set_json(serde_json::json!({
             "status": "InProgress"
         }))
         .to_request();

@@ -1,27 +1,14 @@
-use crate::config::load_config;
-use crate::error::{BackupError, BackupResult};
-use crate::nats_client::NatsClient;
-use crate::service::{BackupService, BackupType};
+use agrocore_backup::config::load_config;
+use agrocore_backup::error::{BackupError, BackupResult};
+use agrocore_backup::nats_client::NatsClient;
+use agrocore_backup::service::{BackupService, BackupType};
 use agrocore_logging::{
     EnvironmentType, LoggingConfig, error as logging_error, info, init_logging, warn,
 };
 use agrocore_messaging::{BridgeConfig, MqttBridgeBuilder};
-use agrocore_scheduler::{JobDefinition, JobType, SchedulerConfig, SchedulerService};
 use agrocore_shared::config::AgroCoreConfig;
 use clap::{Parser, Subcommand};
-use std::sync::Arc;
 use tokio::signal;
-
-mod config;
-mod encryption;
-mod error;
-mod manifest;
-mod nats_client;
-mod pg_dump;
-mod retention;
-mod service;
-mod storage;
-mod verification;
 
 #[derive(Parser)]
 #[command(name = "agrocore-backup")]
@@ -150,7 +137,7 @@ async fn run_daemon() -> BackupResult<()> {
 
     // Create MQTT Bridge (NATS-only mode for now)
     let bridge_config = BridgeConfig::default();
-    let mut bridge = MqttBridgeBuilder::new()
+    let bridge = MqttBridgeBuilder::new()
         .nats_url(nats_url)
         .bridge_config(bridge_config)
         .build_nats_only()
@@ -194,10 +181,10 @@ async fn run_daemon() -> BackupResult<()> {
     }
 
     // Stop scheduler
-    if let Some(scheduler) = &backup_service.scheduler {
-        if let Err(e) = scheduler.stop().await {
-            logging_error!("Failed to stop scheduler: {e}");
-        }
+    if let Some(scheduler) = &backup_service.scheduler
+        && let Err(e) = scheduler.stop().await
+    {
+        logging_error!("Failed to stop scheduler: {e}");
     }
     info!("Scheduler stopped");
 

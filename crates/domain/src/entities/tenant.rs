@@ -48,6 +48,12 @@ pub enum Module {
     CostTracking,
     Maps,
     Reports,
+    #[serde(rename = "inventory", alias = "Inventory")]
+    Inventory,
+    #[serde(rename = "livestock", alias = "Livestock")]
+    Livestock,
+    #[serde(rename = "equipment", alias = "Equipment")]
+    Equipment,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]

@@ -67,8 +67,8 @@ impl BuildingRepository for PgBuildingRepo {
             Ok(PaginatedResponse {
                 data,
                 total: total as u64,
-                page: page as u64,
-                per_page: per_page as u64,
+                page,
+                per_page,
                 total_pages,
             })
         })
@@ -116,8 +116,8 @@ impl BuildingRepository for PgBuildingRepo {
             Ok(PaginatedResponse {
                 data,
                 total: total as u64,
-                page: page as u64,
-                per_page: per_page as u64,
+                page,
+                per_page,
                 total_pages,
             })
         })

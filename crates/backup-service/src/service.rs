@@ -1,6 +1,5 @@
 use crate::config::BackupConfig;
 use crate::error::{BackupError, BackupResult};
-use crate::storage::StorageBackendTrait;
 use agrocore_logging::{error, info, warn};
 use agrocore_scheduler::{JobDefinition, JobType, SchedulerConfig, SchedulerService};
 use chrono::{DateTime, Utc};
@@ -108,7 +107,7 @@ impl BackupService {
         // Create database pool
         let db_pool = sqlx::PgPool::connect(&database_url)
             .await
-            .map_err(|e| BackupError::Database(e))?;
+            .map_err(BackupError::Database)?;
 
         // Initialize components
         let pg_dump = crate::pg_dump::PgDump::new(db_pool.clone(), config.pg_dump.clone());
@@ -458,60 +457,60 @@ impl BackupService {
         prefix: &str,
         _job_id: Uuid,
     ) -> BackupResult<u64> {
-        let temp_dir = tempfile::tempdir().map_err(|e| BackupError::Io(e))?;
+        let temp_dir = tempfile::tempdir().map_err(BackupError::Io)?;
         let config_path = temp_dir.path().join("config_backup.tar.gz");
 
         // Collect config files
         let mut total_size = 0u64;
 
         // Create tar.gz of config files
-        let tar_gz = std::fs::File::create(&config_path).map_err(|e| BackupError::Io(e))?;
+        let tar_gz = std::fs::File::create(&config_path).map_err(BackupError::Io)?;
         let enc = flate2::write::GzEncoder::new(tar_gz, flate2::Compression::default());
         let mut tar = tar::Builder::new(enc);
 
         for env_file in &self.config.config_paths.env_files {
             if env_file.exists() {
                 tar.append_path_with_name(env_file, env_file.file_name().unwrap())
-                    .map_err(|e| BackupError::Io(e))?;
+                    .map_err(BackupError::Io)?;
             }
         }
 
         for config_dir in &self.config.config_paths.config_dirs {
             if config_dir.exists() {
                 tar.append_dir_all("config", config_dir)
-                    .map_err(|e| BackupError::Io(e))?;
+                    .map_err(BackupError::Io)?;
             }
         }
 
         for compose_file in &self.config.config_paths.docker_compose_files {
             if compose_file.exists() {
                 tar.append_path_with_name(compose_file, compose_file.file_name().unwrap())
-                    .map_err(|e| BackupError::Io(e))?;
+                    .map_err(BackupError::Io)?;
             }
         }
 
         for dockerfile in &self.config.config_paths.dockerfiles {
             if dockerfile.exists() {
                 tar.append_path_with_name(dockerfile, dockerfile.file_name().unwrap())
-                    .map_err(|e| BackupError::Io(e))?;
+                    .map_err(BackupError::Io)?;
             }
         }
 
         for tls_dir in &self.config.config_paths.tls_certs {
             if tls_dir.exists() {
                 tar.append_dir_all("tls", tls_dir)
-                    .map_err(|e| BackupError::Io(e))?;
+                    .map_err(BackupError::Io)?;
             }
         }
 
         for secrets_dir in &self.config.config_paths.secrets {
             if secrets_dir.exists() {
                 tar.append_dir_all("secrets", secrets_dir)
-                    .map_err(|e| BackupError::Io(e))?;
+                    .map_err(BackupError::Io)?;
             }
         }
 
-        tar.finish().map_err(|e| BackupError::Io(e))?;
+        tar.finish().map_err(BackupError::Io)?;
 
         // Encrypt if needed
         let final_path = if self.config.encryption.default != crate::config::EncryptionMethod::None

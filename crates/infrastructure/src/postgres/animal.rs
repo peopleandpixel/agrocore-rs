@@ -193,7 +193,7 @@ impl AnimalRepository for PgAnimalRepo {
             .bind(record.medication)
             .bind(record.dosage)
             .bind(record.veterinarian)
-            .bind(record.withdrawal_days.map(|d| d as i32))
+            .bind(record.withdrawal_days)
             .bind(record.notes)
             .execute(&pool)
             .await

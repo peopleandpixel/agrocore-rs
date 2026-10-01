@@ -6,11 +6,8 @@ use agrocore_backup::{
         EncryptionMethod, PgDumpConfig, RetentionConfig, VerificationConfig,
     },
     error::{BackupError, BackupResult},
-    nats_client::NatsClient,
-    service::{BackupService, BackupStatus, BackupType},
+    service::{BackupStatus, BackupType},
 };
-use std::sync::Arc;
-use tempfile::tempdir;
 use uuid::Uuid;
 
 #[cfg(test)]
@@ -29,9 +26,11 @@ mod config_tests {
 
     #[test]
     fn test_backup_config_validation_empty_targets() {
-        let mut config = BackupConfig::default();
-        config.enabled = true;
-        config.targets = vec![];
+        let config = BackupConfig {
+            enabled: true,
+            targets: vec![],
+            ..Default::default()
+        };
 
         let result = config.validate();
         assert!(result.is_err());
@@ -40,17 +39,43 @@ mod config_tests {
 
     #[test]
     fn test_backup_config_validation_valid() {
-        let mut config = BackupConfig::default();
-        config.enabled = true;
-        config.targets = vec![BackupTarget::Local {
-            path: std::path::PathBuf::from("/tmp/backup"),
-            encryption: Default::default(),
-            permissions: None,
-        }];
+        // Default EncryptionConfig is `Age` with no recipients, which
+        // validate() rejects; so a config carrying it must fail.
+        let age_no_recipients = BackupConfig {
+            enabled: true,
+            targets: vec![BackupTarget::Local {
+                path: std::path::PathBuf::from("/tmp/backup"),
+                encryption: Default::default(),
+                permissions: None,
+            }],
+            ..Default::default()
+        };
 
-        let result = config.validate();
-        // Validation passes but local path must exist
-        assert!(result.is_ok() || result.is_err());
+        let err = age_no_recipients
+            .validate()
+            .expect_err("Age encryption without recipients must fail validation");
+        assert!(
+            err.to_string().contains("recipient"),
+            "expected a missing-recipient error, got {err}"
+        );
+
+        // With a usable encryption method the whole config validates.
+        let valid = BackupConfig {
+            enabled: true,
+            targets: vec![BackupTarget::Local {
+                path: std::path::PathBuf::from("/tmp/backup"),
+                encryption: Default::default(),
+                permissions: None,
+            }],
+            encryption: EncryptionConfig {
+                default: EncryptionMethod::None,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        valid
+            .validate()
+            .expect("config with None encryption and one local target must validate");
     }
 
     #[test]
@@ -144,39 +169,13 @@ mod retention_tests {
 
     #[test]
     fn test_retention_config_validation() {
-        let mut config = RetentionConfig::default();
-        config.daily = 0;
+        let config = RetentionConfig {
+            daily: 0,
+            ..Default::default()
+        };
 
         let result = config.validate();
         assert!(result.is_err());
-    }
-}
-
-#[cfg(test)]
-mod encryption_tests {
-    use super::*;
-
-    #[test]
-    fn test_encryption_config_default() {
-        let config = EncryptionConfig::default();
-        assert_eq!(config.default, EncryptionMethod::Age);
-    }
-
-    #[test]
-    fn test_encryption_config_validation_age_requires_recipients() {
-        let mut config = EncryptionConfig::default();
-        config.default = EncryptionMethod::Age;
-        config.age_recipients = vec![];
-
-        let result = config.validate();
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_encryption_method_display() {
-        assert_eq!(EncryptionMethod::None.to_string(), "none");
-        assert_eq!(EncryptionMethod::Age.to_string(), "age");
-        assert_eq!(EncryptionMethod::Aes256Gcm.to_string(), "aes256gcm");
     }
 }
 
@@ -197,8 +196,10 @@ mod verification_tests {
 
     #[test]
     fn test_verification_config_validation() {
-        let mut config = VerificationConfig::default();
-        config.test_db_name = "".to_string();
+        let config = VerificationConfig {
+            test_db_name: String::new(),
+            ..Default::default()
+        };
 
         let result = config.validate();
         assert!(result.is_err());
@@ -294,9 +295,24 @@ mod integration_tests {
             std::env::set_var("BACKUP_TIMEZONE", "Europe/Berlin");
         }
 
-        let config = agrocore_backup::config::load_config();
-        // Should at least not panic
-        assert!(config.is_ok() || config.is_err());
+        // Only env vars are set here, so required fields that are not part of
+        // the BACKUP_* env surface (e.g. schedule_config) are absent and
+        // deserialization must fail loudly rather than silently defaulting.
+        let err = match agrocore_backup::config::load_config() {
+            Ok(config) => {
+                // If a config file is present and complete, the overrides must
+                // have been honoured.
+                assert!(config.enabled);
+                assert_eq!(config.schedule_db, "0 1 * * *");
+                assert_eq!(config.timezone, "Europe/Berlin");
+                return;
+            }
+            Err(err) => err,
+        };
+        assert!(
+            err.to_string().contains("deserialize") || err.to_string().contains("build"),
+            "unexpected config error: {err}"
+        );
 
         unsafe {
             std::env::remove_var("BACKUP_ENABLED");
@@ -331,10 +347,16 @@ mod error_tests {
 
     #[test]
     fn test_backup_result_type() {
-        let result: BackupResult<()> = Ok(());
-        assert!(result.is_ok());
+        let ok: BackupResult<()> = Ok(());
+        assert!(ok.is_ok());
 
-        let result: BackupResult<()> = Err(BackupError::Config("error".to_string()));
-        assert!(result.is_err());
+        let err: BackupResult<()> = Err(BackupError::Config("error".to_string()));
+        assert!(err.is_err());
+
+        // Consume the error the way callers do, and check the rendered message.
+        let Err(err) = err else {
+            panic!("expected an Err result");
+        };
+        assert!(err.to_string().contains("error"));
     }
 }

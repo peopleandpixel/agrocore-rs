@@ -47,7 +47,7 @@ impl SchedulerService {
 
         let scheduler = JobScheduler::new()
             .await
-            .map_err(|e| SchedulerError::JobScheduler(e))?;
+            .map_err(SchedulerError::JobScheduler)?;
 
         let scheduler = Arc::new(scheduler);
 
@@ -70,7 +70,7 @@ impl SchedulerService {
         self.scheduler
             .start()
             .await
-            .map_err(|e| SchedulerError::JobScheduler(e))?;
+            .map_err(SchedulerError::JobScheduler)?;
 
         info!("Scheduler started");
         Ok(())
@@ -140,7 +140,7 @@ impl SchedulerService {
 
         // Calculate next run for recurring jobs
         let schedule = <cron::Schedule as std::str::FromStr>::from_str(&job_def.schedule)
-            .map_err(|e| SchedulerError::Cron(e))?;
+            .map_err(SchedulerError::Cron)?;
         let next_run = schedule.upcoming(Utc).next();
 
         let scheduled_job = ScheduledJob {
@@ -200,7 +200,7 @@ impl SchedulerService {
 
             let job = Job::new_async(
                 <cron::Schedule as std::str::FromStr>::from_str(&schedule_str)
-                    .map_err(|e| SchedulerError::Cron(e))?,
+                    .map_err(SchedulerError::Cron)?,
                 move |_uuid, _lock| {
                     let service = service.clone();
                     let job_id = job_id.clone();
@@ -211,12 +211,12 @@ impl SchedulerService {
                     })
                 },
             )
-            .map_err(|e| SchedulerError::JobScheduler(e))?;
+            .map_err(SchedulerError::JobScheduler)?;
 
             self.scheduler
                 .add(job)
                 .await
-                .map_err(|e| SchedulerError::JobScheduler(e))?;
+                .map_err(SchedulerError::JobScheduler)?;
         }
 
         info!("Added job: {} ({})", job_def.name, job_def.id);
@@ -341,7 +341,7 @@ impl SchedulerService {
                     .args(args)
                     .output()
                     .await
-                    .map_err(|e| SchedulerError::Io(e))?;
+                    .map_err(SchedulerError::Io)?;
 
                 if !output.status.success() {
                     let stderr = String::from_utf8_lossy(&output.stderr);
@@ -384,8 +384,8 @@ impl SchedulerService {
             }
             JobType::Nats { subject, payload } => {
                 if let Some(nats) = &self.nats {
-                    let data = serde_json::to_vec(payload)
-                        .map_err(|e| SchedulerError::Serialization(e))?;
+                    let data =
+                        serde_json::to_vec(payload).map_err(SchedulerError::Serialization)?;
                     nats.publish(subject.to_string(), Bytes::from(data))
                         .await
                         .map_err(|e| SchedulerError::Nats(e.to_string()))?;
@@ -464,7 +464,7 @@ impl SchedulerService {
             self.scheduler
                 .remove(&uuid)
                 .await
-                .map_err(|e| SchedulerError::JobScheduler(e))?;
+                .map_err(SchedulerError::JobScheduler)?;
         }
 
         // Remove from local state
@@ -484,51 +484,49 @@ impl SchedulerService {
 
     pub async fn enable_job(&self, job_id: &str) -> SchedulerResult<()> {
         let mut jobs = self.jobs.write().await;
-        if let Some(job) = jobs.get_mut(job_id) {
-            if !job.definition.enabled {
-                job.definition.enabled = true;
-                job.status = JobRunStatus::Pending;
-                job.updated_at = Utc::now();
+        if let Some(job) = jobs.get_mut(job_id).filter(|j| !j.definition.enabled) {
+            job.definition.enabled = true;
+            job.status = JobRunStatus::Pending;
+            job.updated_at = Utc::now();
 
-                // Re-add to scheduler
-                let job_def = job.definition.clone();
-                let service = self.clone_for_job();
-                let timeout = job_def
-                    .timeout_seconds
-                    .unwrap_or(self.config.default_job_timeout_seconds);
-                let max_retries = job_def.max_retries.unwrap_or(self.config.max_retries);
-                let retry_delay = job_def
-                    .retry_delay_seconds
-                    .unwrap_or(self.config.retry_delay_seconds);
+            // Re-add to scheduler
+            let job_def = job.definition.clone();
+            let service = self.clone_for_job();
+            let timeout = job_def
+                .timeout_seconds
+                .unwrap_or(self.config.default_job_timeout_seconds);
+            let max_retries = job_def.max_retries.unwrap_or(self.config.max_retries);
+            let retry_delay = job_def
+                .retry_delay_seconds
+                .unwrap_or(self.config.retry_delay_seconds);
 
-                let job = Job::new_async(
-                    <cron::Schedule as std::str::FromStr>::from_str(&job_def.schedule)
-                        .map_err(|e| SchedulerError::Cron(e))?,
-                    move |_uuid, _lock| {
-                        let service = service.clone();
-                        let job_id = job_def.id.clone();
-                        Box::pin(async move {
-                            service
-                                .execute_job(&job_id, timeout, max_retries, retry_delay)
-                                .await;
-                        })
-                    },
-                )
-                .map_err(|e| SchedulerError::JobScheduler(e))?;
+            let job = Job::new_async(
+                <cron::Schedule as std::str::FromStr>::from_str(&job_def.schedule)
+                    .map_err(SchedulerError::Cron)?,
+                move |_uuid, _lock| {
+                    let service = service.clone();
+                    let job_id = job_def.id.clone();
+                    Box::pin(async move {
+                        service
+                            .execute_job(&job_id, timeout, max_retries, retry_delay)
+                            .await;
+                    })
+                },
+            )
+            .map_err(SchedulerError::JobScheduler)?;
 
-                self.scheduler
-                    .add(job)
-                    .await
-                    .map_err(|e| SchedulerError::JobScheduler(e))?;
+            self.scheduler
+                .add(job)
+                .await
+                .map_err(SchedulerError::JobScheduler)?;
 
-                // Update status
-                let mut state = self.job_state.write().await;
-                if let Some(s) = state.get_mut(job_id) {
-                    s.status = JobRunStatus::Pending;
-                }
-
-                info!("Enabled job: {}", job_id);
+            // Update status
+            let mut state = self.job_state.write().await;
+            if let Some(s) = state.get_mut(job_id) {
+                s.status = JobRunStatus::Pending;
             }
+
+            info!("Enabled job: {}", job_id);
         }
         Ok(())
     }
@@ -543,7 +541,7 @@ impl SchedulerService {
             self.scheduler
                 .remove(&uuid)
                 .await
-                .map_err(|e| SchedulerError::JobScheduler(e))?;
+                .map_err(SchedulerError::JobScheduler)?;
         }
 
         {

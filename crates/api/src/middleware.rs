@@ -262,6 +262,50 @@ fn parse_uuid(s: &str) -> Result<uuid::Uuid, Error> {
 
 pub type AuthUser = AuthenticatedUser;
 
+/// Metrics middleware: checks is_enabled() and registers metrics.
+pub struct MetricsMiddleware;
+
+impl<S, B> Transform<S, ServiceRequest> for MetricsMiddleware
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    B: 'static,
+{
+    type Response = ServiceResponse<B>;
+    type Error = Error;
+    type InitError = ();
+    type Transform = MetricsMiddlewareService<S>;
+    type Future = Ready<Result<Self::Transform, Self::InitError>>;
+
+    fn new_transform(&self, service: S) -> Self::Future {
+        ready(Ok(MetricsMiddlewareService { service }))
+    }
+}
+
+pub struct MetricsMiddlewareService<S> {
+    service: S,
+}
+
+impl<S, B> Service<ServiceRequest> for MetricsMiddlewareService<S>
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    B: 'static,
+{
+    type Response = ServiceResponse<B>;
+    type Error = Error;
+    type Future = S::Future;
+
+    fn poll_ready(&self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.service.poll_ready(cx)
+    }
+
+    fn call(&self, req: ServiceRequest) -> Self::Future {
+        if crate::metrics::is_enabled() {
+            debug!("Metrics enabled — registering request metrics");
+        }
+        self.service.call(req)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -391,49 +435,5 @@ mod tests {
                 agrocore_domain::entities::user::UserRole::Viewer,
             ]
         );
-    }
-}
-
-/// Metrics middleware: checks is_enabled() and registers metrics.
-pub struct MetricsMiddleware;
-
-impl<S, B> Transform<S, ServiceRequest> for MetricsMiddleware
-where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
-    B: 'static,
-{
-    type Response = ServiceResponse<B>;
-    type Error = Error;
-    type InitError = ();
-    type Transform = MetricsMiddlewareService<S>;
-    type Future = Ready<Result<Self::Transform, Self::InitError>>;
-
-    fn new_transform(&self, service: S) -> Self::Future {
-        ready(Ok(MetricsMiddlewareService { service }))
-    }
-}
-
-pub struct MetricsMiddlewareService<S> {
-    service: S,
-}
-
-impl<S, B> Service<ServiceRequest> for MetricsMiddlewareService<S>
-where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
-    B: 'static,
-{
-    type Response = ServiceResponse<B>;
-    type Error = Error;
-    type Future = S::Future;
-
-    fn poll_ready(&self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.service.poll_ready(cx)
-    }
-
-    fn call(&self, req: ServiceRequest) -> Self::Future {
-        if crate::metrics::is_enabled() {
-            debug!("Metrics enabled — registering request metrics");
-        }
-        self.service.call(req)
     }
 }

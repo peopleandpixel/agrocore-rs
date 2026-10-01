@@ -108,7 +108,7 @@ pub async fn refresh_token(
     }
 
     // Generate new tokens
-    let roles: Vec<UserRole> = user.roles.iter().map(|r| r.clone()).collect();
+    let roles: Vec<UserRole> = user.roles.to_vec();
     let new_token = generate_jwt(user.id, user.tenant_id.0, &roles)
         .map_err(|e| SharedError::Internal(format!("Token generation failed: {}", e)))?;
 
@@ -190,7 +190,7 @@ pub async fn impersonate(
         .await?
         .ok_or_else(|| SharedError::NotFound("User not found".into()))?;
     // Generate a new JWT for the target user
-    let roles: Vec<UserRole> = user.roles.iter().map(|r| r.clone()).collect();
+    let roles: Vec<UserRole> = user.roles.to_vec();
     let token = generate_jwt(user.id, user.tenant_id.0, &roles)
         .map_err(|e| SharedError::Internal(format!("Failed to generate token: {}", e)))?;
     Ok(HttpResponse::Ok().json(serde_json::json!({
@@ -211,7 +211,7 @@ pub async fn stop_impersonation(
         .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), auth.0.user_id)
         .await?
         .ok_or_else(|| SharedError::NotFound("User not found".into()))?;
-    let roles: Vec<UserRole> = user.roles.iter().map(|r| r.clone()).collect();
+    let roles: Vec<UserRole> = user.roles.to_vec();
     let token = generate_jwt(user.id, user.tenant_id.0, &roles)
         .map_err(|e| SharedError::Internal(format!("Failed to generate token: {}", e)))?;
     Ok(HttpResponse::Ok().json(serde_json::json!({ "token": token })))

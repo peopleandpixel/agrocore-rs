@@ -4,9 +4,14 @@ pub mod error;
 pub mod layers;
 
 pub use config::{EnvironmentType, LoggingConfig, RotationConfig, RotationType};
-pub use context::{
-    RequestContext, ServiceContext, ServiceContextLayer, SpanExt, create_span, set_service_context,
-};
+pub use context::{RequestContext, ServiceContext, create_span, set_service_context};
+
+// Span-layer extensions require the `tracing` dependency, so they only exist
+// when at least one tracing-backed feature is enabled. Consumers that build
+// this crate with `default-features = false` (e.g. the WASM frontends) must not
+// reference them.
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
+pub use context::{ServiceContextLayer, SpanExt};
 pub use error::{LoggingError, LoggingResult};
 pub use layers::{LoggingHandle, init_logging};
 

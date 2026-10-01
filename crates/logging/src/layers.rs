@@ -13,7 +13,9 @@ use opentelemetry_otlp::WithExportConfig;
 #[cfg(feature = "otlp")]
 use tracing_opentelemetry::OpenTelemetryLayer;
 
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 use std::fs;
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 use std::io::{self, Write};
 
 #[cfg(feature = "dev-console")]
@@ -25,8 +27,10 @@ use tracing_appender::{
 };
 
 /// A writer that discards all data (like /dev/null) - always available
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 struct NoOpWriter;
 
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 impl Write for NoOpWriter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         Ok(buf.len())
@@ -37,6 +41,7 @@ impl Write for NoOpWriter {
     }
 }
 
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
 impl<'a> tracing_subscriber::fmt::MakeWriter<'a> for NoOpWriter {
     type Writer = NoOpWriter;
 

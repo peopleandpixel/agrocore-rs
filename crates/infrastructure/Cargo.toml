@@ -30,4 +30,8 @@ mocks = ["agrocore-domain/mocks"]
 [dev-dependencies]
 testcontainers = "0.27.3"
 testcontainers-modules = { version = "0.15.0", features = ["postgres"] }
-tokio = { workspace = true, features = ["rt", "macros"] }
+tokio = { workspace = true, features = ["rt", "macros", "test-util"] }
+
+[[test]]
+name = "database_setup_test"
+path = "tests/database_setup_tests.rs"
