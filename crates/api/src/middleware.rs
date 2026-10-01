@@ -1,3 +1,4 @@
+use crate::AppState;
 use actix_web::{
     Error, FromRequest, HttpRequest,
     dev::{Service, ServiceRequest, ServiceResponse, Transform},
@@ -8,7 +9,7 @@ use dashmap::DashMap;
 use jsonwebtoken::{Algorithm, Validation, decode};
 use redis::AsyncCommands;
 use serde::Deserialize;
-use std::future::{Ready, ready};
+use std::future::{Future, Ready, ready};
 use std::net::IpAddr;
 use std::sync::Arc;
 use std::task::{Context, Poll};
@@ -146,49 +147,71 @@ pub struct AuthExtractor(pub AuthenticatedUser);
 
 impl FromRequest for AuthExtractor {
     type Error = Error;
-    type Future = Ready<Result<Self, Self::Error>>;
+    // The revocation list is an async resource (Redis or in-memory), so the
+    // future cannot stay a plain `Ready` any more.
+    type Future = std::pin::Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;
 
     fn from_request(req: &HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
-        let auth_header = req.headers().get("authorization");
-        match auth_header {
-            Some(header_value) => {
-                let header_str = match header_value.to_str() {
-                    Ok(s) => s,
-                    Err(_) => {
-                        return ready(Err(actix_web::error::ErrorUnauthorized(
-                            "Invalid auth header",
-                        )));
-                    }
-                };
-                let token = match header_str.strip_prefix("Bearer ") {
-                    Some(t) => t,
-                    None => {
-                        return ready(Err(actix_web::error::ErrorUnauthorized("No Bearer prefix")));
-                    }
-                };
-                match decode::<Claims>(token, decoding_key(), &Validation::new(Algorithm::HS256)) {
-                    Ok(token_data) => match (
-                        parse_uuid(&token_data.claims.sub),
-                        parse_uuid(&token_data.claims.tenant_id),
-                    ) {
-                        (Ok(user_id), Ok(tenant_id)) => {
-                            ready(Ok(AuthExtractor(AuthenticatedUser {
-                                user_id,
-                                tenant_id,
-                                roles: token_data.claims.roles,
-                                jti: token_data.claims.jti,
-                            })))
-                        }
-                        _ => ready(Err(actix_web::error::ErrorUnauthorized("Invalid UUID"))),
-                    },
-                    Err(_) => ready(Err(actix_web::error::ErrorUnauthorized("Invalid token"))),
-                }
-            }
-            None => ready(Err(actix_web::error::ErrorUnauthorized(
-                "Missing auth header",
-            ))),
-        }
+        // Clone the header and the app-state handle so the future owns
+        // everything it needs and does not borrow `req`.
+        let auth_header = req
+            .headers()
+            .get("authorization")
+            .map(|v| v.as_bytes().to_vec());
+        let state = req.app_data::<actix_web::web::Data<AppState>>().cloned();
+        Box::pin(async move { authenticate_request(auth_header, state).await })
     }
+}
+
+/// Validate the bearer token and reject revoked ones.
+///
+/// A revoked token must not authenticate: logout and password changes call
+/// `revoke()`, but nothing ever called `is_revoked()`, so a stolen token stayed
+/// valid for its full lifetime.
+async fn authenticate_request(
+    auth_header: Option<Vec<u8>>,
+    state: Option<actix_web::web::Data<AppState>>,
+) -> Result<AuthExtractor, Error> {
+    let auth_header = match auth_header {
+        Some(v) => v,
+        None => return Err(actix_web::error::ErrorUnauthorized("Missing auth header")),
+    };
+
+    let header_str = std::str::from_utf8(&auth_header)
+        .map_err(|_| actix_web::error::ErrorUnauthorized("Invalid auth header"))?;
+
+    let token = header_str
+        .strip_prefix("Bearer ")
+        .ok_or_else(|| actix_web::error::ErrorUnauthorized("No Bearer prefix"))?;
+
+    let token_data = decode::<Claims>(token, decoding_key(), &Validation::new(Algorithm::HS256))
+        .map_err(|_| actix_web::error::ErrorUnauthorized("Invalid token"))?;
+
+    let (user_id, tenant_id) = match (
+        parse_uuid(&token_data.claims.sub),
+        parse_uuid(&token_data.claims.tenant_id),
+    ) {
+        (Ok(u), Ok(t)) => (u, t),
+        _ => return Err(actix_web::error::ErrorUnauthorized("Invalid UUID")),
+    };
+
+    // Reject revoked tokens. The list is keyed by the token's jti, which is
+    // what logout and password changes write.
+    if let Some(state) = state
+        && state
+            .token_revocation
+            .is_revoked(&token_data.claims.jti)
+            .await
+    {
+        return Err(actix_web::error::ErrorUnauthorized("Token revoked"));
+    }
+
+    Ok(AuthExtractor(AuthenticatedUser {
+        user_id,
+        tenant_id,
+        roles: token_data.claims.roles,
+        jti: token_data.claims.jti,
+    }))
 }
 
 impl AuthExtractor {
@@ -323,6 +346,16 @@ mod tests {
         jti: String,
     }
 
+    /// Run `from_request` to completion.
+    ///
+    /// The extractor returns a boxed future because it has to consult the
+    /// async revocation list, so the tests can no longer use `into_inner()`.
+    fn extract(req: &HttpRequest) -> Result<AuthExtractor, Error> {
+        let mut payload = Payload::None;
+        let fut = AuthExtractor::from_request(req, &mut payload);
+        actix_web::rt::System::new().block_on(fut)
+    }
+
     fn signed_token(sub: &str, tenant_id: &str, roles: Vec<&str>) -> String {
         let _ = DEFAULT_PROVIDER.install_default();
         encode(
@@ -342,8 +375,7 @@ mod tests {
     #[test]
     fn auth_extractor_rejects_missing_header() {
         let req = TestRequest::default().to_http_request();
-        let mut payload = Payload::None;
-        let result = AuthExtractor::from_request(&req, &mut payload).into_inner();
+        let result = extract(&req);
         assert!(result.is_err());
     }
 
@@ -352,8 +384,7 @@ mod tests {
         let req = TestRequest::default()
             .insert_header((header::AUTHORIZATION, "Token abc"))
             .to_http_request();
-        let mut payload = Payload::None;
-        let result = AuthExtractor::from_request(&req, &mut payload).into_inner();
+        let result = extract(&req);
         assert!(result.is_err());
     }
 
@@ -363,8 +394,7 @@ mod tests {
         let req = TestRequest::default()
             .insert_header((header::AUTHORIZATION, format!("Bearer {token}")))
             .to_http_request();
-        let mut payload = Payload::None;
-        let result = AuthExtractor::from_request(&req, &mut payload).into_inner();
+        let result = extract(&req);
         assert!(result.is_err());
     }
 
@@ -380,10 +410,7 @@ mod tests {
         let req = TestRequest::default()
             .insert_header((header::AUTHORIZATION, format!("Bearer {token}")))
             .to_http_request();
-        let mut payload = Payload::None;
-        let extractor = AuthExtractor::from_request(&req, &mut payload)
-            .into_inner()
-            .expect("extractor");
+        let extractor = extract(&req).expect("extractor");
 
         assert_eq!(extractor.0.user_id, user_id);
         assert_eq!(extractor.0.tenant_id, tenant_id);

@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-10-01
+
+Schließt drei Sicherheitslücken (`tasks.md` A4, A5) und macht zehn zuvor nicht
+erreichbare Routen existierbar (J1, J2).
+
+### Security
+- **Der Server startete mit einem öffentlich bekannten Signing-Key** — `shared/config.rs`, `api/src/lib.rs`. `validate_jwt_secret()` verglich lediglich gegen das Literal `dev-secret` und hatte **null Aufrufer im gesamten Workspace**. Ein Deployment ohne `JWT_SECRET` lief deshalb mit genau diesem Key; jeder konnte einen Admin-Token mit einer gewöhnlichen HS256-Signatur fälschen und sich in einen beliebigen Tenant setzen.
+
+  `run_server` bricht jetzt mit einem `io::Error` ab, bevor der Server lauscht. Die Prüfung liefert nicht mehr nur `bool`, sondern `Result<(), JwtSecretError>` mit den Varianten `DevSecret` und `TooShort { length, minimum }`, weil die Abhilfe unterschiedlich ist. Neu ist außerdem eine Mindestlänge von 32 Zeichen — 32 Bytes ist die Breite eines SHA-256-Digests, die übliche Untergrenze für einen symmetrischen HMAC-Schlüssel. `ALLOW_DEV_SECRET=1` entschärft nur den Default-Secret-Check, nie die Längenprüfung.
+
+- **Logout und Passwortwechsel widerriefen nichts** — `middleware.rs`. `is_revoked()` war definiert, hatte aber null Aufrufe; nur `revoke()` wurde verwendet. Ein gestohlener oder per XSS abgefangener Token blieb bis zum Ablauf gültig. `AuthExtractor` prüft die `jti` jetzt nach erfolgreichem `decode` gegen `AppState.token_revocation` und lehnt mit 401 *Token revoked* ab.
+
+  Dafür musste der `FromRequest`-Future von `Ready` auf einen `Pin<Box<dyn Future>>` umgestellt werden, weil die Revocation-Liste asynchron ist. `from_request` klont Header und State-Handle, damit der Future nichts leiht.
+
+### Fixed
+- **`sigpac` und `livestock` waren als Handler deklariert, aber nie registriert** — `handlers/mod.rs`. Beide besaßen ein fertiges `configure()` und waren in der OpenAPI-Spezifikation dokumentiert, wurden aber nie aufgerufen: `/api/v1/sigpac/parcels` (3 Routen) und `/api/v1/livestock/animals` (7 Routen) existierten nicht. Zusätzlich war `livestock_new::configure` zweimal registriert; die Doppelnennung ist entfernt. Die beiden Livestock-Module teilen sich den Prefix `/livestock` mit verschiedenen Unterpfaden, eine Kollision gibt es nicht.
+- **Der gesamte Site-Import war toter Code** — `handlers/sites.rs`. `import_sites`, `import_geojson` und `import_shapefile` waren vollständig implementiert und nutzen `ImportService` mit LPIS-Registry und Geozero-Shapefile-Parsing, hatten aber keine Route. Registriert als `POST /sites/import`, `/sites/import/geojson`, `/sites/import/shapefile` — bewusst vor `/sites/{id}`, sonst hätte das Id-Muster den Pfad *import* als UUID zu parsen versucht. Damit sind 719 Zeilen Service-Code und die passenden Admin-UI-Wrapper erstmals erreichbar.
+
+### Changed
+- **`AuthExtractor::from_request` ist nicht mehr synchron** — der Future-Typ ist jetzt `Pin<Box<dyn Future<Output = Result<Self, Error>>>>`. Aufrufer, die den Wert zuvor per `.into_inner()` aus einem `Ready` gezogen haben, müssen den Future jetzt pollen. Betrifft die vier Tests in `middleware.rs`, die einen `extract()`-Helfer bekommen haben.
+
+### Tests
+- 268 Tests im Workspace, 0 Fehler.
+- 5 neue Tests für die JWT-Secret-Regeln in `crates/api/tests/jwt_secret_tests.rs`.
+
 ## [0.26.0] - 2026-10-01
 
 Behebt die unauthentifizierten Demo-Endpunkte (`tasks.md` A2) und vereinheitlicht das

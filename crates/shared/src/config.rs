@@ -272,8 +272,82 @@ pub fn token_blacklist_ttl_secs() -> u64 {
     AgroCoreConfig::global().token_blacklist_ttl_secs
 }
 
-/// Validates that JWT secret is properly configured
-/// Call this during startup to ensure production readiness
-pub fn validate_jwt_secret() -> bool {
-    AgroCoreConfig::global().jwt_secret != "dev-secret"
+/// Minimum accepted length for the JWT secret.
+///
+/// HS256 strength scales with the key length. 32 bytes is the width of a
+/// SHA-256 digest, which is the usual floor for a symmetric HMAC key.
+pub const JWT_SECRET_MIN_LENGTH: usize = 32;
+
+/// The insecure fallback used when `JWT_SECRET` is unset.
+const DEV_JWT_SECRET: &str = "dev-secret";
+
+/// Why the JWT secret was rejected.
+///
+/// Returned instead of a bare `bool` so the startup path can log something
+/// actionable rather than a generic failure.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum JwtSecretError {
+    /// The configuration still holds the built-in development secret.
+    DevSecret,
+    /// A real secret was provided but it is too short to be safe for HS256.
+    TooShort { length: usize, minimum: usize },
+}
+
+impl std::fmt::Display for JwtSecretError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::DevSecret => write!(
+                f,
+                "JWT_SECRET is still the built-in development secret \
+                 (JWT_SECRET_MIN_LENGTH = {JWT_SECRET_MIN_LENGTH} characters required)"
+            ),
+            Self::TooShort { length, minimum } => write!(
+                f,
+                "JWT_SECRET is too short: {length} characters, {minimum} required"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for JwtSecretError {}
+
+/// Validates that the JWT secret is properly configured.
+///
+/// Call this during startup to ensure production readiness. Previously the
+/// check only compared against the literal `dev-secret` and had no callers at
+/// all, so a production deployment without `JWT_SECRET` silently ran with a
+/// publicly known signing key.
+///
+/// The development escape hatch is `ALLOW_DEV_SECRET=1`, which relaxes the
+/// default-secret check but not the length requirement.
+pub fn validate_jwt_secret() -> Result<(), JwtSecretError> {
+    let secret = &AgroCoreConfig::global().jwt_secret;
+
+    if secret == DEV_JWT_SECRET && !dev_secret_allowed() {
+        return Err(JwtSecretError::DevSecret);
+    }
+
+    if secret.len() < JWT_SECRET_MIN_LENGTH {
+        return Err(JwtSecretError::TooShort {
+            length: secret.len(),
+            minimum: JWT_SECRET_MIN_LENGTH,
+        });
+    }
+
+    Ok(())
+}
+
+/// Whether `ALLOW_DEV_SECRET` opts out of the built-in-secret check.
+///
+/// Intended for local development and the test fixture. It never relaxes the
+/// length requirement, so a short secret is rejected either way.
+fn dev_secret_allowed() -> bool {
+    matches!(
+        std::env::var("ALLOW_DEV_SECRET")
+            .ok()
+            .as_deref()
+            .map(str::trim)
+            .map(|v| v.eq_ignore_ascii_case("1") || v.eq_ignore_ascii_case("true")),
+        Some(true)
+    )
 }

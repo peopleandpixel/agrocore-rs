@@ -103,16 +103,13 @@ fn build_cors() -> Cors {
 fn init_token_revocation() -> TokenRevocationList {
     let config = agrocore_shared::config::AgroCoreConfig::global();
     match &config.redis_url {
-        Some(url) => match TokenRevocationList::from_redis(url) {
-            Ok(trl) => trl,
-            Err(e) => {
-                warn!(
+        Some(url) => TokenRevocationList::from_redis(url).unwrap_or_else(|e| {
+            warn!(
                     "Failed to initialize Redis-backed token revocation list: {}. Falling back to in-memory store.",
                     e
                 );
-                TokenRevocationList::new()
-            }
-        },
+            TokenRevocationList::new()
+        }),
         None => TokenRevocationList::new(),
     }
 }
@@ -123,6 +120,18 @@ pub async fn run_server(
     bind_addr: &str,
     backup_service: Option<Arc<BackupService>>,
 ) -> std::io::Result<()> {
+    // Refuse to serve with a weak signing key. Without this the server starts
+    // with the built-in `dev-secret`, and anyone can mint an admin token with
+    // a plain HS256 signature. `validate_jwt_secret()` existed but had no
+    // callers at all.
+    if let Err(e) = agrocore_shared::config::validate_jwt_secret() {
+        return Err(std::io::Error::other(format!(
+            "Refusing to start: {e}. Set JWT_SECRET to at least {} characters, \
+             or ALLOW_DEV_SECRET=1 for local development.",
+            agrocore_shared::config::JWT_SECRET_MIN_LENGTH
+        )));
+    }
+
     // Initialize LPIS Registry with all providers
     let lpis_registry = Arc::new(create_default_registry());
 

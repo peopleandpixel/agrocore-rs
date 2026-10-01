@@ -74,6 +74,19 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route(web::get().to(sites::list_sites))
                     .route(web::post().to(sites::create_site)),
             )
+            // Static paths must be registered before /sites/{id}: the {id}
+            // pattern would otherwise match "import" and fail to parse it as a
+            // UUID. The three handlers below were fully implemented (they use
+            // ImportService with the LPIS registry and shapefile parsing) but
+            // had no route at all, leaving the whole service unreachable.
+            .service(web::resource("/sites/import").route(web::post().to(sites::import_sites)))
+            .service(
+                web::resource("/sites/import/geojson").route(web::post().to(sites::import_geojson)),
+            )
+            .service(
+                web::resource("/sites/import/shapefile")
+                    .route(web::post().to(sites::import_shapefile)),
+            )
             .service(
                 web::resource("/sites/{id}")
                     .route(web::get().to(sites::get_site))
@@ -244,7 +257,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .configure(reporting::configure)
             .configure(nutrition::configure)
             .configure(harvest::configure)
-            .configure(livestock_new::configure)
             .configure(iot::configure)
             .configure(agriculture::configure)
             .configure(building::configure)
@@ -255,7 +267,13 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .configure(breed::configure)
             .configure(backup::configure)
             .configure(calculation::configure)
-            .configure(demo::configure),
+            .configure(demo::configure)
+            // These two modules were declared and fully implemented but never
+            // registered, so /api/v1/sigpac/parcels and
+            // /api/v1/livestock/animals did not exist despite being documented
+            // in the OpenAPI spec.
+            .configure(sigpac::configure)
+            .configure(livestock::configure),
     );
 }
 
