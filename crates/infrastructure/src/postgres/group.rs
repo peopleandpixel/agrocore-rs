@@ -138,11 +138,12 @@ impl GroupRepository for PgGroupRepo {
 
             sqlx::query(
                 r#"
-                INSERT INTO groups (id, plot_id, parent_group_id, group_type, label, created_at)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                INSERT INTO groups (id, tenant_id, plot_id, parent_group_id, group_type, label, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 "#,
             )
             .bind(id)
+            .bind(tid)
             .bind(dto.plot_id)
             .bind(dto.parent_group_id)
             .bind(dto.group_type.as_str())

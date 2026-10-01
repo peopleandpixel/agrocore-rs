@@ -136,11 +136,12 @@ impl BuildingRepository for PgBuildingRepo {
 
             sqlx::query(
                 r#"
-                INSERT INTO buildings (id, plot_id, building_type, label, created_at)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO buildings (id, tenant_id, plot_id, building_type, label, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 "#,
             )
             .bind(id)
+            .bind(tid)
             .bind(dto.plot_id)
             .bind(dto.building_type.as_str())
             .bind(&dto.label)

@@ -150,11 +150,12 @@ impl LivestockRepository for PgLivestockRepo {
 
             sqlx::query(
                 r#"
-                INSERT INTO livestock (id, plot_id, herd_id, livestock_type, count, label, created_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                INSERT INTO livestock (id, tenant_id, plot_id, herd_id, livestock_type, count, label, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 "#,
             )
             .bind(id)
+            .bind(tid)
             .bind(dto.plot_id)
             .bind(&dto.herd_id)
             .bind(&dto.livestock_type)

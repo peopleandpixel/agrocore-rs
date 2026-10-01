@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-10-01
+
+Erster Teil des Code-Audits vom 2026-10-01 (Block I und J). Behebt den schwerwiegendsten
+Befund: acht Tabellen wurden von fertig implementierten Repositories abgefragt, existierten
+aber in keiner Migration. Zusätzlich wurde ein Sicherheitsaudit dokumentiert
+(`docs/tasks.md`, Blöcke A–J).
+
+### Fixed
+- **Acht Tabellen fehlten im Schema, sieben Repos waren zur Laufzeit tot** — `spatial_objects`, `groups`, `trees`, `buildings`, `livestock`, `water_usages`, `animal_treatments`, `animal_grazing_records`. Die Repos waren vollständig implementiert, keine Migration legte die Tabellen an, jede Query scheiterte mit `relation "..." does not exist`. Migration `0000000003_missing_domain_tables.sql` angelegt: sechs Tabellen mit Indizes, GIST-Geometrieindizes, RLS-Policies nach bestehendem Muster und `ALTER TABLE water_usage RENAME TO water_usages`.
+- **`spatial_objects` wurde von jedem GPS-Ping abgefragt, der Fehler war unsichtbar** — `handlers/workforce.rs:353,364` rief `spatial_object_repo().find_containing_point(...)` mit `.unwrap_or_default()`. Jeder Standort-Ping lief zweimal in eine nicht existierende Tabelle, das Ergebnis war immer leer: die Standort-zu-Feld-Zuordnung funktionierte nie und fiel nicht auf. Jetzt wird der Fehler mit `warn!` protokolliert (Tenant, Koordinaten, Fehlertext); der Ping läuft weiter, aber der Fehler ist sichtbar.
+- **INSERT-Statements haben `tenant_id` nicht gebunden** — `tree.rs`, `group.rs`, `building.rs`, `livestock.rs`. Alle SELECTs filtern mit `WHERE tenant_id = $1`, der INSERT ließ die Spalte weg — ein neu angelegter Datensatz wäre nicht mehr auffindbar gewesen. Nicht sichtbar, weil die Methodensignatur `tid: TenantId` korrekt aussah. Vier Queries und Bind-Reihenfolgen korrigiert.
+- **Falsche Tabellennamen in `animal.rs`** — abgefragt wurden `animal_treatments` und `animal_grazing_records`, vorhanden sind `treatment_records` (Migration `:676`) und `grazing_records` (`:665`); zusätzlich schrieb das Repo `treatment_date` statt `date`. Auf die vorhandenen Tabellen umgestellt, kein neues Schema nötig.
+- **`animals` fehlten drei Spalten, die das Repository liest** — `identifier`, `livestock_type` und `status`. `identifier` wird aus `tag_number` gebackfillt. Für `livestock_type` genügt kein Default, weil vorhandene Inserts (inklusive Demo-Seed) nur `species` setzen: ein BEFORE-Trigger leitet `livestock_type` bei jedem INSERT und UPDATE aus `species` ab. Ein erster Versuch mit `SET NOT NULL` brach den Demo-Seed (`null value in column "livestock_type"`).
+
+### Fixed
+- **Der Test-Fixture startete ein Image ohne PostGIS** — `crates/infrastructure/tests/common/mod.rs` verwendete `testcontainers_modules::postgres`, das fest auf `postgres:11-alpine` verdrahtet ist und kein PostGIS enthält. Migration `0000000000` erstellt aber die `postgis`-Extension, deshalb scheiterten **alle neun** Integrationstests an `extension "postgis" is not available` — sie konnten nie gelaufen sein. Auf `GenericImage::new("postgis/postgis", "16-3.4")` umgestellt (das Modul bietet kein `with_tag()`), und den Connect mit Backoff plus Retries versehen, weil Postgres während der Init-Phase einmal neu startet und laufende Verbindungen zurücksetzt.
+
+### Added
+- **Drei Regressionstests** (`crates/infrastructure/tests/database_setup_tests.rs`) — `test_repository_tables_exist` prüft jede von einem Repository abgefragte Tabelle, `test_tenant_scoped_tables_have_tenant_id` findet Tabellen ohne Mandantenbezug, `test_new_domain_rows_are_tenant_scoped` legt Zeilen in allen vier neuen Tabellen an und liest sie über den Tenant-Filter zurück. Alle drei schlagen bei Rückkehr des ursprünglichen Zustands fehl.
+- **Tabellenliste im Migrations-Test erweitert** — der bestehende `test_database_migrations_applied` prüfte `spatial_objects` bereits und wäre durch die Migration jetzt grün; `groups`, `trees`, `buildings`, `livestock` und `water_usages` ergänzt.
+
+### Changed
+- **RLS-Policies auf den neuen Tabellen** nach dem bestehenden Muster über `get_current_tenant_id()` ergänzt. Sie greifen aus demselben Grund nicht wie die übrigen 190: `app.current_tenant_id` wird nirgends gesetzt und `FORCE ROW LEVEL SECURITY` fehlt (siehe `tasks.md` A3). Die Policies sind aus Konsistenzgründen da, nicht als Garantie.
+
+### Verified
+- Alle vier Migrationen laufen in einer frischen PostgreSQL-Instanz in Reihenfolge durch.
+- Migration `0000000003` ist dreimal hintereinander auf derselben Datenbank gelaufen, ohne Duplikate.
+- Der Demo-Seed läuft nach der Migration durch und legt 3 Tiere, 3 Sites und 6 Grazing-Records an.
+- Alle Repository-Queries gegen das neue Schema ausgeführt: `spatial_objects` (find_by_id, count, GPS-Ping-Abfrage), `trees`, `groups`, `buildings`, `livestock` (je count und INSERT), `water_usages`, `animals`, `treatment_records`, `grazing_records`.
+- Der GPS-Ping liefert erstmals Daten; `livestock_type` wird korrekt aus `species` abgeleitet (`Cattle -> Cattle`).
+
+### Known Limitations
+- Vier vorbestehende Integrationstests in `database_setup_tests.rs` scheitern weiterhin, unabhängig von dieser Änderung: `test_database_migrations_applied` erwartet eine Tabelle `spatial_properties`, die keine Migration anlegt; `test_site_crud_operations` bricht mit `INSERT has more target columns than expressions`; `test_tenant_creation_and_isolation` erzeugt pro Test einen Tenant mit festem Slug `test-tenant` und scheitert am Unique-Constraint, sobald mehr als ein Test denselben Slug nutzt; `test_tenant_scoped_tables_have_tenant_id` findet Tabellen ohne `tenant_id`. `test_updated_at_trigger` ist nach dem Fixture-Fix ebenfalls rot. Siehe `tasks.md` J19 und J4.
+- Der Fehler in `workforce.rs` wird geloggt, nicht behoben. Eine fehlgeschlagene Geometrie-Abfrage führt weiterhin zu keiner Standort-Zuordnung — nur ist es jetzt sichtbar.
+- `work_logs` und rund 40 weitere Spalten fehlen weiterhin (`tasks.md` J4).
+- `varieties` und `breeds` haben weiterhin keine `tenant_id`-Spalte, ihre Repos filtern aber danach — Varianten und Rassen sind global statt mandantenisoliert (`tasks.md` J5).
+
 ## [0.23.0] - 2026-10-01
 
 Backup-Service Phase 8 Abschnitt 4: Streaming-Pipeline, funktionale Retention, echtes Restore, Monitoring-Metriken sowie die bislang nur konfigurierten Backends SFTP und WebDAV.

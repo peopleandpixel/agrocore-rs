@@ -341,7 +341,11 @@ pub async fn report_location(
         lat: previous.lat,
     });
 
-    let current_objects = state
+    // A failed spatial lookup must not be indistinguishable from "no object
+    // here": silently defaulting hid a missing table for the entire lifetime of
+    // the endpoint. Log and continue so the location ping still records, but the
+    // failure is visible.
+    let current_objects = match state
         .db
         .spatial_object_repo()
         .find_containing_point(
@@ -350,18 +354,36 @@ pub async fn report_location(
             None,
         )
         .await
-        .unwrap_or_default();
+    {
+        Ok(objects) => objects,
+        Err(e) => {
+            warn!(
+                "Spatial lookup failed for tenant {} at lng={} lat={}: {}",
+                auth.0.tenant_id, current_point.lng, current_point.lat, e
+            );
+            Vec::new()
+        }
+    };
     let previous_objects = if let Some(previous_point) = previous_point {
-        state
+        match state
             .db
             .spatial_object_repo()
             .find_containing_point(
                 agrocore_domain::TenantId(auth.0.tenant_id),
-                previous_point,
+                previous_point.clone(),
                 None,
             )
             .await
-            .unwrap_or_default()
+        {
+            Ok(objects) => objects,
+            Err(e) => {
+                warn!(
+                    "Previous spatial lookup failed for tenant {} at lng={} lat={}: {}",
+                    auth.0.tenant_id, previous_point.lng, previous_point.lat, e
+                );
+                Vec::new()
+            }
+        }
     } else {
         Vec::new()
     };

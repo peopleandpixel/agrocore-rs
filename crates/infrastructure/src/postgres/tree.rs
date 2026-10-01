@@ -138,11 +138,12 @@ impl TreeRepository for PgTreeRepo {
 
             sqlx::query(
                 r#"
-                INSERT INTO trees (id, plot_id, group_id, tree_type, count, label, created_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                INSERT INTO trees (id, tenant_id, plot_id, group_id, tree_type, count, label, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 "#,
             )
             .bind(id)
+            .bind(tid)
             .bind(dto.plot_id)
             .bind(&dto.group_id)
             .bind(dto.tree_type.as_str())

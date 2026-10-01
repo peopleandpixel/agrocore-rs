@@ -41,6 +41,14 @@ async fn test_database_migrations_applied() {
         "breeds",
         "spatial_objects",
         "spatial_properties",
+        // Added with migration 0000000003_missing_domain_tables.sql. Each of
+        // these was queried by a repository while no migration created it, so
+        // the repositories failed at runtime. See tasks.md I1.
+        "groups",
+        "trees",
+        "buildings",
+        "livestock",
+        "water_usages",
     ];
 
     for table in tables {
@@ -281,4 +289,171 @@ async fn test_updated_at_trigger() {
     // updated_at should be newer
     assert!(updated.updated_at > created_at);
     assert!(updated.updated_at > updated_at);
+}
+
+/// Every table a repository queries must exist after the migrations.
+///
+/// This is the regression guard for tasks.md J19 and I1: the eight domain
+/// tables were all queried by working repositories while no migration created
+/// them, and because the callers swallowed the error the failure was invisible.
+#[tokio::test]
+#[ignore]
+async fn test_repository_tables_exist() {
+    let fixture = PostgresTestFixture::new()
+        .await
+        .expect("Failed to create fixture");
+
+    // (table, repository) pairs taken from the FROM/JOIN/INTO clauses in
+    // crates/infrastructure/src/postgres/*.rs
+    let repo_tables = [
+        ("spatial_objects", "site.rs"),
+        ("groups", "group.rs"),
+        ("trees", "tree.rs"),
+        ("buildings", "building.rs"),
+        ("livestock", "livestock.rs"),
+        ("water_usages", "water_usage.rs"),
+        ("treatment_records", "animal.rs"),
+        ("grazing_records", "animal.rs"),
+        ("animals", "animal.rs"),
+    ];
+
+    for (table, repo) in repo_tables {
+        let exists: bool = sqlx::query_scalar(
+            "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = $1)",
+        )
+        .bind(table)
+        .fetch_one(&fixture.pool)
+        .await
+        .expect("Failed to check table existence");
+
+        assert!(
+            exists,
+            "Table {table} is queried by {repo} but not created by any migration"
+        );
+    }
+}
+
+/// Every table holding tenant data must carry a tenant_id column.
+///
+/// A missing column turns a tenant-scoped repository into a global one without
+/// any compile error or query error.
+#[tokio::test]
+#[ignore]
+async fn test_tenant_scoped_tables_have_tenant_id() {
+    let fixture = PostgresTestFixture::new()
+        .await
+        .expect("Failed to create fixture");
+
+    let tables: Vec<String> = sqlx::query_scalar(
+        "SELECT table_name FROM information_schema.tables
+         WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+         ORDER BY table_name",
+    )
+    .fetch_all(&fixture.pool)
+    .await
+    .expect("Failed to list tables");
+
+    // Tables that legitimately have no tenant scoping.
+    let global_tables = [
+        "_sqlx_migrations",
+        "varieties",
+        "breeds",
+        "spatial_properties",
+    ];
+
+    let mut missing = Vec::new();
+    for table in tables {
+        if global_tables.contains(&table.as_str()) {
+            continue;
+        }
+        let has_column: bool = sqlx::query_scalar(
+            "SELECT EXISTS (
+                 SELECT FROM information_schema.columns
+                 WHERE table_name = $1 AND column_name = 'tenant_id')",
+        )
+        .bind(&table)
+        .fetch_one(&fixture.pool)
+        .await
+        .expect("Failed to check column existence");
+
+        if !has_column {
+            missing.push(table);
+        }
+    }
+
+    assert!(
+        missing.is_empty(),
+        "these tables have no tenant_id but may hold tenant data: {missing:?}"
+    );
+}
+
+/// The repositories filter with `WHERE tenant_id = $1`, so an INSERT that omits
+/// the column produces a row that can never be read back.
+///
+/// This mirrors the bug found while implementing tasks.md I1: trees, groups,
+/// buildings and livestock never bound tenant_id.
+#[tokio::test]
+#[ignore]
+async fn test_new_domain_rows_are_tenant_scoped() {
+    let fixture = PostgresTestFixture::new()
+        .await
+        .expect("Failed to create fixture");
+
+    let tenant_id = Uuid::new_v4();
+    let site_id = Uuid::new_v4();
+
+    sqlx::query("INSERT INTO tenants (id, name, slug, is_active) VALUES ($1, 'T', $2, true)")
+        .bind(tenant_id)
+        .bind(format!("t-{}", &tenant_id.to_string()[..8]))
+        .execute(&fixture.pool)
+        .await
+        .expect("Failed to insert tenant");
+
+    sqlx::query(
+        "INSERT INTO sites (id, tenant_id, label, is_active, plots) VALUES ($1, $2, 'S', true, '[]')",
+    )
+    .bind(site_id)
+    .bind(tenant_id)
+    .execute(&fixture.pool)
+    .await
+    .expect("Failed to insert site");
+
+    // (table, id column, extra column, extra value)
+    let inserts = [
+        ("trees", "tree_type", "olive"),
+        ("groups", "group_type", "herd"),
+        ("buildings", "building_type", "barn"),
+        ("livestock", "livestock_type", "goat"),
+    ];
+
+    for (table, extra_col, extra_val) in inserts {
+        let id = Uuid::new_v4();
+        let sql = format!(
+            "INSERT INTO {table} (id, tenant_id, plot_id, {extra_col}, label, created_at)
+             VALUES ($1, $2, $3, $4, 'L', NOW())"
+        );
+        sqlx::query(&sql)
+            .bind(id)
+            .bind(tenant_id)
+            .bind(site_id)
+            .bind(extra_val)
+            .execute(&fixture.pool)
+            .await
+            .unwrap_or_else(|e| panic!("INSERT into {table} failed: {e}"));
+
+        // The read path every repository uses.
+        let visible: bool = sqlx::query_scalar(&format!(
+            "SELECT EXISTS (SELECT FROM {table} WHERE id = $1 AND tenant_id = $2)"
+        ))
+        .bind(id)
+        .bind(tenant_id)
+        .fetch_one(&fixture.pool)
+        .await
+        .unwrap_or_else(|e| panic!("SELECT from {table} failed: {e}"));
+
+        assert!(
+            visible,
+            "row inserted into {table} is not readable via the tenant filter"
+        );
+    }
 }

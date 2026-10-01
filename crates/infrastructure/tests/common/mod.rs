@@ -1,19 +1,27 @@
 use agrocore_infrastructure::postgres::Database;
 use std::time::Duration;
 use testcontainers::ImageExt;
+use testcontainers::core::WaitFor;
 use testcontainers::runners::AsyncRunner;
-use testcontainers_modules::postgres::{self, Postgres};
+use testcontainers::{ContainerAsync, GenericImage};
 
 pub struct PostgresTestFixture {
     pub pool: sqlx::PgPool,
     pub database: Database,
-    _container: testcontainers::ContainerAsync<Postgres>,
+    _container: ContainerAsync<GenericImage>,
 }
 
 impl PostgresTestFixture {
     pub async fn new() -> anyhow::Result<Self> {
-        let container = postgres::Postgres::default()
-            .with_tag("16-alpine")
+        // The postgis image is required: migration 0000000000 creates the
+        // postgis extension, which the plain postgres image does not ship.
+        // testcontainers_modules::postgres is hardwired to postgres:11-alpine
+        // and has no with_tag(), hence GenericImage.
+        let container = GenericImage::new("postgis/postgis", "16-3.4")
+            .with_exposed_port(5432_u16.into())
+            .with_wait_for(WaitFor::message_on_either_std(
+                "database system is ready to accept connections",
+            ))
             .with_env_var("POSTGRES_USER", "test_user")
             .with_env_var("POSTGRES_PASSWORD", "test_password")
             .start()
@@ -26,8 +34,10 @@ impl PostgresTestFixture {
             host, port
         );
 
-        tokio::time::sleep(Duration::from_secs(2)).await;
-        let pool = sqlx::PgPool::connect(&database_url).await?;
+        // Retry the first connection: the log wait above matches the
+        // "ready to accept connections" line, but postgres restarts once during
+        // init, which resets in-flight connections.
+        let pool = retry_connect(&database_url, 10).await?;
 
         sqlx::query("CREATE DATABASE agrocore_test")
             .execute(&pool)
@@ -38,7 +48,7 @@ impl PostgresTestFixture {
             "postgres://test_user:test_password@{}:{}/agrocore_test",
             host, port
         );
-        let pool = sqlx::PgPool::connect(&test_database_url).await?;
+        let pool = retry_connect(&test_database_url, 10).await?;
 
         sqlx::migrate!("../../migrations").run(&pool).await?;
 
@@ -60,5 +70,26 @@ impl PostgresTestFixture {
             .await
             .unwrap();
         row.get("id")
+    }
+}
+
+/// Connect with retries, backing off. The container log signal fires during the
+/// init phase, and postgres performs a restart immediately afterwards, so an
+/// early connection attempt gets reset.
+async fn retry_connect(url: &str, attempts: u32) -> anyhow::Result<sqlx::PgPool> {
+    let mut last_err = None;
+    for attempt in 0..attempts {
+        match sqlx::PgPool::connect(url).await {
+            Ok(pool) => return Ok(pool),
+            Err(e) => {
+                last_err = Some(e);
+                let delay = std::cmp::min(1 + attempt, 5);
+                tokio::time::sleep(Duration::from_secs(delay.into())).await;
+            }
+        }
+    }
+    match last_err {
+        Some(e) => Err(e.into()),
+        None => Err(anyhow::anyhow!("could not connect to {url}")),
     }
 }

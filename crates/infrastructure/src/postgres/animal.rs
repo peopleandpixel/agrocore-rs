@@ -183,7 +183,7 @@ impl AnimalRepository for PgAnimalRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query(
-                r#"INSERT INTO animal_treatments (id, animal_id, tenant_id, treatment_date, treatment_type, medication, dosage, veterinarian, withdrawal_days, notes, created_at)
+                r#"INSERT INTO treatment_records (id, animal_id, tenant_id, date, treatment_type, medication, dosage, veterinarian, withdrawal_days, notes, created_at)
                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())"#)
             .bind(record.id)
             .bind(id)
@@ -211,7 +211,7 @@ impl AnimalRepository for PgAnimalRepo {
         Box::pin(async move {
             sqlx::query_as::<_, TreatmentRecord>(
                 r#"SELECT id, animal_id, treatment_type, date, medication, dosage, veterinarian, withdrawal_days, notes, created_at
-                   FROM animal_treatments
+                   FROM treatment_records
                    WHERE animal_id = $1 AND tenant_id = $2
                    ORDER BY date DESC"#,
             )
@@ -228,7 +228,7 @@ impl AnimalRepository for PgAnimalRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query(
-                r#"INSERT INTO animal_grazing_records (id, animal_id, tenant_id, site_id, start_date, end_date, notes, created_at)
+                r#"INSERT INTO grazing_records (id, animal_id, tenant_id, site_id, start_date, end_date, notes, created_at)
                    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())"#)
             .bind(Uuid::new_v4())
             .bind(id)
