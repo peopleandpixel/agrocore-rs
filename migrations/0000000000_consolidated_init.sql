@@ -220,18 +220,18 @@ BEGIN
     END IF;
 
     INSERT INTO audit_logs (
-        tenant_id, user_id, action, entity_type, entity_id,
-        old_value, new_value, changed_fields,
-        ip_address, user_agent, request_id, session_id
-    ) VALUES (
-        COALESCE(v_tenant_id,
-            CASE
-                WHEN TG_TABLE_NAME = 'tenants' THEN NEW.id
-                WHEN has_column(TG_TABLE_NAME, 'tenant_id') THEN
-                    COALESCE(NEW.tenant_id, OLD.tenant_id)
-                ELSE NULL
-            END
-        ),
+            tenant_id, user_id, action, entity_type, entity_id,
+            old_value, new_value, changed_fields,
+            ip_address, user_agent, request_id, session_id
+        ) VALUES (
+            COALESCE(v_tenant_id,
+                CASE
+                    WHEN TG_TABLE_NAME = 'tenants' THEN NULL
+                    WHEN has_column(TG_TABLE_NAME, 'tenant_id') THEN
+                        COALESCE(NEW.tenant_id, OLD.tenant_id)
+                    ELSE NULL
+                END
+            ),
         v_user_id,
         v_action,
         TG_TABLE_NAME,

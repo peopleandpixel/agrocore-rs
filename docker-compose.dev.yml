@@ -57,9 +57,7 @@ services:
       start_period: 5s
 
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
+    image: agrocore-api:local
     container_name: agrocore-api
     network_mode: host
     environment:
