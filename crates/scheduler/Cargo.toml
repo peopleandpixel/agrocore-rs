@@ -18,8 +18,8 @@ config = { workspace = true }
 dotenvy = { workspace = true }
 
 # Scheduling
-tokio-cron-scheduler = { version = "0.13", features = ["signal"] }
-cron = "0.9"
+tokio-cron-scheduler = { version = "0.15", features = ["signal"] }
+cron = "0.17"
 
 # Async trait support for dyn compatibility
 async-trait = "0.1"
