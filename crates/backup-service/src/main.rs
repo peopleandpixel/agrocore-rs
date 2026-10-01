@@ -40,6 +40,9 @@ enum Commands {
         /// Target database name (optional, uses default)
         #[arg(long)]
         target_db: Option<String>,
+        /// Validate the backup without writing to the database
+        #[arg(long)]
+        dry_run: bool,
     },
     /// List available backups
     List {
@@ -102,7 +105,8 @@ async fn main() -> BackupResult<()> {
         Commands::Restore {
             backup_id,
             target_db,
-        } => run_restore(&backup_id, target_db).await,
+            dry_run,
+        } => run_restore(&backup_id, target_db, dry_run).await,
         Commands::List { backup_type, limit } => run_list(backup_type.map(Into::into), limit).await,
         Commands::Verify { backup_id } => run_verify(&backup_id).await,
         Commands::Status { job_id } => run_status(&job_id).await,
@@ -227,7 +231,11 @@ async fn run_manual_backup(backup_type: BackupType) -> BackupResult<()> {
     Ok(())
 }
 
-async fn run_restore(backup_id_str: &str, target_db: Option<String>) -> BackupResult<()> {
+async fn run_restore(
+    backup_id_str: &str,
+    target_db: Option<String>,
+    dry_run: bool,
+) -> BackupResult<()> {
     info!("Starting restore for backup: {}", backup_id_str);
 
     let backup_id = uuid::Uuid::parse_str(backup_id_str)
@@ -246,7 +254,18 @@ async fn run_restore(backup_id_str: &str, target_db: Option<String>) -> BackupRe
     )
     .await?;
 
-    backup_service.restore(backup_id, target_db).await?;
+    let outcome = backup_service
+        .restore(backup_id, target_db, dry_run)
+        .await?;
+
+    if outcome.dry_run {
+        info!(
+            "Dry run OK: {} is restorable ({} bytes)",
+            outcome.object_name, outcome.bytes_restored
+        );
+    } else {
+        info!("Restore completed: {} bytes", outcome.bytes_restored);
+    }
 
     info!("Restore completed successfully");
     nats_client.close().await;

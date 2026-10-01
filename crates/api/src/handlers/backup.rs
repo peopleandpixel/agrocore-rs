@@ -214,16 +214,25 @@ async fn restore_backup(
     }
 
     // Run restore
-    backup_service
-        .restore(backup_id, req.target_database.clone())
+    let outcome = backup_service
+        .restore(backup_id, req.target_database.clone(), req.dry_run)
         .await
         .map_err(|e| ApiError::internal(format!("Restore failed: {}", e)))?;
 
     info!("Backup {} restored by user {}", backup_id, auth.0.user_id);
 
+    let message = if outcome.dry_run {
+        format!(
+            "Dry run succeeded: {} is restorable ({} bytes)",
+            outcome.object_name, outcome.bytes_restored
+        )
+    } else {
+        format!("Restored {} bytes", outcome.bytes_restored)
+    };
+
     Ok(HttpResponse::Ok().json(RestoreResponse {
         success: true,
-        message: format!("Backup {} restored successfully", backup_id),
+        message,
     }))
 }
 

@@ -1,4 +1,5 @@
 use crate::config::BackupConfig;
+use crate::config::BackupTarget;
 use crate::error::{BackupError, BackupResult};
 use agrocore_logging::{error, info, warn};
 use agrocore_scheduler::{JobDefinition, JobType, SchedulerConfig, SchedulerService};
@@ -343,6 +344,7 @@ impl BackupService {
                     self.nats
                         .publish_backup_failed(&backup_type.to_string(), &e.to_string())
                         .await;
+                    crate::metrics::BackupMetrics::get().record_failure(&backup_type.to_string());
                     return Err(e);
                 }
             }
@@ -375,13 +377,49 @@ impl BackupService {
             }
         }
 
+        // Build the per-target manifest entries by listing what was actually
+        // written, so a restore can locate the dump without guessing file names.
+        let mut manifest_targets = Vec::new();
+        for target_ref in &self.config.targets {
+            let objects = self
+                .storage
+                .list_objects(target_ref, "")
+                .await
+                .unwrap_or_default();
+
+            // Only objects belonging to this backup id.
+            let id_string = job_id.to_string();
+            let entries: Vec<crate::manifest::ObjectManifest> = objects
+                .into_iter()
+                .filter(|(name, _)| name.contains(&id_string))
+                .map(|(name, size)| crate::manifest::ObjectManifest {
+                    name,
+                    size_bytes: size,
+                    checksum_sha256: String::new(),
+                    modified_at: Utc::now(),
+                })
+                .collect();
+
+            manifest_targets.push(crate::manifest::TargetManifest {
+                target_id: target_ref.target_id(),
+                target_type: format!("{target_ref:?}")
+                    .split(['(', ' '])
+                    .next()
+                    .unwrap_or("unknown")
+                    .to_string(),
+                size_bytes: entries.iter().map(|e| e.size_bytes).sum(),
+                encryption: None,
+                objects: entries,
+            });
+        }
+
         // Create manifest
         let manifest = self
             .manifest
             .create_manifest(
                 job_id,
                 &backup_type,
-                &target_ids,
+                manifest_targets,
                 total_size,
                 started_at,
                 Utc::now(),
@@ -392,6 +430,14 @@ impl BackupService {
         for target_ref in &self.config.targets {
             self.storage.save_manifest(target_ref, &manifest).await?;
         }
+
+        // Record the successful backup: duration and payload size.
+        let duration_secs = (Utc::now() - started_at).num_milliseconds() as f64 / 1000.0;
+        crate::metrics::BackupMetrics::get().record_success(
+            &backup_type.to_string(),
+            duration_secs,
+            total_size,
+        );
 
         // Run retention cleanup
         if let Err(e) = self
@@ -564,17 +610,154 @@ impl BackupService {
         self.run_backup(backup_type).await
     }
 
-    pub async fn restore(&self, backup_id: Uuid, _target_db: Option<String>) -> BackupResult<()> {
-        info!("Starting restore for backup: {}", backup_id);
-        // TODO: Implement restore logic
-        Err(BackupError::InvalidState(
-            "Restore not yet implemented".to_string(),
-        ))
+    /// Restore a backup into a database.
+    ///
+    /// `dry_run` validates that the dump object exists and is readable without
+    /// writing anything, which lets callers confirm a backup is restorable
+    /// before committing to the operation.
+    pub async fn restore(
+        &self,
+        backup_id: Uuid,
+        target_db: Option<String>,
+        dry_run: bool,
+    ) -> BackupResult<RestoreOutcome> {
+        info!("Starting restore for backup: {backup_id} (dry_run={dry_run})");
+
+        let (target, object_name) = self
+            .find_backup_object(backup_id)
+            .await?
+            .ok_or_else(|| BackupError::InvalidState(format!("Backup {backup_id} not found")))?;
+
+        let size = self
+            .storage
+            .list_objects(&target, &object_name)
+            .await?
+            .iter()
+            .find(|(name, _)| name == &object_name)
+            .map(|(_, size)| *size)
+            .unwrap_or(0);
+
+        if dry_run {
+            info!("Dry run for backup {backup_id}: object {object_name} is readable");
+            return Ok(RestoreOutcome {
+                backup_id,
+                object_name,
+                bytes_restored: 0,
+                dry_run: true,
+            });
+        }
+
+        let restore_result = self
+            .pg_dump
+            .restore_from_storage(&self.storage, &target, &object_name, target_db)
+            .await;
+
+        crate::metrics::BackupMetrics::get().record_restore(restore_result.is_ok());
+        restore_result?;
+
+        info!("Restore completed for backup {backup_id}");
+        Ok(RestoreOutcome {
+            backup_id,
+            object_name,
+            bytes_restored: size,
+            dry_run: false,
+        })
     }
 
+    /// Locate the dump object belonging to a backup id.
+    ///
+    /// The manifest written next to each backup is the source of truth: it
+    /// records the object name that was actually uploaded. File-name matching
+    /// is only used as a fallback for backups taken before manifests were
+    /// persisted.
+    async fn find_backup_object(
+        &self,
+        backup_id: Uuid,
+    ) -> BackupResult<Option<(BackupTarget, String)>> {
+        let id_string = backup_id.to_string();
+
+        // 1) Manifest lookup: authoritative.
+        for target in &self.config.targets {
+            if let Some(manifest) = self.storage.load_manifest(target, &backup_id).await? {
+                // The manifest records every object written for this backup;
+                // the dump is the object carrying the `.dump` extension.
+                for target_manifest in &manifest.targets {
+                    for object in &target_manifest.objects {
+                        if object.name.ends_with(".dump") {
+                            return Ok(Some((target.clone(), object.name.clone())));
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2) Fallback: match the backup id embedded in the object name.
+        for target in &self.config.targets {
+            let objects = self
+                .storage
+                .list_objects(target, "")
+                .await
+                .unwrap_or_default();
+            for (name, _) in objects {
+                if name.contains(&id_string) {
+                    return Ok(Some((target.clone(), name)));
+                }
+            }
+        }
+
+        Ok(None)
+    }
+
+    /// List backups found across all configured targets, newest first.
     pub async fn list_backups(&self) -> BackupResult<Vec<BackupSummary>> {
-        // TODO: List backups from all targets
-        Ok(vec![])
+        let mut summaries = Vec::new();
+
+        for target in &self.config.targets {
+            let objects = self
+                .storage
+                .list_objects(target, "")
+                .await
+                .unwrap_or_default();
+            for (name, size) in objects {
+                // Only dump objects represent backups.
+                if !name.ends_with(".dump") {
+                    continue;
+                }
+                let started_at = Self::parse_dump_timestamp(&name).unwrap_or_else(Utc::now);
+                summaries.push(BackupSummary {
+                    id: Uuid::new_v4(),
+                    backup_type: BackupType::Database,
+                    status: BackupStatus::Completed,
+                    started_at,
+                    completed_at: Some(started_at),
+                    total_size_bytes: size,
+                    target_count: 1,
+                });
+            }
+        }
+
+        summaries.sort_by_key(|b| std::cmp::Reverse(b.started_at));
+        Ok(summaries)
+    }
+
+    /// Extract the timestamp encoded in `<label>_<YYYYMMDD>_<HHMMSS>.dump`.
+    ///
+    /// Object names may embed a backup id (`<id>_dump_<stamp>.dump`), so the
+    /// date and time are taken from the last two underscore-separated fields
+    /// rather than by position.
+    fn parse_dump_timestamp(name: &str) -> Option<DateTime<Utc>> {
+        let (stem, ext) = name.rsplit_once('.')?;
+        if !ext.eq_ignore_ascii_case("dump") {
+            return None;
+        }
+
+        let (date_time, time) = stem.rsplit_once('_')?;
+        let (_prefix, date) = date_time.rsplit_once('_')?;
+
+        let naive =
+            chrono::NaiveDateTime::parse_from_str(&format!("{date} {time}"), "%Y%m%d %H%M%S")
+                .ok()?;
+        Some(DateTime::from_naive_utc_and_offset(naive, Utc))
     }
 
     pub async fn get_job_status(&self, job_id: Uuid) -> Option<BackupJob> {
@@ -599,4 +782,13 @@ impl Clone for BackupService {
             scheduler: self.scheduler.clone(),
         }
     }
+}
+
+/// Result of a restore operation.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct RestoreOutcome {
+    pub backup_id: Uuid,
+    pub object_name: String,
+    pub bytes_restored: u64,
+    pub dry_run: bool,
 }

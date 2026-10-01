@@ -60,7 +60,7 @@ impl ManifestManager {
         &self,
         backup_id: Uuid,
         backup_type: &crate::service::BackupType,
-        _target_ids: &[String],
+        target_manifests: Vec<TargetManifest>,
         total_size_bytes: u64,
         started_at: chrono::DateTime<Utc>,
         completed_at: chrono::DateTime<Utc>,
@@ -89,7 +89,7 @@ impl ManifestManager {
             status: crate::service::BackupStatus::Completed,
             started_at,
             completed_at,
-            targets: vec![], // Would be populated with actual target data
+            targets: target_manifests,
             total_size_bytes,
             schema_version,
             git_commit,
@@ -102,13 +102,18 @@ impl ManifestManager {
         Ok(manifest)
     }
 
+    /// Serialize a manifest to JSON and persist it next to the backup payload.
     pub async fn save_manifest(
         &self,
-        _storage: &Arc<dyn StorageBackendTrait>,
-        _target: &crate::config::BackupTarget,
-        _manifest: &BackupManifest,
+        storage: &Arc<dyn StorageBackendTrait>,
+        target: &crate::config::BackupTarget,
+        manifest: &BackupManifest,
     ) -> crate::error::BackupResult<()> {
-        // TODO: Serialize and save manifest to storage
+        let json = serde_json::to_vec_pretty(manifest)
+            .map_err(crate::error::BackupError::Serialization)?;
+        let object_name = format!("manifests/{}.json", manifest.backup_id);
+
+        storage.upload_bytes(target, &object_name, &json).await?;
         Ok(())
     }
 

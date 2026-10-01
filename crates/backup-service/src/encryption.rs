@@ -1,4 +1,4 @@
-use crate::config::{EncryptionConfig, EncryptionMethod};
+use crate::config::{EncryptionConfig, EncryptionMethod, TargetEncryption};
 use crate::error::{BackupError, BackupResult};
 use aes_gcm::aead::generic_array::GenericArray;
 use aes_gcm::{
@@ -150,4 +150,50 @@ impl EncryptionManager {
         fs::write(output_path, plaintext).map_err(BackupError::Io)?;
         Ok(())
     }
+}
+
+/// Encrypt bytes according to the target's encryption setting.
+///
+/// The existing encryption API works on files, so in-memory payloads go
+/// through a temporary file. Upload paths that stream chunk by chunk
+/// encrypt each chunk separately, which keeps memory bounded.
+pub async fn encrypt_payload(
+    data: &[u8],
+    encryption: &TargetEncryption,
+    config: &EncryptionConfig,
+) -> BackupResult<Vec<u8>> {
+    let manager = EncryptionManager::new(config.clone());
+    if matches!(encryption, TargetEncryption::None) {
+        return Ok(data.to_vec());
+    }
+
+    let dir = tempfile::tempdir().map_err(BackupError::Io)?;
+    let plain = dir.path().join("plain.bin");
+    let cipher = dir.path().join("cipher.bin");
+    tokio::fs::write(&plain, data)
+        .await
+        .map_err(BackupError::Io)?;
+    manager.encrypt_file(&plain, &cipher).await?;
+    tokio::fs::read(&cipher).await.map_err(BackupError::Io)
+}
+
+/// Reverse of [`encrypt_payload`].
+pub async fn decrypt_payload(
+    data: &[u8],
+    encryption: &TargetEncryption,
+    config: &EncryptionConfig,
+) -> BackupResult<Vec<u8>> {
+    let manager = EncryptionManager::new(config.clone());
+    if matches!(encryption, TargetEncryption::None) {
+        return Ok(data.to_vec());
+    }
+
+    let dir = tempfile::tempdir().map_err(BackupError::Io)?;
+    let cipher = dir.path().join("cipher.bin");
+    let plain = dir.path().join("plain.bin");
+    tokio::fs::write(&cipher, data)
+        .await
+        .map_err(BackupError::Io)?;
+    manager.decrypt_file(&cipher, &plain).await?;
+    tokio::fs::read(&plain).await.map_err(BackupError::Io)
 }

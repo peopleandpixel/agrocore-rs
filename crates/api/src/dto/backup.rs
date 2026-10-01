@@ -39,6 +39,9 @@ pub struct BackupSummaryResponse {
 pub struct RestoreRequest {
     pub backup_id: Uuid,
     pub target_database: Option<String>,
+    /// Validate that the backup is restorable without writing to the database.
+    #[serde(default)]
+    pub dry_run: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]

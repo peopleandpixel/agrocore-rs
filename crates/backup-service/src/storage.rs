@@ -1,9 +1,16 @@
 use crate::config::BackupTarget;
 use crate::error::{BackupError, BackupResult};
-use agrocore_logging::warn;
 use async_trait::async_trait;
+use bytes::Bytes;
+use futures::StreamExt;
 use object_store::{ObjectStore, PutPayload, path::Path};
 use std::sync::Arc;
+
+/// Chunk size used when streaming to and from storage.
+const STREAM_BUFFER_SIZE: usize = 1024 * 1024;
+use futures::Stream;
+use std::pin::Pin;
+use tokio::io::AsyncWriteExt;
 
 #[async_trait]
 pub trait StorageBackendTrait: Send + Sync {
@@ -24,12 +31,52 @@ pub trait StorageBackendTrait: Send + Sync {
         target: &BackupTarget,
         object_name: &str,
     ) -> BackupResult<Vec<u8>>;
+
+    /// Stream an object into storage without buffering it in memory.
+    ///
+    /// Required for database dumps, which can exceed available memory. The
+    /// returned value is the number of bytes written.
+    async fn upload_stream(
+        &self,
+        target: &BackupTarget,
+        object_name: &str,
+        data: ByteStream,
+    ) -> BackupResult<u64>;
+
+    /// Stream an object out of storage without buffering it in memory.
+    async fn download_stream(
+        &self,
+        target: &BackupTarget,
+        object_name: &str,
+    ) -> BackupResult<ByteStream>;
+
+    /// List objects under `prefix`, returning (name, size) pairs.
+    async fn list_objects(
+        &self,
+        target: &BackupTarget,
+        prefix: &str,
+    ) -> BackupResult<Vec<(String, u64)>>;
+
+    /// Delete an object. Used by retention cleanup.
+    async fn delete_object(&self, target: &BackupTarget, object_name: &str) -> BackupResult<()>;
+
+    /// Read a previously persisted manifest.
+    async fn load_manifest(
+        &self,
+        target: &BackupTarget,
+        backup_id: &uuid::Uuid,
+    ) -> BackupResult<Option<crate::manifest::BackupManifest>>;
+
+    /// Persist a manifest alongside the backup payload.
     async fn save_manifest(
         &self,
         target: &BackupTarget,
         manifest: &crate::manifest::BackupManifest,
     ) -> BackupResult<()>;
 }
+
+/// Byte stream used for streaming uploads and downloads.
+pub type ByteStream = Pin<Box<dyn Stream<Item = Result<Bytes, BackupError>> + Send>>;
 
 pub struct StorageBackend {
     s3_clients: Vec<(BackupTarget, Arc<dyn ObjectStore>)>,
@@ -39,6 +86,51 @@ pub struct StorageBackend {
 }
 
 impl StorageBackend {
+    /// Upload a byte stream via the object store's multipart API.
+    ///
+    /// The payload is never materialised in memory: chunks are uploaded as
+    /// they arrive and the upload is only completed once the stream is
+    /// exhausted, which keeps memory use bounded for arbitrarily large dumps.
+    async fn upload_multipart(
+        store: &dyn ObjectStore,
+        object_name: &str,
+        data: ByteStream,
+    ) -> BackupResult<u64> {
+        use futures::StreamExt;
+
+        let path = Path::from(object_name);
+        let mut upload = store
+            .put_multipart(&path)
+            .await
+            .map_err(BackupError::ObjectStore)?;
+
+        let mut data = data;
+        let mut written: u64 = 0;
+        while let Some(chunk) = data.next().await {
+            let chunk = chunk?;
+            if chunk.is_empty() {
+                continue;
+            }
+            // Record the size before the chunk is consumed by put_part.
+            written += chunk.len() as u64;
+            upload
+                .put_part(chunk.into())
+                .await
+                .map_err(BackupError::ObjectStore)?;
+        }
+        upload.complete().await.map_err(BackupError::ObjectStore)?;
+        Ok(written)
+    }
+
+    /// Adapt already-materialised bytes to our stream type.
+    ///
+    /// `GetResult::bytes()` collects the object into memory; this wrapper only
+    /// exists so the trait signature stays uniform across backends. Local and
+    /// multipart paths stream instead and never call this.
+    fn bytes_to_stream(bytes: Bytes) -> ByteStream {
+        Box::pin(futures::stream::once(async move { Ok(bytes) }))
+    }
+
     pub async fn new(targets: Vec<BackupTarget>) -> BackupResult<Self> {
         let mut s3_clients = Vec::new();
         let mut azure_clients = Vec::new();
@@ -154,12 +246,10 @@ impl StorageBackend {
                         Arc::new(client) as Arc<dyn ObjectStore>,
                     ));
                 }
-                BackupTarget::Sftp { .. } => {
-                    warn!("SFTP backend not yet implemented");
-                }
-                BackupTarget::WebDAV { .. } => {
-                    warn!("WebDAV backend not yet implemented");
-                }
+                // SFTP and WebDAV are connection-based rather than
+                // object-store based, so no client is constructed up front;
+                // their backends are created lazily per operation.
+                BackupTarget::Sftp { .. } | BackupTarget::WebDAV { .. } => {}
             }
         }
 
@@ -411,11 +501,310 @@ impl StorageBackendTrait for StorageBackend {
                 let data = tokio::fs::read(full_path).await.map_err(BackupError::Io)?;
                 Ok(data)
             }
+            BackupTarget::Sftp { .. } => {
+                crate::sftp_backend::backend_from_target(target)?
+                    .download_bytes(target, object_name)
+                    .await
+            }
+            BackupTarget::WebDAV { .. } => {
+                crate::webdav_backend::backend_from_target(target)?
+                    .download_bytes(target, object_name)
+                    .await
+            }
+        }
+    }
+
+    async fn upload_stream(
+        &self,
+        target: &BackupTarget,
+        object_name: &str,
+        data: ByteStream,
+    ) -> BackupResult<u64> {
+        let mut data = data;
+        match target {
+            BackupTarget::Local { path, .. } => {
+                let base = self
+                    .find_local(target)
+                    .map(|(_, p)| p)
+                    .unwrap_or_else(|| path.clone());
+                let full_path = base.join(object_name);
+                if let Some(parent) = full_path.parent() {
+                    tokio::fs::create_dir_all(parent)
+                        .await
+                        .map_err(BackupError::Io)?;
+                }
+
+                let mut file = tokio::fs::File::create(&full_path)
+                    .await
+                    .map_err(BackupError::Io)?;
+                let mut written: u64 = 0;
+
+                use futures::StreamExt;
+                while let Some(chunk) = data.next().await {
+                    let chunk = chunk?;
+                    file.write_all(&chunk).await.map_err(BackupError::Io)?;
+                    written += chunk.len() as u64;
+                }
+                file.flush().await.map_err(BackupError::Io)?;
+                Ok(written)
+            }
+            BackupTarget::S3 { .. }
+            | BackupTarget::MinIO { .. }
+            | BackupTarget::B2 { .. }
+            | BackupTarget::Wasabi { .. } => {
+                let (_, store) = self.find_s3_store(target).ok_or_else(|| {
+                    BackupError::Config(format!(
+                        "No S3 store configured for target: {}",
+                        target.target_id()
+                    ))
+                })?;
+                Self::upload_multipart(store.as_ref(), object_name, data).await
+            }
+            BackupTarget::Azure { .. } => {
+                let (_, store) = self.find_azure_store(target).ok_or_else(|| {
+                    BackupError::Config(format!(
+                        "No Azure store configured for target: {}",
+                        target.target_id()
+                    ))
+                })?;
+                Self::upload_multipart(store.as_ref(), object_name, data).await
+            }
+            BackupTarget::Gcs { .. } => {
+                let (_, store) = self.find_gcs_store(target).ok_or_else(|| {
+                    BackupError::Config(format!(
+                        "No GCS store configured for target: {}",
+                        target.target_id()
+                    ))
+                })?;
+                Self::upload_multipart(store.as_ref(), object_name, data).await
+            }
+            BackupTarget::Sftp { .. } => {
+                crate::sftp_backend::backend_from_target(target)?
+                    .upload_stream(target, object_name, data)
+                    .await
+            }
+            BackupTarget::WebDAV { .. } => {
+                crate::webdav_backend::backend_from_target(target)?
+                    .upload_stream(target, object_name, data)
+                    .await
+            }
+        }
+    }
+
+    async fn download_stream(
+        &self,
+        target: &BackupTarget,
+        object_name: &str,
+    ) -> BackupResult<ByteStream> {
+        match target {
+            BackupTarget::Local { path, .. } => {
+                let base = self
+                    .find_local(target)
+                    .map(|(_, p)| p)
+                    .unwrap_or_else(|| path.clone());
+                let full = base.join(object_name);
+                let file = tokio::fs::File::open(&full)
+                    .await
+                    .map_err(BackupError::Io)?;
+
+                use tokio::io::AsyncReadExt;
+                let stream = async_stream::stream! {
+                    let mut file = file;
+                    let mut buf = vec![0u8; STREAM_BUFFER_SIZE];
+                    loop {
+                        match file.read(&mut buf).await {
+                            Ok(0) => break,
+                            Ok(n) => yield Ok(bytes::Bytes::copy_from_slice(&buf[..n])),
+                            Err(e) => {
+                                yield Err(BackupError::Io(e));
+                                break;
+                            }
+                        }
+                    }
+                };
+                Ok(Box::pin(stream))
+            }
+            BackupTarget::S3 { .. }
+            | BackupTarget::MinIO { .. }
+            | BackupTarget::B2 { .. }
+            | BackupTarget::Wasabi { .. } => {
+                let (_, store) = self.find_s3_store(target).ok_or_else(|| {
+                    BackupError::Config(format!(
+                        "No S3 store configured for target: {}",
+                        target.target_id()
+                    ))
+                })?;
+                let result = store
+                    .get(&Path::from(object_name))
+                    .await
+                    .map_err(BackupError::ObjectStore)?;
+                Ok(Self::bytes_to_stream(
+                    result.bytes().await.map_err(BackupError::ObjectStore)?,
+                ))
+            }
+            BackupTarget::Azure { .. } => {
+                let (_, store) = self.find_azure_store(target).ok_or_else(|| {
+                    BackupError::Config(format!(
+                        "No Azure store configured for target: {}",
+                        target.target_id()
+                    ))
+                })?;
+                let result = store
+                    .get(&Path::from(object_name))
+                    .await
+                    .map_err(BackupError::ObjectStore)?;
+                Ok(Self::bytes_to_stream(
+                    result.bytes().await.map_err(BackupError::ObjectStore)?,
+                ))
+            }
+            BackupTarget::Gcs { .. } => {
+                let (_, store) = self.find_gcs_store(target).ok_or_else(|| {
+                    BackupError::Config(format!(
+                        "No GCS store configured for target: {}",
+                        target.target_id()
+                    ))
+                })?;
+                let result = store
+                    .get(&Path::from(object_name))
+                    .await
+                    .map_err(BackupError::ObjectStore)?;
+                Ok(Self::bytes_to_stream(
+                    result.bytes().await.map_err(BackupError::ObjectStore)?,
+                ))
+            }
+            BackupTarget::Sftp { .. } => {
+                crate::sftp_backend::backend_from_target(target)?
+                    .download_stream(target, object_name)
+                    .await
+            }
+            BackupTarget::WebDAV { .. } => {
+                crate::webdav_backend::backend_from_target(target)?
+                    .download_stream(target, object_name)
+                    .await
+            }
+        }
+    }
+
+    async fn list_objects(
+        &self,
+        target: &BackupTarget,
+        prefix: &str,
+    ) -> BackupResult<Vec<(String, u64)>> {
+        match target {
+            BackupTarget::Local { path, .. } => {
+                let base = self
+                    .find_local(target)
+                    .map(|(_, p)| p)
+                    .unwrap_or_else(|| path.clone());
+                let mut out = Vec::new();
+                collect_local_objects(&base, &base, prefix, &mut out).await?;
+                Ok(out)
+            }
+            BackupTarget::S3 { .. }
+            | BackupTarget::MinIO { .. }
+            | BackupTarget::B2 { .. }
+            | BackupTarget::Wasabi { .. } => {
+                let (_, store) = self.find_s3_store(target).ok_or_else(|| {
+                    BackupError::Config(format!(
+                        "No S3 store configured for target: {}",
+                        target.target_id()
+                    ))
+                })?;
+                let prefix_path = Path::from(prefix);
+                let mut out = Vec::new();
+                let mut stream = store.list(Some(&prefix_path));
+                while let Some(item) = stream.next().await {
+                    let meta = item.map_err(BackupError::ObjectStore)?;
+                    out.push((meta.location.to_string(), meta.size as u64));
+                }
+                Ok(out)
+            }
+            BackupTarget::Sftp { .. } => {
+                crate::sftp_backend::backend_from_target(target)?
+                    .list_objects(target, prefix)
+                    .await
+            }
+            BackupTarget::WebDAV { .. } => {
+                crate::webdav_backend::backend_from_target(target)?
+                    .list_objects(target, prefix)
+                    .await
+            }
             _ => Err(BackupError::Config(format!(
-                "No storage backend configured for target: {}",
+                "List is not supported for target: {}",
                 target.target_id()
             ))),
         }
+    }
+
+    async fn delete_object(&self, target: &BackupTarget, object_name: &str) -> BackupResult<()> {
+        match target {
+            BackupTarget::Local { path, .. } => {
+                let base = self
+                    .find_local(target)
+                    .map(|(_, p)| p)
+                    .unwrap_or_else(|| path.clone());
+                let full = base.join(object_name);
+                if full.exists() {
+                    tokio::fs::remove_file(&full)
+                        .await
+                        .map_err(BackupError::Io)?;
+                }
+                Ok(())
+            }
+            BackupTarget::S3 { .. }
+            | BackupTarget::MinIO { .. }
+            | BackupTarget::B2 { .. }
+            | BackupTarget::Wasabi { .. } => {
+                let (_, store) = self.find_s3_store(target).ok_or_else(|| {
+                    BackupError::Config(format!(
+                        "No S3 store configured for target: {}",
+                        target.target_id()
+                    ))
+                })?;
+                let path = Path::from(object_name);
+                store
+                    .delete(&path)
+                    .await
+                    .map_err(BackupError::ObjectStore)?;
+                Ok(())
+            }
+            BackupTarget::Sftp { .. } => {
+                crate::sftp_backend::backend_from_target(target)?
+                    .delete_object(target, object_name)
+                    .await
+            }
+            BackupTarget::WebDAV { .. } => {
+                crate::webdav_backend::backend_from_target(target)?
+                    .delete_object(target, object_name)
+                    .await
+            }
+            _ => Err(BackupError::Config(format!(
+                "Delete is not supported for target: {}",
+                target.target_id()
+            ))),
+        }
+    }
+
+    async fn load_manifest(
+        &self,
+        target: &BackupTarget,
+        backup_id: &uuid::Uuid,
+    ) -> BackupResult<Option<crate::manifest::BackupManifest>> {
+        let object_name = format!("manifests/{backup_id}.json");
+        let data = match self.download_bytes(target, &object_name).await {
+            Ok(d) => d,
+            // A backup without a manifest simply has none to load. Remote
+            // backends report a missing object as a transport error carrying
+            // the status, so treat those as absent too rather than failing a
+            // restore that can still fall back to listing.
+            Err(BackupError::Io(e)) if e.kind() == std::io::ErrorKind::NotFound => {
+                return Ok(None);
+            }
+            Err(e) if is_missing_object(&e) => return Ok(None),
+            Err(e) => return Err(e),
+        };
+        let manifest = serde_json::from_slice(&data).map_err(BackupError::Serialization)?;
+        Ok(Some(manifest))
     }
 
     async fn save_manifest(
@@ -429,4 +818,48 @@ impl StorageBackendTrait for StorageBackend {
         self.upload_bytes(target, &object_name, &manifest_json)
             .await
     }
+}
+
+/// Whether a download error means "object does not exist".
+///
+/// Local storage surfaces a NotFound io error; the remote backends wrap the
+/// HTTP status in a Config error message.
+fn is_missing_object(e: &BackupError) -> bool {
+    match e {
+        BackupError::Config(msg) => msg.contains("404") || msg.to_lowercase().contains("not found"),
+        _ => false,
+    }
+}
+
+/// Recursively collect files under `root` whose relative path starts with
+/// `prefix`, returning (relative path, size) pairs.
+async fn collect_local_objects(
+    root: &std::path::Path,
+    dir: &std::path::Path,
+    prefix: &str,
+    out: &mut Vec<(String, u64)>,
+) -> BackupResult<()> {
+    let mut entries = match tokio::fs::read_dir(dir).await {
+        Ok(e) => e,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(e) => return Err(BackupError::Io(e)),
+    };
+
+    while let Some(entry) = entries.next_entry().await.map_err(BackupError::Io)? {
+        let path = entry.path();
+        if path.is_dir() {
+            Box::pin(collect_local_objects(root, &path, prefix, out)).await?;
+        } else {
+            let rel = path
+                .strip_prefix(root)
+                .unwrap_or(&path)
+                .to_string_lossy()
+                .to_string();
+            if rel.starts_with(prefix) {
+                let size = entry.metadata().await.map_err(BackupError::Io)?.len();
+                out.push((rel, size));
+            }
+        }
+    }
+    Ok(())
 }

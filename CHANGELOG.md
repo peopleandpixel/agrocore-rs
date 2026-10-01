@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-10-01
+
+Backup-Service Phase 8 Abschnitt 4: Streaming-Pipeline, funktionale Retention, echtes Restore, Monitoring-Metriken sowie die bislang nur konfigurierten Backends SFTP und WebDAV.
+
+### Added
+- **Streaming-Backup-Pipeline** — `pg_dump` liest stdout über einen 1-MiB-Puffer statt `cmd.output()`. Bei Dumps im zweistelligen GB-Bereich war das ein OOM-Risiko, weil der komplette Dump gleichzeitig im Speicher lag.
+- **Streaming-Restore** — `pg_restore` bekommt die Daten direkt über stdin. `restore_from_storage` lädt den Dump nicht mehr komplett via `download_bytes()`.
+- **`StorageBackendTrait` erweitert** — neue Methoden `upload_stream`, `download_stream`, `list_objects`, `delete_object`, `load_manifest` und `save_manifest`. Cloud-Backends nutzen `object_store::put_multipart` für chunkweises Hochladen.
+- **Prometheus-Metriken** (`crates/backup-service/src/metrics.rs`) — `backup_duration_seconds`, `backup_size_bytes`, `backup_success_total`, `backup_failed_total` und `backup_restore_total`. Verknüpft mit Erfolg, Fehlschlag, Dauer, Größe und Restore-Ergebnis. 4 Unit-Tests.
+- **SFTP-Backend** (`crates/backup-service/src/sftp_backend.rs`) — Passwort- und Private-Key-Authentifizierung über `russh`/`russh-sftp`, Streaming-Upload mit 1-MiB-Chunks, Download, rekursives Listing, Löschen und Manifest-Persistenz.
+- **WebDAV-Backend** (`crates/backup-service/src/webdav_backend.rs`) — Basic Auth, `MKCOL` für Collections, Streaming-Uput über `PUT` mit Chunked Transfer Encoding, `PROPFIND` für rekursives Listing inklusive XML-Parsing, `DELETE`, Manifest-Persistenz. 11 Unit-Tests für URL-Konstruktion, Pfad-Encoding und Response-Parsing.
+- **Verschlüsselung für beide neuen Backends** — `encrypt_payload`/`decrypt_payload` in `encryption.rs` wenden die konfigurierte Target-Verschlüsselung an. Der Streaming-Upload verschlüsselt chunkweise, damit der Speicherbedarf begrenzt bleibt.
+- **`dry_run` für Restore** — API-Request (`RestoreRequest.dry_run`) und CLI (`agrocore-backup restore <ID> --dry-run`) prüfen, ob ein Backup wiederherstellbar ist, ohne in die Datenbank zu schreiben.
+- **14 neue Tests** — 8 Storage-Streaming, 7 Retention, 4 Manifest, 3 echte PostgreSQL-Integrationstests.
+
+### Fixed
+- **Retention konnte nichts löschen** — `parse_dump_timestamp` nahm mit `rsplit_once('_')` das letzte `_` und isolierte damit `HHMMSS`; der anschließende Split konnte nie gelingen, die Funktion lieferte für `dump_YYYYMMDD_HHMMSS.dump` immer `None`. Der Parser wertet jetzt die letzten beiden Segmente aus.
+- **`create_manifest` bekam eine leere Objektliste** — `targets: vec![]` wurde unverändert durchgereicht. Restore fand dadurch kein Dump-Objekt. Manifests werden jetzt mit den tatsächlich in Storage vorhandenen Objekten und Größen befüllt.
+- **Restore identifizierte Backups per Dateinamen-Heuristik** — jetzt wird zuerst das persistierte Manifest gelesen, mit Listing-Fallback für Altbestände.
+- **Restore schlug bei gemischten Client-/Server-Versionen fehl** — pg_dump 18.6 gegen PostgreSQL 16.4 erzeugt `SET transaction_timeout = 0`, das der Server nicht kennt. Nur dieser Fall wird als Warnung behandelt; echte `pg_restore: error:`-Zeilen lassen den Restore weiterhin fehlschlagen.
+- **`list_objects` gab bei unbekannten Targets stillschweigend eine leere Liste zurück** (`_ => Ok(Vec::new())`). Retention hätte so Backup-Ausfälle als "nichts zu löschen" interpretiert. Der Fallback meldet jetzt einen Fehler.
+- **`load_manifest` behandelte ein fehlendes Remote-Manifest als Fehler** — nur lokale Storage lieferte `NotFound`. Der Pfad prüft jetzt auch den HTTP-Status der Remote-Backends.
+- **`_shared`-Hilfsfunktion ohne Aufrufer** in `webdav_backend.rs` entfernt.
+
+### Changed
+- **`list_objects`, `download_stream`, `upload_stream` und `delete_object` dispatchen jetzt explizit** an `BackupTarget::Sftp` und `BackupTarget::WebDAV`. Die vorherigen `warn!("... not yet implemented")`-Zweige sind entfernt.
+- **Dump-Objektnamen enthalten die Job-ID** (`<uuid>_dump_<timestamp>.dump`). Retention parst weiterhin id-haltige Namen.
+- **`russh` auf 0.49 gepinnt** — 0.54 zieht eine `base64ct`-Version, die mit `argon2`'s Anforderung kollidiert. Konfliktfreie Versionen haben Vorrang, wie im Workspace üblich.
+- **`reqwest` um das `stream`-Feature erweitert** — `Body::wrap_stream` ist ohne dieses Feature nicht verfügbar.
+
+### Tests
+- 249 Tests im Workspace, 0 Fehler.
+- 3 echte `pg_dump`/`pg_restore`-Tests gegen eine laufende PostgreSQL-Instanz, darunter ein Roundtrip mit Row-Count-Vergleich:
+  ```bash
+  DATABASE_URL=postgresql://agrocore:agrocore@localhost:5432/agrocore \
+    cargo test -p agrocore-backup --test pg_dump_e2e_tests -- --ignored --test-threads=1
+  ```
+
+### Known Limitations
+- Der Download-Pfad der `object_store`-Backends nutzt `GetResult::bytes()`, weil object_store 0.11 keinen asynchronen Byte-Stream für Downloads liefert. Cloud-Downloads sind deshalb weiterhin nicht speicherschonend; Local, SFTP und WebDAV streamen.
+- Host-Key-Pinning für SFTP ist nicht implementiert; `check_server_key` akzeptiert jeden Schlüssel. Für den Produktivbetrieb sollte gegen eine `known_hosts`-Datei verifiziert werden.
+- Age- und KMS-Verschlüsselung sind weiterhin nicht implementiert; die Verschlüsselung läuft über AES-256-GCM.
+- Integrationstests gegen echte SFTP- und WebDAV-Server fehlen; getestet wurden Pfad-, Auth- und Response-Handling.
+- NATS-Progress-Events (0–100 %) sind implementiert, aber nicht durch Integrationstests abgesichert.
+- Das Disaster-Recovery-Runbook für 50 GB bei RTO < 15 Minuten ist noch offen.
+
 ## [0.22.0] - 2026-09-30
 
 ### Added

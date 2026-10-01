@@ -4,7 +4,9 @@ use crate::storage::StorageBackendTrait;
 use agrocore_logging::{info, warn};
 use chrono::{DateTime, Duration, Utc};
 use std::sync::Arc;
-use uuid::Uuid;
+
+/// Object prefix scanned by retention.
+const PREFIX: &str = "";
 
 pub struct RetentionManager {
     config: RetentionConfig,
@@ -17,13 +19,13 @@ impl RetentionManager {
 
     pub async fn cleanup(
         &self,
-        _storage: &Arc<dyn StorageBackendTrait>,
+        storage: &Arc<dyn StorageBackendTrait>,
         targets: &[crate::config::BackupTarget],
     ) -> BackupResult<()> {
         info!("Starting retention cleanup");
 
         for target in targets {
-            if let Err(e) = self.cleanup_target(target).await {
+            if let Err(e) = self.cleanup_target(storage, target).await {
                 warn!(
                     "Retention cleanup failed for target {}: {}",
                     target.target_id(),
@@ -36,9 +38,13 @@ impl RetentionManager {
         Ok(())
     }
 
-    async fn cleanup_target(&self, target: &crate::config::BackupTarget) -> BackupResult<()> {
+    async fn cleanup_target(
+        &self,
+        storage: &Arc<dyn StorageBackendTrait>,
+        target: &crate::config::BackupTarget,
+    ) -> BackupResult<()> {
         // List all backup objects for this target
-        let backups = self.list_backups(target).await?;
+        let backups = self.list_backups(storage, target, PREFIX).await?;
 
         // Group by date and classify
         let mut daily = Vec::new();
@@ -79,14 +85,17 @@ impl RetentionManager {
             .filter(|b| b.timestamp < grace_cutoff)
             .collect();
 
-        // Delete selected backups
+        // Delete selected backups from storage.
         for backup in to_delete {
-            // TODO: Implement actual deletion from storage
-            info!(
-                "Would delete backup: {} (age: {} days)",
-                backup.id,
-                (Utc::now() - backup.timestamp).num_days()
-            );
+            match storage.delete_object(target, &backup.object_name).await {
+                Ok(()) => info!(
+                    "Deleted backup {} ({} days old, {} bytes)",
+                    backup.object_name,
+                    (Utc::now() - backup.timestamp).num_days(),
+                    backup.size_bytes
+                ),
+                Err(e) => warn!("Failed to delete backup {}: {}", backup.object_name, e),
+            }
         }
 
         Ok(())
@@ -101,23 +110,65 @@ impl RetentionManager {
         sorted.into_iter().skip(keep).collect()
     }
 
+    /// List backup objects under `prefix`, newest first.
+    ///
+    /// Objects whose name does not embed a `dump_YYYYMMDD_HHMMSS.dump`
+    /// timestamp are skipped: they are not managed by retention and must not
+    /// be deleted by it.
     async fn list_backups(
         &self,
-        _target: &crate::config::BackupTarget,
+        storage: &Arc<dyn StorageBackendTrait>,
+        target: &crate::config::BackupTarget,
+        prefix: &str,
     ) -> BackupResult<Vec<BackupInfo>> {
-        // TODO: Implement actual listing from storage
-        Ok(vec![])
+        let objects = storage.list_objects(target, prefix).await?;
+        let mut out = Vec::new();
+
+        for (name, size) in objects {
+            let Some(timestamp) = Self::parse_dump_timestamp(&name) else {
+                continue;
+            };
+            out.push(BackupInfo {
+                object_name: name,
+                timestamp,
+                size_bytes: size,
+            });
+        }
+
+        out.sort_by_key(|b| std::cmp::Reverse(b.timestamp));
+        Ok(out)
+    }
+
+    /// Test hook: expose the dump timestamp parser.
+    pub fn debug_parse(name: &str) -> Option<DateTime<Utc>> {
+        Self::parse_dump_timestamp(name)
+    }
+
+    /// Extract the timestamp encoded in `<label>_<YYYYMMDD>_<HHMMSS>.dump`.
+    ///
+    /// Object names may embed a backup id (`<id>_dump_<stamp>.dump`), so the
+    /// date and time are taken from the last two underscore-separated fields
+    /// rather than by position.
+    fn parse_dump_timestamp(name: &str) -> Option<DateTime<Utc>> {
+        let (stem, ext) = name.rsplit_once('.')?;
+        if !ext.eq_ignore_ascii_case("dump") {
+            return None;
+        }
+
+        let (date_time, time) = stem.rsplit_once('_')?;
+        let (_prefix, date) = date_time.rsplit_once('_')?;
+
+        let naive =
+            chrono::NaiveDateTime::parse_from_str(&format!("{date} {time}"), "%Y%m%d %H%M%S")
+                .ok()?;
+        Some(DateTime::from_naive_utc_and_offset(naive, Utc))
     }
 }
 
 #[derive(Debug, Clone)]
 struct BackupInfo {
-    id: Uuid,
+    /// Storage object key, used for deletion.
+    object_name: String,
     timestamp: DateTime<Utc>,
-    /// Populated once `list_backups` reads real storage listings; used for
-    /// reporting and quota decisions during retention cleanup.
-    #[allow(dead_code)]
     size_bytes: u64,
-    #[allow(dead_code)]
-    backup_type: crate::service::BackupType,
 }

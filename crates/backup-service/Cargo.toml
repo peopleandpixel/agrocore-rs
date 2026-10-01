@@ -63,6 +63,11 @@ sha2 = "0.10"
 # Async trait support for dyn compatibility
 async-trait = "0.1"
 
+# SFTP backend. Pinning russh-sftp to 2.x keeps russh at 0.5x; russh 0.54
+# pulls a base64ct that conflicts with argon2's requirement.
+russh = "0.49"
+russh-sftp = "2.1"
+
 # NATS
 async-nats = { workspace = true }
 futures = { workspace = true }
@@ -86,6 +91,7 @@ agrocore-infrastructure = { path = "../infrastructure" }
 agrocore-messaging = { path = "../messaging" }
 agrocore-scheduler = { path = "../scheduler" }
 
+async-stream = "0.3"
 [dev-dependencies]
 testcontainers = "0.27"
 testcontainers-modules = { version = "0.15", features = ["postgres"] }
