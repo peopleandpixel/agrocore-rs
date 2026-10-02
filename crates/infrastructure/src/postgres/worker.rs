@@ -1,4 +1,5 @@
 use crate::postgres::audit_log::PgAuditLogRepo;
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::workforce::{CreateWorkerDto, UpdateWorkerDto, Worker};
 use agrocore_domain::repositories::{
@@ -12,7 +13,7 @@ agrocore_shared::pg_repo!(PgWorkerRepo);
 
 impl WorkerRepo for PgWorkerRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Worker>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Worker>(
                 "SELECT * FROM workers WHERE id = $1 AND tenant_id = $2 AND is_active = true",
@@ -38,7 +39,7 @@ impl WorkerRepo for PgWorkerRepo {
     }
 
     fn find_by_user_id(&self, tid: TenantId, user_id: Uuid) -> RepositoryFuture<Option<Worker>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Worker>(
                 "SELECT * FROM workers WHERE user_id = $1 AND tenant_id = $2 AND is_active = true",
@@ -56,7 +57,7 @@ impl WorkerRepo for PgWorkerRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Worker>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -99,8 +100,8 @@ impl WorkerRepo for PgWorkerRepo {
     }
 
     fn create(&self, tid: TenantId, dto: CreateWorkerDto, by: Uuid) -> RepositoryFuture<Worker> {
-        let pool = self.pool.clone();
-        let audit_repo = PgAuditLogRepo::new(pool.clone());
+        let pool = TenantPool::new(&self.pool, tid.0);
+        let audit_repo = PgAuditLogRepo::new(self.pool.clone());
         Box::pin(async move {
             let id = Uuid::new_v4();
             let entity = sqlx::query_as::<_, Worker>(
@@ -144,8 +145,8 @@ impl WorkerRepo for PgWorkerRepo {
         dto: UpdateWorkerDto,
         by: Uuid,
     ) -> RepositoryFuture<Option<Worker>> {
-        let pool = self.pool.clone();
-        let audit_repo = PgAuditLogRepo::new(pool.clone());
+        let pool = TenantPool::new(&self.pool, tid.0);
+        let audit_repo = PgAuditLogRepo::new(self.pool.clone());
         Box::pin(async move {
             let old_val = sqlx::query_as::<_, Worker>(
                 "SELECT * FROM workers WHERE id = $1 AND tenant_id = $2",
@@ -191,7 +192,7 @@ impl WorkerRepo for PgWorkerRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query("UPDATE workers SET is_active = false WHERE id = $1 AND tenant_id = $2")
                 .bind(id)

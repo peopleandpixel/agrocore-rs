@@ -7,6 +7,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.30.0] - 2026-10-02
+
+Integriert den Tenant-Pin in alle Datenbankpfade und behebt die dadurch
+sichtbar gewordenen Fehler. Verifiziert gegen eine frische Datenbank mit
+allen Migrationen von Null und geladenem Demo-Seed.
+
+### Tenant-Pin
+
+- `TenantPool` pinnt `app.current_tenant_id` auf derselben Verbindung, die
+  die Query ausführt, und setzt `app.is_superadmin` auf `false`.
+- Implementiert sqlx `Executor`, damit 317 Aufrufstellen in 47 Repos
+  unverändert bleiben und der Pin nicht vergessen werden kann.
+- `begin()` sendet zuerst ein explizites `BEGIN`, weil `SET LOCAL` außerhalb
+  eines Transaktionsblocks ein No-op ist. Die andere Reihenfolge sieht
+  funktionierend aus und setzt den Pin beim ersten Statement zurück.
+- `unscoped()` nutzt die Nil-UUID und verweigert damit alles: fail-closed für
+  Bootstrap-Arbeit.
+- 7 Tests in `tests/tenant_pin_tests.rs`, darunter
+  `checkout_does_not_inherit_previous_tenant`.
+
+### Behobene Fehler
+
+- **Login war vollständig kaputt.** Der RLS-Rolle fehlten Grants für 10 nach
+  der RLS-Migration angelegte Tabellen; `user_sites` wird vom Login-Join
+  gebraucht.
+- **Auth braucht eine eng begrenzte Ausnahme**, weil der Tenant erst aus der
+  User-Zeile gelesen wird. Rolle `agrocore_auth` mit SELECT auf `users` und
+  `user_sites`, Policy nur für diese Rolle.
+- **Refresh-Token-Write wirkungslos.** Ungepinnt traf das UPDATE null Zeilen,
+  weil `users_update` den Pin verlangt.
+- **`#[sqlx(json)]` auf `Option<T>` war falsch.** sqlx unterscheidet `json`
+  (nicht-null) und `json(nullable)`; 29 Felder in 10 Dateien waren falsch
+  annotiert. Ursache für `unexpected null; try decoding as an Option`.
+- **Schema-Drift bei `orders`:** `order_type` war VARCHAR statt JSONB,
+  `planned_date`/`deadline_date` waren DATE gegen DateTime, `started_at` und
+  `completed_at` fehlten in der Tabelle. `GET /api/v1/orders` war unerreichbar.
+- **37 NUMERIC-Spalten gegen `f64`.** Jede betroffene Entity scheiterte am
+  Decode, `GET /api/v1/customers` an `vat_rate`. Iterativ auf
+  DOUBLE PRECISION normalisiert.
+- **Demo-Seed war fachlich falsch:** `seeding` und `fertilizing` existieren als
+  `OrderType` nicht; `{"mode":"Manual"}` schrieb PascalCase statt snake_case.
+- **Fehlendes NATS brach den gesamten API-Start ab**, obwohl die Publisher
+  Fehler ohnehin ignorieren. Messaging ist jetzt optional,
+  `MESSAGING_REQUIRED=1` erzwingt es.
+
+### Verifiziert
+
+```text
+POST /api/v1/auth/login       -> 200
+GET  /api/v1/health          -> 200
+GET  /api/v1/sites           -> 200
+GET  /api/v1/users           -> 200
+GET  /api/v1/orders          -> 200
+GET  /api/v1/orders/my-tasks -> 200
+GET  /api/v1/customers       -> 200
+GET  /api/v1/inventory/items -> 200
+GET  /api/v1/tasks           -> 200
+```
+
+RLS dabei durchgehend aktiv, Verbindung als `agrocore_app`.
+
+
 ## [0.29.0] - 2026-10-01
 
 Macht die vorhandene Row-Level-Security tatsächlich wirksam (`tasks.md` A3).

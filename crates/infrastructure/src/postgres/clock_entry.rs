@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::workforce::{
     ClockEntry, ClockSession, CreateClockEntryDto, UpdateClockEntryDto,
@@ -13,7 +14,7 @@ agrocore_shared::pg_repo!(PgClockEntryRepo);
 
 impl ClockEntryRepo for PgClockEntryRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<ClockEntry>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, ClockEntry>(
                 "SELECT * FROM clock_entries WHERE tenant_id = $1 AND id = $2",
@@ -31,7 +32,7 @@ impl ClockEntryRepo for PgClockEntryRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<ClockEntry>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -73,7 +74,7 @@ impl ClockEntryRepo for PgClockEntryRepo {
         worker_id: Uuid,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<ClockEntry>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -118,7 +119,7 @@ impl ClockEntryRepo for PgClockEntryRepo {
         tid: TenantId,
         worker_id: Uuid,
     ) -> RepositoryFuture<Option<ClockEntry>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             // An active session is a clock-in without a matching clock-out
             sqlx::query_as::<_, ClockEntry>(
@@ -146,7 +147,7 @@ impl ClockEntryRepo for PgClockEntryRepo {
         from: chrono::DateTime<chrono::Utc>,
         to: chrono::DateTime<chrono::Utc>,
     ) -> RepositoryFuture<Vec<ClockSession>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             // Fetch all clock-in entries within the date range
             let clock_ins: Vec<ClockEntry> = sqlx::query_as::<_, ClockEntry>(
@@ -198,7 +199,7 @@ impl ClockEntryRepo for PgClockEntryRepo {
         dto: CreateClockEntryDto,
         _by: Uuid,
     ) -> RepositoryFuture<ClockEntry> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, ClockEntry>(
                 r#"INSERT INTO clock_entries (id, tenant_id, worker_id, entry_type, timestamp, lat, lng, task_id, notes)
@@ -226,7 +227,7 @@ impl ClockEntryRepo for PgClockEntryRepo {
         dto: UpdateClockEntryDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<ClockEntry>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, ClockEntry>(
                 "UPDATE clock_entries SET lat = $3, lng = $4, task_id = $5, notes = $6 WHERE tenant_id = $1 AND id = $2 RETURNING *",
@@ -244,7 +245,7 @@ impl ClockEntryRepo for PgClockEntryRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query("DELETE FROM clock_entries WHERE tenant_id = $1 AND id = $2")
                 .bind(tid)
@@ -263,7 +264,7 @@ impl ClockEntryRepo for PgClockEntryRepo {
         from: chrono::DateTime<chrono::Utc>,
         to: chrono::DateTime<chrono::Utc>,
     ) -> RepositoryFuture<f64> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             // Inline the session query to avoid borrowing self in async block
             let clock_ins: Vec<ClockEntry> = sqlx::query_as::<_, ClockEntry>(

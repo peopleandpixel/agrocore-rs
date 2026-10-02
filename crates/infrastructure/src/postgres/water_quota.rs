@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::water::{CreateWaterQuotaDto, WaterQuota};
 use agrocore_domain::repositories::{
@@ -11,7 +12,7 @@ agrocore_shared::pg_repo!(PgWaterQuotaRepo);
 
 impl WaterQuotaRepo for PgWaterQuotaRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WaterQuota>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let row = sqlx::query_as("SELECT * FROM water_quotas WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
@@ -27,7 +28,7 @@ impl WaterQuotaRepo for PgWaterQuotaRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<WaterQuota>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -62,7 +63,7 @@ impl WaterQuotaRepo for PgWaterQuotaRepo {
         dto: CreateWaterQuotaDto,
         _by: Uuid,
     ) -> RepositoryFuture<WaterQuota> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let id = Uuid::new_v4();
         Box::pin(async move {
             let record = sqlx::query_as(
@@ -91,7 +92,7 @@ impl WaterQuotaRepo for PgWaterQuotaRepo {
         source_id: Uuid,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<agrocore_domain::entities::water::WaterQuota>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -126,7 +127,7 @@ impl WaterQuotaRepo for PgWaterQuotaRepo {
         dto: agrocore_domain::entities::water::UpdateWaterQuotaDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<agrocore_domain::entities::water::WaterQuota>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as("UPDATE water_quotas SET allocated_m3 = COALESCE($1, allocated_m3), used_m3 = COALESCE($2, used_m3), remaining_m3 = COALESCE($1, allocated_m3) - COALESCE($2, used_m3), comunidad_id = COALESCE($3, comunidad_id), updated_at = NOW() WHERE id = $4 AND tenant_id = $5 RETURNING *")
                 .bind(dto.allocated_m3).bind(dto.used_m3).bind(dto.comunidad_id).bind(id).bind(tid)
@@ -134,7 +135,7 @@ impl WaterQuotaRepo for PgWaterQuotaRepo {
         })
     }
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query("DELETE FROM water_quotas WHERE id = $1 AND tenant_id = $2")
                 .bind(id)

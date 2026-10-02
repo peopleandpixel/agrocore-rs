@@ -5,6 +5,7 @@ edition = "2024"
 license.workspace = true
 
 [dependencies]
+futures-core = "0.3"
 agrocore-domain = { path = "../domain" }
 agrocore-shared = { path = "../shared", features = ["sqlx"] }
 sqlx = { workspace = true, features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono", "ipnetwork", "bigdecimal", "json"], optional = true }

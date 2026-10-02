@@ -46,11 +46,13 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 
 async fn find_device(
     state: &web::Data<AppState>,
+    tenant_id: uuid::Uuid,
     device_id: &str,
 ) -> Result<Option<IoTDeviceResponse>, ApiError> {
-    let row = sqlx::query("SELECT device FROM iot_devices WHERE device_id = $1")
+    let row = sqlx::query("SELECT device FROM iot_devices WHERE device_id = $1 AND tenant_id = $2")
         .bind(device_id)
-        .fetch_optional(state.db.pool())
+        .bind(tenant_id)
+        .fetch_optional(state.db.tenant_pool(tenant_id))
         .await?;
 
     row.map(|row| {
@@ -75,7 +77,7 @@ async fn persist_device(
     .bind(device.tenant_id)
     .bind(device.site_id)
     .bind(payload)
-    .execute(state.db.pool())
+    .execute(state.db.tenant_pool(device.tenant_id))
     .await?;
     Ok(())
 }
@@ -129,7 +131,7 @@ pub async fn list_devices(
 
     let rows = sqlx::query("SELECT device FROM iot_devices WHERE tenant_id = $1")
         .bind(tenant_id)
-        .fetch_all(state.db.pool())
+        .fetch_all(state.db.tenant_pool(auth.0.tenant_id))
         .await?;
     let devices: Vec<IoTDeviceResponse> = rows
         .into_iter()
@@ -176,7 +178,7 @@ pub async fn get_device(
     auth.require_any_role(vec!["admin", "manager", "viewer"])?;
 
     let device_id = path.into_inner();
-    if let Some(device) = find_device(&state, &device_id).await? {
+    if let Some(device) = find_device(&state, auth.0.tenant_id, &device_id).await? {
         if device.tenant_id != auth.0.tenant_id {
             return Err(ApiError::forbidden(
                 "Device belongs to different tenant".to_string(),
@@ -221,7 +223,10 @@ pub async fn create_device(
         ));
     }
 
-    if find_device(&state, &dto.device_id).await?.is_some() {
+    if find_device(&state, auth.0.tenant_id, &dto.device_id)
+        .await?
+        .is_some()
+    {
         return Err(ApiError::conflict("Device ID already exists".to_string()));
     }
 
@@ -285,7 +290,7 @@ pub async fn update_device(
     dto.validate()
         .map_err(|e| ApiError::validation(e.to_string()))?;
 
-    if let Some(mut device) = find_device(&state, &device_id).await? {
+    if let Some(mut device) = find_device(&state, auth.0.tenant_id, &device_id).await? {
         if device.tenant_id != auth.0.tenant_id && !auth.is_admin() {
             return Err(ApiError::forbidden(
                 "Cannot update device from different tenant".to_string(),
@@ -345,7 +350,7 @@ pub async fn delete_device(
     auth.require_admin()?;
 
     let device_id = path.into_inner();
-    if let Some(device) = find_device(&state, &device_id).await?
+    if let Some(device) = find_device(&state, auth.0.tenant_id, &device_id).await?
         && device.tenant_id != auth.0.tenant_id
         && !auth.is_admin()
     {
@@ -356,7 +361,7 @@ pub async fn delete_device(
 
     let deleted = sqlx::query("DELETE FROM iot_devices WHERE device_id = $1")
         .bind(&device_id)
-        .execute(state.db.pool())
+        .execute(state.db.tenant_pool(auth.0.tenant_id))
         .await?
         .rows_affected();
     if deleted > 0 {
@@ -394,7 +399,7 @@ pub async fn get_device_telemetry(
     auth.require_any_role(vec!["admin", "manager", "viewer"])?;
 
     let device_id = path.into_inner();
-    if let Some(device) = find_device(&state, &device_id).await? {
+    if let Some(device) = find_device(&state, auth.0.tenant_id, &device_id).await? {
         if device.tenant_id != auth.0.tenant_id && !auth.is_admin() {
             return Err(ApiError::forbidden(
                 "Device belongs to different tenant".to_string(),
@@ -446,7 +451,7 @@ pub async fn send_command(
     dto.validate()
         .map_err(|e| ApiError::validation(e.to_string()))?;
 
-    if let Some(device) = find_device(&state, &device_id).await? {
+    if let Some(device) = find_device(&state, auth.0.tenant_id, &device_id).await? {
         if device.tenant_id != auth.0.tenant_id && !auth.is_admin() {
             return Err(ApiError::forbidden(
                 "Device belongs to different tenant".to_string(),
@@ -504,7 +509,7 @@ pub async fn get_ha_discovery(
     auth.require_any_role(vec!["admin", "manager"])?;
 
     let device_id = path.into_inner();
-    if let Some(device) = find_device(&state, &device_id).await? {
+    if let Some(device) = find_device(&state, auth.0.tenant_id, &device_id).await? {
         if device.tenant_id != auth.0.tenant_id && !auth.is_admin() {
             return Err(ApiError::forbidden(
                 "Device belongs to different tenant".to_string(),

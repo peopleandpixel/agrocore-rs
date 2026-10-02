@@ -163,7 +163,9 @@ pub async fn list_sigpac_parcels(
         count_query = count_query.bind(v.clone());
     }
 
-    let total: i64 = count_query.fetch_one(state.db.pool()).await?;
+    let total: i64 = count_query
+        .fetch_one(state.db.tenant_pool(auth.0.tenant_id))
+        .await?;
 
     // Fetch page
     let select_sql = format!(
@@ -207,7 +209,9 @@ pub async fn list_sigpac_parcels(
 
     select_query = select_query.bind(per_page as i64).bind(offset as i64);
 
-    let rows = select_query.fetch_all(state.db.pool()).await?;
+    let rows = select_query
+        .fetch_all(state.db.tenant_pool(auth.0.tenant_id))
+        .await?;
 
     let mut parcels = Vec::new();
     for row in rows {
@@ -280,7 +284,7 @@ pub async fn get_sigpac_parcel(
     )
     .bind(parcel_id)
     .bind(auth.0.tenant_id)
-    .fetch_optional(state.db.pool())
+    .fetch_optional(state.db.tenant_pool(auth.0.tenant_id))
     .await?
     .ok_or_else(|| SharedError::NotFound("SIGPAC parcel not found".into()))?;
 
@@ -358,7 +362,7 @@ pub async fn search_parcels_near_point(
     .bind(query.lng)
     .bind(query.lat)
     .bind(radius)
-    .fetch_all(state.db.pool())
+    .fetch_all(state.db.tenant_pool(auth.0.tenant_id))
     .await?;
 
     let mut parcels = Vec::new();

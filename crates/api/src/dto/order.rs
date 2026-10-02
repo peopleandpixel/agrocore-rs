@@ -50,8 +50,8 @@ impl From<Order> for OrderDto {
             status: o.status,
             site_ids: o.site_ids,
             assigned_worker_ids: o.assigned_worker_ids,
-            planned_date: o.planned_date.map(|d| d.to_rfc3339()),
-            deadline_date: o.deadline_date.map(|d| d.to_rfc3339()),
+            planned_date: o.planned_date.map(|d| d.to_string()),
+            deadline_date: o.deadline_date.map(|d| d.to_string()),
             started_at: o.started_at.map(|d| d.to_rfc3339()),
             completed_at: o.completed_at.map(|d| d.to_rfc3339()),
             last_completed_at: o.last_completed_at.map(|d| d.to_rfc3339()),
@@ -87,8 +87,10 @@ impl From<CreateOrderDto> for agrocore_domain::entities::order::CreateOrderDto {
             order_type: dto.order_type,
             site_ids: dto.site_ids,
             assigned_worker_ids: dto.assigned_worker_ids,
-            planned_date: dto.planned_date,
-            deadline_date: dto.deadline_date,
+            // The DTO accepts RFC3339 strings; the column is a DATE, so only
+            // the day part survives the round trip.
+            planned_date: dto.planned_date.map(|d| d.date_naive()),
+            deadline_date: dto.deadline_date.map(|d| d.date_naive()),
             articles: None,
             quantities: None,
             custom_fields: None,
@@ -125,8 +127,10 @@ impl From<UpdateOrderDto> for agrocore_domain::entities::order::UpdateOrderDto {
             status: dto.status,
             site_ids: dto.site_ids,
             assigned_worker_ids: dto.assigned_worker_ids,
-            planned_date: dto.planned_date,
-            deadline_date: dto.deadline_date,
+            // The DTO accepts RFC3339 strings; the column is a DATE, so only
+            // the day part survives the round trip.
+            planned_date: dto.planned_date.map(|d| d.date_naive()),
+            deadline_date: dto.deadline_date.map(|d| d.date_naive()),
             recurrence: dto.recurrence,
             execution_policy: dto.execution_policy,
             is_active: dto.is_active,

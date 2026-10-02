@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::weather::{CreateWeatherDataDto, WeatherData};
 use agrocore_domain::repositories::{RepositoryFuture, WeatherDataRepo};
@@ -9,7 +10,7 @@ agrocore_shared::pg_repo!(PgWeatherDataRepo);
 
 impl WeatherDataRepo for PgWeatherDataRepo {
     fn create(&self, tid: TenantId, dto: CreateWeatherDataDto) -> RepositoryFuture<WeatherData> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             sqlx::query_as::<_, WeatherData>(
@@ -33,7 +34,7 @@ impl WeatherDataRepo for PgWeatherDataRepo {
         })
     }
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WeatherData>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WeatherData>(
                 "SELECT * FROM weather_data WHERE id = $1 AND tenant_id = $2",
@@ -51,7 +52,7 @@ impl WeatherDataRepo for PgWeatherDataRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<WeatherData>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -94,7 +95,7 @@ impl WeatherDataRepo for PgWeatherDataRepo {
         station_id: Uuid,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<WeatherData>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -140,7 +141,7 @@ impl WeatherDataRepo for PgWeatherDataRepo {
         id: Uuid,
         dto: agrocore_domain::entities::weather::UpdateWeatherDataDto,
     ) -> RepositoryFuture<Option<WeatherData>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as("UPDATE weather_data SET station_id = COALESCE($1, station_id), timestamp = COALESCE($2, timestamp), temperature_c = COALESCE($3, temperature_c), humidity_percent = COALESCE($4, humidity_percent), precipitation_mm = COALESCE($5, precipitation_mm), wind_speed_kmh = COALESCE($6, wind_speed_kmh), wind_direction_deg = COALESCE($7, wind_direction_deg), solar_radiation_wm2 = COALESCE($8, solar_radiation_wm2), pressure_hpa = COALESCE($9, pressure_hpa), soil_temperature_c = COALESCE($10, soil_temperature_c), soil_moisture_percent = COALESCE($11, soil_moisture_percent), leaf_wetness = COALESCE($12, leaf_wetness) WHERE id = $13 AND tenant_id = $14 RETURNING *")
                 .bind(dto.station_id).bind(dto.timestamp).bind(dto.temperature_c).bind(dto.humidity_percent).bind(dto.precipitation_mm).bind(dto.wind_speed_kmh).bind(dto.wind_direction_deg).bind(dto.solar_radiation_wm2).bind(dto.pressure_hpa).bind(dto.soil_temperature_c).bind(dto.soil_moisture_percent).bind(dto.leaf_wetness).bind(id).bind(tid)
@@ -149,7 +150,7 @@ impl WeatherDataRepo for PgWeatherDataRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query("DELETE FROM weather_data WHERE id = $1 AND tenant_id = $2")
                 .bind(id)

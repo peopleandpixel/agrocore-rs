@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::plant_protection::{
     ApplicatorLicense, CreateApplicatorLicenseDto, CreatePlantProtectionDto, PlantProtectionRecord,
     UpdateApplicatorLicenseDto, UpdatePlantProtectionDto,
@@ -18,7 +19,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
         tid: TenantId,
         id: Uuid,
     ) -> RepositoryFuture<Option<PlantProtectionRecord>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, PlantProtectionRecord>(
                 "SELECT * FROM plant_protection_records WHERE id = $1 AND tenant_id = $2",
@@ -36,7 +37,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<PlantProtectionRecord>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -80,7 +81,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
         dto: CreatePlantProtectionDto,
         _by: Uuid,
     ) -> RepositoryFuture<PlantProtectionRecord> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             sqlx::query_as::<_, PlantProtectionRecord>(
@@ -114,7 +115,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
         dto: UpdatePlantProtectionDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<PlantProtectionRecord>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, PlantProtectionRecord>(
                 r#"UPDATE plant_protection_records SET product_name = COALESCE($1, product_name)
@@ -130,7 +131,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query("DELETE FROM plant_protection_records WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
@@ -147,7 +148,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
         tid: TenantId,
         user_id: Uuid,
     ) -> RepositoryFuture<Option<ApplicatorLicense>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, ApplicatorLicense>(
                 "SELECT * FROM applicator_licenses WHERE id = $1 AND tenant_id = $2",
@@ -164,7 +165,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
         &self,
         tid: TenantId,
     ) -> RepositoryFuture<Vec<ApplicatorLicense>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, ApplicatorLicense>(
                 "SELECT * FROM applicator_licenses WHERE tenant_id = $1 ORDER BY created_at DESC",
@@ -181,7 +182,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
         tid: TenantId,
         dto: CreateApplicatorLicenseDto,
     ) -> RepositoryFuture<ApplicatorLicense> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             let license_type_json = serde_json::to_value(&dto.license_type)
@@ -211,7 +212,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
         id: Uuid,
         dto: UpdateApplicatorLicenseDto,
     ) -> RepositoryFuture<Option<ApplicatorLicense>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let license_type_json = dto
                 .license_type
@@ -244,7 +245,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
     }
 
     fn delete_applicator_license(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query("DELETE FROM applicator_licenses WHERE id = $1 AND tenant_id = $2")
                 .bind(id)

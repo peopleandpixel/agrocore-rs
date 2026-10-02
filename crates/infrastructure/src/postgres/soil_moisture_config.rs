@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::weather::{CreateSoilMoistureConfigDto, SoilMoistureConfig};
 use agrocore_domain::repositories::{RepositoryFuture, SoilMoistureConfigRepo};
@@ -9,7 +10,7 @@ agrocore_shared::pg_repo!(PgSoilMoistureConfigRepo);
 
 impl SoilMoistureConfigRepo for PgSoilMoistureConfigRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<SoilMoistureConfig>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, SoilMoistureConfig>(
                 "SELECT * FROM soil_moisture_configs WHERE id = $1 AND tenant_id = $2",
@@ -27,7 +28,7 @@ impl SoilMoistureConfigRepo for PgSoilMoistureConfigRepo {
         tid: TenantId,
         station_id: Uuid,
     ) -> RepositoryFuture<Vec<SoilMoistureConfig>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, SoilMoistureConfig>(
                 "SELECT * FROM soil_moisture_configs WHERE tenant_id = $1 AND station_id = $2 AND is_active = true",
@@ -46,7 +47,7 @@ impl SoilMoistureConfigRepo for PgSoilMoistureConfigRepo {
         site_id: Uuid,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<SoilMoistureConfig>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -93,7 +94,7 @@ impl SoilMoistureConfigRepo for PgSoilMoistureConfigRepo {
         tid: TenantId,
         dto: CreateSoilMoistureConfigDto,
     ) -> RepositoryFuture<SoilMoistureConfig> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             sqlx::query_as::<_, SoilMoistureConfig>(
@@ -127,7 +128,7 @@ impl SoilMoistureConfigRepo for PgSoilMoistureConfigRepo {
         id: Uuid,
         dto: CreateSoilMoistureConfigDto,
     ) -> RepositoryFuture<Option<SoilMoistureConfig>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, SoilMoistureConfig>(
                 r#"UPDATE soil_moisture_configs SET
@@ -155,7 +156,7 @@ impl SoilMoistureConfigRepo for PgSoilMoistureConfigRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query("DELETE FROM soil_moisture_configs WHERE id = $1 AND tenant_id = $2")
                 .bind(id)

@@ -34,6 +34,7 @@ pub mod site;
 mod soil_moisture_config;
 mod task_data;
 mod tenant;
+pub mod tenant_pool;
 mod tree;
 mod user;
 mod variety;

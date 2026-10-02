@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::{Building, BuildingType, CreateBuildingDto, UpdateBuildingDto};
 use agrocore_domain::repositories::{
@@ -16,7 +17,7 @@ pg_repo!(PgBuildingRepo);
 
 impl BuildingRepository for PgBuildingRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Building>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Building>(
                 "SELECT * FROM buildings WHERE id = $1 AND tenant_id = $2",
@@ -34,7 +35,7 @@ impl BuildingRepository for PgBuildingRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Building>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
 
@@ -80,7 +81,7 @@ impl BuildingRepository for PgBuildingRepo {
         plot_id: Uuid,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Building>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
 
@@ -129,7 +130,7 @@ impl BuildingRepository for PgBuildingRepo {
         dto: CreateBuildingDto,
         _by: Uuid,
     ) -> RepositoryFuture<Building> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             let now = chrono::Utc::now();
@@ -166,7 +167,7 @@ impl BuildingRepository for PgBuildingRepo {
         dto: UpdateBuildingDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<Building>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let existing = sqlx::query_as::<_, Building>(
                 "SELECT * FROM buildings WHERE id = $1 AND tenant_id = $2",
@@ -206,7 +207,7 @@ impl BuildingRepository for PgBuildingRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let result = sqlx::query("DELETE FROM buildings WHERE id = $1 AND tenant_id = $2")
                 .bind(id)

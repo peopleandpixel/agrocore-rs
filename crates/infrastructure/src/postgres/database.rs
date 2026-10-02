@@ -107,6 +107,24 @@ pub struct MockDatabase {
 }
 
 impl Database {
+    /// A pool pinned to `tenant_id`. Prefer this over `pool()` in handlers.
+    pub fn tenant_pool(&self, tenant_id: uuid::Uuid) -> crate::postgres::tenant_pool::TenantPool {
+        match self {
+            Self::Postgres(db) => db.tenant_pool(tenant_id),
+            #[cfg(feature = "mocks")]
+            Self::Mock(_) => panic!("MockDatabase has no pool"),
+        }
+    }
+
+    /// A pool with no tenant pinned, for genuinely non-tenant-scoped work.
+    pub fn unscoped_pool(&self) -> crate::postgres::tenant_pool::TenantPool {
+        match self {
+            Self::Postgres(db) => db.unscoped_pool(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(_) => panic!("MockDatabase has no pool"),
+        }
+    }
+
     pub fn pool(&self) -> &PgPool {
         match self {
             Self::Postgres(db) => db.pool(),
@@ -937,6 +955,24 @@ impl PostgresDb {
 
     pub fn pool(&self) -> &PgPool {
         &self.pool
+    }
+
+    /// A pool pinned to `tenant_id`.
+    ///
+    /// Every query executed through this handle applies
+    /// `app.current_tenant_id` first, so the row-level-security policies see
+    /// the right tenant. Request handlers should use this rather than `pool()`.
+    pub fn tenant_pool(&self, tenant_id: uuid::Uuid) -> crate::postgres::tenant_pool::TenantPool {
+        crate::postgres::tenant_pool::TenantPool::new(&self.pool, tenant_id)
+    }
+
+    /// A pool with no tenant pinned.
+    ///
+    /// For work that is not tenant-scoped: migrations, health checks, and the
+    /// setup endpoint that creates the first tenant. The nil tenant matches no
+    /// tenant, so the policies deny everything — that is the safe direction.
+    pub fn unscoped_pool(&self) -> crate::postgres::tenant_pool::TenantPool {
+        crate::postgres::tenant_pool::TenantPool::unscoped(&self.pool)
     }
 
     pub fn map_db_error(e: sqlx::Error) -> agrocore_shared::SharedError {

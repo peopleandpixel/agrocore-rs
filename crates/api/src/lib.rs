@@ -34,7 +34,12 @@ use agrocore_logging::{error as logging_error, warn};
 #[derive(Clone)]
 pub struct AppState {
     pub db: Arc<Database>,
-    pub messaging: Arc<MessagingClient>,
+    /// `None` when the broker was unreachable at startup.
+    ///
+    /// Optional on purpose: publishers already ignore send failures (`let _ =
+    /// ...publish()`), so a broker outage degraded notifications only. Making it
+    /// required made the whole API refuse to start for the same reason.
+    pub messaging: Option<Arc<MessagingClient>>,
     pub lpis_registry: Arc<LpisRegistry>,
     pub token_revocation: Arc<TokenRevocationList>,
     pub db_metrics: DbMetrics,
@@ -114,9 +119,28 @@ fn init_token_revocation() -> TokenRevocationList {
     }
 }
 
+/// Publish an event when a broker is available.
+///
+/// Every call site already discarded the result with `let _ =`, so a missing
+/// broker must not turn a successful write into an error. Keeping this in one
+/// place means each handler does not repeat the `Option` dance.
+pub async fn publish_event<T: serde::Serialize>(
+    messaging: Option<&Arc<MessagingClient>>,
+    subject: impl Into<String>,
+    event: &T,
+) -> Result<(), String> {
+    match messaging {
+        Some(m) => m
+            .publish(subject.into(), event)
+            .await
+            .map_err(|e| e.to_string()),
+        None => Ok(()),
+    }
+}
+
 pub async fn run_server(
     db: Database,
-    messaging: MessagingClient,
+    messaging: Option<MessagingClient>,
     bind_addr: &str,
     backup_service: Option<Arc<BackupService>>,
 ) -> std::io::Result<()> {
@@ -142,7 +166,7 @@ pub async fn run_server(
 
     let state = web::Data::new(AppState {
         db: Arc::new(db),
-        messaging: Arc::new(messaging),
+        messaging: messaging.map(Arc::new),
         lpis_registry,
         token_revocation: Arc::new(init_token_revocation()),
         db_metrics,

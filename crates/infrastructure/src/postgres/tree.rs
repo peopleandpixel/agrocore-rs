@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::{CreateTreeDto, Tree, TreeType, UpdateTreeDto};
 use agrocore_domain::repositories::{
@@ -16,7 +17,7 @@ pg_repo!(PgTreeRepo);
 
 impl TreeRepository for PgTreeRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Tree>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Tree>("SELECT * FROM trees WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
@@ -28,7 +29,7 @@ impl TreeRepository for PgTreeRepo {
     }
 
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Tree>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
 
@@ -73,7 +74,7 @@ impl TreeRepository for PgTreeRepo {
         plot_id: Uuid,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Tree>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
 
@@ -117,7 +118,7 @@ impl TreeRepository for PgTreeRepo {
     }
 
     fn find_by_group(&self, tid: TenantId, group_id: Uuid) -> RepositoryFuture<Vec<Tree>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Tree>(
                 "SELECT * FROM trees WHERE tenant_id = $1 AND group_id = $2 ORDER BY label",
@@ -131,7 +132,7 @@ impl TreeRepository for PgTreeRepo {
     }
 
     fn create(&self, tid: TenantId, dto: CreateTreeDto, _by: Uuid) -> RepositoryFuture<Tree> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             let now = chrono::Utc::now();
@@ -172,7 +173,7 @@ impl TreeRepository for PgTreeRepo {
         dto: UpdateTreeDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<Tree>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let existing =
                 sqlx::query_as::<_, Tree>("SELECT * FROM trees WHERE id = $1 AND tenant_id = $2")
@@ -219,7 +220,7 @@ impl TreeRepository for PgTreeRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let result = sqlx::query("DELETE FROM trees WHERE id = $1 AND tenant_id = $2")
                 .bind(id)

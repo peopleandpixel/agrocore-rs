@@ -130,10 +130,12 @@ pub async fn create_order(
         )
         .await?;
     let event = Event::new("api".into(), GlobalEvent::OrderCreated(o.clone()));
-    let _ = state
-        .messaging
-        .publish("events.orders".to_string(), &event)
-        .await;
+    let _ = crate::publish_event(
+        state.messaging.as_ref(),
+        "events.orders".to_string(),
+        &event,
+    )
+    .await;
     Ok(HttpResponse::Created().json(OrderDto::from(o)))
 }
 
@@ -178,10 +180,12 @@ pub async fn update_order(
         .await?
         .ok_or_else(|| SharedError::NotFound("Order not found".into()))?;
     let event = Event::new("api".into(), GlobalEvent::OrderUpdated(o.clone()));
-    let _ = state
-        .messaging
-        .publish("events.orders".to_string(), &event)
-        .await;
+    let _ = crate::publish_event(
+        state.messaging.as_ref(),
+        "events.orders".to_string(),
+        &event,
+    )
+    .await;
     Ok(HttpResponse::Ok().json(OrderDto::from(o)))
 }
 
@@ -215,10 +219,12 @@ pub async fn delete_order(
         .await?
     {
         let event = Event::new("api".into(), GlobalEvent::OrderDeleted(order_id));
-        let _ = state
-            .messaging
-            .publish("events.orders".to_string(), &event)
-            .await;
+        let _ = crate::publish_event(
+            state.messaging.as_ref(),
+            "events.orders".to_string(),
+            &event,
+        )
+        .await;
         Ok(HttpResponse::Ok().json(serde_json::json!({"deleted": true})))
     } else {
         Err(SharedError::NotFound("Order not found".into()).into())
@@ -337,10 +343,12 @@ pub async fn complete_order(
     }
 
     let event = Event::new("api".into(), GlobalEvent::OrderUpdated(updated.clone()));
-    let _ = state
-        .messaging
-        .publish("events.orders".to_string(), &event)
-        .await;
+    let _ = crate::publish_event(
+        state.messaging.as_ref(),
+        "events.orders".to_string(),
+        &event,
+    )
+    .await;
     Ok(HttpResponse::Ok().json(OrderDto::from(updated)))
 }
 
@@ -397,10 +405,12 @@ pub async fn start_order(
         .await?
         .ok_or_else(|| SharedError::NotFound("Order not found".into()))?;
     let event = Event::new("api".into(), GlobalEvent::OrderUpdated(updated.clone()));
-    let _ = state
-        .messaging
-        .publish("events.orders".to_string(), &event)
-        .await;
+    let _ = crate::publish_event(
+        state.messaging.as_ref(),
+        "events.orders".to_string(),
+        &event,
+    )
+    .await;
     Ok(HttpResponse::Ok().json(OrderDto::from(updated)))
 }
 

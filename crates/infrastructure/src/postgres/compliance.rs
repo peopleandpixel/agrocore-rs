@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::compliance::{
     ComplianceChecklist, CreateComplianceChecklistDto, UpdateComplianceChecklistDto,
 };
@@ -13,7 +14,7 @@ agrocore_shared::pg_repo!(PgComplianceChecklistRepo);
 
 impl ComplianceChecklistRepo for PgComplianceChecklistRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<ComplianceChecklist>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, ComplianceChecklist>(
                 "SELECT * FROM compliance_checklists WHERE id = $1 AND tenant_id = $2",
@@ -31,7 +32,7 @@ impl ComplianceChecklistRepo for PgComplianceChecklistRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<ComplianceChecklist>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -77,7 +78,7 @@ impl ComplianceChecklistRepo for PgComplianceChecklistRepo {
         dto: CreateComplianceChecklistDto,
         _by: Uuid,
     ) -> RepositoryFuture<ComplianceChecklist> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             sqlx::query_as::<_, ComplianceChecklist>(
@@ -104,7 +105,7 @@ impl ComplianceChecklistRepo for PgComplianceChecklistRepo {
         dto: UpdateComplianceChecklistDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<ComplianceChecklist>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, ComplianceChecklist>(
                 r#"UPDATE compliance_checklists SET status = COALESCE($1, status), updated_at = NOW()
@@ -119,7 +120,7 @@ impl ComplianceChecklistRepo for PgComplianceChecklistRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query("DELETE FROM compliance_checklists WHERE id = $1 AND tenant_id = $2")
                 .bind(id)

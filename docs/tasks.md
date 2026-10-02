@@ -58,6 +58,43 @@ Datensätze wären nicht auffindbar gewesen. Behoben.
 
 - [x] **A1 — Privilege Escalation: jeder User kann sich zum Admin machen** — erledigt (2026-10-01). `update_user` prüft jetzt `if dto.0.roles.is_some() || dto.0.is_active.is_some() { auth.require_admin()?; }` — Rollenwechsel und Aktivitätsstatus sind Admin-only, unabhängig davon, ob der eigene Account betroffen ist. Dazu ein neues `PUT /api/v1/users/me` mit `UpdateOwnProfileDto`, das nur `firstname`, `lastname`, `password`, `language`, `color` annimmt; alle übrigen Domain-Felder werden explizit auf `None` gesetzt, damit das Repository die Spalten unangetastet lässt. Die Route ist **vor** `/users/{id}` registriert, sonst würde `{id}` den Pfad „me" schlucken. `UpdateUserDto.password` verlangt jetzt `min = 12` statt der 8 aus `CreateUserDto` — über die alte Lücke ließ sich ein bestehendes Passwort auf einen leeren String setzen, das ist mit A1 und D3 behoben. 9 Regressionstests in `crates/api/tests/privilege_escalation_tests.rs`. — `handlers/users.rs:153-157`. `if let Err(e) = auth.require_admin() && auth.0.user_id != user_id` hebt den Admin-Check auf, sobald die eigene ID angesprochen wird. Der Body enthält `roles`, und `postgres/user.rs:318` bindet es ungeprüft. Angriff: `PUT /api/v1/users/{eigene_id}` mit `{"roles":["Admin"]}` → voller Admin-Zugriff. Rollenwechsel und `is_active` strikt admin-only; eigenes Profil über ein `/me`-Endpoint mit Feld-Whitelist (`firstname`, `lastname`, `password`, `language`).
 - [x] **A2 — Demo-Routen löschen echte Tenants, unauthentifiziert** — erledigt (2026-10-01). Zwei unabhängige Barrieren: `require_demo_access()` in `handlers/demo.rs` prüft `AppState.demo_endpoints_enabled` (aus `ALLOW_DEMO_ENDPOINTS`, Default **aus**) **und** `auth.require_admin()`. Alle drei Endpunkte (`/seed`, `/reset`, `/summary`) nehmen jetzt einen `AuthExtractor`; vorher tat das keiner, auch `/summary` nicht. Die OpenAPI-Deklarationen tragen jetzt `security(("bearer_auth"))` sowie 401/403, vorher fehlten beide. Zusätzlich das hartkodierte `b"demo123"` entfernt: das Passwort kommt aus `DEMO_ADMIN_PASSWORD` mit Default `demo1234-agrocore`, und wird beim Fehlen der Variablen geloggt. Siehe G2 für die Passwort-Vereinheitlichung. 6 Regressionstests in `crates/api/tests/demo_endpoint_auth_tests.rs`. — `handlers/demo.rs:19-22,37,559`. `/seed`, `/reset`, `/summary` ohne `AuthExtractor`. `reset` erzwingt `reset=true` und führt `DELETE FROM tenants WHERE id = $1` mit Cascade aus; der Tenant-Slug kommt aus dem Request-Body. Zusätzlich hartkodiertes Admin-Passwort `demo123` (`:117`). Routen hinter `#[cfg(feature = "demo")]` + `require_admin()` + Env-Gate `ALLOW_DEMO_ENDPOINTS`; Passwort entfernen.
+- [x] **Pin-Integration: Tenant-Pin in allen Datenbankpfaden** — erledigt (2026-10-02). A3 hatte die Policies scharf geschaltet, aber noch nichts setzte `app.current_tenant_id`. Ohne Pin liefern alle Repos null Zeilen. Behoben:
+
+  **`crates/infrastructure/src/postgres/tenant_pool.rs`** — `TenantPool` pinnt vor jeder Query:
+  - `set_config('app.current_tenant_id', ...)` und `set_config('app.is_superadmin','false')` auf **derselben** Verbindung, die die Query ausführt.
+  - implementiert sqlx `Executor`, damit 317 Aufrufstellen in 47 Repos unverändert bleiben und der Pin nicht vergessen werden kann.
+  - `begin()` sendet zuerst ein explizites `BEGIN` vor `set_config(..., true)`. `SET LOCAL` außerhalb eines Transaktionsblocks ist ein No-op — die andere Reihenfolge sieht funktionierend aus und setzt den Pin dann beim ersten Statement zurück.
+  - `unscoped()` nutzt die Nil-UUID: passt zu keinem Tenant, verweigert also alles. Fail-closed für Bootstrap-Arbeit.
+  - 7 Tests in `tests/tenant_pin_tests.rs`. Der entscheidende: `checkout_does_not_inherit_previous_tenant` — eine wiederverwendete Poolverbindung darf keinen Tenant eines vorherigen Requests übernehmen.
+
+  **Bootstrap-Pfade bewusst ungepinnt**, mit Begründung im Code: `system/setup` und `demo/seed` erzeugen den ersten Tenant, können also nichts pinnen. `demo/summary` ermittelt den Tenant erst ungepinnt und pinnt danach auf dessen ID. `demo/seed` pinnt seine Transaktion direkt nach der Tenant-Anlage um.
+
+  **Ein Auth-Pfad braucht eine Ausnahme, weil er den Pin noch nicht kennt:** Login liest den Tenant *aus* der User-Zeile. `users_select` verlangt `tenant_id = get_current_tenant_id()`, was dort nicht existiert. Rolle `agrocore_auth` (NOLOGIN, SELECT auf `users` + `user_sites`, Policy nur für diese Rolle) löst das. Verifiziert: unter `agrocore_app` liefert die Abfrage weiterhin 0 Zeilen, die Ausnahme ist also begrenzt.
+
+  **Durch das Wirksamschalten vier weitere echte Bugs sichtbar geworden**, alle gegen eine frisch migrierte Datenbank verifiziert:
+  - **Login komplett kaputt.** Fehlende Grants für 10 nach der RLS-Migration angelegte Tabellen; `user_sites` wird vom Login-Join gebraucht, also schlug jeder Login mit `permission denied` fehl.
+  - **Refresh-Token-Write wirkungslos.** `update_refresh_token` schrieb ungepinnt, `users_update` verlangt den Pin → UPDATE traf 0 Zeilen → Handler meldete ehrlich `false`. Das war vorher als stilles Scheitern übersehen worden.
+  - **`#[sqlx(json)]` auf `Option<T>` ist falsch.** sqlx kennt `json` (erzeugt `Json<T>`, nicht-null) und `json(nullable)` (erzeugt `Option<Json<T>>`). 29 Felder in 10 Dateien waren falsch annotiert. Ursache für `unexpected null; try decoding as an Option`.
+  - **Schema-Drift bei `orders`:** `order_type` war `VARCHAR` statt JSONB, `planned_date`/`deadline_date` waren `DATE` gegen `DateTime`, und `started_at`/`completed_at` existierten in der Tabelle überhaupt nicht. `GET /api/v1/orders` war dadurch unerreichbar. 5 Konformance-Tests in `tests/order_schema_tests.rs`.
+  - **37 `NUMERIC`-Spalten gegen `f64` in Rust.** Jede Entity, die eine davon berührte, scheiterte am Decode — `GET /api/v1/customers` an `vat_rate`. Auf `DOUBLE PRECISION` normalisiert, iterativ statt per Liste, damit die Lücke nicht zurückkommt.
+
+  **Demo-Seed war fachlich falsch** und hätte nach den Typkorrekturen weiterhin 500er erzeugt: `seeding` und `fertilizing` existieren als `OrderType` nicht (korrekt: `soil_work`, `fertilization`), und `{"mode":"Manual"}` schrieb PascalCase, wo snake_case erwartet wird.
+
+  **NATS war ein harter Startup-Blocker.** Ein fehlender Broker brach den gesamten API-Start ab, obwohl die Publisher ohnehin `let _ = …publish()` taten. Messaging ist jetzt optional; `MESSAGING_REQUIRED=1` erzwingt es, wenn es deploymentskritisch ist. Reports brauchen den Broker weiterhin und sagen das explizit.
+
+  **Verifiziert gegen eine frische Datenbank, alle Migrationen von null, Demo-Seed geladen:**
+  ```text
+  POST /api/v1/auth/login       -> 200
+  GET  /api/v1/health          -> 200
+  GET  /api/v1/sites           -> 200
+  GET  /api/v1/users           -> 200
+  GET  /api/v1/orders          -> 200
+  GET  /api/v1/orders/my-tasks -> 200
+  GET  /api/v1/customers       -> 200
+  GET  /api/v1/inventory/items -> 200
+  GET  /api/v1/tasks           -> 200
+  ```
+
 - [x] **A3 — RLS existiert, war aber wirkungslos** — erledigt (2026-10-01). Drei Ursachen, alle behoben:
 
   **1. Die Verbindungsrolle war Superuser mit BYPASSRLS.** Gemessen auf dieser Installation: `agrocore` hat `rolsuper = true` **und** `rolbypassrls = true`. PostgreSQL exemptet solche Rollen von RLS **bedingungslos** — `FORCE ROW LEVEL SECURITY` ändert daran nichts. Solange die Anwendung als diese Rolle verbindet, sind 190 Policies Dekoration. Migration `0000000004_force_rls.sql` führt `agrocore_app` ein (NOSUPERUSER, NOBYPASSRLS, NOLOGIN) und der Pool schaltet per `after_connect` mit `SET ROLE agrocore_app` darauf um.

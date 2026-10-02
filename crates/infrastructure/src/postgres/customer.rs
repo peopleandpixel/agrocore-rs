@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::customer::{CreateCustomerDto, Customer, UpdateCustomerDto};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::UserRole;
@@ -12,7 +13,7 @@ agrocore_shared::pg_repo!(PgCustomerRepo);
 
 impl CustomerRepository for PgCustomerRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Customer>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Customer>(
                 "SELECT * FROM customers WHERE id = $1 AND tenant_id = $2 AND is_active = true",
@@ -32,7 +33,7 @@ impl CustomerRepository for PgCustomerRepo {
         user_id: Uuid,
         roles: &[UserRole],
     ) -> RepositoryFuture<Option<Customer>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let roles_vec = roles.to_vec();
         let _ = user_id;
         Box::pin(async move {
@@ -65,7 +66,7 @@ impl CustomerRepository for PgCustomerRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Customer>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -120,7 +121,7 @@ impl CustomerRepository for PgCustomerRepo {
         tid: TenantId,
         number: &str,
     ) -> RepositoryFuture<Option<Customer>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let number_owned = number.to_owned();
         Box::pin(async move {
             sqlx::query_as::<_, Customer>(
@@ -140,7 +141,7 @@ impl CustomerRepository for PgCustomerRepo {
         dto: CreateCustomerDto,
         by: Uuid,
     ) -> RepositoryFuture<Customer> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let _ = by; // by is used for audit in the future
         Box::pin(async move {
             sqlx::query_as::<_, Customer>(
@@ -179,7 +180,7 @@ impl CustomerRepository for PgCustomerRepo {
         by: Uuid,
     ) -> RepositoryFuture<Option<Customer>> {
         let _ = by; // by is used for audit in the future
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Customer>(
                 r#"UPDATE customers SET
@@ -223,7 +224,7 @@ impl CustomerRepository for PgCustomerRepo {
         query: &str,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Customer>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -270,7 +271,7 @@ impl CustomerRepository for PgCustomerRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query("UPDATE customers SET is_active = false WHERE id = $1 AND tenant_id = $2")
                 .bind(id)

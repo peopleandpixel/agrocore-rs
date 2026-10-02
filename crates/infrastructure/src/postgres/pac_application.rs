@@ -1,4 +1,5 @@
 use crate::postgres::audit_log::PgAuditLogRepo;
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::finance::{
     CreatePACApplicationDto, PACApplication, UpdatePACApplicationDto,
 };
@@ -15,7 +16,7 @@ agrocore_shared::pg_repo!(PgPACApplicationRepo);
 
 impl PACApplicationRepo for PgPACApplicationRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<PACApplication>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, PACApplication>(
                 "SELECT * FROM pac_applications WHERE tenant_id = $1 AND id = $2",
@@ -34,7 +35,7 @@ impl PACApplicationRepo for PgPACApplicationRepo {
         user_id: Uuid,
         roles: &[UserRole],
     ) -> RepositoryFuture<Option<PACApplication>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let roles_vec = roles.to_vec();
         Box::pin(async move {
             let can_see_all =
@@ -60,7 +61,7 @@ impl PACApplicationRepo for PgPACApplicationRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<PACApplication>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -100,8 +101,8 @@ impl PACApplicationRepo for PgPACApplicationRepo {
         dto: CreatePACApplicationDto,
         by: Uuid,
     ) -> RepositoryFuture<PACApplication> {
-        let pool = self.pool.clone();
-        let audit_repo = PgAuditLogRepo::new(pool.clone());
+        let pool = TenantPool::new(&self.pool, tid.0);
+        let audit_repo = PgAuditLogRepo::new(self.pool.clone());
         Box::pin(async move {
             let entity = sqlx::query_as::<_, PACApplication>(
                 "INSERT INTO pac_applications (id, tenant_id, year, application_number, status, total_eligible_area, eco_schemes, documents_urls) 
@@ -145,8 +146,8 @@ impl PACApplicationRepo for PgPACApplicationRepo {
         dto: UpdatePACApplicationDto,
         by: Uuid,
     ) -> RepositoryFuture<Option<PACApplication>> {
-        let pool = self.pool.clone();
-        let audit_repo = PgAuditLogRepo::new(pool.clone());
+        let pool = TenantPool::new(&self.pool, tid.0);
+        let audit_repo = PgAuditLogRepo::new(self.pool.clone());
         Box::pin(async move {
             let old_val = sqlx::query_as::<_, PACApplication>(
                 "SELECT * FROM pac_applications WHERE tenant_id = $1 AND id = $2",
@@ -229,8 +230,8 @@ impl PACApplicationRepo for PgPACApplicationRepo {
         })
     }
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
-        let audit_repo = PgAuditLogRepo::new(pool.clone());
+        let pool = TenantPool::new(&self.pool, tid.0);
+        let audit_repo = PgAuditLogRepo::new(self.pool.clone());
         Box::pin(async move {
             // Get old value for audit before deletion
             let old_val = sqlx::query_as::<_, PACApplication>(
@@ -281,7 +282,7 @@ impl PACApplicationRepo for PgPACApplicationRepo {
         year: i32,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<PACApplication>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;

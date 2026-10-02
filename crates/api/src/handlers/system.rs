@@ -67,7 +67,12 @@ pub async fn initial_setup(
         SharedError::Validation(e.to_string())
     })?;
 
-    let pool = state.db.pool();
+    // The setup endpoint runs *before* any tenant exists, so no tenant can be
+    // pinned. The nil tenant matches no tenant: the policies deny data access,
+    // while `tenants_insert` still allows this one setup INSERT. That is the
+    // intent - setup may create the first tenant, but must not read or write
+    // tenant data.
+    let pool = state.db.unscoped_pool();
     let mut tx = pool.begin().await.map_err(|e| {
         error!("Failed to begin transaction: {}", e);
         SharedError::Database(e.to_string())
@@ -148,16 +153,16 @@ pub async fn initial_setup(
 
     // 4 Publish TenantCreated event after successful commit
     info!("Publishing TenantCreated event for tenant: {}", tenant.id);
-    let _ = state
-        .messaging
-        .publish(
-            "system.tenant.created".to_string(),
-            &agrocore_messaging::Event::new(
-                tenant.id.to_string(),
-                agrocore_messaging::GlobalEvent::TenantCreated(tenant.clone()),
-            ),
-        )
-        .await;
+    let tenant_event = agrocore_messaging::Event::new(
+        tenant.id.to_string(),
+        agrocore_messaging::GlobalEvent::TenantCreated(tenant.clone()),
+    );
+    let _ = crate::publish_event(
+        state.messaging.as_ref(),
+        "system.tenant.created",
+        &tenant_event,
+    )
+    .await;
 
     info!("Initial setup completed successfully");
     Ok(HttpResponse::Created().finish())

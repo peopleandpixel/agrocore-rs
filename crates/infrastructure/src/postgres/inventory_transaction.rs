@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::inventory::{
     CreateInventoryTransactionDto, InventoryTransaction, TransactionType,
 };
@@ -19,7 +20,7 @@ impl InventoryTransactionRepo for PgInventoryTransactionRepo {
         tid: TenantId,
         id: Uuid,
     ) -> RepositoryFuture<Option<InventoryTransaction>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, InventoryTransaction>(
                 "SELECT * FROM inventory_transactions WHERE id = $1 AND tenant_id = $2",
@@ -38,7 +39,7 @@ impl InventoryTransactionRepo for PgInventoryTransactionRepo {
         item_id: Uuid,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<InventoryTransaction>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
 
@@ -86,7 +87,7 @@ impl InventoryTransactionRepo for PgInventoryTransactionRepo {
         tid: TenantId,
         limit: u32,
     ) -> RepositoryFuture<Vec<InventoryTransaction>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, InventoryTransaction>(
                 "SELECT * FROM inventory_transactions WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2",
@@ -105,7 +106,7 @@ impl InventoryTransactionRepo for PgInventoryTransactionRepo {
         dto: CreateInventoryTransactionDto,
         by: Uuid,
     ) -> RepositoryFuture<InventoryTransaction> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let now = Utc::now();
             let id = Uuid::new_v4();
@@ -157,7 +158,7 @@ impl InventoryTransactionRepo for PgInventoryTransactionRepo {
         notes: Option<String>,
         by: Uuid,
     ) -> RepositoryFuture<InventoryTransaction> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let now = Utc::now();
             let id = Uuid::new_v4();
@@ -203,7 +204,7 @@ impl InventoryTransactionRepo for PgInventoryTransactionRepo {
         notes: Option<String>,
         by: Uuid,
     ) -> RepositoryFuture<Option<InventoryTransaction>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
 
         Box::pin(async move {
             // Calculate available balance using FIFO/FEFO logic
@@ -281,7 +282,7 @@ impl InventoryTransactionRepo for PgInventoryTransactionRepo {
         to_location: &str,
         by: Uuid,
     ) -> RepositoryFuture<Option<InventoryTransaction>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let from_location = from_location.to_string();
         let to_location = to_location.to_string();
 
@@ -324,7 +325,7 @@ impl InventoryTransactionRepo for PgInventoryTransactionRepo {
         notes: &str,
         by: Uuid,
     ) -> RepositoryFuture<Option<InventoryTransaction>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let notes = notes.to_string();
 
         Box::pin(async move {
@@ -357,7 +358,7 @@ impl InventoryTransactionRepo for PgInventoryTransactionRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let result =
                 sqlx::query("DELETE FROM inventory_transactions WHERE id = $1 AND tenant_id = $2")

@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::compliance::{AuditLog, CreateAuditLogDto};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::repositories::{
@@ -11,7 +12,7 @@ agrocore_shared::pg_repo!(PgAuditLogRepo);
 
 impl AuditLogRepo for PgAuditLogRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<AuditLog>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, AuditLog>(
                 "SELECT * FROM audit_logs WHERE tenant_id = $1 AND id = $2",
@@ -29,7 +30,7 @@ impl AuditLogRepo for PgAuditLogRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<AuditLog>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -65,7 +66,7 @@ impl AuditLogRepo for PgAuditLogRepo {
     }
 
     fn create(&self, tid: TenantId, dto: CreateAuditLogDto) -> RepositoryFuture<AuditLog> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             sqlx::query_as::<_, AuditLog>(

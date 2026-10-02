@@ -59,8 +59,13 @@ pub async fn export_orders_excel(
     };
     let event = Event::new("api".into(), request);
 
-    let response = state
-        .messaging
+    let Some(broker) = state.messaging.as_ref() else {
+        return Err(SharedError::Internal(
+            "Reporting service unavailable: message broker not connected".to_string(),
+        )
+        .into());
+    };
+    let response = broker
         .request::<_, ReportingResponse>("reporting.request", &event)
         .await
         .map_err(|e| SharedError::Internal(e.to_string()))?;
@@ -96,8 +101,13 @@ pub async fn export_sites_geojson(
     };
     let event = Event::new("api".into(), request);
 
-    let response = state
-        .messaging
+    let Some(broker) = state.messaging.as_ref() else {
+        return Err(SharedError::Internal(
+            "Reporting service unavailable: message broker not connected".to_string(),
+        )
+        .into());
+    };
+    let response = broker
         .request::<_, ReportingResponse>("reporting.request", &event)
         .await
         .map_err(|e| SharedError::Internal(e.to_string()))?;
@@ -129,8 +139,13 @@ pub async fn export_pac_sip(
     };
     let event = Event::new("api".into(), request);
 
-    let response = state
-        .messaging
+    let Some(broker) = state.messaging.as_ref() else {
+        return Err(SharedError::Internal(
+            "Reporting service unavailable: message broker not connected".to_string(),
+        )
+        .into());
+    };
+    let response = broker
         .request::<_, ReportingResponse>("reporting.request", &event)
         .await
         .map_err(|e| SharedError::Internal(e.to_string()))?;
@@ -166,8 +181,13 @@ pub async fn export_veterinary(
     };
     let event = Event::new("api".into(), request);
 
-    let response = state
-        .messaging
+    let Some(broker) = state.messaging.as_ref() else {
+        return Err(SharedError::Internal(
+            "Reporting service unavailable: message broker not connected".to_string(),
+        )
+        .into());
+    };
+    let response = broker
         .request::<_, ReportingResponse>("reporting.request", &event)
         .await
         .map_err(|e| SharedError::Internal(e.to_string()))?;

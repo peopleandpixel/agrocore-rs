@@ -58,7 +58,12 @@ pub async fn login(
     let stored = state
         .db
         .user_repo()
-        .update_refresh_token(user.user_id, &refresh_token, refresh_expires_at)
+        .update_refresh_token(
+            user.tenant_id,
+            user.user_id,
+            &refresh_token,
+            refresh_expires_at,
+        )
         .await
         .map_err(|e| SharedError::Internal(format!("Failed to store refresh token: {}", e)))?;
 
@@ -110,7 +115,11 @@ pub async fn refresh_token(
         && expires_at < Utc::now()
     {
         // Invalidate expired token
-        let _ = state.db.user_repo().invalidate_refresh_token(user.id).await;
+        let _ = state
+            .db
+            .user_repo()
+            .invalidate_refresh_token(user.tenant_id, user.id)
+            .await;
         return Err(SharedError::Unauthorized("Refresh token expired".into()).into());
     }
 
@@ -127,7 +136,12 @@ pub async fn refresh_token(
     let stored = state
         .db
         .user_repo()
-        .update_refresh_token(user.id, &new_refresh_token, refresh_expires_at)
+        .update_refresh_token(
+            user.tenant_id,
+            user.id,
+            &new_refresh_token,
+            refresh_expires_at,
+        )
         .await
         .map_err(|e| SharedError::Internal(format!("Failed to update refresh token: {}", e)))?;
 
@@ -172,7 +186,10 @@ pub async fn logout(
     state
         .db
         .user_repo()
-        .invalidate_refresh_token(auth.0.user_id)
+        .invalidate_refresh_token(
+            agrocore_domain::entities::tenant::TenantId(auth.0.tenant_id),
+            auth.0.user_id,
+        )
         .await?;
 
     info!("User {} logged out, token revoked", auth.0.user_id);

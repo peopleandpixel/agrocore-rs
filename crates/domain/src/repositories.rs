@@ -430,10 +430,27 @@ pub trait UserRepository: Send + Sync {
     ) -> RepositoryFuture<Option<User>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
     fn authenticate(&self, dto: LoginDto) -> RepositoryFuture<AuthResponse>;
+    /// Resolve a refresh token to its user.
+    ///
+    /// Runs before the tenant is known (the token is the credential), so it is
+    /// deliberately tenant-agnostic and reaches `users` through the restricted
+    /// `agrocore_auth` role rather than through a pin.
     fn find_by_refresh_token(&self, refresh_token: &str) -> RepositoryFuture<Option<User>>;
-    fn invalidate_refresh_token(&self, user_id: Uuid) -> RepositoryFuture<bool>;
+    /// Clear a stored refresh token. Tenant-scoped, like
+    /// [`Self::update_refresh_token`].
+    fn invalidate_refresh_token(
+        &self,
+        tenant_id: TenantId,
+        user_id: Uuid,
+    ) -> RepositoryFuture<bool>;
+    /// Persist a refresh token.
+    ///
+    /// Takes the tenant because the write is subject to row-level security:
+    /// `users_update` requires `tenant_id = get_current_tenant_id()`. Without
+    /// it the UPDATE matches no rows and reports `false`.
     fn update_refresh_token(
         &self,
+        tenant_id: TenantId,
         user_id: Uuid,
         token: &str,
         expires_at: chrono::DateTime<chrono::Utc>,

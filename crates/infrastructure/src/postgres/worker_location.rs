@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::workforce::{CreateWorkerLocationDto, WorkerLocation};
 use agrocore_domain::repositories::{RepositoryFuture, WorkerLocationRepo};
@@ -9,7 +10,7 @@ agrocore_shared::pg_repo!(PgWorkerLocationRepo);
 
 impl WorkerLocationRepo for PgWorkerLocationRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WorkerLocation>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WorkerLocation>(
                 "SELECT id, tenant_id, worker_id, ST_X(location) as lng, ST_Y(location) as lat, timestamp FROM worker_locations WHERE tenant_id = $1 AND id = $2"
@@ -32,7 +33,7 @@ impl WorkerLocationRepo for PgWorkerLocationRepo {
         tid: TenantId,
         dto: CreateWorkerLocationDto,
     ) -> RepositoryFuture<WorkerLocation> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WorkerLocation>(
                 "INSERT INTO worker_locations (id, tenant_id, worker_id, location, timestamp) VALUES ($1, $2, $3, ST_SetSRID(ST_MakePoint($4, $5), 4326), $6) RETURNING id, tenant_id, worker_id, ST_X(location) as lng, ST_Y(location) as lat, timestamp"
@@ -46,7 +47,7 @@ impl WorkerLocationRepo for PgWorkerLocationRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<WorkerLocation>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -89,7 +90,7 @@ impl WorkerLocationRepo for PgWorkerLocationRepo {
         tid: TenantId,
         worker_id: Uuid,
     ) -> RepositoryFuture<Option<WorkerLocation>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WorkerLocation>(
                 "SELECT id, tenant_id, worker_id, ST_X(location) as lng, ST_Y(location) as lat, timestamp FROM worker_locations WHERE tenant_id = $1 AND worker_id = $2 ORDER BY timestamp DESC LIMIT 1"
@@ -99,7 +100,7 @@ impl WorkerLocationRepo for PgWorkerLocationRepo {
         })
     }
     fn get_latest_locations(&self, tid: TenantId) -> RepositoryFuture<Vec<WorkerLocation>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WorkerLocation>(
                 "SELECT DISTINCT ON (worker_id) id, tenant_id, worker_id, ST_X(location) as lng, ST_Y(location) as lat, timestamp FROM worker_locations WHERE tenant_id = $1 ORDER BY worker_id, timestamp DESC"

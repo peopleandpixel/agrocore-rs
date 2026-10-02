@@ -24,7 +24,7 @@ pub struct User {
     pub external_cost_per_hour: Option<f64>,
     pub color: Option<String>,
     pub language: Option<String>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub assigned_site_ids: Option<Vec<Uuid>>,
     pub last_login: Option<DateTime<Utc>>,
     pub refresh_token: Option<String>,

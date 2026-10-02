@@ -13,6 +13,7 @@ agrocore_shared::pg_repo!(PgUserRepo);
 
 use crate::jwt::generate_jwt;
 use crate::postgres::error_mapper::map_db_error;
+use crate::postgres::tenant_pool::TenantPool;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use password_hash::phc::SaltString;
 use rand::rng;
@@ -39,7 +40,7 @@ struct UserRow {
     pub refresh_token_expires_at: Option<chrono::DateTime<chrono::Utc>>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub assigned_site_ids: Option<Vec<Uuid>>,
 }
 
@@ -81,7 +82,7 @@ const USER_SELECT_FIELDS: &str = r#"SELECT u.id, u.tenant_id, u.firstname, u.las
 
 impl UserRepository for PgUserRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<User>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let user: Option<UserRow> = sqlx::query_as(&format!(
                 "{} WHERE u.id = $1 AND u.tenant_id = $2 AND u.is_active = true GROUP BY u.id",
@@ -106,24 +107,51 @@ impl UserRepository for PgUserRepo {
         self.find_by_id(tid, id)
     }
 
+    /// Look a user up by email for the login path.
+    ///
+    /// This runs *before* the tenant is known: authentication has not happened
+    /// yet, so there is no `app.current_tenant_id` to pin. RLS would therefore
+    /// hide every row. The lookup is instead scoped to what a login may see -
+    /// active users only - and the caller pins the returned user's tenant
+    /// before touching anything else.
+    ///
+    /// This is the one place where a tenant-agnostic read is required by
+    /// design. It returns the tenant id with the user, so the caller never has
+    /// to search again.
     fn find_by_email(&self, email: &str) -> RepositoryFuture<Option<User>> {
         let pool = self.pool.clone();
         let email = email.to_string();
         Box::pin(async move {
+            let mut conn = pool.acquire().await.map_err(map_db_error)?;
+            // `SET LOCAL ROLE` is only effective inside a transaction block, so
+            // BEGIN has to come first. Ordering these the other way round would
+            // silently leave the privileged role active for the whole
+            // connection.
+            sqlx::query("BEGIN")
+                .execute(&mut *conn)
+                .await
+                .map_err(map_db_error)?;
+            sqlx::query("SET LOCAL ROLE agrocore_auth")
+                .execute(&mut *conn)
+                .await
+                .map_err(map_db_error)?;
             let user: Option<UserRow> = sqlx::query_as(&format!(
                 "{} WHERE u.email = $1 AND u.is_active = true GROUP BY u.id",
                 USER_SELECT_FIELDS
             ))
             .bind(email)
-            .fetch_optional(&pool)
+            .fetch_optional(&mut *conn)
             .await
             .map_err(map_db_error)?;
+            // End the transaction so the connection is clean when it returns to
+            // the pool; `SET LOCAL ROLE` is scoped to it.
+            sqlx::query("COMMIT").execute(&mut *conn).await.ok();
             Ok(user.map(Into::into))
         })
     }
 
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<User>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -172,7 +200,7 @@ impl UserRepository for PgUserRepo {
     }
 
     fn create(&self, tid: TenantId, dto: CreateUserDto, _by: Uuid) -> RepositoryFuture<User> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let password_hash = dto.password;
         let roles = dto.roles.unwrap_or_default();
         let internal_cost_per_hour = dto.internal_cost_per_hour;
@@ -220,7 +248,7 @@ impl UserRepository for PgUserRepo {
         _by: Uuid,
     ) -> RepositoryFuture<Option<User>> {
         // Extract all owned data from dto and self to avoid lifetime issues
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let firstname = dto.firstname;
         let lastname = dto.lastname;
         let email = dto.email;
@@ -328,7 +356,7 @@ impl UserRepository for PgUserRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let result = sqlx::query("DELETE FROM users WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
@@ -346,14 +374,40 @@ impl UserRepository for PgUserRepo {
         let password = dto.password;
 
         Box::pin(async move {
+            // The user lookup runs before the tenant is known - the pin is read
+            // *from* this row - so `users_select` (`tenant_id =
+            // get_current_tenant_id()`) cannot be satisfied and would hide every
+            // user. `agrocore_auth` has a SELECT-only policy on `users` that
+            // admits exactly this step and nothing else.
+            //
+            // BEGIN comes first: `SET LOCAL ROLE` is a no-op outside a
+            // transaction block, and getting that wrong would leave the
+            // privileged role active on the whole pooled connection.
+            let mut conn = pool.acquire().await.map_err(map_db_error)?;
+            sqlx::query("BEGIN")
+                .execute(&mut *conn)
+                .await
+                .map_err(map_db_error)?;
+            sqlx::query("SET LOCAL ROLE agrocore_auth")
+                .execute(&mut *conn)
+                .await
+                .map_err(map_db_error)?;
+
             let user: User = sqlx::query_as(&format!(
                 "{} WHERE u.email = $1 AND u.is_active = true GROUP BY u.id",
                 USER_SELECT_FIELDS
             ))
             .bind(&email)
-            .fetch_one(&pool)
+            .fetch_one(&mut *conn)
             .await
             .map_err(map_db_error)?;
+
+            // Hand the connection back in its normal (RLS-enforcing) role
+            // before the tenant update below.
+            sqlx::query("COMMIT")
+                .execute(&mut *conn)
+                .await
+                .map_err(map_db_error)?;
 
             let argon2 = Argon2::default();
             let parsed_hash = PasswordHash::new(&user.password_hash)
@@ -367,14 +421,16 @@ impl UserRepository for PgUserRepo {
             let refresh_token = generate_jwt(user.id, user.tenant_id.0, &user.roles)
                 .map_err(|e| SharedError::Internal(format!("JWT generation failed: {}", e)))?;
 
-            // Update refresh token in DB
+            // Update refresh token in DB. Pinned to the user's own tenant, so
+            // RLS restricts the write to that row.
+            let pinned = TenantPool::new(&pool, user.tenant_id.0);
             sqlx::query(
                 "UPDATE users SET refresh_token = $1, refresh_token_expires_at = $2, last_login = NOW() WHERE id = $3"
             )
             .bind(&refresh_token)
             .bind(chrono::Utc::now() + chrono::Duration::days(30))
             .bind(user.id)
-            .execute(&pool)
+            .execute(&pinned)
             .await
             .map_err(map_db_error)?;
 
@@ -403,6 +459,19 @@ impl UserRepository for PgUserRepo {
         let pool = self.pool.clone();
         let refresh_token = refresh_token.to_string();
         Box::pin(async move {
+            // The refresh token is itself the credential, so the tenant is not
+            // known before this lookup - the same position as `authenticate`.
+            // `agrocore_auth` is the restricted role that admits it.
+            let mut conn = pool.acquire().await.map_err(map_db_error)?;
+            sqlx::query("BEGIN")
+                .execute(&mut *conn)
+                .await
+                .map_err(map_db_error)?;
+            sqlx::query("SET LOCAL ROLE agrocore_auth")
+                .execute(&mut *conn)
+                .await
+                .map_err(map_db_error)?;
+
             // Expiry and the active flag are filtered in SQL rather than in
             // Rust, so an expired token is indistinguishable from an unknown one
             // at this layer and cannot be mistaken for a valid session.
@@ -412,16 +481,28 @@ impl UserRepository for PgUserRepo {
                 USER_SELECT_FIELDS
             ))
             .bind(&refresh_token)
-            .fetch_optional(&pool)
+            .fetch_optional(&mut *conn)
             .await
             .map_err(map_db_error)?;
+
+            sqlx::query("COMMIT")
+                .execute(&mut *conn)
+                .await
+                .map_err(map_db_error)?;
 
             Ok(user.map(User::from))
         })
     }
 
-    fn invalidate_refresh_token(&self, user_id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+    fn invalidate_refresh_token(
+        &self,
+        tenant_id: TenantId,
+        user_id: Uuid,
+    ) -> RepositoryFuture<bool> {
+        // Pinned for the same reason as `update_refresh_token`: `users_update`
+        // is tenant-scoped, so an unpinned write would silently match no rows
+        // and report `false` - a revocation that appears to have happened.
+        let pool = TenantPool::new(&self.pool, tenant_id.0);
         Box::pin(async move {
             // `refresh_token IS NOT NULL` keeps this idempotent: invalidating
             // an already-cleared token reports "nothing changed" instead of
@@ -441,11 +522,16 @@ impl UserRepository for PgUserRepo {
 
     fn update_refresh_token(
         &self,
+        tenant_id: TenantId,
         user_id: Uuid,
         token: &str,
         expires_at: chrono::DateTime<chrono::Utc>,
     ) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        // Pinned: `users_update` requires `tenant_id =
+        // get_current_tenant_id()`, so without the pin the UPDATE would match no
+        // rows and report `false` - which the login handler correctly treats as
+        // "refresh token could not be persisted".
+        let pool = TenantPool::new(&self.pool, tenant_id.0);
         let token = token.to_string();
         Box::pin(async move {
             let result = sqlx::query(

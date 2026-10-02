@@ -204,23 +204,24 @@ impl AgroCoreConfig {
     /// Returns PgPoolOptions configured from this config.
     #[cfg(feature = "sqlx")]
     pub fn pg_pool_options(&self) -> PgPoolOptions {
-        PgPoolOptions::new()
-            // Row-level security is per-session state, so every physical
-            // connection has to be switched to a role that is subject to it.
-            // The connection role is usually superuser, which PostgreSQL
-            // exempts from RLS unconditionally.
-            //
-            // Gated on AGROCORE_RLS_ENABLED: turning the policies live before
-            // every query pins `app.current_tenant_id` would make the
-            // repositories return zero rows, because the policies compare
-            // `tenant_id = get_current_tenant_id()` and that setting is NULL
-            // until a request supplies it. The switchover is therefore a
-            // config change rather than a coordinated release.
-            .after_connect(|conn, _meta| {
+        let opts = PgPoolOptions::new()
+            .max_connections(self.database_max_connections)
+            .min_connections(self.database_min_connections)
+            .idle_timeout(std::time::Duration::from_secs(
+                self.database_idle_timeout_secs,
+            ))
+            .max_lifetime(std::time::Duration::from_secs(
+                self.database_max_lifetime_secs,
+            ))
+            .acquire_timeout(std::time::Duration::from_secs(
+                self.database_acquire_timeout_secs,
+            ));
+
+        // RLS is only enforced for a role that is neither superuser nor
+        // BYPASSRLS; see crates/infrastructure/src/postgres/tenant_pool.rs.
+        if rls_enabled() {
+            opts.after_connect(|conn, _meta| {
                 Box::pin(async move {
-                    if !rls_enabled() {
-                        return Ok(());
-                    }
                     sqlx::query("SET ROLE agrocore_app")
                         .execute(conn)
                         .await
@@ -232,17 +233,9 @@ impl AgroCoreConfig {
                         })
                 })
             })
-            .max_connections(self.database_max_connections)
-            .min_connections(self.database_min_connections)
-            .idle_timeout(std::time::Duration::from_secs(
-                self.database_idle_timeout_secs,
-            ))
-            .max_lifetime(std::time::Duration::from_secs(
-                self.database_max_lifetime_secs,
-            ))
-            .acquire_timeout(std::time::Duration::from_secs(
-                self.database_acquire_timeout_secs,
-            ))
+        } else {
+            opts
+        }
     }
 
     /// Returns the connect timeout duration.

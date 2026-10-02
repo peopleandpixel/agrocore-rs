@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::weather::{
     CreateWeatherStationDto, UpdateWeatherStationDto, WeatherStation,
@@ -13,7 +14,7 @@ agrocore_shared::pg_repo!(PgWeatherStationRepo);
 
 impl WeatherStationRepo for PgWeatherStationRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WeatherStation>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WeatherStation>(
                 "SELECT * FROM weather_stations WHERE id = $1 AND tenant_id = $2",
@@ -31,7 +32,7 @@ impl WeatherStationRepo for PgWeatherStationRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<WeatherStation>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -76,7 +77,7 @@ impl WeatherStationRepo for PgWeatherStationRepo {
         dto: CreateWeatherStationDto,
         _by: Uuid,
     ) -> RepositoryFuture<WeatherStation> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             sqlx::query_as::<_, WeatherStation>(
@@ -103,7 +104,7 @@ impl WeatherStationRepo for PgWeatherStationRepo {
         dto: UpdateWeatherStationDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<WeatherStation>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WeatherStation>(
                 r#"UPDATE weather_stations SET label = COALESCE($1, label), is_active = COALESCE($2, is_active), updated_at = NOW()
@@ -119,7 +120,7 @@ impl WeatherStationRepo for PgWeatherStationRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query("DELETE FROM weather_stations WHERE id = $1 AND tenant_id = $2")
                 .bind(id)

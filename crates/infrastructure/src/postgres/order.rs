@@ -1,4 +1,5 @@
 use crate::postgres::audit_log::PgAuditLogRepo;
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::order::{CreateOrderDto, Order, UpdateOrderDto};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::UserRole;
@@ -13,7 +14,7 @@ agrocore_shared::pg_repo!(PgOrderRepo);
 
 impl OrderRepository for PgOrderRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Order>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Order>("SELECT * FROM orders WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
@@ -31,7 +32,7 @@ impl OrderRepository for PgOrderRepo {
         user_id: Uuid,
         roles: &[UserRole],
     ) -> RepositoryFuture<Option<Order>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let roles_vec = roles.to_vec();
         Box::pin(async move {
             let can_see_all =
@@ -59,7 +60,7 @@ impl OrderRepository for PgOrderRepo {
     }
 
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Order>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -106,7 +107,7 @@ impl OrderRepository for PgOrderRepo {
     }
 
     fn find_my_tasks(&self, tid: TenantId, user_id: Uuid) -> RepositoryFuture<Vec<Order>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Order>("SELECT * FROM orders WHERE tenant_id = $1 AND assigned_to = $2 AND is_active = true")
                 .bind(tid)
@@ -118,8 +119,8 @@ impl OrderRepository for PgOrderRepo {
     }
 
     fn create(&self, tid: TenantId, dto: CreateOrderDto, by: Uuid) -> RepositoryFuture<Order> {
-        let pool = self.pool.clone();
-        let audit_repo = PgAuditLogRepo::new(pool.clone());
+        let pool = TenantPool::new(&self.pool, tid.0);
+        let audit_repo = PgAuditLogRepo::new(self.pool.clone());
         Box::pin(async move {
             let id = Uuid::new_v4();
             let order = sqlx::query_as::<_, Order>(
@@ -164,8 +165,8 @@ impl OrderRepository for PgOrderRepo {
         dto: UpdateOrderDto,
         by: Uuid,
     ) -> RepositoryFuture<Option<Order>> {
-        let pool = self.pool.clone();
-        let audit_repo = PgAuditLogRepo::new(pool.clone());
+        let pool = TenantPool::new(&self.pool, tid.0);
+        let audit_repo = PgAuditLogRepo::new(self.pool.clone());
         Box::pin(async move {
             // Get old value for audit
             let old_order =
@@ -213,7 +214,7 @@ impl OrderRepository for PgOrderRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         // Since delete doesn't have 'by' parameter in the trait yet, we might need to adjust the trait
         // or accept that delete audits don't have a user_id for now if called from here.
         // Actually AuditLogRepo::create needs a user_id.
@@ -233,7 +234,7 @@ impl OrderRepository for PgOrderRepo {
         tid: TenantId,
         worker_id: Uuid,
     ) -> RepositoryFuture<Vec<Order>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Order>(
                 "SELECT * FROM orders WHERE tenant_id = $1 AND assigned_to = $2",
@@ -252,7 +253,7 @@ impl OrderRepository for PgOrderRepo {
         customer_id: Uuid,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Order>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;

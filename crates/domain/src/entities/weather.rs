@@ -41,7 +41,7 @@ pub struct WeatherStation {
     pub serial_number: Option<String>,
     pub api_key_config: Option<String>,
     pub is_active: bool,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub sensor_metadata: Option<serde_json::Value>,
     pub firmware_version: Option<String>,
     pub created_at: DateTime<Utc>,

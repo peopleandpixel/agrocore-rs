@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::inventory::{
     CreateInventoryItemDto, InventoryBalance, InventoryItem, UpdateInventoryItemDto,
 };
@@ -17,7 +18,7 @@ pg_repo!(PgInventoryItemRepo);
 
 impl InventoryItemRepository for PgInventoryItemRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<InventoryItem>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, InventoryItem>(
                 "SELECT * FROM inventory_items WHERE id = $1 AND tenant_id = $2 AND is_active IS DISTINCT FROM false",
@@ -31,7 +32,7 @@ impl InventoryItemRepository for PgInventoryItemRepo {
     }
 
     fn find_by_sku(&self, tid: TenantId, sku: &str) -> RepositoryFuture<Option<InventoryItem>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let sku = sku.to_string();
         Box::pin(async move {
             sqlx::query_as::<_, InventoryItem>(
@@ -50,7 +51,7 @@ impl InventoryItemRepository for PgInventoryItemRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<InventoryItem>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
 
@@ -92,7 +93,7 @@ impl InventoryItemRepository for PgInventoryItemRepo {
     }
 
     fn find_below_minimum(&self, tid: TenantId) -> RepositoryFuture<Vec<InventoryBalance>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let items: Vec<InventoryItem> = sqlx::query_as(
                 "SELECT * FROM inventory_items WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true)",
@@ -144,7 +145,7 @@ impl InventoryItemRepository for PgInventoryItemRepo {
     }
 
     fn find_balances(&self, tid: TenantId) -> RepositoryFuture<Vec<InventoryBalance>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let items: Vec<InventoryItem> = sqlx::query_as(
                 "SELECT * FROM inventory_items WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true)",
@@ -199,7 +200,7 @@ impl InventoryItemRepository for PgInventoryItemRepo {
         tid: TenantId,
         item_id: Uuid,
     ) -> RepositoryFuture<Option<InventoryBalance>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let item: Option<InventoryItem> = sqlx::query_as(
                 "SELECT * FROM inventory_items WHERE id = $1 AND tenant_id = $2 AND (is_active IS NULL OR is_active = true)",
@@ -264,7 +265,7 @@ impl InventoryItemRepository for PgInventoryItemRepo {
         dto: CreateInventoryItemDto,
         _by: Uuid,
     ) -> RepositoryFuture<InventoryItem> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let now = Utc::now();
             let id = Uuid::new_v4();
@@ -300,7 +301,7 @@ impl InventoryItemRepository for PgInventoryItemRepo {
         dto: UpdateInventoryItemDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<InventoryItem>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let now = Utc::now();
 
@@ -336,7 +337,7 @@ impl InventoryItemRepository for PgInventoryItemRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let result = sqlx::query(
                 "UPDATE inventory_items SET is_active = false, updated_at = $1 WHERE id = $2 AND tenant_id = $3 AND (is_active IS NULL OR is_active = true)",

@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::worker_task_status::{
     CreateWorkerTaskStatusDto, WorkerTaskStatus, WorkerTaskStatusType,
@@ -16,7 +17,7 @@ impl WorkerTaskStatusRepository for PgWorkerTaskStatusRepo {
         task_id: Uuid,
         worker_id: Uuid,
     ) -> RepositoryFuture<Option<WorkerTaskStatus>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WorkerTaskStatus>("SELECT * FROM worker_task_statuses WHERE task_id = $1 AND worker_id = $2 AND tenant_id = $3")
                 .bind(task_id)
@@ -33,7 +34,7 @@ impl WorkerTaskStatusRepository for PgWorkerTaskStatusRepo {
         tid: TenantId,
         task_id: Uuid,
     ) -> RepositoryFuture<Vec<WorkerTaskStatus>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WorkerTaskStatus>(
                 "SELECT * FROM worker_task_statuses WHERE task_id = $1 AND tenant_id = $2",
@@ -51,7 +52,7 @@ impl WorkerTaskStatusRepository for PgWorkerTaskStatusRepo {
         tid: TenantId,
         dto: CreateWorkerTaskStatusDto,
     ) -> RepositoryFuture<WorkerTaskStatus> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             sqlx::query_as::<_, WorkerTaskStatus>(
@@ -76,7 +77,7 @@ impl WorkerTaskStatusRepository for PgWorkerTaskStatusRepo {
         worker_id: Uuid,
         status: WorkerTaskStatusType,
     ) -> RepositoryFuture<Option<WorkerTaskStatus>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WorkerTaskStatus>(
                 r#"UPDATE worker_task_statuses SET status = $1, updated_at = NOW()

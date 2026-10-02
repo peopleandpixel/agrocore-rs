@@ -33,7 +33,7 @@ pub struct Customer {
     /// Lieblingsort für Lieferungen / Abholung
     pub preferred_delivery_location: Option<serde_json::Value>,
     /// Vorlieben (z.B. Lieferzeit-Fenster, Produkttypen)
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub preferences: Option<serde_json::Value>,
     pub is_active: bool,
     pub created_at: DateTime<Utc>,

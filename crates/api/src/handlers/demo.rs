@@ -74,13 +74,17 @@ pub async fn seed_demo(
     req.validate()
         .map_err(|e| ApiError::validation(e.to_string()))?;
 
-    let pool = state.db.pool();
+    // Bootstrap path: the demo tenant is created by this very transaction, so
+    // there is no tenant to pin yet. The nil tenant denies access to tenant
+    // data (correct - this must not read another tenant's rows) while the
+    // `tenants_insert` policy still permits creating the demo tenant.
+    let pool = state.db.unscoped_pool();
 
     // Check if tenant already exists
     let existing: Option<Uuid> =
         sqlx::query_scalar("SELECT id FROM tenants WHERE slug = $1 AND is_active = true")
             .bind(&req.tenant)
-            .fetch_optional(pool)
+            .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
@@ -138,6 +142,16 @@ pub async fn seed_demo(
     .fetch_one(&mut *tx)
     .await
     .map_err(agrocore_infrastructure::PostgresDb::map_db_error)?;
+
+    // Re-pin the transaction to the tenant that now exists. Everything below
+    // writes that tenant's rows, and the policies enforce
+    // `tenant_id = current_tenant` on INSERT, so without this every demo row
+    // would be rejected. `SET LOCAL` ties the pin to this transaction.
+    sqlx::query("SELECT set_config('app.current_tenant_id', $1, true)")
+        .bind(tenant.id.to_string())
+        .execute(&mut *tx)
+        .await
+        .map_err(agrocore_infrastructure::PostgresDb::map_db_error)?;
 
     // Create Admin User
     let user_id = Uuid::new_v4();
@@ -568,16 +582,15 @@ pub async fn seed_demo(
         .map_err(|e| SharedError::Database(e.to_string()))?;
 
     // Publish TenantCreated event
-    let _ = state
-        .messaging
-        .publish(
-            "system.tenant.created".to_string(),
-            &agrocore_messaging::Event::new(
-                tenant.id.to_string(),
-                agrocore_messaging::GlobalEvent::TenantCreated(tenant.clone()),
-            ),
-        )
-        .await;
+    let _ = crate::publish_event(
+        state.messaging.as_ref(),
+        "system.tenant.created".to_string(),
+        &agrocore_messaging::Event::new(
+            tenant.id.to_string(),
+            agrocore_messaging::GlobalEvent::TenantCreated(tenant.clone()),
+        ),
+    )
+    .await;
 
     Ok(HttpResponse::Created().json(DemoSeedResponse {
         success: true,
@@ -632,22 +645,25 @@ pub async fn demo_summary(
 ) -> Result<HttpResponse, ApiError> {
     require_demo_access(&state, &auth)?;
 
-    let pool = state.db.pool();
-
-    // Find demo tenant
+    // Look the tenant up first, unpinned: `tenants` is the one table whose
+    // SELECT is not tenant-filtered, and the lookup itself is what tells us
+    // which tenant to pin for the counts that follow.
     let tenant: Option<agrocore_domain::entities::tenant::Tenant> =
         sqlx::query_as("SELECT * FROM tenants WHERE slug = 'demo' AND is_active = true LIMIT 1")
-            .fetch_optional(pool)
+            .fetch_optional(&state.db.unscoped_pool())
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
     let tenant = tenant.ok_or_else(|| ApiError::not_found("Demo tenant not found"))?;
 
+    // From here on everything is the demo tenant's own data, so pin it.
+    let pool = state.db.tenant_pool(tenant.id);
+
     // Count demo data
     let sites_count: i64 =
         sqlx::query_scalar("SELECT COUNT(*) FROM sites WHERE tenant_id = $1 AND is_active = true")
             .bind(tenant.id)
-            .fetch_one(pool)
+            .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
@@ -655,14 +671,14 @@ pub async fn demo_summary(
         "SELECT COUNT(*) FROM equipment WHERE tenant_id = $1 AND is_active = true",
     )
     .bind(tenant.id)
-    .fetch_one(pool)
+    .fetch_one(&pool)
     .await
     .map_err(|e| SharedError::Database(e.to_string()))?;
 
     let orders_count: i64 =
         sqlx::query_scalar("SELECT COUNT(*) FROM orders WHERE tenant_id = $1 AND is_active = true")
             .bind(tenant.id)
-            .fetch_one(pool)
+            .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
@@ -670,7 +686,7 @@ pub async fn demo_summary(
         "SELECT COUNT(*) FROM workers WHERE tenant_id = $1 AND is_active = true",
     )
     .bind(tenant.id)
-    .fetch_one(pool)
+    .fetch_one(&pool)
     .await
     .map_err(|e| SharedError::Database(e.to_string()))?;
 
@@ -678,7 +694,7 @@ pub async fn demo_summary(
         "SELECT COUNT(*) FROM inventory_items WHERE tenant_id = $1 AND is_active = true",
     )
     .bind(tenant.id)
-    .fetch_one(pool)
+    .fetch_one(&pool)
     .await
     .map_err(|e| SharedError::Database(e.to_string()))?;
 
@@ -686,7 +702,7 @@ pub async fn demo_summary(
         "SELECT COUNT(*) FROM animals WHERE tenant_id = $1 AND status = 'active'",
     )
     .bind(tenant.id)
-    .fetch_one(pool)
+    .fetch_one(&pool)
     .await
     .map_err(|e| SharedError::Database(e.to_string()))?;
 

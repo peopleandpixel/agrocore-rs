@@ -1,6 +1,7 @@
 use crate::dto::import::*;
 use crate::dto::site::UpdateSiteDto;
 use agrocore_domain::entities::{Boundary, CropType, GeoPoint, SiteType};
+use agrocore_infrastructure::TenantPool;
 use agrocore_shared::SharedError;
 use agrocore_shared::lpis::{LpisCountry, LpisRegistry};
 use base64::{Engine as _, engine::general_purpose};
@@ -15,12 +16,12 @@ use validator::Validate;
 
 #[derive(Clone)]
 pub struct ImportService {
-    pool: sqlx::PgPool,
+    pool: TenantPool,
     lpis_registry: Arc<LpisRegistry>,
 }
 
 impl ImportService {
-    pub fn new(pool: sqlx::PgPool, lpis_registry: Arc<LpisRegistry>) -> Self {
+    pub fn new(pool: TenantPool, lpis_registry: Arc<LpisRegistry>) -> Self {
         Self {
             pool,
             lpis_registry,

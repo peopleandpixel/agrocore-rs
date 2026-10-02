@@ -214,39 +214,6 @@ async fn authenticate_request(
     }))
 }
 
-/// Pin the tenant on a pooled connection before a query runs.
-///
-/// The RLS policies call `get_current_tenant_id()`, which reads
-/// `app.current_tenant_id`. That setting is session-scoped, so it must be
-/// re-applied on every checkout: a pooled connection may have served a
-/// different tenant before. `set_config(..., false)` makes it session-scoped,
-/// and the explicit reset below prevents any leak into a later request.
-///
-/// `SET LOCAL` would be tidier but requires wrapping every query in a
-/// transaction; with 154 routes that is a larger change than the problem
-/// warrants. The reset in the same call chain closes the window instead.
-pub async fn pin_tenant(
-    conn: &mut sqlx::PgConnection,
-    tenant_id: uuid::Uuid,
-) -> Result<(), sqlx::Error> {
-    sqlx::query("SELECT set_config('app.current_tenant_id', $1, false)")
-        .bind(tenant_id.to_string())
-        .execute(&mut *conn)
-        .await?;
-    Ok(())
-}
-
-/// Clear the tenant pin again.
-///
-/// Called after the request finished. Failures are ignored on purpose: the
-/// connection goes back to the pool either way, and the next request
-/// overwrites the setting before it issues a query.
-pub async fn unpin_tenant(conn: &mut sqlx::PgConnection) {
-    let _ = sqlx::query("SELECT set_config('app.current_tenant_id', '', false)")
-        .execute(&mut *conn)
-        .await;
-}
-
 impl AuthExtractor {
     pub fn roles(&self) -> Vec<agrocore_domain::entities::user::UserRole> {
         self.0

@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::{CreateLivestockDto, Livestock, LivestockType, UpdateLivestockDto};
 use agrocore_domain::repositories::{
@@ -16,7 +17,7 @@ pg_repo!(PgLivestockRepo);
 
 impl LivestockRepository for PgLivestockRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Livestock>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Livestock>(
                 "SELECT * FROM livestock WHERE id = $1 AND tenant_id = $2",
@@ -34,7 +35,7 @@ impl LivestockRepository for PgLivestockRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Livestock>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
 
@@ -80,7 +81,7 @@ impl LivestockRepository for PgLivestockRepo {
         plot_id: Uuid,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Livestock>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
 
@@ -124,7 +125,7 @@ impl LivestockRepository for PgLivestockRepo {
     }
 
     fn find_by_herd(&self, tid: TenantId, herd_id: String) -> RepositoryFuture<Vec<Livestock>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Livestock>(
                 "SELECT * FROM livestock WHERE tenant_id = $1 AND herd_id = $2 ORDER BY label",
@@ -143,7 +144,7 @@ impl LivestockRepository for PgLivestockRepo {
         dto: CreateLivestockDto,
         _by: Uuid,
     ) -> RepositoryFuture<Livestock> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             let now = chrono::Utc::now();
@@ -185,7 +186,7 @@ impl LivestockRepository for PgLivestockRepo {
         dto: UpdateLivestockDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<Livestock>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let existing = sqlx::query_as::<_, Livestock>(
                 "SELECT * FROM livestock WHERE id = $1 AND tenant_id = $2",
@@ -233,7 +234,7 @@ impl LivestockRepository for PgLivestockRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let result = sqlx::query("DELETE FROM livestock WHERE id = $1 AND tenant_id = $2")
                 .bind(id)

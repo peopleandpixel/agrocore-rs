@@ -30,12 +30,12 @@ pub struct TaskData {
     pub machine_hours: Option<f64>,
     pub cost_center_id: Option<Uuid>,
     pub area_covered: Option<f64>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub materials_used: Option<Vec<MaterialUsage>>,
     pub observations: Option<String>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub gps_track: Option<Vec<GpsPoint>>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub photo_urls: Option<Vec<String>>,
     /// Task can be "finished for day" without completing the order
     pub finished_for_day_at: Option<DateTime<Utc>>,

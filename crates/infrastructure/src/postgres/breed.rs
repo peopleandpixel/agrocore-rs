@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::{Breed, CreateBreedDto, Species, UpdateBreedDto};
 use agrocore_domain::repositories::{
@@ -16,7 +17,7 @@ pg_repo!(PgBreedRepo);
 
 impl BreedRepository for PgBreedRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Breed>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Breed>("SELECT * FROM breeds WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
@@ -28,7 +29,7 @@ impl BreedRepository for PgBreedRepo {
     }
 
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Breed>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
 
@@ -68,7 +69,7 @@ impl BreedRepository for PgBreedRepo {
     }
 
     fn find_by_species(&self, tid: TenantId, species: Species) -> RepositoryFuture<Vec<Breed>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Breed>(
                 "SELECT * FROM breeds WHERE tenant_id = $1 AND species = $2 ORDER BY name",
@@ -82,7 +83,7 @@ impl BreedRepository for PgBreedRepo {
     }
 
     fn create(&self, tid: TenantId, dto: CreateBreedDto, _by: Uuid) -> RepositoryFuture<Breed> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             let now = chrono::Utc::now();
@@ -118,7 +119,7 @@ impl BreedRepository for PgBreedRepo {
         dto: UpdateBreedDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<Breed>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let existing =
                 sqlx::query_as::<_, Breed>("SELECT * FROM breeds WHERE id = $1 AND tenant_id = $2")
@@ -161,7 +162,7 @@ impl BreedRepository for PgBreedRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let result = sqlx::query("DELETE FROM breeds WHERE id = $1 AND tenant_id = $2")
                 .bind(id)

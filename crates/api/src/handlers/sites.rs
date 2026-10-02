@@ -125,10 +125,8 @@ pub async fn create_site(
         )
         .await?;
     let event = Event::new("api".into(), GlobalEvent::SiteCreated(site.clone()));
-    let _ = state
-        .messaging
-        .publish("events.sites".to_string(), &event)
-        .await;
+    let _ =
+        crate::publish_event(state.messaging.as_ref(), "events.sites".to_string(), &event).await;
     Ok(HttpResponse::Created().json(SiteDto::from(site)))
 }
 
@@ -173,10 +171,8 @@ pub async fn update_site(
         .await?
         .ok_or_else(|| SharedError::NotFound("Site not found".into()))?;
     let event = Event::new("api".into(), GlobalEvent::SiteUpdated(site.clone()));
-    let _ = state
-        .messaging
-        .publish("events.sites".to_string(), &event)
-        .await;
+    let _ =
+        crate::publish_event(state.messaging.as_ref(), "events.sites".to_string(), &event).await;
     Ok(HttpResponse::Ok().json(SiteDto::from(site)))
 }
 
@@ -210,9 +206,7 @@ pub async fn delete_site(
         .await?
     {
         let event = Event::new("api".into(), GlobalEvent::SiteDeleted(site_id));
-        let _ = state
-            .messaging
-            .publish("events.sites".to_string(), &event)
+        let _ = crate::publish_event(state.messaging.as_ref(), "events.sites".to_string(), &event)
             .await;
         Ok(HttpResponse::Ok().json(serde_json::json!({"deleted": true})))
     } else {
@@ -247,7 +241,7 @@ pub async fn import_sites(
         .validate()
         .map_err(|e| SharedError::Validation(e.to_string()))?;
 
-    let pool = state.db.pool().clone();
+    let pool = state.db.tenant_pool(auth.0.tenant_id);
     let import_service = ImportService::new(pool, state.lpis_registry.clone());
     let result = import_service
         .import_sites(auth.0.tenant_id, dto.0, auth.0.user_id)
@@ -279,7 +273,7 @@ pub async fn import_geojson(
         agrocore_domain::TenantId(auth.0.tenant_id)
     );
 
-    let pool = state.db.pool().clone();
+    let pool = state.db.tenant_pool(auth.0.tenant_id);
     let import_service = ImportService::new(pool, state.lpis_registry.clone());
     let result = import_service
         .import_geojson(auth.0.tenant_id, dto.0, auth.0.user_id)
@@ -310,7 +304,7 @@ pub async fn import_shapefile(
         agrocore_domain::TenantId(auth.0.tenant_id)
     );
 
-    let pool = state.db.pool().clone();
+    let pool = state.db.tenant_pool(auth.0.tenant_id);
     let import_service = ImportService::new(pool, state.lpis_registry.clone());
     let result = import_service
         .import_shapefile(auth.0.tenant_id, dto.0, auth.0.user_id)

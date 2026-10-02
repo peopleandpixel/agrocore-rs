@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::workforce::{CreateWorkLogDto, UpdateWorkLogDto, WorkLog};
 use agrocore_domain::repositories::{PaginatedResponse, Pagination, RepositoryFuture, WorkLogRepo};
@@ -9,7 +10,7 @@ agrocore_shared::pg_repo!(PgWorkLogRepo);
 
 impl WorkLogRepo for PgWorkLogRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WorkLog>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WorkLog>("SELECT * FROM work_logs WHERE tenant_id = $1 AND id = $2")
                 .bind(tid)
@@ -34,7 +35,7 @@ impl WorkLogRepo for PgWorkLogRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<WorkLog>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -79,7 +80,7 @@ impl WorkLogRepo for PgWorkLogRepo {
         self.find_all(tid, p)
     }
     fn create(&self, tid: TenantId, dto: CreateWorkLogDto, _by: Uuid) -> RepositoryFuture<WorkLog> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WorkLog>(
                 "INSERT INTO work_logs (id, tenant_id, worker_id, date, hours_worked, overtime_hours, rest_period_hours, task_description, site_id, is_night_shift, breaks_taken) 
@@ -108,7 +109,7 @@ impl WorkLogRepo for PgWorkLogRepo {
         dto: UpdateWorkLogDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<WorkLog>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let self_clone = self.clone();
         Box::pin(async move {
             let mut query = String::from("UPDATE work_logs SET ");
@@ -187,7 +188,7 @@ impl WorkLogRepo for PgWorkLogRepo {
         })
     }
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let res = sqlx::query("DELETE FROM work_logs WHERE tenant_id = $1 AND id = $2")
                 .bind(tid)
@@ -204,7 +205,7 @@ impl WorkLogRepo for PgWorkLogRepo {
         worker_id: Uuid,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<WorkLog>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;

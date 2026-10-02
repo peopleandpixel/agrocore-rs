@@ -53,7 +53,9 @@ impl WorkflowService {
         };
 
         if let Some(delay) = config.delay_days {
-            let planned = Utc::now() + Duration::days(delay as i64);
+            // `planned_date` is a DATE column, so the delay is counted in
+            // whole days from today rather than as a timestamp.
+            let planned = (Utc::now() + Duration::days(delay as i64)).date_naive();
             next_dto.planned_date = Some(planned);
         }
 

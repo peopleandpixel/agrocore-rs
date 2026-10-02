@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::{CreateTenantDto, Tenant, UpdateTenantDto};
 use agrocore_domain::repositories::{
     PaginatedResponse, Pagination, RepositoryFuture, TenantRepository,

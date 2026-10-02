@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::equipment::{
     CreateEquipmentDto, DepreciationMethod, DepreciationScheduleEntry, Equipment,
     EquipmentDepreciationDto, FuelConsumptionDto, MaintenanceCostSummaryDto, MaintenanceLogDto,
@@ -22,7 +23,7 @@ agrocore_shared::pg_repo!(PgEquipmentRepo);
 
 impl EquipmentRepository for PgEquipmentRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Equipment>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Equipment>(
                 "SELECT * FROM equipment WHERE id = $1 AND tenant_id = $2",
@@ -42,7 +43,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         user_id: Uuid,
         roles: &[UserRole],
     ) -> RepositoryFuture<Option<Equipment>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let roles_vec = roles.to_vec();
         Box::pin(async move {
             let can_see_all =
@@ -76,7 +77,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Equipment>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
 
@@ -124,7 +125,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         fuel_efficiency_range: Option<(f64, f64)>,
         location_filter: Option<&str>,
     ) -> RepositoryFuture<PaginatedResponse<Equipment>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -259,7 +260,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         _user_id: Uuid,
         roles: &[UserRole],
     ) -> RepositoryFuture<PaginatedResponse<Equipment>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -335,7 +336,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         dto: CreateEquipmentDto,
         _by: Uuid,
     ) -> RepositoryFuture<Equipment> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let now = Utc::now();
             let id = Uuid::new_v4();
@@ -373,7 +374,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         dto: UpdateEquipmentDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<Equipment>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let now = Utc::now();
             let equipment_type = dto
@@ -418,7 +419,7 @@ impl EquipmentRepository for PgEquipmentRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let result = sqlx::query("UPDATE equipment SET is_active = false, updated_at = $1 WHERE id = $2 AND tenant_id = $3")
                 .bind(Utc::now())
@@ -437,7 +438,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Equipment>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -492,7 +493,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         hours: f64,
         note: Option<String>,
     ) -> RepositoryFuture<Option<Equipment>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
 
         Box::pin(async move {
             let mut tx = pool
@@ -592,7 +593,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         tid: TenantId,
         id: Uuid,
     ) -> RepositoryFuture<Vec<MaintenanceLogDto>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, MaintenanceLogDto>(
                 r#"
@@ -616,7 +617,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         tid: TenantId,
         id: Uuid,
     ) -> RepositoryFuture<Option<MaintenanceCostSummaryDto>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, MaintenanceCostSummaryDto>(
                 r#"
@@ -647,7 +648,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         labor_hours: f64,
         downtime_hours: f64,
     ) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let rows = sqlx::query(
                 r#"
@@ -674,10 +675,20 @@ impl EquipmentRepository for PgEquipmentRepo {
         tid: TenantId,
         id: Uuid,
     ) -> RepositoryFuture<Vec<FuelConsumptionDto>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
+            // The four numeric columns stay NUMERIC because `total_cost` is a
+            // generated column and PostgreSQL refuses to alter a column a
+            // generated column depends on. The DTO uses `f64`, so the cast
+            // happens here instead of changing the column type.
             let records: Vec<FuelConsumptionDto> = sqlx::query_as::<_, FuelConsumptionDto>(
-                r#"SELECT * FROM equipment_fuel_consumption
+                r#"SELECT id, tenant_id, equipment_id, consumed_at,
+                          liters::float8          AS liters,
+                          cost_per_liter::float8  AS cost_per_liter,
+                          total_cost::float8      AS total_cost,
+                          hours_operated::float8  AS hours_operated,
+                          operation_type, field_id, notes
+                   FROM equipment_fuel_consumption
                    WHERE equipment_id = $1 AND tenant_id = $2
                    ORDER BY consumed_at DESC"#,
             )
@@ -702,7 +713,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         hours_operated: Option<f64>,
         notes: Option<&str>,
     ) -> RepositoryFuture<Option<FuelConsumptionDto>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let op_type_owned = operation_type.map(|s| s.to_string());
         let notes_owned = notes.map(|s| s.to_string());
         Box::pin(async move {
@@ -737,7 +748,7 @@ impl EquipmentRepository for PgEquipmentRepo {
     }
     /// Get usage log history for an equipment, newest first.
     fn get_usage_log(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Vec<UsageLogDto>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let records: Vec<UsageLogDto> = sqlx::query_as::<_, UsageLogDto>(
                 r#"SELECT * FROM equipment_usage_log
@@ -759,7 +770,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         tid: TenantId,
         id: Uuid,
     ) -> RepositoryFuture<Option<UsageSummaryDto>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let summary: Option<UsageSummaryDto> = sqlx::query_as::<_, UsageSummaryDto>(
                 r#"SELECT
@@ -795,7 +806,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         hours_operated: f64,
         note: Option<&str>,
     ) -> RepositoryFuture<Option<UsageLogDto>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let op_type_owned = operation_type.map(|s| s.to_string());
         let note_owned = note.map(|s| s.to_string());
         Box::pin(async move {
@@ -843,7 +854,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         tid: TenantId,
         id: Uuid,
     ) -> RepositoryFuture<Option<EquipmentDepreciationDto>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let row = sqlx::query(
                 r#"SELECT
@@ -904,7 +915,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         tid: TenantId,
         id: Uuid,
     ) -> RepositoryFuture<Vec<DepreciationScheduleEntry>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let now = Utc::now();
         Box::pin(async move {
             // If schedule entries exist in DB, use them; otherwise compute on the fly

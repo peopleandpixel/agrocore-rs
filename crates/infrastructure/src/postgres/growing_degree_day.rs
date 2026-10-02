@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::weather::{CreateGrowingDegreeDayDto, GrowingDegreeDay};
 use agrocore_domain::repositories::{GrowingDegreeDayRepo, RepositoryFuture};
@@ -9,7 +10,7 @@ agrocore_shared::pg_repo!(PgGrowingDegreeDayRepo);
 
 impl GrowingDegreeDayRepo for PgGrowingDegreeDayRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<GrowingDegreeDay>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, GrowingDegreeDay>(
                 "SELECT * FROM growing_degree_days WHERE id = $1 AND tenant_id = $2",
@@ -28,7 +29,7 @@ impl GrowingDegreeDayRepo for PgGrowingDegreeDayRepo {
         site_id: Uuid,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<GrowingDegreeDay>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -75,7 +76,7 @@ impl GrowingDegreeDayRepo for PgGrowingDegreeDayRepo {
         tid: TenantId,
         dto: CreateGrowingDegreeDayDto,
     ) -> RepositoryFuture<GrowingDegreeDay> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             let gdd = (dto.actual_mean_temp_c - dto.base_temp_c).max(0.0);
@@ -107,7 +108,7 @@ impl GrowingDegreeDayRepo for PgGrowingDegreeDayRepo {
         to: chrono::DateTime<chrono::Utc>,
         crop_type: String,
     ) -> RepositoryFuture<f64> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let result: (Option<f64>,) = sqlx::query_as(
                 "SELECT COALESCE(SUM(gdd), 0.0) FROM growing_degree_days WHERE tenant_id = $1 AND site_id = $2 AND date BETWEEN $3 AND $4 AND crop_type = $5",

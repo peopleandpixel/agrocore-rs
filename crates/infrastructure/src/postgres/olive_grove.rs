@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::olive::{CreateOliveGroveDto, OliveGrove, UpdateOliveGroveDto};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::repositories::{
@@ -11,7 +12,7 @@ agrocore_shared::pg_repo!(PgOliveGroveRepo);
 
 impl OliveGroveRepo for PgOliveGroveRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<OliveGrove>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, OliveGrove>(
                 "SELECT * FROM olive_groves WHERE id = $1 AND tenant_id = $2",
@@ -29,7 +30,7 @@ impl OliveGroveRepo for PgOliveGroveRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<OliveGrove>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -74,7 +75,7 @@ impl OliveGroveRepo for PgOliveGroveRepo {
         site_id: Uuid,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<OliveGrove>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -120,7 +121,7 @@ impl OliveGroveRepo for PgOliveGroveRepo {
         dto: CreateOliveGroveDto,
         _by: Uuid,
     ) -> RepositoryFuture<OliveGrove> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             sqlx::query_as::<_, OliveGrove>(
@@ -153,7 +154,7 @@ impl OliveGroveRepo for PgOliveGroveRepo {
         dto: UpdateOliveGroveDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<OliveGrove>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, OliveGrove>(
                 r#"UPDATE olive_groves SET label = COALESCE($1, label), variety = COALESCE($2, variety), tree_count = COALESCE($3, tree_count), planting_year = COALESCE($4, planting_year), area_ha = COALESCE($5, area_ha), spacing_m = COALESCE($6, spacing_m), irrigation_type = COALESCE($7, irrigation_type), is_organic = COALESCE($8, is_organic), certification_body = COALESCE($9, certification_body), certification_number = COALESCE($10, certification_number), updated_at = NOW()
@@ -177,7 +178,7 @@ impl OliveGroveRepo for PgOliveGroveRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query("DELETE FROM olive_groves WHERE id = $1 AND tenant_id = $2")
                 .bind(id)

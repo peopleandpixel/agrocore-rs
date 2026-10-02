@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::livestock::{
     Animal, CreateAnimalDto, GrazingRecord, TreatmentRecord, UpdateAnimalDto,
 };
@@ -17,7 +18,7 @@ agrocore_shared::pg_repo!(PgAnimalRepo);
 
 impl AnimalRepository for PgAnimalRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> Fut<Option<Animal>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Animal>("SELECT * FROM animals WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
@@ -35,7 +36,7 @@ impl AnimalRepository for PgAnimalRepo {
         user_id: Uuid,
         roles: &[UserRole],
     ) -> Fut<Option<Animal>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let roles_vec = roles.to_vec();
         Box::pin(async move {
             let can_see_all =
@@ -65,7 +66,7 @@ impl AnimalRepository for PgAnimalRepo {
     }
 
     fn find_all(&self, tid: TenantId, p: Pagination) -> Fut<PaginatedResponse<Animal>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -102,7 +103,7 @@ impl AnimalRepository for PgAnimalRepo {
     }
 
     fn create(&self, tid: TenantId, dto: CreateAnimalDto, _by: Uuid) -> Fut<Animal> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let now = Utc::now();
             let id = Uuid::new_v4();
@@ -133,7 +134,7 @@ impl AnimalRepository for PgAnimalRepo {
         dto: UpdateAnimalDto,
         _by: Uuid,
     ) -> Fut<Option<Animal>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let now = Utc::now();
 
@@ -165,7 +166,7 @@ impl AnimalRepository for PgAnimalRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> Fut<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let result = sqlx::query("UPDATE animals SET is_active = false, updated_at = $1 WHERE id = $2 AND tenant_id = $3")
                 .bind(Utc::now())
@@ -180,7 +181,7 @@ impl AnimalRepository for PgAnimalRepo {
     }
 
     fn add_treatment(&self, tid: TenantId, id: Uuid, record: TreatmentRecord) -> Fut<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query(
                 r#"INSERT INTO treatment_records (id, animal_id, tenant_id, date, treatment_type, medication, dosage, veterinarian, withdrawal_days, notes, created_at)
@@ -207,7 +208,7 @@ impl AnimalRepository for PgAnimalRepo {
         tid: TenantId,
         animal_id: Uuid,
     ) -> Fut<Option<Vec<TreatmentRecord>>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, TreatmentRecord>(
                 r#"SELECT id, animal_id, treatment_type, date, medication, dosage, veterinarian, withdrawal_days, notes, created_at
@@ -225,7 +226,7 @@ impl AnimalRepository for PgAnimalRepo {
     }
 
     fn add_grazing_record(&self, tid: TenantId, id: Uuid, record: GrazingRecord) -> Fut<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query(
                 r#"INSERT INTO grazing_records (id, animal_id, tenant_id, site_id, start_date, end_date, notes, created_at)

@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::finance::{CostCenter, CreateCostCenterDto};
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::user::UserRole;
@@ -11,7 +12,7 @@ agrocore_shared::pg_repo!(PgCostCenterRepo);
 
 impl CostCenterRepo for PgCostCenterRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<CostCenter>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, CostCenter>(
                 "SELECT * FROM cost_centers WHERE id = $1 AND tenant_id = $2",
@@ -38,7 +39,7 @@ impl CostCenterRepo for PgCostCenterRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<CostCenter>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -73,7 +74,7 @@ impl CostCenterRepo for PgCostCenterRepo {
         dto: CreateCostCenterDto,
         _by: Uuid,
     ) -> RepositoryFuture<CostCenter> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, CostCenter>("INSERT INTO cost_centers (tenant_id, label, cost_center_type, code, reference_id) VALUES ($1, $2, $3, $4, $5) RETURNING *")
             .bind(tid).bind(&dto.label).bind(serde_json::to_value(&dto.cost_center_type).unwrap()).bind(&dto.code).bind(dto.reference_id)
@@ -87,7 +88,7 @@ impl CostCenterRepo for PgCostCenterRepo {
         dto: agrocore_domain::entities::finance::UpdateCostCenterDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<CostCenter>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as("UPDATE cost_centers SET label = COALESCE($1, label), code = COALESCE($2, code), cost_center_type = COALESCE($3, cost_center_type), reference_id = COALESCE($4, reference_id), is_active = COALESCE($5, is_active), updated_at = NOW() WHERE id = $6 AND tenant_id = $7 RETURNING *")
                 .bind(dto.label).bind(dto.code).bind(dto.cost_center_type.map(|v| serde_json::to_value(v).unwrap())).bind(dto.reference_id).bind(dto.is_active).bind(id).bind(tid)
@@ -95,7 +96,7 @@ impl CostCenterRepo for PgCostCenterRepo {
         })
     }
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query("UPDATE cost_centers SET is_active = false, updated_at = NOW() WHERE id = $1 AND tenant_id = $2")
                 .bind(id).bind(tid).execute(&pool).await.map(|r| r.rows_affected() > 0)

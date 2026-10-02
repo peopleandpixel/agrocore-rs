@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::water::WaterUsage;
 use agrocore_domain::repositories::{
@@ -11,7 +12,7 @@ agrocore_shared::pg_repo!(PgWaterUsageRepo);
 
 impl WaterUsageRepo for PgWaterUsageRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WaterUsage>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WaterUsage>(
                 "SELECT * FROM water_usages WHERE tenant_id = $1 AND id = $2",
@@ -28,7 +29,7 @@ impl WaterUsageRepo for PgWaterUsageRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<WaterUsage>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -68,7 +69,7 @@ impl WaterUsageRepo for PgWaterUsageRepo {
         dto: agrocore_domain::entities::water::CreateWaterUsageDto,
         _by: Uuid,
     ) -> RepositoryFuture<WaterUsage> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WaterUsage>(
                 "INSERT INTO water_usages (id, tenant_id, source_id, site_id, usage_date, volume_m3, irrigation_method, efficiency_pct) 
@@ -94,7 +95,7 @@ impl WaterUsageRepo for PgWaterUsageRepo {
         dto: agrocore_domain::entities::water::UpdateWaterUsageDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<WaterUsage>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let self_clone = self.clone();
         Box::pin(async move {
             let mut query = String::from("UPDATE water_usages SET ");
@@ -159,7 +160,7 @@ impl WaterUsageRepo for PgWaterUsageRepo {
         })
     }
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let res = sqlx::query("DELETE FROM water_usages WHERE tenant_id = $1 AND id = $2")
                 .bind(tid)
@@ -176,7 +177,7 @@ impl WaterUsageRepo for PgWaterUsageRepo {
         source_id: Uuid,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<WaterUsage>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -219,7 +220,7 @@ impl WaterUsageRepo for PgWaterUsageRepo {
         site_id: Uuid,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<WaterUsage>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;

@@ -482,7 +482,9 @@ pub async fn get_workflow_follow_ups(
             order_type: fu.order_type.to_string(),
             site_ids: fu.site_ids,
             assigned_worker_ids: fu.assigned_worker_ids.unwrap_or_default(),
-            planned_date: fu.planned_date,
+            planned_date: fu
+                .planned_date
+                .map(|d| d.and_hms_opt(0, 0, 0).expect("midnight is valid").and_utc()),
             parent_order_id: fu.parent_order_id.unwrap_or(Uuid::nil()),
         })
         .collect();

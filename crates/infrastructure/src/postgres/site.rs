@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::TenantId;
 use agrocore_domain::entities::site::{LpisData, RowConfig, SigpacData, Site, SiteProperty};
 use agrocore_domain::entities::spatial::types::{Boundary, GeoPoint, Plot};
@@ -17,7 +18,7 @@ agrocore_shared::pg_repo!(PgSiteRepo);
 
 impl SiteRepository for PgSiteRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Site>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, SiteDb>(
                 r#"SELECT id, tenant_id, business_id, label, site_type, crop_type, variety,
@@ -45,7 +46,7 @@ impl SiteRepository for PgSiteRepo {
         _user_id: Uuid,
         roles: &[agrocore_domain::entities::user::UserRole],
     ) -> RepositoryFuture<Option<Site>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let roles_vec = roles.to_vec();
         Box::pin(async move {
             let can_see_all = roles_vec.contains(&agrocore_domain::entities::user::UserRole::Admin)
@@ -89,7 +90,7 @@ impl SiteRepository for PgSiteRepo {
     }
 
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Site>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -144,7 +145,7 @@ impl SiteRepository for PgSiteRepo {
         dto: agrocore_domain::entities::site::CreateSiteDto,
         by: Uuid,
     ) -> RepositoryFuture<Site> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             let site_type_val = serde_json::to_value(&dto.site_type).unwrap();
@@ -225,7 +226,7 @@ impl SiteRepository for PgSiteRepo {
         dto: agrocore_domain::entities::site::UpdateSiteDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<Site>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let site_type_val = dto
                 .site_type
@@ -351,7 +352,7 @@ impl SiteRepository for PgSiteRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query("UPDATE sites SET is_active = false WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
@@ -454,7 +455,7 @@ impl SpatialObjectRepository for PgSiteRepo {
         tid: TenantId,
         id: Uuid,
     ) -> RepositoryFuture<Option<agrocore_domain::entities::spatial::SpatialObject>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, agrocore_domain::entities::spatial::SpatialObject>(
                 r#"SELECT id, tenant_id, site_id, parent_id, label, object_type, geometry,
@@ -476,7 +477,7 @@ impl SpatialObjectRepository for PgSiteRepo {
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<agrocore_domain::entities::spatial::SpatialObject>>
     {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -513,7 +514,7 @@ impl SpatialObjectRepository for PgSiteRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query("DELETE FROM spatial_objects WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
@@ -531,7 +532,7 @@ impl SpatialObjectRepository for PgSiteRepo {
         point: agrocore_domain::entities::spatial::types::GeoPoint,
         site_id: Option<Uuid>,
     ) -> RepositoryFuture<Vec<agrocore_domain::entities::spatial::SpatialObject>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let mut query =
                 r#"SELECT id, tenant_id, site_id, parent_id, label, object_type, geometry,

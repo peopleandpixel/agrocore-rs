@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::harvest::{
     CreateHarvestDeliveryDto, HarvestDelivery, UpdateHarvestDeliveryDto,
 };
@@ -13,7 +14,7 @@ agrocore_shared::pg_repo!(PgHarvestDeliveryRepo);
 
 impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> Fut<Option<HarvestDelivery>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, HarvestDelivery>(
                 "SELECT * FROM harvest_deliveries WHERE id = $1 AND tenant_id = $2",
@@ -27,7 +28,7 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
     }
 
     fn find_all(&self, tid: TenantId, p: Pagination) -> Fut<PaginatedResponse<HarvestDelivery>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -70,7 +71,7 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
         lot_id: Uuid,
         p: Pagination,
     ) -> Fut<PaginatedResponse<HarvestDelivery>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -116,7 +117,7 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
         dto: CreateHarvestDeliveryDto,
         _by: Uuid,
     ) -> Fut<HarvestDelivery> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             let net_weight = dto.gross_weight_kg - dto.tare_weight_kg;
@@ -148,7 +149,7 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
         dto: UpdateHarvestDeliveryDto,
         _by: Uuid,
     ) -> Fut<Option<HarvestDelivery>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             // Need to handle net_weight calculation if gross or tare changes
             let current = sqlx::query_as::<_, HarvestDelivery>(
@@ -200,7 +201,7 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> Fut<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query("DELETE FROM harvest_deliveries WHERE id = $1 AND tenant_id = $2")
                 .bind(id)

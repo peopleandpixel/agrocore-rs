@@ -9,4 +9,5 @@ pub use defaults::{default_bind_addr, default_nats_url};
 pub use jwt::generate_jwt;
 #[cfg(feature = "mocks")]
 pub use postgres::MockDatabase;
+pub use postgres::tenant_pool::{TenantPool, set_tenant};
 pub use postgres::{Database, PostgresDb};

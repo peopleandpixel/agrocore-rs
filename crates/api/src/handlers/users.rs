@@ -124,10 +124,8 @@ pub async fn create_user(
         )
         .await?;
     let event = Event::new("api".into(), GlobalEvent::UserCreated(u.clone()));
-    let _ = state
-        .messaging
-        .publish("events.users".to_string(), &event)
-        .await;
+    let _ =
+        crate::publish_event(state.messaging.as_ref(), "events.users".to_string(), &event).await;
     Ok(HttpResponse::Created().json(UserDto::from(u)))
 }
 
@@ -180,10 +178,8 @@ pub async fn update_user(
         .await?
         .ok_or_else(|| SharedError::NotFound("User not found".into()))?;
     let event = Event::new("api".into(), GlobalEvent::UserUpdated(u.clone()));
-    let _ = state
-        .messaging
-        .publish("events.users".to_string(), &event)
-        .await;
+    let _ =
+        crate::publish_event(state.messaging.as_ref(), "events.users".to_string(), &event).await;
     Ok(HttpResponse::Ok().json(UserDto::from(u)))
 }
 
@@ -240,10 +236,8 @@ pub async fn update_own_profile(
 
     info!("User {} updated own profile", user_id);
     let event = Event::new("api".into(), GlobalEvent::UserUpdated(u.clone()));
-    let _ = state
-        .messaging
-        .publish("events.users".to_string(), &event)
-        .await;
+    let _ =
+        crate::publish_event(state.messaging.as_ref(), "events.users".to_string(), &event).await;
     Ok(HttpResponse::Ok().json(UserDto::from(u)))
 }
 
@@ -277,9 +271,7 @@ pub async fn delete_user(
         .await?
     {
         let event = Event::new("api".into(), GlobalEvent::UserDeleted(user_id));
-        let _ = state
-            .messaging
-            .publish("events.users".to_string(), &event)
+        let _ = crate::publish_event(state.messaging.as_ref(), "events.users".to_string(), &event)
             .await;
         Ok(HttpResponse::Ok().json(serde_json::json!({"deleted": true})))
     } else {

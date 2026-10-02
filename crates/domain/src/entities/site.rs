@@ -63,9 +63,9 @@ pub struct Site {
     pub gross_area: Option<f64>,
     #[sqlx(json)]
     pub plots: serde_json::Value,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub row_config: Option<serde_json::Value>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub bbch_stage: Option<serde_json::Value>,
     pub planted_date: Option<DateTime<Utc>>,
     pub cleared_date: Option<DateTime<Utc>>,
@@ -75,20 +75,20 @@ pub struct Site {
     pub altitude: Option<f64>,
     pub organic: Option<bool>,
     pub organic_eligible: Option<bool>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub center: Option<GeoPoint>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub sigpac_data: Option<SigpacData>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub lpis_country: Option<agrocore_shared::lpis::LpisCountry>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub lpis_data: Option<LpisData>,
     pub regepac_id: Option<String>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub boundary: Option<Boundary>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub properties: Option<serde_json::Value>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub custom_fields: Option<serde_json::Value>,
     pub note1: Option<String>,
     pub note2: Option<String>,

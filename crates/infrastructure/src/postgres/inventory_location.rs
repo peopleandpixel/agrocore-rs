@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::inventory::{
     CreateInventoryLocationDto, InventoryLocation, UpdateInventoryLocationDto,
 };
@@ -15,7 +16,7 @@ pg_repo!(PgInventoryLocationRepo);
 
 impl InventoryLocationRepo for PgInventoryLocationRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<InventoryLocation>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, InventoryLocation>(
                 "SELECT * FROM inventory_locations WHERE id = $1 AND tenant_id = $2 AND (is_active IS NULL OR is_active = true)",
@@ -33,7 +34,7 @@ impl InventoryLocationRepo for PgInventoryLocationRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<InventoryLocation>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
 
@@ -79,7 +80,7 @@ impl InventoryLocationRepo for PgInventoryLocationRepo {
         tid: TenantId,
         code: &str,
     ) -> RepositoryFuture<Option<InventoryLocation>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let code = code.to_string();
         Box::pin(async move {
             sqlx::query_as::<_, InventoryLocation>(
@@ -99,7 +100,7 @@ impl InventoryLocationRepo for PgInventoryLocationRepo {
         dto: CreateInventoryLocationDto,
         _by: Uuid,
     ) -> RepositoryFuture<InventoryLocation> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let now = Utc::now();
             let id = Uuid::new_v4();
@@ -130,7 +131,7 @@ impl InventoryLocationRepo for PgInventoryLocationRepo {
         dto: UpdateInventoryLocationDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<InventoryLocation>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let now = Utc::now();
 
@@ -158,7 +159,7 @@ impl InventoryLocationRepo for PgInventoryLocationRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let result = sqlx::query(
                 "UPDATE inventory_locations SET is_active = false, updated_at = $1 WHERE id = $2 AND tenant_id = $3 AND (is_active IS NULL OR is_active = true)",

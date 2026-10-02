@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::{CreateGroupDto, Group, GroupType, UpdateGroupDto};
 use agrocore_domain::repositories::{
@@ -16,7 +17,7 @@ pg_repo!(PgGroupRepo);
 
 impl GroupRepository for PgGroupRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Group>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Group>("SELECT * FROM groups WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
@@ -28,7 +29,7 @@ impl GroupRepository for PgGroupRepo {
     }
 
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Group>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
 
@@ -73,7 +74,7 @@ impl GroupRepository for PgGroupRepo {
         plot_id: Uuid,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Group>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
 
@@ -117,7 +118,7 @@ impl GroupRepository for PgGroupRepo {
     }
 
     fn find_children(&self, tid: TenantId, parent_id: Uuid) -> RepositoryFuture<Vec<Group>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Group>(
                 "SELECT * FROM groups WHERE tenant_id = $1 AND parent_group_id = $2 ORDER BY label",
@@ -131,7 +132,7 @@ impl GroupRepository for PgGroupRepo {
     }
 
     fn create(&self, tid: TenantId, dto: CreateGroupDto, _by: Uuid) -> RepositoryFuture<Group> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             let now = chrono::Utc::now();
@@ -170,7 +171,7 @@ impl GroupRepository for PgGroupRepo {
         dto: UpdateGroupDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<Group>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let existing =
                 sqlx::query_as::<_, Group>("SELECT * FROM groups WHERE id = $1 AND tenant_id = $2")
@@ -213,7 +214,7 @@ impl GroupRepository for PgGroupRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let result = sqlx::query("DELETE FROM groups WHERE id = $1 AND tenant_id = $2")
                 .bind(id)

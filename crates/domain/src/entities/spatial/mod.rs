@@ -228,9 +228,9 @@ pub struct SpatialObject {
     pub area: Option<f64>,
     #[validate(range(min = 0.0))]
     pub buffer_meters: Option<f64>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub properties: Option<Vec<SpatialProperty>>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub custom_fields: Option<serde_json::Value>,
     pub note: Option<String>,
     pub is_active: bool,

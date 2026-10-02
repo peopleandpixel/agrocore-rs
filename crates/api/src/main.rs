@@ -22,22 +22,53 @@ async fn main() -> std::io::Result<()> {
         .await
         .map_err(|e| std::io::Error::other(e.to_string()))?;
 
+    // Messaging is a hard dependency of the notification dispatcher, but not of
+    // serving data. Previously an unreachable broker aborted startup, so one
+    // missing dependency took the whole API offline. It is now required only
+    // when explicitly enabled.
     let nats_url =
         std::env::var("NATS_URL").unwrap_or_else(|_| "nats://localhost:4222".to_string());
-    let messaging = agrocore_messaging::MessagingClient::connect(&nats_url)
-        .await
-        .map_err(|e| std::io::Error::other(e.to_string()))?;
+    let messaging_required = std::env::var("MESSAGING_REQUIRED")
+        .map(|v| matches!(v.as_str(), "1" | "true" | "yes"))
+        .unwrap_or(false);
+
+    let messaging = match agrocore_messaging::MessagingClient::connect(&nats_url).await {
+        Ok(m) => Some(m),
+        Err(e) if messaging_required => {
+            return Err(std::io::Error::other(format!(
+                "NATS required but unreachable at {nats_url}: {e}"
+            )));
+        }
+        Err(e) => {
+            error!(
+                "NATS unreachable at {}, continuing without messaging: {}",
+                nats_url, e
+            );
+            None
+        }
+    };
 
     // Initialize backup service
     let backup_config = load_config().unwrap_or_default();
+    // Backups are enabled by default, but an unreachable broker must not stop
+    // the API from serving data. The `?` here used to abort startup, which meant
+    // one missing dependency took the whole system offline.
     let backup_service = if backup_config.enabled {
-        let backup_nats = BackupNatsClient::connect(&nats_url)
-            .await
-            .map_err(|e| std::io::Error::other(e.to_string()))?;
-        match BackupService::new(backup_config, database_url.clone(), backup_nats).await {
-            Ok(svc) => Some(Arc::new(svc)),
+        match BackupNatsClient::connect(&nats_url).await {
+            Ok(backup_nats) => {
+                match BackupService::new(backup_config, database_url.clone(), backup_nats).await {
+                    Ok(svc) => Some(Arc::new(svc)),
+                    Err(e) => {
+                        error!("Failed to initialize backup service: {}", e);
+                        None
+                    }
+                }
+            }
             Err(e) => {
-                error!("Failed to initialize backup service: {}", e);
+                error!(
+                    "NATS unreachable at {}, backup service disabled: {}",
+                    nats_url, e
+                );
                 None
             }
         }

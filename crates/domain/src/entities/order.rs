@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, TimeZone, Timelike, Utc};
+use chrono::{DateTime, Datelike, NaiveDate, TimeZone, Timelike, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -142,28 +142,28 @@ pub struct Order {
     pub site_ids: Vec<Uuid>,
     #[sqlx(json)]
     pub assigned_worker_ids: Vec<Uuid>,
-    pub planned_date: Option<DateTime<Utc>>,
-    pub deadline_date: Option<DateTime<Utc>>,
+    pub planned_date: Option<NaiveDate>,
+    pub deadline_date: Option<NaiveDate>,
     pub started_at: Option<DateTime<Utc>>,
     pub completed_at: Option<DateTime<Utc>>,
     pub last_completed_at: Option<DateTime<Utc>>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub recurrence: Option<RecurrenceRule>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub execution_policy: Option<TaskExecutionPolicy>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub automation_state: Option<TaskAutomationState>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub articles: Option<Vec<OrderArticle>>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub quantities: Option<serde_json::Value>,
     pub results: Option<String>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub weather: Option<WeatherInfo>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub custom_fields: Option<serde_json::Value>,
     pub parent_order_id: Option<Uuid>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub workflow_config: Option<WorkflowConfig>,
     pub cost_center_id: Option<Uuid>,
     pub customer_id: Option<Uuid>,
@@ -291,7 +291,9 @@ impl Order {
         self.started_at = None;
         self.completed_at = None;
         self.last_completed_at = Some(completed_at);
-        self.planned_date = Some(next_due);
+        // `planned_date` is a DATE column; the recurrence math works in
+        // timestamps, so truncate to the day.
+        self.planned_date = Some(next_due.date_naive());
         self.is_active = true;
         self.updated_at = completed_at;
         Some(next_due)
@@ -388,8 +390,8 @@ pub struct CreateOrderDto {
     pub order_type: OrderType,
     pub site_ids: Vec<Uuid>,
     pub assigned_worker_ids: Option<Vec<Uuid>>,
-    pub planned_date: Option<DateTime<Utc>>,
-    pub deadline_date: Option<DateTime<Utc>>,
+    pub planned_date: Option<NaiveDate>,
+    pub deadline_date: Option<NaiveDate>,
     pub articles: Option<Vec<OrderArticle>>,
     pub quantities: Option<serde_json::Value>,
     pub custom_fields: Option<serde_json::Value>,
@@ -407,8 +409,8 @@ pub struct UpdateOrderDto {
     pub status: Option<OrderStatus>,
     pub site_ids: Option<Vec<Uuid>>,
     pub assigned_worker_ids: Option<Vec<Uuid>>,
-    pub planned_date: Option<DateTime<Utc>>,
-    pub deadline_date: Option<DateTime<Utc>>,
+    pub planned_date: Option<NaiveDate>,
+    pub deadline_date: Option<NaiveDate>,
     pub articles: Option<Vec<OrderArticle>>,
     pub quantities: Option<serde_json::Value>,
     pub results: Option<String>,
@@ -435,8 +437,8 @@ pub struct MyTask {
     pub status: OrderStatus,
     pub site_count: u32,
     pub total_area: f64,
-    pub deadline_date: Option<DateTime<Utc>>,
-    pub planned_date: Option<DateTime<Utc>>,
+    pub deadline_date: Option<NaiveDate>,
+    pub planned_date: Option<NaiveDate>,
 }
 
 #[cfg(test)]
@@ -533,7 +535,7 @@ mod tests {
         assert_eq!(order.status, OrderStatus::Planned);
         assert_eq!(order.last_completed_at, Some(completed_at));
         assert_eq!(order.completed_at, None);
-        assert_eq!(order.planned_date, next_due);
+        assert_eq!(order.planned_date, next_due.map(|d| d.date_naive()));
     }
 
     #[test]

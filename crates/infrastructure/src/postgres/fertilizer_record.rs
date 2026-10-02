@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::fertilizer::{
     CreateFertilizerRecordDto, FertilizerRecord, UpdateFertilizerRecordDto,
 };
@@ -13,7 +14,7 @@ agrocore_shared::pg_repo!(PgFertilizerRecordRepo);
 
 impl FertilizerRecordRepo for PgFertilizerRecordRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<FertilizerRecord>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, FertilizerRecord>(
                 "SELECT * FROM fertilizer_records WHERE id = $1 AND tenant_id = $2",
@@ -31,7 +32,7 @@ impl FertilizerRecordRepo for PgFertilizerRecordRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<FertilizerRecord>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -74,7 +75,7 @@ impl FertilizerRecordRepo for PgFertilizerRecordRepo {
         site_id: Uuid,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<FertilizerRecord>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -120,7 +121,7 @@ impl FertilizerRecordRepo for PgFertilizerRecordRepo {
         dto: CreateFertilizerRecordDto,
         _by: Uuid,
     ) -> RepositoryFuture<FertilizerRecord> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             sqlx::query_as::<_, FertilizerRecord>(
@@ -151,7 +152,7 @@ impl FertilizerRecordRepo for PgFertilizerRecordRepo {
         dto: UpdateFertilizerRecordDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<FertilizerRecord>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, FertilizerRecord>(
                 r#"UPDATE fertilizer_records SET product_name = COALESCE($1, product_name), updated_at = NOW()
@@ -166,7 +167,7 @@ impl FertilizerRecordRepo for PgFertilizerRecordRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query("DELETE FROM fertilizer_records WHERE id = $1 AND tenant_id = $2")
                 .bind(id)

@@ -18,9 +18,9 @@ pub struct Vineyard {
     pub ph_at_harvest: Option<f64>,
     pub acidity: Option<f64>,
     pub yield_tons: Option<f64>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub quality_grade: Option<QualityGrade>,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub kelter_delivery: Option<KelterDelivery>,
     pub slope_percent: Option<f64>,
     pub altitude_m: Option<f64>,

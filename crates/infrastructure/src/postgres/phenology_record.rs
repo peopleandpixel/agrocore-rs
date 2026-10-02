@@ -1,3 +1,4 @@
+use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::weather::{
     CreatePhenologyRecordDto, PhenologyRecord, UpdatePhenologyRecordDto,
@@ -13,7 +14,7 @@ agrocore_shared::pg_repo!(PgPhenologyRecordRepo);
 
 impl PhenologyRecordRepo for PgPhenologyRecordRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<PhenologyRecord>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, PhenologyRecord>(
                 "SELECT * FROM phenology_records WHERE id = $1 AND tenant_id = $2",
@@ -31,7 +32,7 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
         tid: TenantId,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<PhenologyRecord>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -74,7 +75,7 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
         site_id: Uuid,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<PhenologyRecord>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         let page = p.page.unwrap_or(0);
         let per_page = p.per_page.unwrap_or(20);
         let offset = page * per_page;
@@ -120,7 +121,7 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
         dto: CreatePhenologyRecordDto,
         _by: Uuid,
     ) -> RepositoryFuture<PhenologyRecord> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let id = Uuid::new_v4();
             sqlx::query_as::<_, PhenologyRecord>(
@@ -147,7 +148,7 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
         dto: UpdatePhenologyRecordDto,
         _by: Uuid,
     ) -> RepositoryFuture<Option<PhenologyRecord>> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as("UPDATE phenology_records SET site_id = COALESCE($1, site_id), observation_date = COALESCE($2, observation_date), stage = COALESCE($3, stage), forecast_next_stage_date = COALESCE($4, forecast_next_stage_date), notes = COALESCE($5, notes), photo_url = COALESCE($6, photo_url), observer_id = COALESCE($7, observer_id) WHERE id = $8 AND tenant_id = $9 RETURNING *")
                 .bind(dto.site_id).bind(dto.observation_date).bind(dto.stage.map(|v| serde_json::to_value(v).unwrap())).bind(dto.forecast_next_stage_date).bind(dto.notes).bind(dto.photo_url).bind(dto.observer_id).bind(id).bind(tid)
@@ -156,7 +157,7 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
-        let pool = self.pool.clone();
+        let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query("DELETE FROM phenology_records WHERE id = $1 AND tenant_id = $2")
                 .bind(id)

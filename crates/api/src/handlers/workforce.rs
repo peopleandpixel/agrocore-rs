@@ -414,10 +414,12 @@ pub async fn report_location(
                 kind: SpatialPolygonEventKind::EnteredPolygon,
             }),
         );
-        let _ = state
-            .messaging
-            .publish("events.spatial".to_string(), &event)
-            .await;
+        let _ = crate::publish_event(
+            state.messaging.as_ref(),
+            "events.spatial".to_string(),
+            &event,
+        )
+        .await;
     }
 
     for object in current_objects.iter() {
@@ -436,10 +438,12 @@ pub async fn report_location(
                 kind: SpatialPolygonEventKind::InPolygon,
             }),
         );
-        let _ = state
-            .messaging
-            .publish("events.spatial".to_string(), &event)
-            .await;
+        let _ = crate::publish_event(
+            state.messaging.as_ref(),
+            "events.spatial".to_string(),
+            &event,
+        )
+        .await;
     }
 
     match state
@@ -528,10 +532,12 @@ pub async fn report_location(
                 }
 
                 let event = Event::new("api".into(), GlobalEvent::OrderUpdated(order.clone()));
-                let _ = state
-                    .messaging
-                    .publish("events.orders".to_string(), &event)
-                    .await;
+                let _ = crate::publish_event(
+                    state.messaging.as_ref(),
+                    "events.orders".to_string(),
+                    &event,
+                )
+                .await;
 
                 if matches!(
                     action,
@@ -604,10 +610,12 @@ pub async fn report_location(
                 kind: SpatialPolygonEventKind::LeftPolygon,
             }),
         );
-        let _ = state
-            .messaging
-            .publish("events.spatial".to_string(), &event)
-            .await;
+        let _ = crate::publish_event(
+            state.messaging.as_ref(),
+            "events.spatial".to_string(),
+            &event,
+        )
+        .await;
     }
 
     Ok(HttpResponse::Created().json(loc))

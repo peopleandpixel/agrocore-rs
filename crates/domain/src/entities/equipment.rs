@@ -23,7 +23,7 @@ pub struct Equipment {
     #[sqlx(json)]
     pub equipment_type: EquipmentType,
     pub in_usage: bool,
-    #[sqlx(json)]
+    #[sqlx(json(nullable))]
     pub maintenance_intervals: Option<Vec<MaintenanceInterval>>,
     pub next_maintenance_date: Option<DateTime<Utc>>,
     pub last_maintenance_hours: Option<f64>,

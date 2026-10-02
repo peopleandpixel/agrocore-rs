@@ -95,7 +95,8 @@ fn recurring_order_reschedules_on_completion() {
     assert_eq!(order.status, OrderStatus::Planned);
     assert_eq!(order.last_completed_at, Some(completed_at));
     assert_eq!(order.completed_at, None);
-    assert_eq!(order.planned_date, next_due);
+    // `planned_date` is a DATE column, so only the day is stored.
+    assert_eq!(order.planned_date, next_due.map(|d| d.date_naive()));
 }
 
 #[test]
