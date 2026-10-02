@@ -9,7 +9,10 @@ use crate::error::ApiError;
 use crate::middleware::AuthExtractor;
 use actix_web::{HttpResponse, web};
 use agrocore_backup::service::{BackupStatus, BackupType};
-use agrocore_logging::info;
+use agrocore_domain::entities::setting::UpdateSetting;
+use agrocore_domain::entities::tenant::TenantId;
+use agrocore_domain::repositories::SettingsRepository;
+use agrocore_logging::{error, info, warn};
 use serde_json::json;
 use uuid::Uuid;
 use validator::Validate;
@@ -38,35 +41,194 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     );
 }
 
-async fn get_backup_config(
-    _state: web::Data<AppState>,
-    _auth: AuthExtractor,
-) -> Result<HttpResponse, ApiError> {
-    // Return current backup configuration
-    let config = BackupConfigResponse {
-        enabled: true,
-        schedule_db: "0 2 * * *".to_string(),
-        schedule_config: "0 3 * * 0".to_string(),
-        timezone: "UTC".to_string(),
+/// Settings keys under the `backup.` namespace.
+///
+/// Namespaced rather than flat so the settings page groups them, and so a
+/// backup key cannot collide with an unrelated one.
+const KEY_ENABLED: &str = "backup.enabled";
+const KEY_SCHEDULE_DB: &str = "backup.schedule_db";
+const KEY_SCHEDULE_CONFIG: &str = "backup.schedule_config";
+const KEY_TIMEZONE: &str = "backup.timezone";
+const KEY_RETENTION_DAILY: &str = "backup.retention.daily";
+const KEY_RETENTION_WEEKLY: &str = "backup.retention.weekly";
+const KEY_RETENTION_MONTHLY: &str = "backup.retention.monthly";
+const KEY_RETENTION_YEARLY: &str = "backup.retention.yearly";
+const KEY_VERIFICATION: &str = "backup.verification_enabled";
+
+/// Fallbacks used when a key has never been written.
+///
+/// Every field has a system default in `system_settings`, so these are only
+/// reached if a deployment dropped that row. They match the shipped defaults.
+const DEFAULT_SCHEDULE_DB: &str = "0 2 * * *";
+const DEFAULT_SCHEDULE_CONFIG: &str = "0 3 * * 0";
+const DEFAULT_TIMEZONE: &str = "UTC";
+
+/// Read a string setting, falling back when it is unset.
+async fn setting_str(
+    repo: &dyn SettingsRepository,
+    tid: TenantId,
+    key: &'static str,
+    default: &'static str,
+) -> String {
+    match repo.get(tid, key).await {
+        Ok(Some(entry)) => match entry.value {
+            serde_json::Value::String(s) => s,
+            // A number or boolean stored under a string key: the value is still
+            // usable as text rather than silently reverting to the default.
+            other => other.to_string(),
+        },
+        Ok(None) => default.to_string(),
+        Err(e) => {
+            warn!("Failed to read setting {key}: {e}");
+            default.to_string()
+        }
+    }
+}
+
+/// Read a numeric setting, falling back when it is unset or not a number.
+async fn setting_u32(
+    repo: &dyn SettingsRepository,
+    tid: TenantId,
+    key: &'static str,
+    default: u32,
+) -> u32 {
+    match repo.get(tid, key).await {
+        Ok(Some(entry)) => entry
+            .value
+            .as_u64()
+            .map(|v| v.min(u32::MAX as u64) as u32)
+            .unwrap_or(default),
+        Ok(None) => default,
+        Err(e) => {
+            warn!("Failed to read setting {key}: {e}");
+            default
+        }
+    }
+}
+
+/// Read a boolean setting, falling back when it is unset.
+async fn setting_bool(
+    repo: &dyn SettingsRepository,
+    tid: TenantId,
+    key: &'static str,
+    default: bool,
+) -> bool {
+    match repo.get(tid, key).await {
+        Ok(Some(entry)) => entry.value.as_bool().unwrap_or(default),
+        Ok(None) => default,
+        Err(e) => {
+            warn!("Failed to read setting {key}: {e}");
+            default
+        }
+    }
+}
+
+/// The stored configuration, or the defaults for whatever was never set.
+async fn load_backup_config(
+    state: &web::Data<AppState>,
+    auth: &AuthExtractor,
+) -> Result<BackupConfigResponse, ApiError> {
+    let repo = state.db.settings_repo();
+    let tid = TenantId(auth.0.tenant_id);
+
+    Ok(BackupConfigResponse {
+        enabled: setting_bool(&*repo, tid, KEY_ENABLED, true).await,
+        schedule_db: setting_str(&*repo, tid, KEY_SCHEDULE_DB, DEFAULT_SCHEDULE_DB).await,
+        schedule_config: setting_str(&*repo, tid, KEY_SCHEDULE_CONFIG, DEFAULT_SCHEDULE_CONFIG)
+            .await,
+        timezone: setting_str(&*repo, tid, KEY_TIMEZONE, DEFAULT_TIMEZONE).await,
+        // No target rows are stored in system_settings yet: the backup service
+        // owns the target list. Reporting the configured count honestly means 0
+        // rather than implying destinations that are not registered.
         targets_count: 0,
-        retention_daily: 7,
-        retention_weekly: 4,
-        retention_monthly: 12,
-        retention_yearly: 7,
-        verification_enabled: true,
-    };
-    Ok(HttpResponse::Ok().json(config))
+        retention_daily: setting_u32(&*repo, tid, KEY_RETENTION_DAILY, 7).await,
+        retention_weekly: setting_u32(&*repo, tid, KEY_RETENTION_WEEKLY, 4).await,
+        retention_monthly: setting_u32(&*repo, tid, KEY_RETENTION_MONTHLY, 12).await,
+        retention_yearly: setting_u32(&*repo, tid, KEY_RETENTION_YEARLY, 7).await,
+        verification_enabled: setting_bool(&*repo, tid, KEY_VERIFICATION, true).await,
+    })
+}
+
+async fn get_backup_config(
+    state: web::Data<AppState>,
+    auth: AuthExtractor,
+) -> Result<HttpResponse, ApiError> {
+    auth.require_admin()?;
+    Ok(HttpResponse::Ok().json(load_backup_config(&state, &auth).await?))
 }
 
 async fn update_backup_config(
-    _state: web::Data<AppState>,
+    state: web::Data<AppState>,
     auth: AuthExtractor,
-    _req: web::Json<UpdateBackupConfigRequest>,
+    req: web::Json<UpdateBackupConfigRequest>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_any_role(vec!["admin"])?;
-    // TODO: Persist config changes
-    info!("Backup config update requested by user: {}", auth.0.user_id);
-    Ok(HttpResponse::Ok().json(json!({"message": "Backup configuration updated"})))
+
+    req.validate()
+        .map_err(|e| ApiError::validation(e.to_string()))?;
+
+    let repo = state.db.settings_repo();
+    let tid = TenantId(auth.0.tenant_id);
+
+    // Only the fields present in the request are written. Building the list
+    // this way — rather than writing every field — is what makes this a partial
+    // update: sending `{"enabled": false}` must not clear the schedule.
+    let mut updates: Vec<UpdateSetting> = Vec::new();
+    let mut push = |key: &'static str, value: serde_json::Value| {
+        updates.push(UpdateSetting {
+            key: key.to_string(),
+            value,
+        });
+    };
+
+    if let Some(v) = req.enabled {
+        push(KEY_ENABLED, json!(v));
+    }
+    if let Some(v) = &req.schedule_db {
+        push(KEY_SCHEDULE_DB, json!(v));
+    }
+    if let Some(v) = &req.schedule_config {
+        push(KEY_SCHEDULE_CONFIG, json!(v));
+    }
+    if let Some(v) = &req.timezone {
+        push(KEY_TIMEZONE, json!(v));
+    }
+    if let Some(v) = req.retention_daily {
+        push(KEY_RETENTION_DAILY, json!(v));
+    }
+    if let Some(v) = req.retention_weekly {
+        push(KEY_RETENTION_WEEKLY, json!(v));
+    }
+    if let Some(v) = req.retention_monthly {
+        push(KEY_RETENTION_MONTHLY, json!(v));
+    }
+    if let Some(v) = req.retention_yearly {
+        push(KEY_RETENTION_YEARLY, json!(v));
+    }
+    if let Some(v) = req.verification_enabled {
+        push(KEY_VERIFICATION, json!(v));
+    }
+
+    if updates.is_empty() {
+        // Nothing to write. Returning the current state instead of a bare
+        // success keeps the response shape identical whether or not fields were
+        // sent, so a client can always render from the reply.
+        return Ok(HttpResponse::Ok().json(load_backup_config(&state, &auth).await?));
+    }
+
+    repo.set_many(tid, auth.0.user_id, updates)
+        .await
+        .map_err(|e| {
+            // The detail is logged, not returned: a database error message
+            // carries table, column and constraint names.
+            error!("Failed to persist backup config: {e}");
+            ApiError::internal("Backup configuration could not be saved")
+        })?;
+
+    info!("Backup config updated by user {}", auth.0.user_id);
+
+    // The stored configuration, not an acknowledgement that it was stored.
+    Ok(HttpResponse::Ok().json(load_backup_config(&state, &auth).await?))
 }
 
 async fn list_backups(

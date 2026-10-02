@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.32.0] - 2026-10-02
+
+Behebt F2 auf F1: die Backup-Konfiguration wird jetzt in `system_settings`
+gespeichert statt fest verdrahtet zu sein. Schließt außerdem die Lücke, die
+dabei sichtbar wurde — der Konfigurations-Endpunkt konnte Retention und
+Verifikation lesen, aber nicht ändern.
+
+### Backup-Konfiguration persistiert (F2)
+
+- `get_backup_config` liest neun Schlüssel aus dem `backup.`-Namespace und
+  fällt für nie geschriebene Werte auf die ausgelieferten Defaults zurück,
+  statt `enabled: true` und `"0 2 * * *"` fest zu verdrahten.
+- `update_backup_config` schreibt jetzt. Es antwortete vorher mit `200
+  {"message": "Backup configuration updated"}`, ohne irgendetwas zu tun — ein
+  Admin, der Backups abschaltete, wurde das Gegenteil der Wahrheit informiert,
+  während der Zeitplan weiterlief.
+- Die Antwort ist die gespeicherte Konfiguration, nicht eine Erfolgsmeldung.
+  Damit ist aus dem Client erkennbar, ob die Werte übernommen wurden.
+- `UpdateBackupConfigRequest` um `retention_daily/weekly/monthly/yearly` und
+  `verification_enabled` erweitert. Diese Felder standen auf der Response und
+  waren nicht änderbar.
+- Partial Update bleibt erhalten: die Schreibliste entsteht aus den gesendeten
+  Feldern, damit `{"enabled": false}` den Zeitplan nicht löscht.
+- Validierung auf Zeitplanlänge, Zeitzone und Retention-Bereiche.
+- `targets_count` bleibt ehrlich bei 0: Ziele verwaltet der Backup-Service,
+  `system_settings` kennt sie nicht. Eine Zahl zu liefern, die nicht
+  registrierten Zielen entspricht, wäre die alte Täuschungsart.
+
+### Einstellungs-Defaults
+
+- Die vier Backup-Keys `backup.schedule`, `backup.retention_days`,
+  `backup.targets` und `backup.verify` sind durch neun sprechende ersetzt.
+  `retention_days` war ein flaches Fenster, die API braucht die vier Retention-
+  Stufen getrennt.
+
+### Tests
+
+- 5 Tests in `crates/api/tests/backup_config_tests.rs`: Persistenz, Wechsel von
+  `is_default` beim Überschreiben, Partial Update, Typablehnung für Retention,
+  Mandanten-Isolation inklusive Reset.
+
 ## [0.31.0] - 2026-10-02
 
 Serverseitige Einstellungen (tasks.md F1/H1) und die Bereinigung der

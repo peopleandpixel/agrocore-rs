@@ -64,10 +64,28 @@ pub struct BackupConfigResponse {
     pub verification_enabled: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+/// Partial update: every field is optional, and only the ones present are
+/// written. The retention and verification fields existed on the response but
+/// not here, so an admin could read them and never change them.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Validate)]
 pub struct UpdateBackupConfigRequest {
     pub enabled: Option<bool>,
+    #[validate(length(min = 9, max = 100))]
     pub schedule_db: Option<String>,
+    #[validate(length(min = 9, max = 100))]
     pub schedule_config: Option<String>,
+    #[validate(length(min = 1, max = 64))]
     pub timezone: Option<String>,
+    /// 0 disables that retention tier rather than deleting everything: the
+    /// retention sweep only removes entries older than the tier, so a zero
+    /// window means "keep all".
+    #[validate(range(min = 0, max = 3650))]
+    pub retention_daily: Option<u32>,
+    #[validate(range(min = 0, max = 520))]
+    pub retention_weekly: Option<u32>,
+    #[validate(range(min = 0, max = 120))]
+    pub retention_monthly: Option<u32>,
+    #[validate(range(min = 0, max = 30))]
+    pub retention_yearly: Option<u32>,
+    pub verification_enabled: Option<bool>,
 }
