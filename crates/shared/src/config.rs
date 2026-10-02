@@ -205,6 +205,33 @@ impl AgroCoreConfig {
     #[cfg(feature = "sqlx")]
     pub fn pg_pool_options(&self) -> PgPoolOptions {
         PgPoolOptions::new()
+            // Row-level security is per-session state, so every physical
+            // connection has to be switched to a role that is subject to it.
+            // The connection role is usually superuser, which PostgreSQL
+            // exempts from RLS unconditionally.
+            //
+            // Gated on AGROCORE_RLS_ENABLED: turning the policies live before
+            // every query pins `app.current_tenant_id` would make the
+            // repositories return zero rows, because the policies compare
+            // `tenant_id = get_current_tenant_id()` and that setting is NULL
+            // until a request supplies it. The switchover is therefore a
+            // config change rather than a coordinated release.
+            .after_connect(|conn, _meta| {
+                Box::pin(async move {
+                    if !rls_enabled() {
+                        return Ok(());
+                    }
+                    sqlx::query("SET ROLE agrocore_app")
+                        .execute(conn)
+                        .await
+                        .map(|_| ())
+                        .map_err(|e| {
+                            sqlx::Error::Configuration(Box::new(std::io::Error::other(format!(
+                                "cannot SET ROLE agrocore_app: {e}"
+                            ))))
+                        })
+                })
+            })
             .max_connections(self.database_max_connections)
             .min_connections(self.database_min_connections)
             .idle_timeout(std::time::Duration::from_secs(
@@ -223,6 +250,20 @@ impl AgroCoreConfig {
     pub fn connect_timeout(&self) -> std::time::Duration {
         std::time::Duration::from_secs(self.database_connect_timeout_secs)
     }
+}
+
+/// Whether the pool should switch connections to the RLS-enforcing role.
+///
+/// Requires migration 0000000004_force_rls.sql to have been applied and every
+/// query path to pin `app.current_tenant_id`. See tasks.md A3.
+pub fn rls_enabled() -> bool {
+    matches!(
+        std::env::var("AGROCORE_RLS_ENABLED")
+            .ok()
+            .as_deref()
+            .map(str::trim),
+        Some("1") | Some("true")
+    )
 }
 
 /// Returns the JWT secret for token signing/verification.

@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-10-01
+
+Macht die vorhandene Row-Level-Security tatsächlich wirksam (`tasks.md` A3).
+
+### Security
+- **Die Verbindungsrolle war Superuser mit BYPASSRLS — RLS war reine Dekoration** — Migration `0000000004_force_rls.sql`. Gemessen auf dieser Installation: `agrocore` hat `rolsuper = true` **und** `rolbypassrls = true`. PostgreSQL exemptet solche Rollen bedingungslos; `FORCE ROW LEVEL SECURITY` ändert daran nichts. Die 190 Policies im Schema wurden nie ausgewertet.
+
+  Migration `0000000004_force_rls.sql` führt die Rolle `agrocore_app` ein (`NOSUPERUSER NOBYPASSRLS NOLOGIN`), erteift ihr Zugriff auf alle RLS-Tabellen und Sequenzen und wendet `FORCE ROW LEVEL SECURITY` auf alle 62 betroffenen Tabellen an. Der Pool schaltet in `PgPoolOptions::after_connect` mit `SET ROLE agrocore_app` um — pro physischer Verbindung, weil es Session-Zustand ist.
+
+  Geschaltet über `AGROCORE_RLS_ENABLED=1`: Die Policies vor dem Pin zu aktivieren würde alle Repos null Zeilen liefern lassen, weil `get_current_tenant_id()` ohne gesetztes `app.current_tenant_id` NULL liefert. Der Schalter ist damit eine Konfigurationsänderung und kein koordiniertes Release.
+
+- **Zwei Lücken, die erst durch das Wirksamschalten sichtbar wurden:**
+  - `sigpac_parcels` hatte `ENABLE ROW LEVEL SECURITY`, aber **keine Policy**. Mit `FORCE` hätte das jede Zeile für jeden verweigert, auch für den Eigentümer. Policy nachgetragen.
+  - `tenants` hatte Policies für SELECT, UPDATE und DELETE, aber **keine für INSERT**. Mit `FORCE` wäre `POST /api/v1/system/setup` — der Endpunkt, der den ersten Tenant anlegt — in jeder Installation gescheitert. `tenants_insert ... WITH CHECK (true)` ergänzt: Tenant-Anlage ist eine Setup-Aktion, die vor dem Bestehen eines Tenants stattfindet, und darf deshalb nicht mandantengefiltert sein.
+  - Sechs Tabellen mit `tenant_id`-Spalte hatten überhaupt kein RLS; für alle außer `tenants` ergänzt.
+
+### Added
+- **Fünf RLS-Tests** (`crates/infrastructure/tests/rls_tests.rs`) gegen eine echte Datenbank:
+
+```bash
+DATABASE_URL=postgresql://agrocore:agrocore@localhost:5432/agrocore \
+AGROCORE_RLS_ENABLED=1 \
+  cargo test -p agrocore-infrastructure --test rls_tests -- --ignored
+```
+
+  Geprüft wird: die Anwendungsrolle ist weder Superuser noch BYPASSRLS; ohne Pin ist **keine** Zeile sichtbar (Fail-Closed, kein Leaken); mit Pin sieht jeder Tenant ausschließlich seine eigenen; eine unbekannte UUID oder ein ungültiger Wert ergibt nichts; `FORCE` ist gesetzt und jede FORCE-Tabelle hat auch eine Policy, weil eine Policy-los-Tabelle unter FORCE jede Zeile verweigern würde.
+
+  Der Test ohne Pin ist der eigentliche Nachweis: Ein Repository, das seinen Tenant-Filter vergisst, liefert dann **nichts** statt die Daten des Nachbarn.
+
+### Verified
+- Die Rolle `agrocore` ist Superuser mit BYPASSRLS; genau deswegen konnten die Policies nie greifen.
+- Als `agrocore_app`: Pin auf Tenant A liefert nur A, auf Tenant B nur B, unbekannte UUID und nicht-UUID ergeben je 0 Zeilen.
+- 62 Tabellen mit `relforcerowsecurity` nach der Migration.
+- Migration `0000000004_force_rls.sql` ist idempotent und läuft in einer frischen Datenbank nach allen vorherigen Migrationen durch.
+- Alle Gates grün, 268 Workspace-Tests.
+
 ## [0.28.0] - 2026-10-01
 
 Behebt die Refresh-Token-Mechanik (D1) und den Tenant-Bruch bei `kelter_deliveries` (B1).

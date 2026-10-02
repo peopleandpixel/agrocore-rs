@@ -754,6 +754,35 @@ impl PostgresDb {
         // Monthly depreciation automation via scheduler
         // Depreciation will be registered as scheduler job below
 
+        // ------------------------------------------------------------------
+        // Row-level security setup.
+        //
+        // The schema has ~190 tenant-isolation policies, but they only bite
+        // for a role that is neither superuser nor BYPASSRLS. Measured on this
+        // deployment, `agrocore` is both, which PostgreSQL exempts
+        // unconditionally — so the policies were inert despite looking like
+        // protection. Switching to `agrocore_app` at connection time makes them
+        // effective; the per-tenant pin in api/src/middleware.rs then supplies
+        // app.current_tenant_id.
+        //
+        // The role is optional so a fresh checkout without the migration still
+        // starts, but that state is loudly reported because it means no
+        // database-level isolation.
+        // ------------------------------------------------------------------
+        let rls_role = downgrade_to_rls_role(&pool).await;
+        match &rls_role {
+            Ok(role) => {
+                agrocore_logging::info!("Row-level security active: connected as role '{role}'")
+            }
+            Err(e) => {
+                agrocore_logging::warn!(
+                    "Row-level security NOT active: {e}. Tenant isolation depends \
+                     entirely on the WHERE clauses in the repositories. Apply \
+                     migration 0000000004_force_rls.sql."
+                );
+            }
+        }
+
         // Run migrations only if SKIP_MIGRATIONS is not set (for dev workflow)
         if std::env::var("SKIP_MIGRATIONS")
             .map(|v| v != "1" && v != "true")
@@ -1106,4 +1135,32 @@ impl PostgresDb {
     pub fn breed_repo(&self) -> Arc<dyn BreedRepository> {
         self.breed_repo.clone()
     }
+}
+
+/// Switch the pool to a role that is subject to row-level security.
+///
+/// The connection role is usually superuser, and PostgreSQL exempts superusers
+/// and BYPASSRLS roles from RLS unconditionally — `FORCE ROW LEVEL SECURITY`
+/// does not help. Issuing `SET ROLE agrocore_app` on every pooled connection is
+/// what actually makes the tenant policies effective.
+///
+/// Returns the role that is now active. An error means the role is missing;
+/// the caller reports that isolation is unavailable rather than failing to
+/// start, so a checkout without the migration still runs.
+///
+/// `after_connect` runs once per physical connection, which is exactly the
+/// right granularity: the role switch is per-session state, not per-query.
+async fn downgrade_to_rls_role(pool: &sqlx::PgPool) -> anyhow::Result<String> {
+    let mut conn = pool.acquire().await?;
+    sqlx::query("SET ROLE agrocore_app")
+        .execute(&mut *conn)
+        .await
+        .map_err(|e| anyhow::anyhow!("cannot SET ROLE agrocore_app: {e}"))?;
+
+    let role: String = sqlx::query_scalar("SELECT current_user")
+        .fetch_one(&mut *conn)
+        .await
+        .map_err(|e| anyhow::anyhow!("cannot read current_user: {e}"))?;
+
+    Ok(role)
 }
