@@ -212,6 +212,54 @@ CREATE INDEX IF NOT EXISTS idx_animals_tenant_identifier
     ON public.animals(tenant_id, identifier);
 
 -- ---------------------------------------------------------------------------
+-- kelter_deliveries: the repository took `tid: TenantId` in all seven methods
+-- and used it in none of the queries, so find_all returned every tenant's rows
+-- and delete removed any tenant's row (tasks.md B1), confirmed independently
+-- by test_tenant_scoped_tables_have_tenant_id.
+--
+-- The table itself already exists since 0000000000. What is missing is a
+-- tenant_id column: the initial RLS policies scope access through
+-- `vineyard_id IN (SELECT id FROM vineyards WHERE tenant_id = ...)`, which the
+-- repository bypasses entirely. Existing rows are backfilled from the vineyard
+-- they belong to.
+-- ---------------------------------------------------------------------------
+ALTER TABLE kelter_deliveries
+    ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE;
+
+-- Backfill from the owning vineyard before the NOT NULL is enforced.
+UPDATE kelter_deliveries kd
+SET tenant_id = v.tenant_id
+FROM vineyards v
+WHERE v.id = kd.vineyard_id
+  AND kd.tenant_id IS NULL;
+
+-- A delivery whose vineyard has no tenant cannot be attributed; fail loudly
+-- rather than silently defaulting it to somebody.
+DO $$
+DECLARE
+    orphans INTEGER;
+BEGIN
+    SELECT count(*) INTO orphans
+    FROM kelter_deliveries
+    WHERE tenant_id IS NULL;
+
+    IF orphans > 0 THEN
+        RAISE EXCEPTION
+            'kelter_deliveries contains % row(s) whose vineyard has no tenant_id;              fix the vineyard rows before enforcing NOT NULL', orphans;
+    END IF;
+END
+$$;
+
+ALTER TABLE kelter_deliveries ALTER COLUMN tenant_id SET NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_kelter_deliveries_tenant
+    ON kelter_deliveries(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_kelter_deliveries_tenant_date
+    ON kelter_deliveries(tenant_id, delivery_date DESC);
+CREATE INDEX IF NOT EXISTS idx_kelter_deliveries_tenant_vineyard
+    ON kelter_deliveries(tenant_id, vineyard_id);
+
+-- ---------------------------------------------------------------------------
 -- RLS on the new tables, mirroring the existing policy pattern.
 -- Same caveat as everywhere else in this schema: without FORCE ROW LEVEL
 -- SECURITY and without app.current_tenant_id being set, these policies never

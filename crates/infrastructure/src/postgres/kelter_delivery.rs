@@ -15,11 +15,15 @@ impl KelterDeliveryRepo for PgKelterDeliveryRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<KelterDelivery>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, KelterDelivery>("SELECT * FROM kelter_deliveries WHERE id = $1")
-                .bind(id)
-                .fetch_optional(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))
+            sqlx::query_as::<_, KelterDelivery>(
+                "SELECT * FROM kelter_deliveries WHERE id = $1 AND tenant_id = $2",
+            )
+            .bind(id)
+            .bind(tid)
+            .bind(id)
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 
@@ -34,18 +38,22 @@ impl KelterDeliveryRepo for PgKelterDeliveryRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM kelter_deliveries")
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
-
-            let data: Vec<KelterDelivery> =
-                sqlx::query_as("SELECT * FROM kelter_deliveries LIMIT $1 OFFSET $2")
-                    .bind(per_page as i32)
-                    .bind(offset as i32)
-                    .fetch_all(&pool)
+            let total: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM kelter_deliveries WHERE tenant_id = $1")
+                    .bind(tid)
+                    .fetch_one(&pool)
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            let data: Vec<KelterDelivery> = sqlx::query_as(
+                "SELECT * FROM kelter_deliveries WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
+            )
+            .bind(tid)
+            .bind(per_page as i32)
+            .bind(offset as i32)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(PaginatedResponse {
                 data,
@@ -69,17 +77,20 @@ impl KelterDeliveryRepo for PgKelterDeliveryRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 =
-                sqlx::query_scalar("SELECT COUNT(*) FROM kelter_deliveries WHERE vineyard_id = $1")
-                    .bind(vineyard_id)
-                    .fetch_one(&pool)
-                    .await
-                    .map_err(|e| SharedError::Database(e.to_string()))?;
-
-            let data: Vec<KelterDelivery> = sqlx::query_as(
-                "SELECT * FROM kelter_deliveries WHERE vineyard_id = $1 LIMIT $2 OFFSET $3",
+            let total: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM kelter_deliveries WHERE vineyard_id = $1 AND tenant_id = $2",
             )
             .bind(vineyard_id)
+            .bind(tid)
+            .fetch_one(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            let data: Vec<KelterDelivery> = sqlx::query_as(
+                "SELECT * FROM kelter_deliveries WHERE vineyard_id = $1 AND tenant_id = $2 LIMIT $3 OFFSET $4",
+            )
+            .bind(vineyard_id)
+            .bind(tid)
             .bind(per_page as i32)
             .bind(offset as i32)
             .fetch_all(&pool)
@@ -106,10 +117,11 @@ impl KelterDeliveryRepo for PgKelterDeliveryRepo {
         Box::pin(async move {
             let id = Uuid::new_v4();
             sqlx::query_as::<_, KelterDelivery>(
-                r#"INSERT INTO kelter_deliveries (id, vineyard_id, delivery_date, gross_weight_kg, net_weight_kg, lot_number, kelter_name, transport_company, temperature_c, notes)
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                r#"INSERT INTO kelter_deliveries (id, tenant_id, vineyard_id, delivery_date, gross_weight_kg, net_weight_kg, lot_number, kelter_name, transport_company, temperature_c, notes)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                    RETURNING *"#)
             .bind(id)
+            .bind(tid.0)
             .bind(dto.vineyard_id)
             .bind(dto.delivery_date)
             .bind(dto.gross_weight_kg)
@@ -144,8 +156,9 @@ impl KelterDeliveryRepo for PgKelterDeliveryRepo {
                     kelter_name = COALESCE($6, kelter_name),
                     transport_company = COALESCE($7, transport_company),
                     temperature_c = COALESCE($8, temperature_c),
-                    notes = COALESCE($9, notes)
-                   WHERE id = $10 RETURNING *"#,
+                    notes = COALESCE($9, notes),
+                    updated_at = NOW()
+                   WHERE id = $10 AND tenant_id = $11 RETURNING *"#,
             )
             .bind(dto.vineyard_id)
             .bind(dto.delivery_date)
@@ -157,6 +170,7 @@ impl KelterDeliveryRepo for PgKelterDeliveryRepo {
             .bind(dto.temperature_c)
             .bind(&dto.notes)
             .bind(id)
+            .bind(tid.0)
             .fetch_optional(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))
@@ -166,7 +180,9 @@ impl KelterDeliveryRepo for PgKelterDeliveryRepo {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query("DELETE FROM kelter_deliveries WHERE id = $1")
+            sqlx::query("DELETE FROM kelter_deliveries WHERE id = $1 AND tenant_id = $2")
+                .bind(id)
+                .bind(tid)
                 .bind(id)
                 .execute(&pool)
                 .await

@@ -12,6 +12,12 @@
 
 use std::env;
 
+/// Serialises access to the environment across the tests in this file.
+fn env_lock() -> std::sync::MutexGuard<'static, ()> {
+    static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    LOCK.lock().unwrap_or_else(|e| e.into_inner())
+}
+
 /// Mirrors `demo_endpoints_enabled()` in crates/api/src/lib.rs.
 fn demo_endpoints_enabled() -> bool {
     match env::var("ALLOW_DEMO_ENDPOINTS") {
@@ -23,6 +29,10 @@ fn demo_endpoints_enabled() -> bool {
 // The tests below mutate a process-wide environment variable, so they must not
 // run concurrently. Each restores the previous value.
 fn with_var(key: &str, value: Option<&str>, f: impl FnOnce()) {
+    // cargo runs tests in parallel threads and the environment is
+    // process-wide, so every test in this file must take the lock or it will
+    // read whatever value another test set last.
+    let _guard = env_lock();
     let previous = env::var(key).ok();
     // SAFETY: single-threaded within this test, restored immediately after.
     unsafe {

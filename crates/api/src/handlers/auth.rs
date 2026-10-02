@@ -51,13 +51,20 @@ pub async fn login(
     let refresh_token = Uuid::new_v4().to_string();
     let refresh_expires_at = Utc::now() + chrono::Duration::days(7);
 
-    // Update user with refresh token
-    state
+    // Store the refresh token. The repository reports success as a bool, so
+    // `map_err` alone would not notice a write that silently affected no rows:
+    // the client would receive a token that does not exist in the database and
+    // every later /auth/refresh would fail.
+    let stored = state
         .db
         .user_repo()
         .update_refresh_token(user.user_id, &refresh_token, refresh_expires_at)
         .await
         .map_err(|e| SharedError::Internal(format!("Failed to store refresh token: {}", e)))?;
+
+    if !stored {
+        return Err(SharedError::Internal("Refresh token could not be persisted".into()).into());
+    }
 
     Ok(HttpResponse::Ok().json(AuthResponseDto {
         token: user.token,
@@ -115,13 +122,18 @@ pub async fn refresh_token(
     let new_refresh_token = Uuid::new_v4().to_string();
     let refresh_expires_at = Utc::now() + chrono::Duration::days(7);
 
-    // Update refresh token in database
-    state
+    // Rotate the refresh token. Rotation is what makes reuse detectable: the
+    // previous value is replaced, so presenting it a second time finds nothing.
+    let stored = state
         .db
         .user_repo()
         .update_refresh_token(user.id, &new_refresh_token, refresh_expires_at)
         .await
         .map_err(|e| SharedError::Internal(format!("Failed to update refresh token: {}", e)))?;
+
+    if !stored {
+        return Err(SharedError::Internal("Refresh token rotation failed".into()).into());
+    }
 
     Ok(HttpResponse::Ok().json(AuthResponseDto {
         token: new_token,

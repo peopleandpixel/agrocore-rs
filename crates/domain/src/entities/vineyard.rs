@@ -61,6 +61,7 @@ pub enum QualityGrade {
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow, ToSchema)]
 pub struct KelterDelivery {
     pub id: Uuid,
+    pub tenant_id: Uuid,
     pub vineyard_id: Uuid,
     pub delivery_date: DateTime<Utc>,
     pub gross_weight_kg: f64,

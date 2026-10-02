@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-10-01
+
+Behebt die Refresh-Token-Mechanik (D1) und den Tenant-Bruch bei `kelter_deliveries` (B1).
+
+### Security
+- **Tenant-Isolation bei `kelter_deliveries` war ausgehebelt** — `postgres/kelter_delivery.rs`. Alle sieben Methoden nahmen `tid: TenantId` entgegen und verwendeten es in **keiner** einzigen Query. `find_all` lieferte global über alle Mandanten, `delete` löschte beliebige Datensätze.
+
+  **Korrektur zum Audit:** Die Tabelle existierte bereits in `0000000000`, sie hatte nur keine `tenant_id`-Spalte; die RLS-Policies des Init-Schemas scopen über den zugehörigen Weinberg (`vineyard_id IN (SELECT id FROM vineyards WHERE tenant_id = …)`), was das Repository umgeht. Migration `0000000003` ergänzt deshalb per `ALTER TABLE` die Spalte, statt die Tabelle neu anzulegen. Bestehende Zeilen werden aus dem Weinberg gebackfillt; eine Zeile ohne Weinbergs-Tenant bricht die Migration mit einer klaren Meldung ab, statt still einem beliebigen Mandanten zugeordnet zu werden.
+
+  Alle sieben Queries filtern jetzt nach `tenant_id`, `KelterDelivery` hat das Feld im Domain-Modell. Die Bind-Reihenfolge in `find_by_vineyard` war dabei falsch — die Platzhalter `$1`/`$2` erwarten erst den Weinberg, dann den Mandanten.
+
+### Fixed
+- **Die Refresh-Token-Mechanik war tot** — `postgres/user.rs:402-420`. Alle drei Methoden waren Stubs: `find_by_refresh_token` gab `Ok(None)` zurück (mit dem Kommentar *Simplified - not fully implemented*), `update_refresh_token` und `invalidate_refresh_token` je `Ok(false)`. Der Fehler blieb still, weil `auth.rs:60` nur `map_err` prüfte und ein `Ok(false)` kein Fehler ist: Der Login antwortete 200 und übergab dem Client einen Refresh-Token, der nie in der Datenbank stand, und `/auth/refresh` gab daraufhin immer 401.
+
+  `find_by_refresh_token` filtert Ablauf und `is_active` jetzt im SQL, damit ein abgelaufener Token von einem unbekannten nicht unterscheidbar ist. `invalidate_refresh_token` setzt beide Spalten auf NULL und meldet über `WHERE refresh_token IS NOT NULL`, ob wirklich etwas widerrufen wurde. Login und Refresh prüfen den Rückgabewert jetzt explizit und geben einen 500 zurück, statt einen unbenutzbaren Token auszuhändigen. Der Refresh rotiert den Token, wodurch Wiederverwendung erkennbar wird.
+
+- **Ein Test war unzuverlässig statt falsch** — `crates/api/tests/demo_endpoint_auth_tests.rs`. `rejected_values_keep_demo_endpoints_disabled` schlug fehl, weil `cargo` Tests parallel in Threads startet und `std::env` prozessweit ist: Der Test las den Wert, den ein anderer gerade gesetzt hatte. Die Tests der Datei nehmen jetzt einen `Mutex` um den Umgebungszugriff. Der Produktionscode war korrekt — der Test war nur zufällig grün.
+
+### Added
+- **Vier Tenant-Isolationstests** (`crates/infrastructure/tests/tenant_isolation_tests.rs`) — `find_all` liefert nur eigene Zeilen, `find_by_id` mit korrekter UUID eines fremden Mandanten liefert nichts, ein Cross-Tenant-`DELETE` betrifft 0 Zeilen, `find_by_vineyard` bleibt gescoped. Zwei Tenants mit je eigenem Weinberg und Lieferung, Cleanup nach jedem Test.
+
+```bash
+DATABASE_URL=postgresql://agrocore:agrocore@localhost:5432/agrocore \
+  cargo test -p agrocore-infrastructure --test tenant_isolation_tests -- --ignored
+```
+
+### Tests
+- 268 Tests im Workspace, 0 Fehler.
+- Die vier Isolationstests laufen grün gegen eine PostgreSQL-Instanz mit angewandten Migrationen.
+
 ## [0.27.0] - 2026-10-01
 
 Schließt drei Sicherheitslücken (`tasks.md` A4, A5) und macht zehn zuvor nicht

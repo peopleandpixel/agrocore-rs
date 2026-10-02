@@ -399,23 +399,67 @@ impl UserRepository for PgUserRepo {
         })
     }
 
-    fn find_by_refresh_token(&self, _refresh_token: &str) -> RepositoryFuture<Option<User>> {
+    fn find_by_refresh_token(&self, refresh_token: &str) -> RepositoryFuture<Option<User>> {
         let pool = self.pool.clone();
+        let refresh_token = refresh_token.to_string();
         Box::pin(async move {
-            Ok(None) // Simplified - not fully implemented
+            // Expiry and the active flag are filtered in SQL rather than in
+            // Rust, so an expired token is indistinguishable from an unknown one
+            // at this layer and cannot be mistaken for a valid session.
+            let user: Option<UserRow> = sqlx::query_as(&format!(
+                "{} WHERE u.refresh_token = $1 AND u.refresh_token_expires_at > NOW() \
+                 AND u.is_active = true GROUP BY u.id",
+                USER_SELECT_FIELDS
+            ))
+            .bind(&refresh_token)
+            .fetch_optional(&pool)
+            .await
+            .map_err(map_db_error)?;
+
+            Ok(user.map(User::from))
         })
     }
 
-    fn invalidate_refresh_token(&self, _user_id: Uuid) -> RepositoryFuture<bool> {
-        Box::pin(async move { Ok(false) })
+    fn invalidate_refresh_token(&self, user_id: Uuid) -> RepositoryFuture<bool> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            // `refresh_token IS NOT NULL` keeps this idempotent: invalidating
+            // an already-cleared token reports "nothing changed" instead of
+            // pretending to have revoked something.
+            let result = sqlx::query(
+                "UPDATE users SET refresh_token = NULL, refresh_token_expires_at = NULL \
+                 WHERE id = $1 AND refresh_token IS NOT NULL",
+            )
+            .bind(user_id)
+            .execute(&pool)
+            .await
+            .map_err(map_db_error)?;
+
+            Ok(result.rows_affected() > 0)
+        })
     }
 
     fn update_refresh_token(
         &self,
-        _user_id: Uuid,
-        _token: &str,
-        _expires_at: chrono::DateTime<chrono::Utc>,
+        user_id: Uuid,
+        token: &str,
+        expires_at: chrono::DateTime<chrono::Utc>,
     ) -> RepositoryFuture<bool> {
-        Box::pin(async move { Ok(false) })
+        let pool = self.pool.clone();
+        let token = token.to_string();
+        Box::pin(async move {
+            let result = sqlx::query(
+                "UPDATE users SET refresh_token = $1, refresh_token_expires_at = $2, \
+                 updated_at = NOW() WHERE id = $3",
+            )
+            .bind(&token)
+            .bind(expires_at)
+            .bind(user_id)
+            .execute(&pool)
+            .await
+            .map_err(map_db_error)?;
+
+            Ok(result.rows_affected() > 0)
+        })
     }
 }
