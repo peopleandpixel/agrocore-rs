@@ -7,6 +7,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-10-02
+
+Serverseitige Einstellungen (tasks.md F1/H1) und die Bereinigung der
+Schema-Abweichungen, die dabei sichtbar wurden. Alle 40 ignorierten
+Datenbanktests laufen jetzt grün gegen eine frische Datenbank mit allen
+Migrationen von Null und geladenem Demo-Seed.
+
+### Einstellungen
+
+- Neue Tabelle `system_settings` (Migration `0000000005`): typisierte
+  Key/Value-Einstellungen, `tenant_id IS NULL` sind System-Defaults, die
+  jeder Mandant erbt. Eindeutigkeit über `COALESCE(tenant_id, …)`, weil ein
+  einfaches `UNIQUE` NULLs als verschieden behandeln und doppelte Defaults
+  erlauben würde.
+- 20 ausgelieferte Defaults, damit eine frische Installation eine
+  vollständige Einstellungsseite hat.
+- `SettingsRepository` mit `list_effective`, `get`, `set`, `set_many`,
+  `reset`, `set_default`, `restore_defaults` und `list_keys`.
+- Endpunkte `GET/PUT/DELETE /api/v1/settings`, `GET/PUT/DELETE
+  /api/v1/settings/{key}` und `POST /api/v1/settings/restore-defaults`, alle
+  admin-only. `null` als Wert entfernt das Override statt JSON-null zu
+  speichern.
+- Neues Modul `settings_editor.rs`: das Widget richtet sich nach
+  `value_type`, nicht nach einem handgeschriebenen Feld pro Schlüssel. Ein in
+  der Datenbank ergänzter Schlüssel erscheint ohne UI-Änderung mit einem
+  passenden Editor. Bestehende Seite `settings.rs` schrieb nur in das
+  localStorage des Browsers und war damit pro Gerät.
+- 6 Tests in `tests/settings_tests.rs`: Mandanten-Isolation, Defaults,
+  Speichern/Reset, Typvalidierung, unbekannte Schlüssel.
+
+### Behobene Fehler
+
+- **Sites waren nicht anlegbar.** Das INSERT nannte 36 Spalten, lieferte aber
+  nur 33 Ausdrücke; die Platzhalter sprangen von `$25` auf `$28`.
+- **`sites.center` und `sites.boundary` sind `GEOMETRY`, wurden aber als JSONB
+  gebunden** — jeder Schreibversuch scheiterte mit `column "center" is of
+  type geometry but expression is of type jsonb`. Geschrieben wird jetzt über
+  `ST_GeomFromGeoJSON`, gelesen über `ST_AsGeoJSON`.
+- **`GeoPoint` serialisiert nicht als GeoJSON.** `{"lng":…,"lat":…}` lehnt
+  PostGIS mit `unknown GeoJSON type` ab; neue Helfer `geo_point_to_geojson`
+  und `boundary_to_geojson` konvertieren explizit und schließen Ringe.
+- **`sites.lpis_country` ist `varchar`, wurde aber als JSONB behandelt**
+  (`COALESCE types jsonb and character varying cannot be matched`).
+- **Soft-Delete war nicht idempotent.** Ein zweites `delete` meldete erneut
+  Erfolg; `AND is_active` macht den Wiederholungsfall zu `false`.
+- **`worker_repo().create()` und der Worker-Task-Status waren tot.**
+  `workers` war als HR-Tabelle angelegt (`employee_id`, `firstname`,
+  `social_security_number`) und hatte keine der Spalten, die das Entity
+  deklariert; `worker_task_statuses` fehlten `paused_at`, `resumed_at`,
+  `stopped_at`, `done_at` und `updated_at`. Migration
+  `0000000006_workforce_schema_alignment.sql` ergänzt beides, ohne die
+  bestehenden Lohndaten zu verwerfen, und benennt Namen aus `users` nach.
+- **`worker_task_statuses.status` war `TEXT`, das Entity erwartet JSONB** —
+  sqlx lehnte den Decode mit `mismatched types` ab.
+- **Ein Fremdschlüssel auf `worker_locations.worker_id` verwarf gültige
+  Zeilen**, weil das Workforce-Modul eine User-ID übergibt, die FK aber auf
+  `workers(id)` zeigte.
+- **`worker_locations.location` war nullable**, wodurch Zeilen ohne Position
+  entstehen konnten, die die GPS-Ansicht als Nullinsel zeigt.
+
+### Testinfrastruktur
+
+- Der Testcontainer-Fixture legt die Rolle `agrocore` an, die Migration 4
+  voraussetzt, sonst bricht die Migration vorher ab.
+- Fixture-Helfer für echte Fremdschlüssel-Zeilen (User, Task, eindeutige
+  Tenant-Slugs) statt zufälliger UUIDs.
+- `rls_tests` und `tenant_pin_tests` erzeugen ihre Tenant-IDs und Slugs
+  lauf-eindeutig, sonst schlägt der zweite Lauf gegen `tenants_pkey` und
+  `tenants_slug_key` fehl. `ON CONFLICT DO NOTHING` ist unter FORCE-RLS keine
+  Lösung: es löst eine Policy-Prüfung aus, die das normale INSERT nicht hat.
+- Zwei Test-Erwartungen korrigiert, die dem Projekt widersprachen:
+  `spatial_properties` existiert in keiner Migration, und `delete` ist
+  projektweit ein Soft-Delete (12 Repos).
+
 ## [0.30.0] - 2026-10-02
 
 Integriert den Tenant-Pin in alle Datenbankpfade und behebt die dadurch

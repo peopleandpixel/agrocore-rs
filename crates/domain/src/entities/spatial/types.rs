@@ -90,3 +90,48 @@ impl<'r> sqlx::Decode<'r, sqlx::Postgres> for Boundary {
         Ok(serde_json::from_str(json)?)
     }
 }
+
+/// GeoJSON representation of a [`GeoPoint`].
+///
+/// The domain type serialises as `{"lng": …, "lat": …}`, which PostGIS rejects
+/// with "unknown GeoJSON type" — GeoJSON only accepts Point, LineString,
+/// Polygon and GeometryCollection. `sites.center` is a `GEOMETRY(POINT, 4326)`
+/// column, so the value has to be converted on the way in.
+pub fn geo_point_to_geojson(p: &GeoPoint) -> String {
+    format!(r#"{{"type":"Point","coordinates":[{},{}]}}"#, p.lng, p.lat)
+}
+
+/// GeoJSON Polygon for a [`Boundary`], including its holes.
+///
+/// The ring is closed explicitly: GeoJSON requires the first and last position
+/// to be identical, and an unclosed ring makes ST_GeomFromGeoJSON fail.
+pub fn boundary_to_geojson(b: &Boundary) -> String {
+    let ring = |points: &[GeoPoint]| -> String {
+        if points.is_empty() {
+            return String::new();
+        }
+        let coords: Vec<String> = points
+            .iter()
+            .map(|p| format!("[{},{}]", p.lng, p.lat))
+            .collect();
+        let first = coords.first().cloned().unwrap_or_default();
+        format!("[{}]", {
+            let mut parts = coords;
+            if parts.last() != Some(&first) {
+                parts.push(first);
+            }
+            parts.join(",")
+        })
+    };
+
+    let outer = ring(&b.polygon);
+    let mut rings = vec![outer];
+    for hole in b.holes.iter().flatten() {
+        rings.push(ring(hole));
+    }
+
+    format!(
+        r#"{{"type":"Polygon","coordinates":[{}]}}"#,
+        rings.join(",")
+    )
+}

@@ -2249,3 +2249,146 @@ pub struct GrazingRecordDto {
     pub end_time: Option<String>,
     pub notes: Option<String>,
 }
+
+/// A setting as the API reports it.
+///
+/// `is_default` distinguishes a value this tenant chose from one inherited from
+/// the system defaults, which is what lets the UI mark it as inherited and offer
+/// a reset.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SettingDto {
+    pub key: String,
+    pub value: serde_json::Value,
+    pub value_type: String,
+    pub is_default: bool,
+    pub default_value: Option<serde_json::Value>,
+    pub description: Option<String>,
+    pub is_sensitive: bool,
+    pub updated_at: String,
+    pub updated_by: Option<uuid::Uuid>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SettingsListResponse {
+    pub settings: Vec<SettingDto>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SettingKeyDto {
+    pub key: String,
+    pub value_type: String,
+    pub description: Option<String>,
+    pub is_sensitive: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RestoreDefaultsResponse {
+    pub restored_keys: Vec<String>,
+}
+
+async fn put_json<T: DeserializeOwned, B: Serialize>(
+    path: &str,
+    body: &B,
+    auth: bool,
+) -> Result<T, String> {
+    let req = Request::put(&api_url(path));
+    let req = if auth { with_auth(req) } else { req };
+    let resp = req
+        .json(body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<T>().await.map_err(|e| e.to_string())
+}
+
+async fn delete_json(path: &str, auth: bool) -> Result<(), String> {
+    let req = Request::delete(&api_url(path));
+    let req = if auth { with_auth(req) } else { req };
+    let resp = req.send().await.map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    Ok(())
+}
+
+/// All effective settings for the current tenant.
+pub async fn fetch_settings() -> Result<SettingsListResponse, String> {
+    get_json("/api/v1/settings", true).await
+}
+
+/// Every known key, including those this tenant has no value for.
+pub async fn fetch_setting_keys() -> Result<Vec<SettingKeyDto>, String> {
+    get_json("/api/v1/settings/keys", true).await
+}
+
+/// Write several settings in one request.
+///
+/// A `Json::Null` value clears the tenant's override instead of storing a null,
+/// matching what the handler does.
+pub async fn save_settings(
+    values: serde_json::Map<String, serde_json::Value>,
+) -> Result<SettingsListResponse, String> {
+    let body = serde_json::json!({ "settings": values });
+    put_json("/api/v1/settings", &body, true).await
+}
+
+/// Write one setting.
+pub async fn save_setting(
+    key: &str,
+    value: serde_json::Value,
+) -> Result<SettingsListResponse, String> {
+    let body = serde_json::json!({ "value": value });
+    put_json(
+        &format!("/api/v1/settings/{}", encode_path_segment(key)),
+        &body,
+        true,
+    )
+    .await
+}
+
+/// Drop this tenant's override for one key.
+pub async fn reset_setting(key: &str) -> Result<RestoreDefaultsResponse, String> {
+    let req = Request::delete(&api_url(&format!(
+        "/api/v1/settings/{}",
+        encode_path_segment(key)
+    )));
+    let resp = with_auth(req).send().await.map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<RestoreDefaultsResponse>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Remove every tenant override in the system.
+pub async fn restore_default_settings() -> Result<RestoreDefaultsResponse, String> {
+    let req = Request::post(&api_url("/api/v1/settings/restore-defaults"));
+    let resp = with_auth(req).send().await.map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<RestoreDefaultsResponse>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Percent-encode one path segment.
+///
+/// Setting keys contain a dot, which is legal in a path segment, but encoding
+/// keeps an arbitrary key from breaking out of the segment.
+fn encode_path_segment(segment: &str) -> String {
+    segment
+        .bytes()
+        .map(|b| match b {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                (b as char).to_string()
+            }
+            _ => format!("%{b:02X}"),
+        })
+        .collect()
+}

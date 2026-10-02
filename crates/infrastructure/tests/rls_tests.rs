@@ -28,8 +28,18 @@ use uuid::Uuid;
 /// Each test derives its own tenant ids from a distinct tag. The tests share a
 /// database and cargo runs them in parallel, so fixed ids would let one test's
 /// cleanup delete another test's rows.
+///
+/// The per-tag base is offset by the process start time. Without that, a run
+/// that left rows behind — the FORCE-RLS policy on `tenants` lets a failed
+/// cleanup pass silently — would collide on tenants_pkey on the next run, and
+/// `ON CONFLICT DO NOTHING` is not a usable workaround: under FORCE it triggers
+/// a policy check the plain INSERT does not.
 fn tenants(tag: u128) -> (Uuid, Uuid) {
-    let base = 0xe100_0000_0000_0000_0000_0000_0000_0000u128 + tag * 2;
+    let run = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    let base = 0xe100_0000_0000_0000_0000_0000_0000_0000u128 + tag * 2 + (run % 0x1000) * 2;
     (Uuid::from_u128(base), Uuid::from_u128(base + 1))
 }
 
@@ -62,9 +72,21 @@ async fn rls_pool(url: &str) -> Option<PgPool> {
 /// so writing without a pin is correctly rejected. That rejection is itself part
 /// of what these tests verify.
 async fn seed(pool: &PgPool, tenant_a: Uuid, tenant_b: Uuid, tag: &str) {
+    // The slug carries the run-unique part too: `tenants.slug` is UNIQUE, so a
+    // leftover row from an earlier run collides on tenants_slug_key even when
+    // the primary key differs.
+    let suffix = tenant_a.as_u128() % 0xffff_ffff;
     for (id, name, slug) in [
-        (tenant_a, format!("RLS A {tag}"), format!("rls-a-{tag}")),
-        (tenant_b, format!("RLS B {tag}"), format!("rls-b-{tag}")),
+        (
+            tenant_a,
+            format!("RLS A {tag}"),
+            format!("rls-a-{tag}-{suffix:x}"),
+        ),
+        (
+            tenant_b,
+            format!("RLS B {tag}"),
+            format!("rls-b-{tag}-{suffix:x}"),
+        ),
     ] {
         let _ = sqlx::query(
             "INSERT INTO tenants (id, name, slug, is_active) VALUES ($1, $2, $3, true)",

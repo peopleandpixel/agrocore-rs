@@ -1742,3 +1742,58 @@ pub trait BreedRepository: Send + Sync {
     ) -> RepositoryFuture<Option<Breed>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
+
+// --- Settings Repository ---
+
+use crate::entities::setting::{SettingEntry, SettingValueType, SettingWithDefault, UpdateSetting};
+
+/// Metadata for one known setting key: the key itself, its declared type, the
+/// human-readable description and whether its value is a secret.
+pub type SettingKeyDescriptor = (String, SettingValueType, Option<String>, bool);
+
+/// Typed key/value settings.
+///
+/// `tenant_id` is `None` for the system-wide defaults. Reads merge the two so
+/// callers get the effective value; writes are always tenant-scoped, so a
+/// tenant can override a default but never edit the default itself.
+#[cfg_attr(feature = "mocks", automock)]
+pub trait SettingsRepository: Send + Sync {
+    /// Every effective setting for the tenant: its own overrides, plus the
+    /// system defaults for keys it has not overridden.
+    fn list_effective(&self, tid: TenantId) -> RepositoryFuture<Vec<SettingWithDefault>>;
+
+    /// A single key, or `None` if neither an override nor a default exists.
+    fn get(&self, tid: TenantId, key: &str) -> RepositoryFuture<Option<SettingEntry>>;
+
+    /// Write a tenant override. The default row is left untouched.
+    fn set(&self, tid: TenantId, user_id: Uuid, update: UpdateSetting) -> RepositoryFuture<()>;
+
+    /// Write several overrides in one transaction.
+    fn set_many(
+        &self,
+        tid: TenantId,
+        user_id: Uuid,
+        updates: Vec<UpdateSetting>,
+    ) -> RepositoryFuture<()>;
+
+    /// Drop the tenant override, so the key falls back to its default.
+    fn reset(&self, tid: TenantId, key: &str) -> RepositoryFuture<bool>;
+
+    /// Write a system-wide default. Separate from `set` because it is not
+    /// tenant-scoped and therefore not reachable through the tenant policies.
+    fn set_default(
+        &self,
+        key: &str,
+        value: serde_json::Value,
+        value_type: SettingValueType,
+        description: Option<String>,
+        is_sensitive: bool,
+    ) -> RepositoryFuture<()>;
+
+    /// Restore the shipped defaults for every key the application knows.
+    fn restore_defaults(&self) -> RepositoryFuture<Vec<String>>;
+
+    /// All keys, including those with no value for this tenant. Used by the UI
+    /// to render a field for a setting that has never been set.
+    fn list_keys(&self) -> RepositoryFuture<Vec<SettingKeyDescriptor>>;
+}

@@ -19,6 +19,7 @@ pub mod orders;
 pub mod plot_subentity;
 pub mod resources;
 pub mod settings;
+pub mod settings_editor;
 pub mod setup;
 pub mod sigpac;
 pub mod sites;

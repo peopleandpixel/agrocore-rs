@@ -118,7 +118,27 @@ pub fn SettingsPage() -> impl IntoView {
             country: blank_to_none(country_value),
         };
         api::save_company_profile(&profile);
-        set_status_message.set(Some(profile_saved.clone()));
+
+        // Keep the browser copy for the export header, but persist through the
+        // API too. Before this the page reported "saved" while only writing
+        // localStorage, which is per-device.
+        let mut values = serde_json::Map::new();
+        let text = |v: Option<String>| serde_json::Value::String(v.unwrap_or_default());
+        values.insert("company.name".into(), text(profile.company_name.clone()));
+        values.insert("company.tax_id".into(), text(profile.tax_id.clone()));
+        values.insert("company.email".into(), text(profile.office_email.clone()));
+        values.insert("company.phone".into(), text(profile.phone.clone()));
+        values.insert("company.address".into(), text(profile.address.clone()));
+        values.insert("company.website".into(), text(profile.website.clone()));
+        values.insert("company.country".into(), text(profile.country.clone()));
+
+        let saved_label = profile_saved.clone();
+        spawn_local(async move {
+            match api::save_settings(values).await {
+                Ok(_) => set_status_message.set(Some(saved_label)),
+                Err(e) => set_status_message.set(Some(format!("Speichern fehlgeschlagen: {e}"))),
+            }
+        });
     };
 
     let tenant_name_log_label = i18n.t(lang.get().as_str(), "tenant_name");
@@ -203,6 +223,11 @@ pub fn SettingsPage() -> impl IntoView {
     view! {
         <div class="flex flex-col gap-6">
             <h1 class="text-3xl font-bold">{settings_title}</h1>
+
+            // Server-backed and tenant-scoped. The company-profile card below
+            // stays for the export header, but it no longer holds the
+            // authoritative values.
+            <crate::components::settings_editor::ServerSettingsPanel />
 
             {move || status_message.get().map(|message| view! {
                 <div class="alert alert-success">

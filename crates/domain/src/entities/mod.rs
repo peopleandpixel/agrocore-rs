@@ -26,6 +26,7 @@ pub mod livestock;
 pub mod olive;
 pub mod order;
 pub mod plant_protection;
+pub mod setting;
 pub mod site;
 pub mod spatial;
 pub mod sync;

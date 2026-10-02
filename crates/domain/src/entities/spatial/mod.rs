@@ -15,6 +15,10 @@ pub mod types;
 
 use crate::entities::spatial::types::GeoPoint;
 
+// Re-exported so the infrastructure layer can convert between the domain types
+// and GeoJSON without reaching into `types`.
+pub use crate::entities::spatial::types::{boundary_to_geojson, geo_point_to_geojson};
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum SpatialObjectType {
     #[serde(rename = "farm")]

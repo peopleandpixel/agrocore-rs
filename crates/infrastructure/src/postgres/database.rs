@@ -12,9 +12,9 @@ use crate::postgres::{
     olive_oil_record::PgOliveOilRecordRepo, order::PgOrderRepo,
     pac_application::PgPACApplicationRepo, pest_risk::PgPestRiskRepo,
     phenology_record::PgPhenologyRecordRepo, plant_protection_record::PgPlantProtectionRecordRepo,
-    site::PgSiteRepo, soil_moisture_config::PgSoilMoistureConfigRepo, task_data::PgTaskDataRepo,
-    tenant::PgTenantRepo, tree::PgTreeRepo, user::PgUserRepo, variety::PgVarietyRepo,
-    vineyard::PgVineyardRepo, weather_data::PgWeatherDataRepo,
+    setting::PgSettingsRepo, site::PgSiteRepo, soil_moisture_config::PgSoilMoistureConfigRepo,
+    task_data::PgTaskDataRepo, tenant::PgTenantRepo, tree::PgTreeRepo, user::PgUserRepo,
+    variety::PgVarietyRepo, vineyard::PgVineyardRepo, weather_data::PgWeatherDataRepo,
     weather_station::PgWeatherStationRepo, work_log::PgWorkLogRepo, worker::PgWorkerRepo,
     worker_location::PgWorkerLocationRepo, worker_task_status::PgWorkerTaskStatusRepo,
 };
@@ -25,11 +25,11 @@ use agrocore_domain::repositories::{
     GroupRepository, GrowingDegreeDayRepo, HarvestDeliveryRepo, HarvestLotRepo, HarvestSeasonRepo,
     InventoryItemRepository, InventoryLocationRepo, InventoryTransactionRepo, KelterDeliveryRepo,
     LivestockRepository, OliveGroveRepo, OliveOilRecordRepo, OrderRepository, PACApplicationRepo,
-    PestRiskRepo, PhenologyRecordRepo, PlantProtectionRecordRepo, SiteRepository,
-    SoilMoistureConfigRepo, SpatialObjectRepository, TaskDataRepository, TenantRepository,
-    TreeRepository, UserRepository, VarietyRepository, VineyardRepo, WaterQuotaRepo,
-    WaterSourceRepo, WaterUsageRepo, WeatherDataRepo, WeatherStationRepo, WorkLogRepo,
-    WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
+    PestRiskRepo, PhenologyRecordRepo, PlantProtectionRecordRepo, SettingsRepository,
+    SiteRepository, SoilMoistureConfigRepo, SpatialObjectRepository, TaskDataRepository,
+    TenantRepository, TreeRepository, UserRepository, VarietyRepository, VineyardRepo,
+    WaterQuotaRepo, WaterSourceRepo, WaterUsageRepo, WeatherDataRepo, WeatherStationRepo,
+    WorkLogRepo, WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
 };
 use agrocore_logging::{debug, info};
 use sqlx::PgPool;
@@ -46,6 +46,7 @@ pub enum Database {
 #[cfg(feature = "mocks")]
 #[derive(Clone, Default)]
 pub struct MockDatabase {
+    pub settings_repo: Option<Arc<agrocore_domain::repositories::MockSettingsRepository>>,
     pub site_repo: Option<Arc<agrocore_domain::repositories::MockSiteRepository>>,
     pub user_repo: Option<Arc<agrocore_domain::repositories::MockUserRepository>>,
     pub order_repo: Option<Arc<agrocore_domain::repositories::MockOrderRepository>>,
@@ -136,6 +137,15 @@ impl Database {
     pub async fn connect(database_url: &str) -> anyhow::Result<Self> {
         let db = PostgresDb::connect(database_url).await?;
         Ok(Self::Postgres(db))
+    }
+
+    pub fn settings_repo(&self) -> Arc<dyn SettingsRepository> {
+        match self {
+            Self::Postgres(db) => db.settings_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => m.settings_repo.clone().expect("settings_repo mock not set")
+                as Arc<dyn SettingsRepository>,
+        }
     }
 
     pub fn site_repo(&self) -> Arc<dyn SiteRepository> {
@@ -692,6 +702,7 @@ impl Database {
 pub struct PostgresDb {
     pub pool: PgPool,
     /// Pre-instantiated repository Arcs — cloned on access instead of re-created.
+    pub settings_repo: Arc<dyn SettingsRepository>,
     pub site_repo: Arc<dyn SiteRepository>,
     pub user_repo: Arc<dyn UserRepository>,
     pub order_repo: Arc<dyn OrderRepository>,
@@ -812,6 +823,7 @@ impl PostgresDb {
         // Pre-instantiate all repositories once — Arc::clone is cheap (refcount increment)
         // compared to Arc::new(Repo::new(pool.clone())) which allocates on every call.
         Ok(Self {
+            settings_repo: Arc::new(PgSettingsRepo::new(pool.clone())),
             site_repo: Arc::new(PgSiteRepo::new(pool.clone())),
             user_repo: Arc::new(PgUserRepo::new(pool.clone())),
             order_repo: Arc::new(PgOrderRepo::new(pool.clone())),
@@ -884,6 +896,7 @@ impl PostgresDb {
     /// Pre-instantiates all repositories just like `connect()`.
     pub fn from_pool(pool: PgPool) -> Self {
         Self {
+            settings_repo: Arc::new(PgSettingsRepo::new(pool.clone())),
             site_repo: Arc::new(PgSiteRepo::new(pool.clone())),
             user_repo: Arc::new(PgUserRepo::new(pool.clone())),
             order_repo: Arc::new(PgOrderRepo::new(pool.clone())),
@@ -980,6 +993,10 @@ impl PostgresDb {
     }
 
     // Core repositories — clone the pre-instantiated Arc instead of creating new instances
+    pub fn settings_repo(&self) -> Arc<dyn SettingsRepository> {
+        self.settings_repo.clone()
+    }
+
     pub fn site_repo(&self) -> Arc<dyn SiteRepository> {
         self.site_repo.clone()
     }

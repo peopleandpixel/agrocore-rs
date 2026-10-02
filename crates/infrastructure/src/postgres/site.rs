@@ -27,7 +27,9 @@ impl SiteRepository for PgSiteRepo {
                    organic_eligible, sigpac_data, regepac_id, lpis_country, lpis_data,
                    properties, custom_fields,
                    note1, note2, is_active, is_temporary, created_at, updated_at,
-                   created_by, updated_by, center, boundary
+                   created_by, updated_by,
+                   ST_AsGeoJSON(center)::jsonb AS center,
+                   ST_AsGeoJSON(boundary)::jsonb AS boundary
                    FROM sites WHERE id = $1 AND tenant_id = $2"#,
             )
             .bind(id)
@@ -59,7 +61,9 @@ impl SiteRepository for PgSiteRepo {
                        organic_eligible, sigpac_data, regepac_id, lpis_country, lpis_data,
                        properties, custom_fields,
                        note1, note2, is_active, is_temporary, created_at, updated_at,
-                       created_by, updated_by, center, boundary
+                       created_by, updated_by,
+                   ST_AsGeoJSON(center)::jsonb AS center,
+                   ST_AsGeoJSON(boundary)::jsonb AS boundary
                        FROM sites WHERE id = $1 AND tenant_id = $2"#,
                 )
                 .bind(id)
@@ -76,7 +80,9 @@ impl SiteRepository for PgSiteRepo {
                        organic_eligible, sigpac_data, regepac_id, lpis_country, lpis_data,
                        properties, custom_fields,
                        note1, note2, is_active, is_temporary, created_at, updated_at,
-                       created_by, updated_by, center, boundary
+                       created_by, updated_by,
+                   ST_AsGeoJSON(center)::jsonb AS center,
+                   ST_AsGeoJSON(boundary)::jsonb AS boundary
                        FROM sites WHERE id = $1 AND tenant_id = $2"#,
                 )
                 .bind(id)
@@ -109,7 +115,9 @@ impl SiteRepository for PgSiteRepo {
                    organic_eligible, sigpac_data, regepac_id, lpis_country, lpis_data,
                    properties, custom_fields,
                    note1, note2, is_active, is_temporary, created_at, updated_at,
-                   created_by, updated_by, center, boundary
+                   created_by, updated_by,
+                   ST_AsGeoJSON(center)::jsonb AS center,
+                   ST_AsGeoJSON(boundary)::jsonb AS boundary
                    FROM sites WHERE tenant_id = $1 LIMIT $2 OFFSET $3"#,
             )
             .bind(tid)
@@ -157,28 +165,43 @@ impl SiteRepository for PgSiteRepo {
                 .properties
                 .map(|p| serde_json::to_value(p).unwrap())
                 .unwrap_or_else(|| serde_json::json!([]));
-            let boundary_val = dto.boundary.map(|b| serde_json::to_value(b).unwrap());
+            // `center`/`boundary` are GEOMETRY columns, not JSONB: the values are
+            // serialized to GeoJSON text and converted by ST_GeomFromGeoJSON.
+            // Binding the struct directly fails with "column center is of type
+            // geometry but expression is of type jsonb".
+            let center_val = dto
+                .center
+                .as_ref()
+                .map(agrocore_domain::entities::spatial::geo_point_to_geojson);
+            let boundary_val = dto
+                .boundary
+                .as_ref()
+                .map(agrocore_domain::entities::spatial::boundary_to_geojson);
 
             sqlx::query_as::<_, SiteDb>(
                 r#"INSERT INTO sites (id, tenant_id, business_id, label, site_type, crop_type, variety,
                    area, gross_area, plots, row_config, bbch_stage, planted_date,
                    cleared_date, soil_type, slope, slope_facing, altitude, organic,
                    organic_eligible, sigpac_data, regepac_id, lpis_country, lpis_data,
-                   properties, custom_fields,
-                   note1, note2, is_active, is_temporary, created_at, updated_at,
+                   properties, custom_fields, note1, note2,
+                   is_active, is_temporary, created_at, updated_at,
                    created_by, updated_by, center, boundary)
                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-                   $14, $15, $16, $17, $18, $19, $20, $21, $22, $23,
-                   $24, $25,
-                   $26, $27, true, false, NOW(), NOW(),
-                   $28, $29, $30, $31)
+                   $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24,
+                   $25, $26, $27, $28,
+                   true, false, NOW(), NOW(),
+                   $29, $30,
+                   ST_SetSRID(ST_GeomFromGeoJSON($31::text), 4326),
+                   ST_SetSRID(ST_GeomFromGeoJSON($32::text), 4326))
                    RETURNING id, tenant_id, business_id, label, site_type, crop_type, variety,
                    area, gross_area, plots, row_config, bbch_stage, planted_date,
                    cleared_date, soil_type, slope, slope_facing, altitude, organic,
                    organic_eligible, sigpac_data, regepac_id, lpis_country, lpis_data,
-                   properties, custom_fields,
-                   note1, note2, is_active, is_temporary, created_at, updated_at,
-                   created_by, updated_by, center, boundary"#
+                   properties, custom_fields, note1, note2,
+                   is_active, is_temporary, created_at, updated_at,
+                   created_by, updated_by,
+                   ST_AsGeoJSON(center)::jsonb AS center,
+                   ST_AsGeoJSON(boundary)::jsonb AS boundary"#
             )
             .bind(Uuid::new_v4())
             .bind(tid)
@@ -210,7 +233,7 @@ impl SiteRepository for PgSiteRepo {
             .bind(None::<String>)
             .bind(None::<Uuid>)
             .bind(None::<Uuid>)
-            .bind(dto.center)
+            .bind(center_val)
             .bind(boundary_val)
             .fetch_one(&pool)
             .await
@@ -265,10 +288,14 @@ impl SiteRepository for PgSiteRepo {
                 .custom_fields
                 .as_ref()
                 .map(|c| serde_json::to_value(c).unwrap());
+            let center_val = dto
+                .center
+                .as_ref()
+                .map(agrocore_domain::entities::spatial::geo_point_to_geojson);
             let boundary_val = dto
                 .boundary
                 .as_ref()
-                .map(|b| serde_json::to_value(b).unwrap());
+                .map(agrocore_domain::entities::spatial::boundary_to_geojson);
 
             let query = r#"UPDATE sites SET 
                    label = COALESCE($1, label),
@@ -290,7 +317,7 @@ impl SiteRepository for PgSiteRepo {
                    organic_eligible = COALESCE($17, organic_eligible),
                    sigpac_data = COALESCE($18, sigpac_data),
                    regepac_id = COALESCE($19, regepac_id),
-                   lpis_country = COALESCE($20, lpis_country),
+                   lpis_country = COALESCE($20::text, lpis_country),
                    lpis_data = COALESCE($21, lpis_data),
                    properties = COALESCE($22, properties),
                    custom_fields = COALESCE($23, custom_fields),
@@ -299,8 +326,8 @@ impl SiteRepository for PgSiteRepo {
                    is_active = COALESCE($26, is_active),
                    is_temporary = COALESCE($27, is_temporary),
                    updated_at = NOW(),
-                   center = COALESCE($28, center),
-                   boundary = COALESCE($29, boundary)
+                   center = COALESCE(ST_SetSRID(ST_GeomFromGeoJSON($28::text), 4326), center),
+                   boundary = COALESCE(ST_SetSRID(ST_GeomFromGeoJSON($29::text), 4326), boundary)
                    WHERE id = $30 AND tenant_id = $31
                    RETURNING id, tenant_id, business_id, label, site_type, crop_type, variety,
                    area, gross_area, plots, row_config, bbch_stage, planted_date,
@@ -308,7 +335,9 @@ impl SiteRepository for PgSiteRepo {
                    organic_eligible, sigpac_data, regepac_id, lpis_country, lpis_data,
                    properties, custom_fields,
                    note1, note2, is_active, is_temporary, created_at, updated_at,
-                   created_by, updated_by, center, boundary"#
+                   created_by, updated_by,
+                   ST_AsGeoJSON(center)::jsonb AS center,
+                   ST_AsGeoJSON(boundary)::jsonb AS boundary"#
                 .to_string();
 
             let mut q = sqlx::query_as::<_, SiteDb>(&query);
@@ -339,7 +368,7 @@ impl SiteRepository for PgSiteRepo {
             q = q.bind(dto.note2);
             q = q.bind(dto.is_active);
             q = q.bind(dto.is_temporary);
-            q = q.bind(dto.center);
+            q = q.bind(center_val);
             q = q.bind(boundary_val);
             q = q.bind(id);
             q = q.bind(tid);
@@ -354,13 +383,18 @@ impl SiteRepository for PgSiteRepo {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
-            sqlx::query("UPDATE sites SET is_active = false WHERE id = $1 AND tenant_id = $2")
-                .bind(id)
-                .bind(tid)
-                .execute(&pool)
-                .await
-                .map(|r| r.rows_affected() > 0)
-                .map_err(|e| SharedError::Database(e.to_string()))
+            // `AND is_active` makes a repeated delete idempotent: the second call
+            // matches no row and reports `false` instead of claiming to have
+            // deleted something. Matches inventory_item/inventory_location.
+            sqlx::query(
+                "UPDATE sites SET is_active = false WHERE id = $1 AND tenant_id = $2 AND is_active",
+            )
+            .bind(id)
+            .bind(tid)
+            .execute(&pool)
+            .await
+            .map(|r| r.rows_affected() > 0)
+            .map_err(|e| SharedError::Database(e.to_string()))
         })
     }
 }
@@ -443,8 +477,10 @@ impl From<SiteDb> for Site {
             updated_at: db.updated_at,
             created_by: db.created_by,
             updated_by: db.updated_by,
-            center: db.center.and_then(|v| serde_json::from_value(v).ok()),
-            boundary: db.boundary.and_then(|v| serde_json::from_value(v).ok()),
+            // The SELECT emits ST_AsGeoJSON(...), so these arrive as GeoJSON,
+            // not as the domain serialisation the columns would suggest.
+            center: db.center.and_then(|v| geojson_point_to_geo_point(&v)),
+            boundary: db.boundary.and_then(|v| geojson_polygon_to_boundary(&v)),
         }
     }
 }
@@ -565,4 +601,53 @@ impl SpatialObjectRepository for PgSiteRepo {
                 .collect())
         })
     }
+}
+
+/// Parse `{"type":"Point","coordinates":[lng,lat]}` back into a [`GeoPoint`].
+fn geojson_point_to_geo_point(geojson: &serde_json::Value) -> Option<GeoPoint> {
+    let coords = geojson.get("coordinates")?.as_array()?;
+    let lng = coords.first()?.as_f64()?;
+    let lat = coords.get(1)?.as_f64()?;
+    Some(GeoPoint { lng, lat })
+}
+
+/// Parse `{"type":"Polygon","coordinates":[[[lng,lat],…],…]}` back into a
+/// [`Boundary`].
+///
+/// The outer ring becomes `polygon`, every further ring becomes a hole, and the
+/// closing position GeoJSON requires is dropped again so the value round-trips
+/// to exactly what came in.
+fn geojson_polygon_to_boundary(geojson: &serde_json::Value) -> Option<Boundary> {
+    let rings = geojson.get("coordinates")?.as_array()?;
+    let mut iter = rings.iter();
+    let outer = iter.next()?;
+    let mut polygon = ring_to_points(outer)?;
+    // Undo the closing position if GeoJSON added one.
+    if polygon.len() > 1 && polygon.first() == polygon.last() {
+        polygon.pop();
+    }
+    let holes = iter
+        .map(|ring| {
+            let mut pts = ring_to_points(ring)?;
+            if pts.len() > 1 && pts.first() == pts.last() {
+                pts.pop();
+            }
+            Some(pts)
+        })
+        .collect::<Option<Vec<_>>>();
+
+    Some(Boundary { polygon, holes })
+}
+
+fn ring_to_points(ring: &serde_json::Value) -> Option<Vec<GeoPoint>> {
+    ring.as_array()?
+        .iter()
+        .map(|pos| {
+            let c = pos.as_array()?;
+            Some(GeoPoint {
+                lng: c.first()?.as_f64()?,
+                lat: c.get(1)?.as_f64()?,
+            })
+        })
+        .collect()
 }

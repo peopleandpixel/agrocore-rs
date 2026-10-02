@@ -20,12 +20,33 @@ use uuid::Uuid;
 
 /// Namespace per test, so each gets its own tenants and rows and cannot collide
 /// with another test's fixture when the suite runs.
+///
+/// `run_nonce` offsets the namespace per process. Without it a run that left
+/// rows behind — the tests share one database, and a failed cleanup leaves the
+/// fixture in place — collides on tenants_pkey and tenants_slug_key on the next
+/// run. `ON CONFLICT DO NOTHING` is not a workaround: the ids are what the
+/// assertions read, so reusing a stale row would test the wrong data.
+fn run_nonce() -> u128 {
+    // Computed once per process: `tenant()` is called from both the fixture and
+    // the assertion, and a nonce that changed between the two calls would give
+    // them different ids — the fixture would seed one tenant while the test read
+    // another.
+    static NONCE: std::sync::OnceLock<u128> = std::sync::OnceLock::new();
+    *NONCE.get_or_init(|| {
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0)
+            % 0x1000
+    })
+}
+
 fn tenant(slot: u128, which: u128) -> Uuid {
-    Uuid::from_u128(0x7000_0000_0000_4000_8000_0000_0000_0000 | (slot << 8) | which)
+    Uuid::from_u128(0x7000_0000_0000_4000_8000_0000_0000_0000 | ((run_nonce() ^ slot) << 8) | which)
 }
 
 fn site_id(slot: u128, which: u128) -> Uuid {
-    Uuid::from_u128(0x7100_0000_0000_4000_8000_0000_0000_0000 | (slot << 8) | which)
+    Uuid::from_u128(0x7100_0000_0000_4000_8000_0000_0000_0000 | ((run_nonce() ^ slot) << 8) | which)
 }
 
 /// Build the pool exactly the way the service does, so the test exercises the
@@ -62,10 +83,13 @@ fn admin_pool() -> PgPool {
 async fn seed(slot: u128, which: u128, label: &'static str) {
     let pool = &admin_pool();
     let tid = tenant(slot, which);
+    // The slug is UNIQUE and the label is fixed per test, so it gets the same
+    // per-run suffix as the id.
+    let slug = format!("{label}-{:x}", tid.as_u128() % 0xffff_ffff);
     sqlx::query("INSERT INTO tenants (id, name, slug, is_active) VALUES ($1, $2, $3, true)")
         .bind(tid)
         .bind(label)
-        .bind(label)
+        .bind(&slug)
         .execute(pool)
         .await
         .unwrap_or_else(|e| panic!("insert tenant {label}: {e}"));

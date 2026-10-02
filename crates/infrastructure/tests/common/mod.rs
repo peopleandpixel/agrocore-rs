@@ -50,6 +50,21 @@ impl PostgresTestFixture {
         );
         let pool = retry_connect(&test_database_url, 10).await?;
 
+        // Migration 4 grants `agrocore_app` to a role named `agrocore`, because
+        // that is the connection role of the deployment. The container connects
+        // as `test_user`, so the migration would abort on a missing role before
+        // ever creating a policy. Create the role here as a plain group role:
+        // NOLOGIN, so nothing can actually connect as it, and `test_user` is a
+        // member, which is what the migration's GRANT needs.
+        sqlx::query("CREATE ROLE agrocore NOLOGIN")
+            .execute(&pool)
+            .await
+            .ok();
+        sqlx::query("GRANT agrocore TO test_user")
+            .execute(&pool)
+            .await
+            .ok();
+
         sqlx::migrate!("../../migrations").run(&pool).await?;
 
         let database = Database::Postgres(
@@ -63,12 +78,58 @@ impl PostgresTestFixture {
         })
     }
 
+    /// A fresh tenant with a unique slug.
+    ///
+    /// The slug has to be unique, and several tests create more than one tenant
+    /// against the same database, so a fixed value collided on the second call.
     pub async fn create_test_tenant(&self) -> uuid::Uuid {
         use sqlx::Row;
-        let row = sqlx::query("INSERT INTO tenants (name, slug, config) VALUES ('Test Tenant', 'test-tenant', '{}') RETURNING id")
-            .fetch_one(&self.pool)
-            .await
-            .unwrap();
+        let slug = format!("test-tenant-{}", uuid::Uuid::new_v4());
+        let row = sqlx::query(
+            "INSERT INTO tenants (name, slug, config) VALUES ('Test Tenant', $1, '{}') RETURNING id",
+        )
+        .bind(&slug)
+        .fetch_one(&self.pool)
+        .await
+        .expect("insert test tenant");
+        row.get("id")
+    }
+
+    /// A user in the given tenant.
+    ///
+    /// `workers.user_id` and `worker_task_statuses.worker_id` both reference
+    /// `users(id)`, so a test that exercises those repositories needs a real user
+    /// row: a random UUID is rejected by the foreign key.
+    ///
+    /// `common` is compiled into every test binary, and not all of them use this
+    /// helper, so the allow keeps the unused warning out of the ones that do not.
+    #[allow(dead_code)]
+    pub async fn create_test_user(&self, tenant_id: uuid::Uuid) -> uuid::Uuid {
+        use sqlx::Row;
+        let email = format!("test-{}@example.invalid", uuid::Uuid::new_v4());
+        let row = sqlx::query(
+            "INSERT INTO users (tenant_id, firstname, lastname, email, password_hash, is_active)
+             VALUES ($1, 'Test', 'User', $2, 'not-a-real-hash', true) RETURNING id",
+        )
+        .bind(tenant_id)
+        .bind(&email)
+        .fetch_one(&self.pool)
+        .await
+        .expect("insert test user");
+        row.get("id")
+    }
+
+    /// A task in the given tenant, for `worker_task_statuses.task_id`.
+    #[allow(dead_code)]
+    pub async fn create_test_task(&self, tenant_id: uuid::Uuid) -> uuid::Uuid {
+        use sqlx::Row;
+        let row = sqlx::query(
+            "INSERT INTO tasks (tenant_id, title, status) VALUES ($1, 'Test Task', 'pending') RETURNING id",
+        )
+        .bind(tenant_id)
+        .fetch_one(&self.pool)
+        .await
+        .expect("insert test task");
         row.get("id")
     }
 }

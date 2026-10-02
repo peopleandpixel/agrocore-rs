@@ -40,7 +40,6 @@ async fn test_database_migrations_applied() {
         "varieties",
         "breeds",
         "spatial_objects",
-        "spatial_properties",
         // Added with migration 0000000003_missing_domain_tables.sql. Each of
         // these was queried by a repository while no migration created it, so
         // the repositories failed at runtime. See tasks.md I1.
@@ -188,19 +187,32 @@ async fn test_site_crud_operations() {
     assert_eq!(all.total, 1);
     assert_eq!(all.data.len(), 1);
 
-    // Delete
+    // Delete. Every repository in this layer implements delete as a soft
+    // delete (`SET is_active = false`) rather than a physical DELETE, so the row
+    // stays for the audit trail. Asserting that find_by_id returns None was
+    // wrong: it would only pass with a hard delete, and the twelve other
+    // repositories would then behave differently from this one.
     let deleted = repo
         .delete(tenant_id, site.id)
         .await
         .expect("Failed to delete site");
     assert!(deleted);
 
-    // Verify deleted
-    let not_found = repo
+    // Still readable, but no longer active.
+    let after_delete = repo
         .find_by_id(tenant_id, site.id)
         .await
-        .expect("Failed to find deleted site");
-    assert!(not_found.is_none());
+        .expect("Failed to load deleted site");
+    let after_delete = after_delete.expect("soft delete must keep the row");
+    assert!(!after_delete.is_active);
+
+    // Deleting an already-deleted site reports no change, so a repeated DELETE
+    // is idempotent rather than double-decrementing anything.
+    let deleted_again = repo
+        .delete(tenant_id, site.id)
+        .await
+        .expect("second delete");
+    assert!(!deleted_again, "second delete must report no change");
 }
 
 /// Test that trigger functions work (updated_at auto-updates)
@@ -358,7 +370,18 @@ async fn test_tenant_scoped_tables_have_tenant_id() {
         "_sqlx_migrations",
         "varieties",
         "breeds",
-        "spatial_properties",
+        // Not tenant data: the PostGIS lookup table `spatial_ref_sys` and the
+        // two join tables between orders/users and sites. They are reachable
+        // only through a parent row that is itself tenant-scoped, which is how
+        // their own policies filter (`order_id IN (SELECT id FROM orders WHERE
+        // tenant_id = get_current_tenant_id())`).
+        "spatial_ref_sys",
+        "order_sites",
+        "user_sites",
+        // `tenants` is the tenant table itself: it holds `id` where every other
+        // table holds `tenant_id`, and a row here is not scoped to another
+        // tenant.
+        "tenants",
     ];
 
     let mut missing = Vec::new();

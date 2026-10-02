@@ -24,7 +24,8 @@ async fn test_worker_repository_crud() {
     let repo = fixture.database.worker_repo();
 
     let dto = CreateWorkerDto {
-        user_id: Uuid::new_v4(),
+        // `workers.user_id` references `users(id)`.
+        user_id: fixture.create_test_user(tid.0).await,
         contract_type: ContractType::Permanent,
         language: Some("de".into()),
         skills: None,
@@ -61,6 +62,9 @@ async fn test_worker_location_repository() {
     let tid = TenantId(fixture.create_test_tenant().await);
     let repo = fixture.database.worker_location_repo();
 
+    // `worker_locations.worker_id` carried a foreign key to `workers(id)` while
+    // the workforce module passes a user id, which rejected every valid row.
+    // Migration 6 drops that constraint; the tenant column still scopes it.
     let worker_id = Uuid::new_v4();
     let dto = CreateWorkerLocationDto {
         worker_id,
@@ -93,8 +97,9 @@ async fn test_worker_task_status_repository() {
     let tid = TenantId(fixture.create_test_tenant().await);
     let repo = fixture.database.worker_task_status_repo();
 
-    let task_id = Uuid::new_v4();
-    let worker_id = Uuid::new_v4();
+    // Both are foreign keys: task_id -> tasks(id), worker_id -> users(id).
+    let task_id = fixture.create_test_task(tid.0).await;
+    let worker_id = fixture.create_test_user(tid.0).await;
 
     let dto = CreateWorkerTaskStatusDto {
         task_id,
