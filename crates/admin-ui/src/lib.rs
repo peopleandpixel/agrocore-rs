@@ -5,15 +5,19 @@ mod i18n;
 #[cfg(test)]
 mod tests;
 
+use crate::components::agriculture::AgricultureManagement;
 use crate::components::analytics::AnalyticsPage;
+use crate::components::applicator_licenses::ApplicatorLicenses;
 use crate::components::audit::AuditLogPage;
 use crate::components::buildings::BuildingManagement;
+use crate::components::calculators::CalculatorsPage;
 use crate::components::compliance::CompliancePage;
 use crate::components::dashboard::DashboardView;
 use crate::components::equipment::EquipmentManagement;
 use crate::components::equipment_detail::EquipmentDetailPage;
 use crate::components::finance::FinanceManagement;
 use crate::components::groups::GroupManagement;
+use crate::components::harvest::HarvestManagement;
 use crate::components::import::DataImport;
 use crate::components::inventory::InventoryManagement;
 use crate::components::livestock::LivestockManagement;
@@ -28,14 +32,18 @@ use crate::components::task_detail::TaskDetailPage;
 use crate::components::toast::{ToastContainer, provide_toast_context};
 use crate::components::trees::TreeManagement;
 use crate::components::users::UserManagement;
+use crate::components::water::WaterManagement;
 use crate::components::weather::WeatherManagement;
+use crate::components::weather_warnings::WeatherWarnings;
 use crate::components::wizard::WizardView;
 use crate::components::worker_tasks::WorkerTasksPage;
 use crate::components::workers::WorkersPage;
+use crate::components::workforce_logs::{WorkforceLocations, WorkforceLogs};
 use I::{
-    ImMagicWand, LuBeef, LuBox, LuBriefcase, LuChartBar, LuChartNoAxesColumn, LuCircleUser,
-    LuClipboardList, LuCloudSun, LuDatabase, LuFileDown, LuHistory, LuLayoutDashboard, LuLogOut,
-    LuMap, LuMapPin, LuMenu, LuSettings, LuSquareCheck, LuSun, LuTractor, LuUsers, LuWallet,
+    ImMagicWand, LuBeef, LuBox, LuBriefcase, LuCalculator, LuChartBar, LuChartNoAxesColumn,
+    LuCircleUser, LuClipboardList, LuCloudSun, LuDatabase, LuFileDown, LuHistory,
+    LuLayoutDashboard, LuLogOut, LuMap, LuMapPin, LuMenu, LuSettings, LuSquareCheck, LuSun,
+    LuTractor, LuUsers, LuWallet,
 };
 use icondata as I;
 use leptos::prelude::*;
@@ -222,6 +230,14 @@ fn AuthenticatedShell(
                             <Route path=path!("/equipment") view=|| view! { <EquipmentManagement /> } />
                             <Route path=path!("/equipment/:id") view=|| view! { <EquipmentDetailPage /> } />
                             <Route path=path!("/inventory") view=|| view! { <InventoryManagement /> } />
+                            <Route path=path!("/calculators") view=|| view! { <CalculatorsPage />} />
+                            <Route path=path!("/water") view=|| view! { <WaterManagement /> } />
+                            <Route path=path!("/harvest") view=|| view! { <HarvestManagement /> } />
+                            <Route path=path!("/agriculture") view=|| view! { <AgricultureManagement /> } />
+                            <Route path=path!("/weather/warnings") view=|| view! { <WeatherWarnings /> } />
+                            <Route path=path!("/worker/logs") view=|| view! { <WorkforceLogs /> } />
+                            <Route path=path!("/worker/locations") view=|| view! { <WorkforceLocations /> } />
+                            <Route path=path!("/compliance/licenses") view=|| view! { <ApplicatorLicenses /> } />
                             <Route path=path!("/analytics") view=|| view! { <AnalyticsPage /> } />
                             <Route path=path!("/audit") view=|| view! { <AuditLogPage /> } />
                             <Route path=path!("/resources") view=|| view! { <ResourcesPage /> } />
@@ -291,7 +307,8 @@ fn AuthenticatedShell(
                         <a href="/finance"><Icon icon=LuWallet width="20" height="20" />{crate::t!(t, "nav_finance")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
-                        <a href="/analytics"><Icon icon=LuChartBar width="20" height="20" />{crate::t!(t, "nav_analytics")}</a>
+                        <a href="/calculators"><Icon icon=LuCalculator width="20" height="20" />{crate::t!(t, "nav_calculators")}</a>
+                            <a href="/analytics"><Icon icon=LuChartBar width="20" height="20" />{crate::t!(t, "nav_analytics")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
                         <a href="/inventory"><Icon icon=LuBox width="20" height="20" />{crate::t!(t, "nav_inventory")}</a>

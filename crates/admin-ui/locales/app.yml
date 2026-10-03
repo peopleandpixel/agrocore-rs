@@ -6016,3 +6016,2723 @@ goose:
   ro: Gâscă
   uk: Гуска
   nl: Gans
+
+# --- G2: calculators page
+grape:
+  en: Grape
+  de: Weinrebe
+  es: Vid
+  fr: Raisin
+  pt: Uva
+  it: Vite
+  pl: Winorośl
+  ro: Viță de vie
+  uk: Виноград
+  nl: Druif
+crop_olive:
+  en: Olive
+  de: Olive
+  es: Olivo
+  fr: Olivier
+  pt: Oliveira
+  it: Oliva
+  pl: Oliwka
+  ro: Măslin
+  uk: Олива
+  nl: Olijf
+apple:
+  en: Apple
+  de: Apfel
+  es: Manzano
+  fr: Pommier
+  pt: Maçã
+  it: Melo
+  pl: Jabłko
+  ro: Măr
+  uk: Яблуня
+  nl: Appel
+citrus:
+  en: Citrus
+  de: Zitrusfrüchte
+  es: Cítricos
+  fr: Agrumes
+  pt: Cítricos
+  it: Agrumi
+  pl: Cytrusy
+  ro: Citrice
+  uk: Цитрусовые
+  nl: Citrus
+vegetable:
+  en: Vegetable
+  de: Gemüse
+  es: Hortaliza
+  fr: Légume
+  pt: Hortaliça
+  it: Ortaggi
+  pl: Warzywa
+  ro: Legumă
+  uk: Овочі
+  nl: Groente
+nut:
+  en: Nut
+  de: Nuss
+  es: Frutos secos
+  fr: Noix
+  pt: Noz
+  it: Noce
+  pl: Orzechy
+  ro: Nucă
+  uk: Горіхи
+  nl: Noten
+crop_cork_oak:
+  en: Cork oak
+  de: Korkeiche
+  es: Alcornoque
+  fr: Subéro
+  pt: Sobreiro
+  it: Sughero
+  pl: Dąb korkowy
+  ro: Stejar de plut
+  uk: Коркове дуба
+  nl: Kurkeik
+crop_almond:
+  en: Almond
+  de: Mandel
+  es: Almendro
+  fr: Amandier
+  pt: Amendoeira
+  it: Mandorlo
+  pl: Migdał
+  ro: Migdal
+  uk: Мигдаль
+  nl: Amandel
+hazelnut:
+  en: Hazelnut
+  de: Haselnuss
+  es: Avellano
+  fr: Noisette
+  pt: Avelã
+  it: Nocciola
+  pl: Leszczyna
+  ro: Nucă
+  uk: Фундук
+  nl: Hazelaar
+chestnut:
+  en: Chestnut
+  de: Kastanie
+  es: Castaño
+  fr: Châtaigne
+  pt: Castanha
+  it: Castagna
+  pl: Kasztan
+  ro: Castan
+  uk: Каштан
+  nl: Kastanje
+berry:
+  en: Berry
+  de: Beere
+  es: Baya
+  fr: Baie
+  pt: Fruto silvestre
+  it: Bacca
+  pl: Jagoda
+  ro: Fruct de pădure
+  uk: Ягода
+  nl: Bes
+tropical:
+  en: Tropical
+  de: Tropisch
+  es: Tropical
+  fr: Tropical
+  pt: Tropical
+  it: Tropicale
+  pl: Tropikalne
+  ro: Tropical
+  uk: Тропічний
+  nl: Tropisch
+poultry:
+  en: Poultry
+  de: Geflügel
+  es: Aves
+  fr: Volaille
+  pt: Aves
+  it: Pollame
+  pl: Dróbia
+  ro: Păsări
+  uk: Птиця
+  nl: Pluimvee
+livestock:
+  en: Livestock
+  de: Vieh
+  es: Ganado
+  fr: Bétail
+  pt: Gado
+  it: Bestiame
+  pl: Bydło
+  ro: Turmă
+  uk: Худоба
+  nl: Vee
+fallow:
+  en: Fallow
+  de: Brache
+  es: Barbeza
+  fr: Jachère
+  pt: Falha
+  it: Magra
+  pl: Odłog
+  ro: Tghevimă
+  uk: Залежь
+  nl: Braak
+forest:
+  en: Forest
+  de: Wald
+  es: Bosque
+  fr: Forêt
+  pt: Floresta
+  it: Foresta
+  pl: Las
+  ro: Pădure
+  uk: Ліс
+  nl: Bos
+pasture:
+  en: Pasture
+  de: Weide
+  es: Pasto
+  fr: Pâturage
+  pt: Pastagem
+  it: Pascolo
+  pl: Pastwisko
+  ro: Pășune
+  uk: Пасовище
+  nl: Weide
+grain:
+  en: Grain
+  de: Getreide
+  es: Cereal
+  fr: Céréale
+  pt: Cereal
+  it: Cereale
+  pl: Zboże
+  ro: Cereale
+  uk: Зерно
+  nl: Granen
+tool_nutrition_demand:
+  en: Nutrient demand
+  de: Nährstoffbedarf
+  es: Demanda de nutrientes
+  fr: Demande en nutriments
+  pt: Necessidade de nutrientes
+  it: Domanda di nutrienti
+  pl: Zapotrzebowanie na składniki
+  ro: Necesar de nutrienți
+  uk: Потреба в поживних речовинах
+  nl: Behoefte aan nutriënten
+tool_fertilizer_amount:
+  en: Fertilizer amount
+  de: Düngemittelmenge
+  es: Cantidad de fertilizante
+  fr: Quantité d'engrais
+  pt: Quantidade de fertilizante
+  it: Quantità di fertilizzante
+  pl: Ilość nawozu
+  ro: Cantitate de îngrășământ
+  uk: Кількість добрива
+  nl: Fosfaat hoeveelheid
+tool_nutrition_balance:
+  en: Nutrient balance
+  de: Nährstoffbilanz
+  es: Balance de nutrientes
+  fr: Bilan des nutriments
+  pt: Balanço de nutrientes
+  it: Bilancio dei nutrienti
+  pl: Bilans składników
+  ro: Bilanț de nutrienți
+  uk: Баланс поживних речовин
+  nl: Nutriëntenbalans
+tool_water_rate:
+  en: Water application rate
+  de: Wasseraufwandmenge
+  es: Tasa de aplicación de agua
+  fr: Débit d'eau par hectare
+  pt: Taxa de aplicação de água
+  it: Portata d'acqua per ettaro
+  pl: Woda na ager
+  ro: Rată de aplicare a apei
+  uk: Норма витрати води
+  nl: Watertoepassingssnelheid
+tool_material:
+  en: Spray material
+  de: Spritzmittelmenge
+  es: Cantidad de aplicación
+  fr: Quantité de produit
+  pt: Quantidade de material
+  it: Quantità di prodotto
+  pl: Ilość środka
+  ro: Cantitate de produs
+  uk: Кількість препарату
+  nl: Gebruik hoeveelheid product
+tool_crown_volume:
+  en: Crown volume
+  de: Kronenvolumen
+  es: Volumen de copa
+  fr: Volume de houppier
+  pt: Volume da copa
+  it: Volume della chioma
+  pl: Objętość korony
+  ro: Volum coroane
+  uk: Об'єм крони
+  nl: Kroonvolume
+tool_forage:
+  en: Forage demand
+  de: Futterbedarf
+  es: Demanda de forraje
+  fr: Besoin fourrager
+  pt: Necessidade de forragem
+  it: Fabbisogno di foraggio
+  pl: Zapotrzebowanie na paszę
+  ro: Necesar de furaj
+  uk: Потреба у кормів
+  nl: Voedervraag
+tool_nitrogen:
+  en: Nitrogen demand
+  de: Stickstoffbedarf
+  es: Demanda de nitrógeno
+  fr: Demande d'azote
+  pt: Necessidade de azoto
+  it: Fabbisogno di azoto
+  pl: Zapotrzebowanie na azot
+  ro: Necesar de azot
+  uk: Потреба в азоті
+  nl: Stikstofvraag
+tool_difficulty:
+  en: Difficulty surcharge
+  de: Schwierigkeitszuschlag
+  es: Recargo por dificultad
+  fr: Supplément de difficulté
+  pt: Acréscimo de dificuldade
+  it: Sovrapprezzo per difficoltà
+  pl: Dopłata za trudność
+  ro: Supliment pentru dificultate
+  uk: Націнка за складність
+  nl: Moeilijkheidstoeslag
+tool_profitability:
+  en: Profitability
+  de: Wirtschaftlichkeit
+  es: Rentabilidad
+  fr: Rentabilité
+  pt: Rentabilidade
+  it: Redditività
+  pl: Rentowność
+  ro: Rentabilitate
+  uk: Рентабельність
+  nl: Rentabiliteit
+tool_harvest_estimation:
+  en: Harvest estimation
+  de: Ernteschätzung
+  es: Estimación de cosecha
+  fr: Estimation de récolte
+  pt: Estimativa de colheita
+  it: Stima del raccolto
+  pl: Szacowanie zbioru
+  ro: Estimarea recoltei
+  uk: Оцінка врожаю
+  nl: Oogstschatting
+tool_workflow:
+  en: Workflow follow-up
+  de: Workflow-Folgeaktion
+  es: Seguimiento de flujo
+  fr: Suivi de flux
+  pt: Seguimento de fluxo
+  it: Follow-up del flusso
+  pl: Działanie następcze workflow
+  ro: Urmărirea fluxului
+  uk: Продовження маршруту
+  nl: Workflow opvolging
+tool_weather_fetch:
+  en: Weather fetch
+  de: Wetter abrufen
+  es: Obtener meteorología
+  fr: Récupérer météo
+  pt: Obter meteorologia
+  it: Recupera meteo
+  pl: Pobierz pogodę
+  ro: Preluare vreme
+  uk: Отримання погоди
+  nl: Weer ophalen
+calc_section_general:
+  en: General
+  de: Allgemein
+  es: General
+  fr: Général
+  pt: Geral
+  it: Generale
+  pl: Ogólne
+  ro: General
+  uk: Загальне
+  nl: Algemeen
+calc_section_nutrition:
+  en: Nutrition
+  de: Ernährung
+  es: Nutrición
+  fr: Nutrition
+  pt: Nutrição
+  it: Nutrizione
+  pl: Żywienie
+  ro: Nutriție
+  uk: Живлення
+  nl: Voeding
+calc_section_water:
+  en: Water
+  de: Wasser
+  es: Agua
+  fr: Eau
+  pt: Água
+  it: Acqua
+  pl: Woda
+  ro: Apă
+  uk: Вода
+  nl: Water
+calc_section_cost:
+  en: Cost
+  de: Kosten
+  es: Coste
+  fr: Coût
+  pt: Custo
+  it: Costo
+  pl: Koszt
+  ro: Cost
+  uk: Вартість
+  nl: Kosten
+calc_run:
+  en: Calculate
+  de: Berechnen
+  es: Calcular
+  fr: Calculer
+  pt: Calcular
+  it: Calcola
+  pl: Oblicz
+  ro: Calculează
+  uk: Обчислити
+  nl: Berekenen
+calc_result:
+  en: Result
+  de: Ergebnis
+  es: Resultado
+  fr: Résultat
+  pt: Resultado
+  it: Risultato
+  pl: Wynik
+  ro: Rezultat
+  uk: Результат
+  nl: Resultaat
+avg_temperature:
+  en: Average temperature
+  de: Durchschnittstemperatur
+  es: Temperatura media
+  fr: Température moyenne
+  pt: Temperatura média
+  it: Temperatura media
+  pl: Temperatura średnia
+  ro: Temperatură medie
+  uk: Середня температура
+  nl: Gemiddelde temperatuur
+base_temperature:
+  en: Base temperature
+  de: Basistemperatur
+  es: Temperatura base
+  fr: Température de base
+  pt: Temperatura base
+  it: Temperatura di base
+  pl: Temperatura bazowa
+  ro: Temperatură de bază
+  uk: Базова температура
+  nl: Basistemperatuur
+bbch_stage:
+  en: BBCH stage
+  de: BBCH-Stadium
+  es: Estadio BBCH
+  fr: Stade BBCH
+  pt: Estádio BBCH
+  it: Stadio BBCH
+  pl: Stadium BBCH
+  ro: Stadiu BBCH
+  uk: Стадія BBCH
+  nl: BBCH-stadium
+current_stage:
+  en: Current stage
+  de: Aktuelles Stadium
+  es: Estadio actual
+  fr: Stade actuel
+  pt: Estádio atual
+  it: Stadio attuale
+  pl: Stadium bieżące
+  ro: Stadiu curent
+  uk: Поточна стадія
+  nl: Huidig stadium
+target_stage:
+  en: Target stage
+  de: Zielstadium
+  es: Estadio objetivo
+  fr: Stade cible
+  pt: Estádio alvo
+  it: Stadio obiettivo
+  pl: Stadium docelowe
+  ro: Stadiu țintă
+  uk: Цільова стадія
+  nl: Geldig stadium
+steep_slope:
+  en: Steep slope
+  de: Steile Hanglage
+  es: Pendiente pronunciada
+  fr: Pente forte
+  pt: Encosta íngreme
+  it: Pendenza ripida
+  pl: Stromy zbocz
+  ro: Pantă abruptă
+  uk: Крутий схил
+  nl: Steile helling
+heavy_soil:
+  en: Heavy soil
+  de: Schwerer Boden
+  es: Suelo pesado
+  fr: Sol lourd
+  pt: Solo pesado
+  it: Suolo pesante
+  pl: Ciężka gleba
+  ro: Sol greu
+  uk: Важкий ґрунт
+  nl: Zware grond
+narrow_lanes:
+  en: Narrow lanes
+  de: Enge Spuren
+  es: Carriles estrechas
+  fr: Passes étroits
+  pt: Passagens estreitas
+  it: Corsie strette
+  pl: Wąskie przejazdy
+  ro: Căi înguste
+  uk: Вузькі проходи
+  nl: Smalle rijbanen
+material_method:
+  en: Area method
+  de: Flächenmethode
+  es: Método de superficie
+  fr: Méthode de surface
+  pt: Método de área
+  it: Metodo di superficie
+  pl: Metoda powierzchni
+  ro: Metodă de suprafață
+  uk: Метод площі
+  nl: Oppervlaktemethode
+speed_kmh:
+  en: Speed (km/h)
+  de: Geschwindigkeit (km/h)
+  es: Velocidad (km/h)
+  fr: Vitesse (km/h)
+  pt: Velocidade (km/h)
+  it: Velocità (km/h)
+  pl: Prędkość (km/h)
+  ro: Viteză (km/h)
+  uk: Швидкість (км/год)
+  nl: Snelheid (km/u)
+nozzle_flow:
+  en: Nozzle flow (l/min)
+  de: Düsenfördermenge (l/min)
+  es: Caudal de boquilla (l/min)
+  fr: Débit de buse (l/min)
+  pt: Caudal do bico (l/min)
+  it: Portata del getto (l/min)
+  pl: Wydajność dyszy (l/min)
+  ro: Debit al duzei (l/min)
+  uk: Продуктивність форсунки (л/хв)
+  nl: Mondtuitstroom (l/min)
+lane_width:
+  en: Lane width (m)
+  de: Arbeitsbreite (m)
+  es: Ancho de pasada (m)
+  fr: Largeur de passage (m)
+  pt: Largura de faixa (m)
+  it: Larghezza di corsia (m)
+  pl: Szerokość pasa (m)
+  ro: Lățimea traseului (m)
+  uk: Ширина проходу (м)
+  nl: Werkbaanbreedte (m)
+nozzle_count:
+  en: Number of nozzles
+  de: Anzahl Düsen
+  es: Número de boquillas
+  fr: Nombre de buses
+  pt: Número de bicos
+  it: Numero di getti
+  pl: Liczba dysz
+  ro: Număr de duze
+  uk: Кількість форсунок
+  nl: Aantal mondstukken
+crown_diameter:
+  en: Crown diameter (m)
+  de: Kronendurchmesser (m)
+  es: Diámetro de copa (m)
+  fr: Diamètre du houppier (m)
+  pt: Diâmetro da copa (m)
+  it: Diametro della chioma (m)
+  pl: Średnica korony (m)
+  ro: Diametrul coroanei (m)
+  uk: Діаметр крони (м)
+  nl: Kroondiameter (m)
+tree_height:
+  en: Tree height (m)
+  de: Baumhöhe (m)
+  es: Altura del árbol (m)
+  fr: Hauteur de l'arbre (m)
+  pt: Altura da árvore (m)
+  it: Altezza dell'albero (m)
+  pl: Wysokość drzewa (m)
+  ro: Înălțimea arborelui (m)
+  uk: Висота дерева (м)
+  nl: Boomhoogte (m)
+trees_per_ha:
+  en: Trees per hectare
+  de: Bäume pro Hektar
+  es: Árboles por hectárea
+  fr: Arbres par hectare
+  pt: Árvores por hectare
+  it: Alberi per ettaro
+  pl: Drzew na hektar
+  ro: Arbori pe hectar
+  uk: Дерев на гектар
+  nl: Bomen per hectare
+body_weight:
+  en: Body weight (kg)
+  de: Körpergewicht (kg)
+  es: Peso corporal (kg)
+  fr: Poids corporel (kg)
+  pt: Peso corporal (kg)
+  it: Peso corporeo (kg)
+  pl: Masa ciała (kg)
+  ro: Greutate corporală (kg)
+  uk: Маса тіла (кг)
+  nl: Lichaamsgewicht (kg)
+demand_percent:
+  en: Demand (% of body weight)
+  de: Bedarf (% Körpergewicht)
+  es: Demanda (% del peso)
+  fr: Besoin (% du poids)
+  pt: Necessidade (% do peso)
+  it: Fabbisogno (% del peso)
+  pl: Zapotrzebowanie (% masy)
+  ro: Necesar (% din greutate)
+  uk: Потреба (% маси)
+  nl: Vraag (% van lichaamsgewicht)
+animal_count_field:
+  en: Animal count
+  de: Anzahl Tiere
+  es: Número de animales
+  fr: Nombre d'animaux
+  pt: Número de animais
+  it: Numero di animali
+  pl: Liczba zwierząt
+  ro: Număr animale
+  uk: Кількість тварин
+  nl: Aantal dieren
+dose_per_ha:
+  en: Dose per hectare
+  de: Aufwandmenge pro Hektar
+  es: Dosis por hectárea
+  fr: Dose par hectare
+  pt: Dose por hectare
+  it: Dose per ettaro
+  pl: Dawka na hektar
+  ro: Doză pe hectar
+  uk: Доза на гектар
+  nl: Dosis per hectare
+yield_amount:
+  en: Yield amount
+  de: Erntemenge
+  es: Cantidad de cosecha
+  fr: Quantité récoltée
+  pt: Quantidade de colheita
+  it: Quantità di raccolto
+  pl: Ilość plonu
+  ro: Cantitate recoltă
+  uk: Обсяг врожаю
+  nl: Opbrengst
+price_per_unit:
+  en: Price per unit
+  de: Preis je Einheit
+  es: Precio por unidad
+  fr: Prix unitaire
+  pt: Preço por unidade
+  it: Prezzo unitario
+  pl: Cena jednostkowa
+  ro: Preț unitar
+  uk: Ціна за одиницю
+  nl: Prijs per eenheid
+material_costs:
+  en: Material costs
+  de: Materialkosten
+  es: Costes de material
+  fr: Coûts des intrants
+  pt: Custos de material
+  it: Costi dei materiali
+  pl: Koszty materiałów
+  ro: Costuri materiale
+  uk: Витрати на матеріали
+  nl: Materiaalkosten
+labor_costs:
+  en: Labor costs
+  de: Arbeitskosten
+  es: Costes de mano de obra
+  fr: Coûts de main-d'œuvre
+  pt: Custos de mão de obra
+  it: Costi della manodopera
+  pl: Koszty pracy
+  ro: Costuri forță de muncă
+  uk: Витрати на працю
+  nl: Arbeidskosten
+machinery_costs:
+  en: Machinery costs
+  de: Maschinenkosten
+  es: Costes de maquinaria
+  fr: Coûts de machinisme
+  pt: Custos de maquinaria
+  it: Costi macchine
+  pl: Koszty maszyn
+  ro: Costuri utilaje
+  uk: Витрати на техніку
+  nl: Machinekosten
+latitude_field:
+  en: Latitude
+  de: Breitengrad
+  es: Latitud
+  fr: Latitude
+  pt: Latitude
+  it: Latitudine
+  pl: Szerokość geograficzna
+  ro: Latitudine
+  uk: Широта
+  nl: Breedtegraad
+longitude_field:
+  en: Longitude
+  de: Längengrad
+  es: Longitud
+  fr: Longitude
+  pt: Longitude
+  it: Longitudine
+  pl: Długość geograficzna
+  ro: Longitudine
+  uk: Довгота
+  nl: Lengtegraad
+
+# --- G2: calculators page, part 2
+nav_calculators:
+  en: Calculators
+  de: Berechnungen
+  es: Calculadoras
+  fr: Calculateurs
+  pt: Calculadoras
+  it: Calcolatori
+  pl: Kalkulacje
+  ro: Calculatoare
+  uk: Калькулятори
+  nl: Rekenmachines
+calc_tool:
+  en: Tool
+  de: Werkzeug
+  es: Herramienta
+  fr: Outil
+  pt: Ferramenta
+  it: Strumento
+  pl: Narzędzie
+  ro: Instrument
+  uk: Інструмент
+  nl: Gereedschap
+area_ha:
+  en: Area (ha)
+  de: Fläche (ha)
+  es: Superficie (ha)
+  fr: Surface (ha)
+  pt: Área (ha)
+  it: Superficie (ha)
+  pl: Powierzchnia (ha)
+  ro: Suprafață (ha)
+  uk: Площа (га)
+  nl: Oppervlakte (ha)
+expected_yield:
+  en: Expected yield
+  de: Erwarteter Ertrag
+  es: Rendimiento esperado
+  fr: Rendement attendu
+  pt: Rendimento esperado
+  it: Resa attesa
+  pl: Oczekiwany plon
+  ro: Randament așteptat
+  uk: Очікуваний урожай
+  nl: Verwachte opbrengst
+demand_per_ha:
+  en: Demand per hectare
+  de: Bedarf pro Hektar
+  es: Demanda por hectárea
+  fr: Besoin par hectare
+  pt: Necessidade por hectare
+  it: Fabbisogno per ettaro
+  pl: Zapotrzebowanie na hektar
+  ro: Necesar pe hectar
+  uk: Потреба на гектар
+  nl: Vraag per hectare
+soil_n:
+  en: Soil nitrogen (N)
+  de: Bodenstickstoff (N)
+  es: Nitrógeno del suelo (N)
+  fr: Azote du sol (N)
+  pt: Azoto do solo (N)
+  it: Azoto del terreno (N)
+  pl: Azot w glebie (N)
+  ro: Azot în sol (N)
+  uk: Азот у ґрунті (N)
+  nl: Bodemstikstof (N)
+soil_p:
+  en: Soil phosphorus (P)
+  de: Bodenphosphor (P)
+  es: Fósforo del suelo (P)
+  fr: Phosphore du sol (P)
+  pt: Fósforo do solo (P)
+  it: Fosforo del terreno (P)
+  pl: Fosfor w glebie (P)
+  ro: Fosfor în sol (P)
+  uk: Фосфор у ґрунті (P)
+  nl: Bodemfosfaat (P)
+soil_k:
+  en: Soil potassium (K)
+  de: Bodenkali (K)
+  es: Potasio del suelo (K)
+  fr: Potassium du sol (K)
+  pt: Potássio do solo (K)
+  it: Potassio del terreno (K)
+  pl: Potas w glebie (K)
+  ro: Potasiu în sol (K)
+  uk: Калій у ґрунті (K)
+  nl: Bodemkalium (K)
+organic_matter:
+  en: Organic matter (%)
+  de: Organische Substanz (%)
+  es: Materia orgánica (%)
+  fr: Matière organique (%)
+  pt: Matéria orgânica (%)
+  it: Sostanza organica (%)
+  pl: Materia organiczna (%)
+  ro: Substanță organică (%)
+  uk: Органічна речовина (%)
+  nl: Organische stof (%)
+base_rate:
+  en: Base rate
+  de: Grundpreis
+  es: Tarifa base
+  fr: Tarif de base
+  pt: Tarifa base
+  it: Tariffa base
+  pl: Stawka bazowa
+  ro: Tarifă de bază
+  uk: Базова ставка
+  nl: Basistarief
+crop_type:
+  en: Crop type
+  de: Fruchtart
+  es: Tipo de cultivo
+  fr: Type de culture
+  pt: Tipo de cultura
+  it: Tipo di coltura
+  pl: Rodzaj uprawy
+  ro: Tip de cultură
+  uk: Тип культури
+  nl: Gewastype
+not_implemented:
+  en: Reachable from the API, not yet wired into this form
+  de: Über die API erreichbar, noch nicht in dieses Formular eingebunden
+  es: Accesible por la API, aún no conectado a este formulario
+  fr: Accessible par l'API, pas encore relié à ce formulaire
+  pt: Acessível pela API, ainda não ligado a este formulário
+  it: Raggiungibile via API, non ancora collegato a questo modulo
+  pl: Osiągalne przez API, jeszcze nie podłączone do tego formularza
+  ro: Accesibil prin API, încă neconectat la acest formular
+  uk: Доступно через API, ще не підключено до цієї форми
+  nl: Bereikbaar via de API, nog niet aan dit formulier gekoppeld
+crop_grape:
+  en: Grape
+  de: Weinrebe
+  es: Vid
+  fr: Raisin
+  pt: Uva
+  it: Vite
+  pl: Winorośl
+  ro: Viță de vie
+  uk: Виноград
+  nl: Druif
+crop_apple:
+  en: Apple
+  de: Apfel
+  es: Manzano
+  fr: Pommier
+  pt: Maçã
+  it: Melo
+  pl: Jabłko
+  ro: Măr
+  uk: Яблуня
+  nl: Appel
+crop_citrus:
+  en: Citrus
+  de: Zitrusfrüchte
+  es: Cítricos
+  fr: Agrumes
+  pt: Cítricos
+  it: Agrumi
+  pl: Cytrusy
+  ro: Citrice
+  uk: Цитрусові
+  nl: Citrus
+crop_vegetable:
+  en: Vegetable
+  de: Gemüse
+  es: Hortaliza
+  fr: Légume
+  pt: Hortaliça
+  it: Ortaggi
+  pl: Warzywa
+  ro: Legumă
+  uk: Овочі
+  nl: Groente
+crop_nut:
+  en: Nut
+  de: Nuss
+  es: Frutos secos
+  fr: Noix
+  pt: Noz
+  it: Noce
+  pl: Orzechy
+  ro: Nucă
+  uk: Горіхи
+  nl: Noten
+crop_type_cork_oak:
+  en: Cork oak
+  de: Korkeiche
+  es: Alcornoque
+  fr: Subéro
+  pt: Sobreiro
+  it: Sughero
+  pl: Dąb korkowy
+  ro: Stejar de plut
+  uk: Коркове дуба
+  nl: Kurkeik
+crop_type_olive_2:
+  en: Olive
+  de: Olive
+  es: Olivo
+  fr: Olivier
+  pt: Oliveira
+  it: Oliva
+  pl: Oliwka
+  ro: Măslin
+  uk: Олива
+  nl: Olijf
+crop_type_almond:
+  en: Almond
+  de: Mandel
+  es: Almendro
+  fr: Amandier
+  pt: Amendoeira
+  it: Mandorlo
+  pl: Migdał
+  ro: Migdal
+  uk: Мигдаль
+  nl: Amandel
+crop_hazelnut:
+  en: Hazelnut
+  de: Haselnuss
+  es: Avellano
+  fr: Noisette
+  pt: Avelã
+  it: Nocciola
+  pl: Leszczyna
+  ro: Nucă
+  uk: Фундук
+  nl: Hazelaar
+crop_chestnut:
+  en: Chestnut
+  de: Kastanie
+  es: Castaño
+  fr: Châtaigne
+  pt: Castanha
+  it: Castagna
+  pl: Kasztan
+  ro: Castan
+  uk: Каштан
+  nl: Kastanje
+crop_berry:
+  en: Berry
+  de: Beere
+  es: Baya
+  fr: Baie
+  pt: Fruto silvestre
+  it: Bacca
+  pl: Jagoda
+  ro: Fruct de pădure
+  uk: Ягода
+  nl: Bes
+crop_tropical:
+  en: Tropical
+  de: Tropisch
+  es: Tropical
+  fr: Tropical
+  pt: Tropical
+  it: Tropicale
+  pl: Tropikalne
+  ro: Tropical
+  uk: Тропічний
+  nl: Tropisch
+crop_poultry:
+  en: Poultry
+  de: Geflügel
+  es: Aves
+  fr: Volaille
+  pt: Aves
+  it: Pollame
+  pl: Dróbia
+  ro: Păsări
+  uk: Птиця
+  nl: Pluimvee
+crop_livestock:
+  en: Livestock
+  de: Vieh
+  es: Ganado
+  fr: Bétail
+  pt: Gado
+  it: Bestiame
+  pl: Bydło
+  ro: Turmă
+  uk: Худоба
+  nl: Vee
+crop_fallow:
+  en: Fallow
+  de: Brache
+  es: Barbeza
+  fr: Jachère
+  pt: Falha
+  it: Magra
+  pl: Odłog
+  ro: Tghevimă
+  uk: Залежь
+  nl: Braak
+crop_forest:
+  en: Forest
+  de: Wald
+  es: Bosque
+  fr: Forêt
+  pt: Floresta
+  it: Foresta
+  pl: Las
+  ro: Pădure
+  uk: Ліс
+  nl: Bos
+crop_pasture:
+  en: Pasture
+  de: Weide
+  es: Pasto
+  fr: Pâturage
+  pt: Pastagem
+  it: Pascolo
+  pl: Pastwisko
+  ro: Pășune
+  uk: Пасовище
+  nl: Weide
+crop_grain:
+  en: Grain
+  de: Getreide
+  es: Cereal
+  fr: Céréale
+  pt: Cereal
+  it: Cereale
+  pl: Zboże
+  ro: Cereale
+  uk: Зерно
+  nl: Granen
+crop_other:
+  en: Other
+  de: Sonstige
+  es: Otro
+  fr: Autre
+  pt: Outro
+  it: Altro
+  pl: Inny
+  ro: Altul
+  uk: Інше
+  nl: Overig
+crop_unknown:
+  en: Unknown
+  de: Unbekannt
+  es: Desconocido
+  fr: Inconnu
+  pt: Desconhecido
+  it: Sconosciuto
+  pl: Nieznany
+  ro: Necunoscut
+  uk: Невідомо
+  nl: Onbekend
+method_net_area:
+  en: Net area
+  de: Netzfläche
+  es: Superficie neta
+  fr: Surface nette
+  pt: Área líquida
+  it: Superficie netta
+  pl: Powierzchnia netto
+  ro: Suprafață netă
+  uk: Чиста площа
+  nl: Netto-oppervlakte
+method_gross_area:
+  en: Gross area
+  de: Bruttofläche
+  es: Superficie bruta
+  fr: Surface brute
+  pt: Área bruta
+  it: Superficie lorda
+  pl: Powierzchnia brutto
+  ro: Suprafață brută
+  uk: Загальна площа
+  nl: Bruto-oppervlakte
+method_leaf_wall_measured:
+  en: Leaf wall (measured)
+  de: Laubwand (gemessen)
+  es: Pared foliar (medida)
+  fr: Mur de feuilles (mesuré)
+  pt: Parede foliar (medida)
+  it: Parete fogliare (misurata)
+  pl: Ściana liściowa (zmierzona)
+  ro: Perete de frunze (măsurat)
+  uk: Листова стіна (виміряна)
+  nl: Bladerwand (gemeten)
+method_leaf_wall_gross:
+  en: Leaf wall (gross)
+  de: Laubwand (brutto)
+  es: Pared foliar (bruta)
+  fr: Mur de feuilles (brut)
+  pt: Parede foliar (bruta)
+  it: Parete fogliare (lorda)
+  pl: Ściana liściowa (brutto)
+  ro: Perete de frunze (brut)
+  uk: Листова стіна (загальна)
+  nl: Bladerwand (bruto)
+method_ground_protection:
+  en: Ground protection
+  de: Bodenschutz
+  es: Protección del suelo
+  fr: Protection du sol
+  pt: Proteção do solo
+  it: Protezione del terreno
+  pl: Ochrona gleby
+  ro: Protecția solului
+  uk: Захист ґрунту
+  nl: Grondbescherming
+method_herbicide_protection:
+  en: Herbicide protection
+  de: Herbizidschutz
+  es: Protección con herbicida
+  fr: Protection herbicide
+  pt: Proteção com herbicida
+  it: Protezione erbicida
+  pl: Ochrona herbicydem
+  ro: Protecția cu erbicid
+  uk: Захист гербіцидом
+  nl: Onkruidbescherming
+method_tree_crown_volume:
+  en: Tree crown volume
+  de: Kronenvolumen
+  es: Volumen de copa
+  fr: Volume de houppier
+  pt: Volume da copa
+  it: Volume della chioma
+  pl: Objętość korony
+  ro: Volum coroane
+  uk: Об'єм крони
+  nl: Kroonvolume
+calc_weather_providers:
+  en: Weather providers
+  de: Wetteranbieter
+  es: Proveedores meteorológicos
+  fr: Fournisseurs météo
+  pt: Fornecedores meteorológicos
+  it: Fornitori meteo
+  pl: Dostawcy pogody
+  ro: Furnizori meteo
+  uk: Постачальники погоди
+  nl: Weerleveranciers
+
+# --- G2: workforce logs, weather warnings, applicator licenses
+nav_work_logs:
+  en: Work logs
+  de: Arbeitsprotokolle
+  es: Registros de trabajo
+  fr: Relevés de travail
+  pt: Registos de trabalho
+  it: Rendiconti di lavoro
+  pl: Ewidencja pracy
+  ro: Jurnal de lucru
+  uk: Журнали роботи
+  nl: Werklogboeken
+nav_worker_locations:
+  en: Worker positions
+  de: Arbeiterpositionen
+  es: Posiciones de trabajadores
+  fr: Positions des travailleurs
+  pt: Posições dos trabalhadores
+  it: Posizioni dei lavoratori
+  pl: Pozycje pracowników
+  ro: Poziții ale lucrătorilor
+  uk: Позиції працівників
+  nl: Posities van werknemers
+worker_id:
+  en: Worker ID
+  de: Arbeiter-ID
+  es: ID de trabajador
+  fr: ID de travailleur
+  pt: ID do trabalhador
+  it: ID lavoratore
+  pl: ID pracownika
+  ro: ID lucrător
+  uk: ID працівника
+  nl: Werknemer-ID
+log_date:
+  en: Date
+  de: Datum
+  es: Fecha
+  fr: Date
+  pt: Data
+  it: Data
+  pl: Data
+  ro: Dată
+  uk: Дата
+  nl: Datum
+hours_worked:
+  en: Hours worked
+  de: Geleistete Stunden
+  es: Horas trabajadas
+  fr: Heures travaillées
+  pt: Horas trabalhadas
+  it: Ore lavorate
+  pl: Godziny pracy
+  ro: Ore lucrate
+  uk: Відпрацьовані години
+  nl: Gewerkte uren
+overtime_hours:
+  en: Overtime
+  de: Überstunden
+  es: Horas extra
+  fr: Heures supplémentaires
+  pt: Horas extra
+  it: Ore straordinarie
+  pl: Nadgodziny
+  ro: Ore suplimentare
+  uk: Понадоботові години
+  nl: Overtijd
+rest_hours:
+  en: Rest hours
+  de: Ruhezeiten
+  es: Horas de descanso
+  fr: Heures de repos
+  pt: Horas de descanso
+  it: Ore di riposo
+  pl: Godziny odpoczynku
+  ro: Ore de repaus
+  uk: Години відпочинку
+  nl: Rusturen
+task_description:
+  en: Task description
+  de: Aufgabenbeschreibung
+  es: Descripción de tarea
+  fr: Description de la tâche
+  pt: Descrição da tarefa
+  it: Descrizione dell'attività
+  pl: Opis zadania
+  ro: Descrierea sarcinii
+  uk: Опис завдання
+  nl: Taakomschrijving
+breaks_taken:
+  en: Breaks taken
+  de: Pausen
+  es: Descansos
+  fr: Pauses
+  pt: Pausas
+  it: Pause
+  pl: Przerwy
+  ro: Pauze
+  uk: Перерви
+  nl: Pauzes
+night_shift:
+  en: Night shift
+  de: Nachtschicht
+  es: Turno de noche
+  fr: Équipe de nuit
+  pt: Turno da noite
+  it: Turno notturno
+  pl: Zmiana nocna
+  ro: Tura de noapte
+  uk: Нічна зміна
+  nl: Nachtdienst
+report_own_position:
+  en: Report my position
+  de: Position melden
+  es: Informar mi posición
+  fr: Signaler ma position
+  pt: Comunicar a minha posição
+  it: Segnala la mia posizione
+  pl: Zgłoś moją pozycję
+  ro: Raportează poziția mea
+  uk: Повідомити мою позицію
+  nl: Mijn positie melden
+timestamp_2:
+  en: Timestamp
+  de: Zeitstempel
+  es: Marca de tiempo
+  fr: Horodatage
+  pt: Marca de tempo
+  it: Marca temporale
+  pl: Znacznik czasu
+  ro: Marcaj de timp
+  uk: Часова мітка
+  nl: Tijdstempel
+weather_warnings:
+  en: Weather warnings
+  de: Wetterwarnungen
+  es: Alertas meteorológicas
+  fr: Alertes météo
+  pt: Alertas meteorológicas
+  it: Avvisi meteorologici
+  pl: Ostrzeżenia pogodowe
+  ro: Alerte meteo
+  uk: Погодні попередження
+  nl: Weerwaarschuwingen
+frost_warning:
+  en: Frost warning
+  de: Frostwarnung
+  es: Alerta de helada
+  fr: Alerte gel
+  pt: Alerta de geada
+  it: Avviso di gelo
+  pl: Ostrzeżenie przed przymrozką
+  ro: Avertisment de îngheț
+  uk: Попередження про заморозки
+  nl: Vorstwaarschuwing
+frost_warnings:
+  en: Frost warnings
+  de: Frostwarnungen
+  es: Alertas de helada
+  fr: Alertes de gel
+  pt: Alertas de geada
+  it: Avvisi di gelo
+  pl: Ostrzeżenia przed przymrozkami
+  ro: Avertismente de îngheț
+  uk: Попередження про заморозки
+  nl: Vorstwaarschuwingen
+active_frost_warnings:
+  en: Active frost warnings
+  de: Aktive Frostwarnungen
+  es: Alertas de helada activas
+  fr: Alertes de gel actives
+  pt: Alertas de geada ativas
+  it: Avvisi di gelo attivi
+  pl: Aktywne ostrzeżenia przed przymrozkami
+  ro: Avertismente active de îngheț
+  uk: Активні попередження про заморозки
+  nl: Actieve vorstwaarschuwingen
+no_active_warnings:
+  en: No active warnings
+  de: Keine aktiven Warnungen
+  es: Sin alertas activas
+  fr: Aucune alerte active
+  pt: Nenhum alerta ativo
+  it: Nessun avviso attivo
+  pl: Brak aktywnych ostrzeżeń
+  ro: Niciun avertisment activ
+  uk: Немає активних попереджен
+  nl: Geen actieve waarschuwingen
+station_id:
+  en: Station ID
+  de: Stations-ID
+  es: ID de estación
+  fr: ID de station
+  pt: ID da estação
+  it: ID stazione
+  pl: ID stacji
+  ro: ID stațieji
+  uk: ID станції
+  nl: Station-ID
+threshold_temp:
+  en: Threshold (°C)
+  de: Schwellenwert (°C)
+  es: Umbral (°C)
+  fr: Seuil (°C)
+  pt: Limiar (°C)
+  it: Soglia (°C)
+  pl: Próg (°C)
+  ro: Prag (°C)
+  uk: Порог (°C)
+  nl: Drempel (°C)
+notify_email:
+  en: Notify by email
+  de: Per E-Mail benachrichtigen
+  es: Notificar por correo
+  fr: Notifier par e-mail
+  pt: Notificar por e-mail
+  it: Notifica via e-mail
+  pl: Powiadomienie e-mail
+  ro: Notificare prin e-mail
+  uk: Сповіщення поштою
+  nl: Per e-mail melden
+notify_sms:
+  en: Notify by SMS
+  de: Per SMS benachrichtigen
+  es: Notificar por SMS
+  fr: Notifier par SMS
+  pt: Notificar por SMS
+  it: Notifica via SMS
+  pl: Powiadomienie SMS
+  ro: Notificare prin SMS
+  uk: Сповіщення SMS
+  nl: Per SMS melden
+pest_risk:
+  en: Pest risk
+  de: Schädlingsrisiko
+  es: Riesgo de plagas
+  fr: Risque ravageurs
+  pt: Risco de pragas
+  it: Rischio parassiti
+  pl: Ryzyko szkodników
+  ro: Risc de dăunători
+  uk: Ризик шкідників
+  nl: Pestrisico
+pest_risks:
+  en: Pest risks
+  de: Schädlingsrisiken
+  es: Riesgos de plagas
+  fr: Risques ravageurs
+  pt: Riscos de pragas
+  it: Rischi parassiti
+  pl: Ryzyka szkodników
+  ro: Riscuri de dăunători
+  uk: Ризики шкідників
+  nl: Pestrisico's
+risk_level:
+  en: Risk level
+  de: Risikostufe
+  es: Nivel de riesgo
+  fr: Niveau de risque
+  pt: Nível de risco
+  it: Livello di rischio
+  pl: Poziom ryzyka
+  ro: Nivel de risc
+  uk: Рівень ризику
+  nl: Risiconiveau
+risk_low:
+  en: Low
+  de: Niedrig
+  es: Bajo
+  fr: Faible
+  pt: Baixo
+  it: Basso
+  pl: Niski
+  ro: Scăzut
+  uk: Низький
+  nl: Laag
+risk_medium:
+  en: Medium
+  de: Mittel
+  es: Medio
+  fr: Moyen
+  pt: Médio
+  it: Medio
+  pl: Średni
+  ro: Mediu
+  uk: Середній
+  nl: Gemiddeld
+risk_high:
+  en: High
+  de: Hoch
+  es: Alto
+  fr: Élevé
+  pt: Alto
+  it: Alto
+  pl: Wysoki
+  ro: Ridicat
+  uk: Високий
+  nl: Hoog
+risk_critical:
+  en: Critical
+  de: Kritisch
+  es: Crítico
+  fr: Critique
+  pt: Crítico
+  it: Critico
+  pl: Krytyczny
+  ro: Critic
+  uk: Критичний
+  nl: Kritiek
+assessment_date:
+  en: Assessment date
+  de: Bewertungsdatum
+  es: Fecha de evaluación
+  fr: Date d'évaluation
+  pt: Data da avaliação
+  it: Data di valutazione
+  pl: Data oceny
+  ro: Data evaluării
+  uk: Дата оцінки
+  nl: Beoordelingsdatum
+pest_type:
+  en: Pest type
+  de: Schädlingsart
+  es: Tipo de plaga
+  fr: Type de ravageur
+  pt: Tipo de praga
+  it: Tipo di parassita
+  pl: Rodzaj szkodnika
+  ro: Tip de dăunător
+  uk: Тип шкідника
+  nl: Pestsoort
+confidence_2:
+  en: Confidence
+  de: Konfidenz
+  es: Confianza
+  fr: Confiance
+  pt: Confiança
+  it: Confidenza
+  pl: Pewność
+  ro: Încredere
+  uk: Впевненість
+  nl: Zekerheid
+recommended_action:
+  en: Recommended action
+  de: Empfohlene Maßnahme
+  es: Acción recomendada
+  fr: Action recommandée
+  pt: Ação recomendada
+  it: Azione consigliata
+  pl: Zalecane działanie
+  ro: Acțiune recomandată
+  uk: Рекомендована дія
+  nl: Aanbevolen actie
+model_version:
+  en: Model version
+  de: Modellversion
+  es: Versión del modelo
+  fr: Version du modèle
+  pt: Versão do modelo
+  it: Versione del modello
+  pl: Wersja modelu
+  ro: Versiunea modelului
+  uk: Версія моделі
+  nl: Modelversie
+applicator_licenses:
+  en: Applicator licenses
+  de: Sprayer-Zertifikate
+  es: Licencias de aplicador
+  fr: Certificats d'applicateur
+  pt: Licenças de aplicador
+  it: Licenze di applicatore
+  pl: Uprawnienia aplikatora
+  ro: Licențe de aplicator
+  uk: Ліцензії applicator
+  nl: Aanvragervergunningen
+license_type:
+  en: License type
+  de: Zertifikatstyp
+  es: Tipo de licencia
+  fr: Type de certificat
+  pt: Tipo de licença
+  it: Tipo di licenza
+  pl: Rodzaj uprawnienia
+  ro: Tip de licență
+  uk: Тип ліцензії
+  nl: Vergunningstype
+license_number:
+  en: License number
+  de: Zertifikatsnummer
+  es: Número de licencia
+  fr: Numéro de certificat
+  pt: Número da licença
+  it: Numero di licenza
+  pl: Numer uprawnienia
+  ro: Număr licență
+  uk: Номер ліцензії
+  nl: Vergunningsnummer
+license_basic:
+  en: Basic
+  de: Basis
+  es: Básico
+  fr: De base
+  pt: Básico
+  it: Base
+  pl: Podstawowy
+  ro: De bază
+  uk: Базовий
+  nl: Basis
+license_advanced:
+  en: Advanced
+  de: Fortgeschritten
+  es: Avanzado
+  fr: Avancé
+  pt: Avançado
+  it: Avanzato
+  pl: Zaawansowany
+  ro: Avansat
+  uk: Просунутий
+  nl: Gevorderd
+license_professional:
+  en: Professional
+  de: Professionell
+  es: Profesional
+  fr: Professionnel
+  pt: Profissional
+  it: Professionale
+  pl: Zawodowy
+  ro: Profesional
+  uk: Професійний
+  nl: Professioneel
+issued_by:
+  en: Issued by
+  de: Ausgestellt von
+  es: Emitida por
+  fr: Délivré par
+  pt: Emitida por
+  it: Rilasciato da
+  pl: Wydana przez
+  ro: Emisă de
+  uk: Видано
+  nl: Uitgegeven door
+valid_from:
+  en: Valid from
+  de: Gültig ab
+  es: Válida desde
+  fr: Valide à partir de
+  pt: Válida a partir de
+  it: Valido dal
+  pl: Ważna od
+  ro: Valabilă de
+  uk: Дійсна з
+  nl: Geldig vanaf
+valid_until:
+  en: Valid until
+  de: Gültig bis
+  es: Válida hasta
+  fr: Valide jusqu'au
+  pt: Válida até
+  it: Valido fino
+  pl: Ważna do
+  ro: Valabilă până
+  uk: Дійсна до
+  nl: Geldig tot
+user_id:
+  en: User ID
+  de: Benutzer-ID
+  es: ID de usuario
+  fr: ID utilisateur
+  pt: ID do utilizador
+  it: ID utente
+  pl: ID użytkownika
+  ro: ID utilizator
+  uk: ID користувача
+  nl: Gebruikers-ID
+
+# --- G2: water page
+nav_water:
+  en: Water
+  de: Bewässerung
+  es: Riego
+  fr: Eau
+  pt: Água
+  it: Acqua
+  pl: Woda
+  ro: Apă
+  uk: Вода
+  nl: Water
+water_sources:
+  en: Water sources
+  de: Wasserquellen
+  es: Fuentes de agua
+  fr: Sources d'eau
+  pt: Fontes de água
+  it: Sorgenti d'acqua
+  pl: Źródła wody
+  ro: Surse de apă
+  uk: Джерела води
+  nl: Waterbronnen
+water_source_type:
+  en: Source type
+  de: Quellentyp
+  es: Tipo de fuente
+  fr: Type de source
+  pt: Tipo de fonte
+  it: Tipo di sorgente
+  pl: Rodzaj źródła
+  ro: Tip de sursă
+  uk: Тип джерела
+  nl: Brontype
+water_capacity:
+  en: Capacity (m³)
+  de: Kapazität (m³)
+  es: Capacidad (m³)
+  fr: Capacité (m³)
+  pt: Capacidade (m³)
+  it: Capacità (m³)
+  pl: Pojemność (m³)
+  ro: Capacitate (m³)
+  uk: Об'єм (м³)
+  nl: Capaciteit (m³)
+water_current_usage:
+  en: Current usage
+  de: Aktueller Verbrauch
+  es: Uso actual
+  fr: Utilisation actuelle
+  pt: Uso atual
+  it: Utilizzo attuale
+  pl: Aktualne zużycie
+  ro: Utilizare actuală
+  uk: Поточне використання
+  nl: Huidig verbruik
+water_usage:
+  en: Water usage
+  de: Wasserverbrauch
+  es: Consumo de agua
+  fr: Consommation d'eau
+  pt: Consumo de água
+  it: Consumo idrico
+  pl: Zużycie wody
+  ro: Consum de apă
+  uk: Використання води
+  nl: Waterverbruik
+water_source_id:
+  en: Source ID
+  de: Quellen-ID
+  es: ID de fuente
+  fr: ID de source
+  pt: ID da fonte
+  it: ID sorgente
+  pl: ID źródła
+  ro: ID sursă
+  uk: ID джерела
+  nl: Bron-ID
+water_volume:
+  en: Volume (m³)
+  de: Menge (m³)
+  es: Volumen (m³)
+  fr: Volume (m³)
+  pt: Volume (m³)
+  it: Volume (m³)
+  pl: Objętość (m³)
+  ro: Volum (m³)
+  uk: Об'єм (м³)
+  nl: Volume (m³)
+irrigation_method:
+  en: Irrigation method
+  de: Bewässerungsmethode
+  es: Método de riego
+  fr: Méthode d'irrigation
+  pt: Método de rega
+  it: Metodo di irrigazione
+  pl: Metoda nawadniania
+  ro: Metodă de irigație
+  uk: Метод зрошення
+  nl: Irrigatiemethode
+efficiency_pct:
+  en: Efficiency (%)
+  de: Effizienz (%)
+  es: Eficiencia (%)
+  fr: Efficacité (%)
+  pt: Eficiência (%)
+  it: Efficienza (%)
+  pl: Wydajność (%)
+  ro: Eficiență (%)
+  uk: Ефективність (%)
+  nl: Efficiëntie (%)
+usage_date:
+  en: Usage date
+  de: Verbrauchsdatum
+  es: Fecha de consumo
+  fr: Date d'utilisation
+  pt: Data de consumo
+  it: Data di utilizzo
+  pl: Data zużycia
+  ro: Data utilizare
+  uk: Дата використання
+  nl: Gebruikdatum
+water_quotas:
+  en: Water quotas
+  de: Wasserkontingente
+  es: Cuotas de agua
+  fr: Quotas d'eau
+  pt: Quotas de água
+  it: Quote d'acqua
+  pl: Limity wody
+  ro: Cotele de apă
+  uk: Ліміти води
+  nl: Waterquota
+quota_year:
+  en: Year
+  de: Jahr
+  es: Año
+  fr: Année
+  pt: Ano
+  it: Anno
+  pl: Rok
+  ro: An
+  uk: Рік
+  nl: Jaar
+quota_allocated:
+  en: Allocated (m³)
+  de: Zugewiesen (m³)
+  es: Asignado (m³)
+  fr: Attribué (m³)
+  pt: Atribuído (m³)
+  it: Assegnato (m³)
+  pl: Przydzielone (m³)
+  ro: Alocat (m³)
+  uk: Розподілено (м³)
+  nl: Toegewezen (m³)
+quota_used:
+  en: Used (m³)
+  de: Verbraucht (m³)
+  es: Usado (m³)
+  fr: Utilisé (m³)
+  pt: Usado (m³)
+  it: Utilizzato (m³)
+  pl: Wykorzystane (m³)
+  ro: Utilizat (m³)
+  uk: Використано (м³)
+  nl: Gebruikt (m³)
+quota_remaining:
+  en: Remaining (m³)
+  de: Verbleibend (m³)
+  es: Restante (m³)
+  fr: Restant (m³)
+  pt: Restante (m³)
+  it: Rimanente (m³)
+  pl: Pozostało (m³)
+  ro: Rămas (m³)
+  uk: Залишилось (м³)
+  nl: Resterend (m³)
+water_source_well:
+  en: Well
+  de: Brunnen
+  es: Pozo
+  fr: Puits
+  pt: Poço
+  it: Pozzo
+  pl: Studnia
+  ro: Fântână
+  uk: Криниця
+  nl: Put
+water_source_reservoir:
+  en: Reservoir
+  de: Stausee
+  es: Embalse
+  fr: Réservoir
+  pt: Represa
+  it: Bacino
+  pl: Zbiornik
+  ro: Lac
+  uk: Водосховище
+  nl: Reservoir
+water_source_river:
+  en: River
+  de: Fluss
+  es: Río
+  fr: Rivière
+  pt: Rio
+  it: Fiume
+  pl: Rzeka
+  ro: Râu
+  uk: Річка
+  nl: Rivier
+water_source_canal:
+  en: Canal
+  de: Kanal
+  es: Canal
+  fr: Canal
+  pt: Canal
+  it: Canale
+  pl: Kanał
+  ro: Canal
+  uk: Канал
+  nl: Kanaal
+water_source_comunidad:
+  en: Irrigation community
+  de: Bewässerungsgemeinschaft
+  es: Comunidad de regantes
+  fr: Communauté d'irrigation
+  pt: Comunidade de regantes
+  it: Comunità di irrigazione
+  pl: Spółka nawadniająca
+  ro: Comunitate de irigații
+  uk: Іригаційне товариство
+  nl: Irrigatiegemeenschap
+water_source_rainwater:
+  en: Rainwater harvesting
+  de: Regenwassernutzung
+  es: Recolección de lluvia
+  fr: Récupération d'eau de pluie
+  pt: Recolha de água da chuva
+  it: Raccolta di acqua piovana
+  pl: Zbieranie wody deszczowej
+  ro: Captarea apei pluviale
+  uk: Збір дощової води
+  nl: Regenwateropvang
+water_source_desalination:
+  en: Desalination
+  de: Entsalzung
+  es: Desalinización
+  fr: Dessalement
+  pt: Dessalinização
+  it: Dissalazione
+  pl: Odsalanianie
+  ro: Dezalinizare
+  uk: Опріснення
+  nl: Ontzouten
+irrigation_drip:
+  en: Drip
+  de: Tropfbewässerung
+  es: Riego por goteo
+  fr: Goutte-à-goutte
+  pt: Rega gota a gota
+  it: Irrigazione a goccia
+  pl: Nawadnianie kroplujące
+  ro: Irigație prin picurare
+  uk: Крапельне зрошення
+  nl: Druppelirrigatie
+irrigation_sprinkler:
+  en: Sprinkler
+  de: Sprinkler
+  es: Aspersión
+  fr: Aspersion
+  pt: Aspersão
+  it: Irrigazione a pioggia
+  pl: Deszczownia
+  ro: Irrigație prin aspersiune
+  uk: Дощувальна система
+  nl: Sprinkler
+irrigation_flood:
+  en: Flood
+  de: Flächenbewässerung
+  es: Riego por inundación
+  fr: Irrigation par submersion
+  pt: Rega por inundação
+  it: Irrigazione a sommersione
+  pl: Nawadnianie zalewowe
+  ro: Irrigație prin inundație
+  uk: Зрошення затоплення
+  nl: Vloedirrigatie
+irrigation_pivot:
+  en: Pivot
+  de: Beregnungsanlage
+  es: Pivote
+  fr: Pivot
+  pt: Pivô
+  it: Irrigazione a pivots
+  pl: Nawadnianie obrotowe
+  ro: Irrigație cu pivot
+  uk: Обертове зрошення
+  nl: Pivotsysteem
+irrigation_micro:
+  en: Micro sprinkler
+  de: Mikro-Sprinkler
+  es: Microaspersión
+  fr: Micro-aspersion
+  pt: Microaspersão
+  it: Microirrigazione a pioggia
+  pl: Mikrozraszacz
+  ro: Microaspersie
+  uk: Мікродошливал
+  nl: Micro-sprinkler
+irrigation_subsurface:
+  en: Subsurface
+  de: Unterflurbewässerung
+  es: Riego subterráneo
+  fr: Irrigation souterraine
+  pt: Rega subterrânea
+  it: Irrigazione sotterranea
+  pl: Nawadnianie podziemne
+  ro: Irrigație subterană
+  uk: Підземне зрошення
+  nl: Ondergrondse irrigatie
+
+# --- G2: harvest page
+nav_harvest:
+  en: Harvest
+  de: Ernte
+  es: Cosecha
+  fr: Récolte
+  pt: Colheita
+  it: Raccolta
+  pl: Zbiór
+  ro: Recoltă
+  uk: Збір
+  nl: Oogst
+harvest_seasons:
+  en: Harvest seasons
+  de: Erntesaisons
+  es: Temporadas de cosecha
+  fr: Saisons de récolte
+  pt: Saisons de colheita
+  it: Stagioni di raccolta
+  pl: Sezony zbioru
+  ro: Sezoane de recoltă
+  uk: Сезони збору
+  nl: Oogstseizoenen
+season_start:
+  en: Start date
+  de: Startdatum
+  es: Fecha de inicio
+  fr: Date de début
+  pt: Data de início
+  it: Data di inizio
+  pl: Data rozpoczęcia
+  ro: Data început
+  uk: Дата початку
+  nl: Startdatum
+season_end:
+  en: End date
+  de: Enddatum
+  es: Fecha de fin
+  fr: Date de fin
+  pt: Data de fim
+  it: Data di fine
+  pl: Data zakończenia
+  ro: Data sfârșit
+  uk: Дата завершення
+  nl: Einddatum
+harvest_lots:
+  en: Harvest lots
+  de: Ernte-Chargen
+  es: Lotes de cosecha
+  fr: Lots de récolte
+  pt: Lotes de colheita
+  it: Lotti di raccolto
+  pl: Partie zbioru
+  ro: Loturi de recoltă
+  uk: Партії врожаю
+  nl: Oogstpartijen
+season_id:
+  en: Season ID
+  de: Saison-ID
+  es: ID de temporada
+  fr: ID de saison
+  pt: ID da estação
+  it: ID stagione
+  pl: ID sezonu
+  ro: ID sezon
+  uk: ID сезону
+  nl: Seizoen-ID
+lot_number:
+  en: Lot number
+  de: Chargennummer
+  es: Número de lote
+  fr: Numéro de lot
+  pt: Número do lote
+  it: Numero di lotto
+  pl: Numer partii
+  ro: Număr lot
+  uk: Номер партії
+  nl: Partijnummer
+site_ids:
+  en: Site IDs (comma-separated)
+  de: Feld-IDs (kommagetrennt)
+  es: IDs de parcelas (separados por comas)
+  fr: ID de parcelles (séparés par virgules)
+  pt: IDs de talhões (separados por vírgula)
+  it: ID appezzamenti (separati da virgola)
+  pl: ID działek (oddzielone przecinkami)
+  ro: ID parcele (separate prin virgulă)
+  uk: ID ділянок (через кому)
+  nl: Perceel-ID's (gescheiden door komma)
+lot_variety:
+  en: Variety
+  de: Sorte
+  es: Variedad
+  fr: Variété
+  pt: Variedade
+  it: Varietà
+  pl: Odmiana
+  ro: Varietate
+  uk: Сорт
+  nl: Ras
+quality_target:
+  en: Quality target
+  de: Qualitätsziel
+  es: Objetivo de calidad
+  fr: Objectif de qualité
+  pt: Objetivo de qualidade
+  it: Obiettivo di qualità
+  pl: Cel jakości
+  ro: Obiectiv de calitate
+  uk: Ціль якості
+  nl: Kwaliteitsdoel
+lot_status:
+  en: Status
+  de: Status
+  es: Estado
+  fr: Statut
+  pt: Estado
+  it: Stato
+  pl: Status
+  ro: Stare
+  uk: Статус
+  nl: Status
+lot_collecting:
+  en: Collecting
+  de: In Sammeln
+  es: En recolección
+  fr: En récolte
+  pt: Em colheita
+  it: In raccolta
+  pl: W zbiorze
+  ro: În strânsere
+  uk: У зборі
+  nl: In oogst
+lot_processed:
+  en: Processed
+  de: Verarbeitet
+  es: Procesado
+  fr: Transformé
+  pt: Processado
+  it: Lavorato
+  pl: Przetworzony
+  ro: Prelucrat
+  uk: Перероблений
+  nl: Verwerkt
+lot_shipped:
+  en: Shipped
+  de: Versandt
+  es: Enviado
+  fr: Expédié
+  pt: Expedido
+  it: Spedito
+  pl: Wysłany
+  ro: Expediat
+  uk: Відвантажено
+  nl: Verzonden
+lot_stored:
+  en: Stored
+  de: Eingelagert
+  es: Almacenado
+  fr: Stocké
+  pt: Armazenado
+  it: Stoccato
+  pl: Przechowywany
+  ro: Depozitat
+  uk: Зберігається
+  nl: Opgeslagen
+harvest_deliveries:
+  en: Deliveries
+  de: Lieferungen
+  es: Entregas
+  fr: Livraisons
+  pt: Entregas
+  it: Consegne
+  pl: Dostawy
+  ro: Livrări
+  uk: Поставки
+  nl: Leveringen
+lot_id:
+  en: Lot ID
+  de: Chargen-ID
+  es: ID de lote
+  fr: ID de lot
+  pt: ID do lote
+  it: ID lotto
+  pl: ID partii
+  ro: ID lot
+  uk: ID партії
+  nl: Partij-ID
+delivery_date:
+  en: Delivery date
+  de: Lieferdatum
+  es: Fecha de entrega
+  fr: Date de livraison
+  pt: Data de entrega
+  it: Data di consegna
+  pl: Data dostawy
+  ro: Data livrării
+  uk: Дата поставки
+  nl: Leverdatum
+gross_weight:
+  en: Gross weight (kg)
+  de: Bruttogewicht (kg)
+  es: Peso bruto (kg)
+  fr: Poids brut (kg)
+  pt: Peso bruto (kg)
+  it: Peso lordo (kg)
+  pl: Waga brutto (kg)
+  ro: Greutate brută (kg)
+  uk: Вага брутто (кг)
+  nl: Brutogewicht (kg)
+tare_weight:
+  en: Tare weight (kg)
+  de: Tara (kg)
+  es: Peso de Tara (kg)
+  fr: Tare (kg)
+  pt: Peso de Tara (kg)
+  it: Tara (kg)
+  pl: Tara (kg)
+  ro: Tara (kg)
+  uk: Тара (кг)
+  nl: Tara (kg)
+net_weight:
+  en: Net weight (kg)
+  de: Nettogewicht (kg)
+  es: Peso neto (kg)
+  fr: Poids net (kg)
+  pt: Peso líquido (kg)
+  it: Peso netto (kg)
+  pl: Waga netto (kg)
+  ro: Greutate netă (kg)
+  uk: Вага нетто (кг)
+  nl: Nettogewicht (kg)
+total_weight:
+  en: Total weight (kg)
+  de: Gesamtgewicht (kg)
+  es: Peso total (kg)
+  fr: Poids total (kg)
+  pt: Peso total (kg)
+  it: Peso totale (kg)
+  pl: Waga łączna (kg)
+  ro: Greutate totală (kg)
+  uk: Загальна вага (кг)
+  nl: Totaalgewicht (kg)
+carrier_name:
+  en: Carrier
+  de: Spediteur
+  es: Transportista
+  fr: Transporteur
+  pt: Transportador
+  it: Trasportatore
+  pl: Przewoźnik
+  ro: Transportator
+  uk: Перевізник
+  nl: Vervoerder
+vehicle_id:
+  en: Vehicle ID
+  de: Fahrzeug-ID
+  es: ID de vehículo
+  fr: ID de véhicule
+  pt: ID do veículo
+  it: ID veicolo
+  pl: ID pojazdu
+  ro: ID vehicul
+  uk: ID транспорту
+  nl: Voertuig-ID
+delivery_temperature:
+  en: Temperature at delivery (°C)
+  de: Temperatur bei Anlieferung (°C)
+  es: Temperatura en entrega (°C)
+  fr: Température à la livraison (°C)
+  pt: Temperatura na entrega (°C)
+  it: Temperatura alla consegna (°C)
+  pl: Temperatura przy dostawie (°C)
+  ro: Temperatură la livrare (°C)
+  uk: Температура при доставці (°C)
+  nl: Temperatuur bij levering (°C)
+cold_chain:
+  en: Cold chain
+  de: Kühlkette
+  es: Cadena de frío
+  fr: Chaîne du froid
+  pt: Cadeia fria
+  it: Catena del freddo
+  pl: Łańcuch chłodniczy
+  ro: Lanț rece
+  uk: Холодильний ланцюг
+  nl: Koelketen
+sensor_id:
+  en: Sensor ID
+  de: Sensor-ID
+  es: ID del sensor
+  fr: ID du capteur
+  pt: ID do sensor
+  it: ID sensore
+  pl: ID czujnika
+  ro: ID senzor
+  uk: ID датчика
+  nl: Sensor-ID
+recorded_at:
+  en: Recorded at
+  de: Erfasst am
+  es: Registrado el
+  fr: Enregistré à
+  pt: Registado em
+  it: Registrato il
+  pl: Zarejestrowano
+  ro: Înregistrat la
+  uk: Записано
+  nl: Vastgelegd op
+temperature_field:
+  en: Temperature (°C)
+  de: Temperatur (°C)
+  es: Temperatura (°C)
+  fr: Température (°C)
+  pt: Temperatura (°C)
+  it: Temperatura (°C)
+  pl: Temperatura (°C)
+  ro: Temperatură (°C)
+  uk: Температура (°C)
+  nl: Temperatuur (°C)
+location_field:
+  en: Location
+  de: Ort
+  es: Ubicación
+  fr: Emplacement
+  pt: Localização
+  it: Posizione
+  pl: Lokalizacja
+  ro: Locație
+  uk: Розташування
+  nl: Locatie
+
+# --- G2: specialized crops page
+nav_agriculture:
+  en: Specialized crops
+  de: Spezialkulturen
+  es: Cultivos especializados
+  fr: Cultures spécialisées
+  pt: Culturas especializadas
+  it: Colture specializzate
+  pl: Uprawy specjalistyczne
+  ro: Culturi specializate
+  uk: Спеціальні культури
+  nl: Gespecialiseerde gewassen
+olive_groves:
+  en: Olive groves
+  de: Olivenhaine
+  es: Olivares
+  fr: Oliveraies
+  pt: Olivais
+  it: Oliveti
+  pl: Gaje oliwne
+  ro: Livezi de măslin
+  uk: Оливні сади
+  nl: Olijfboomgaarden
+olive_grove_id:
+  en: Grove ID
+  de: Hain-ID
+  es: ID de olivar
+  fr: ID d'oliveraie
+  pt: ID do olival
+  it: ID oliveto
+  pl: ID gaju
+  ro: ID livadă de măslin
+  uk: ID оливного саду
+  nl: Gaard-ID
+olive_oil_records:
+  en: Olive oil records
+  de: Olivenöl-Einträge
+  es: Registros de aceite de oliva
+  fr: Relevés d'huile d'olive
+  pt: Registos de azeite
+  it: Registri olio d'oliva
+  pl: Rejestry oliwy
+  ro: Înregistrări ulei de măslin
+  uk: Записи оливкової олії
+  nl: Olijfolieregisters
+olive_quantity:
+  en: Quantity (kg)
+  de: Menge (kg)
+  es: Cantidad (kg)
+  fr: Quantité (kg)
+  pt: Quantidade (kg)
+  it: Quantità (kg)
+  pl: Ilość (kg)
+  ro: Cantitate (kg)
+  uk: Кількість (кг)
+  nl: Hoeveelheid (kg)
+olive_yield:
+  en: Oil yield (kg)
+  de: Ölertrag (kg)
+  es: Rendimiento de aceite (kg)
+  fr: Rendement en huile (kg)
+  pt: Rendimento de azeite (kg)
+  it: Resa in olio (kg)
+  pl: Wydajność oliwy (kg)
+  ro: Randament ulei (кг)
+  uk: Вихід олії (кг)
+  nl: Olieopbrengst (kg)
+acidity_pct:
+  en: Acidity (%)
+  de: Säuregehalt (%)
+  es: Acidez (%)
+  fr: Acidité (%)
+  pt: Acidez (%)
+  it: Acidità (%)
+  pl: Kwasowość (%)
+  ro: Aciditate (%)
+  uk: Кислотність (%)
+  nl: Zuurgehalte (%)
+peroxide_value:
+  en: Peroxide value
+  de: Peroxidzahl
+  es: Valor de peróxidos
+  fr: Indice de peroxyde
+  pt: Valor de peróxidos
+  it: Valore perossidico
+  pl: Liczba peroxydowa
+  ro: Valoare peroxidică
+  uk: Пeroxидне число
+  nl: Peroxidewaarde
+k232:
+  en: K232
+  de: K232
+  es: K232
+  fr: K232
+  pt: K232
+  it: K232
+  pl: K232
+  ro: K232
+  uk: K232
+  nl: K232
+k270:
+  en: K270
+  de: K270
+  es: K270
+  fr: K270
+  pt: K270
+  it: K270
+  pl: K270
+  ro: K270
+  uk: K270
+  nl: K270
+notes_field:
+  en: Notes
+  de: Notizen
+  es: Notas
+  fr: Notes
+  pt: Notas
+  it: Note
+  pl: Notatki
+  ro: Note
+  uk: butnotes
+  nl: Notities
+vineyards:
+  en: Vineyards
+  de: Weingärten
+  es: Viñedos
+  fr: Vignobles
+  pt: Vinhedos
+  it: Vigneti
+  pl: Winnice
+  ro: Podgoruri
+  uk: Виноградники
+  nl: Wijngaarden
+vineyard_id:
+  en: Vineyard ID
+  de: Weingarten-ID
+  es: ID de viñedo
+  fr: ID de vignoble
+  pt: ID da vinha
+  it: ID vigneto
+  pl: ID winnicy
+  ro: ID podgorie
+  uk: ID винограднику
+  nl: Wijngaard-ID
+doc_area:
+  en: DOC area
+  de: DOC-Fläche
+  es: Superficie DOC
+  fr: Surface DOC
+  pt: Área DOC
+  it: Superficie DOC
+  pl: Powierzchnia DOC
+  ro: Suprafață DOC
+  uk: Площа DOC
+  nl: DOC-oppervlakte
+vintage:
+  en: Vintage
+  de: Jahrgang
+  es: Añada
+  fr: Millésime
+  pt: Vindima
+  it: Annata
+  pl: Rocznik
+  ro: An de recolte
+  uk: Врожай
+  nl: Jaar
+grape_variety:
+  en: Grape variety
+  de: Rebsorte
+  es: Variedad de uva
+  fr: Cépage
+  pt: Variedade de uva
+  it: Varietà di uva
+  pl: Odmiana winorośli
+  ro: Soi de struguri
+  uk: Сорт винограда
+  nl: Druivenras
+brix:
+  en: Brix
+  de: Brix
+  es: Brix
+  fr: Brix
+  pt: Brix
+  it: Brix
+  pl: Brix
+  ro: Brix
+  uk: Брікс
+  nl: Brix
+ph:
+  en: pH
+  de: pH
+  es: pH
+  fr: pH
+  pt: pH
+  it: pH
+  pl: pH
+  ro: pH
+  uk: pH
+  nl: pH
+acidity:
+  en: Acidity
+  de: Säuregehalt
+  es: Acidez
+  fr: Acidité
+  pt: Acidez
+  it: Acidità
+  pl: Kwasowość
+  ro: Aciditate
+  uk: Кислотність
+  nl: Zuurgehalte
+yield_tons:
+  en: Yield (t)
+  de: Ertrag (t)
+  es: Rendimiento (t)
+  fr: Rendement (t)
+  pt: Rendimento (t)
+  it: Resa (t)
+  pl: Plon (t)
+  ro: Randament (t)
+  uk: Врожай (т)
+  nl: Opbrengst (t)
+quality_grade:
+  en: Quality grade
+  de: Qualitätsstufe
+  es: Nivel de calidad
+  fr: Niveau de qualité
+  pt: Nível de qualidade
+  it: Livello di qualità
+  pl: Klasa jakości
+  ro: Nivel de calitate
+  uk: Якісний клас
+  nl: Kwaliteitsklasse
+grade_reserva:
+  en: Reserva
+  de: Reserva
+  es: Reserva
+  fr: Réserve
+  pt: Reserva
+  it: Riserva
+  pl: Reserva
+  ro: Rezervă
+  uk: Резерва
+  nl: Reserva
+grade_grande_reserva:
+  en: Grande Reserva
+  de: Grande Reserva
+  es: Grande Reserva
+  fr: Grande Réserve
+  pt: Grande Reserva
+  it: Grande Riserva
+  pl: Grande Reserva
+  ro: Grande Rezervă
+  uk: Гранде Резерва
+  nl: Grande Reserva
+grade_garrafeira:
+  en: Garrafeira
+  de: Garrafeira
+  es: Garrafeira
+  fr: Garrafeira
+  pt: Garrafeira
+  it: Garrafeira
+  pl: Garrafeira
+  ro: Garrafeira
+  uk: Гаррафейра
+  nl: Garrafeira
+grade_superior:
+  en: Superior
+  de: Superior
+  es: Superior
+  fr: Supérieur
+  pt: Superior
+  it: Superiore
+  pl: Superior
+  ro: Superior
+  uk: Суперіор
+  nl: Superior
+grade_classic:
+  en: Classic
+  de: Classic
+  es: Clásico
+  fr: Classique
+  pt: Clássico
+  it: Classico
+  pl: Classic
+  ro: Clasic
+  uk: Класик
+  nl: Classic
+grade_late_harvest:
+  en: Late Harvest
+  de: Spätere Lese
+  es: Cosecha tardía
+  fr: Vendange tardive
+  pt: Vindima tardia
+  it: Vendemmia tardiva
+  pl: Późne zbiór
+  ro: Strânsecul târziu
+  uk: Пізній збір
+  nl: Late oogst
+slope_percent:
+  en: Slope (%)
+  de: Neigung (%)
+  es: Pendiente (%)
+  fr: Pente (%)
+  pt: Inclinação (%)
+  it: Pendenza (%)
+  pl: Nachylenie (%)
+  ro: Înclinationare (%)
+  uk: Схил (%)
+  nl: Helling (%)
+altitude_m:
+  en: Altitude (m)
+  de: Höhe (m)
+  es: Altitud (m)
+  fr: Altitude (m)
+  pt: Altitude (m)
+  it: Altitudine (m)
+  pl: Wysokość (m)
+  ro: Altitudine (m)
+  uk: Висота (м)
+  nl: Hoogte (m)
+is_organic:
+  en: Organic
+  de: Bio
+  es: Ecológico
+  fr: Biologique
+  pt: Biológico
+  it: Biologico
+  pl: Ekologiczne
+  ro: Ecologic
+  uk: Екологічний
+  nl: Biologisch
+certification_body:
+  en: Certification body
+  de: Zertifizierungsstelle
+  es: Organismo certificador
+  fr: Organisme certificateur
+  pt: Organismo certificador
+  it: Organismo di certificazione
+  pl: Jednostka certyfikująca
+  ro: Organism de certificare
+  uk: Сертифікуючий орган
+  nl: Certificeringsinstantie
+certification_number:
+  en: Certification number
+  de: Zertifikatsnummer
+  es: Número de certificación
+  fr: Numéro de certification
+  pt: Número de certificação
+  it: Numero di certificazione
+  pl: Numer certyfikatu
+  ro: Număr de certificare
+  uk: Номер сертифіката
+  nl: Certificaatnummer
+planting_year:
+  en: Planting year
+  de: Pflanzjahr
+  es: Año de plantación
+  fr: Année de plantation
+  pt: Ano de plantio
+  it: Anno di impianto
+  pl: Rok sadzenia
+  ro: An de plantare
+  uk: Рік посадки
+  nl: Plantjaar
+spacing_m:
+  en: Spacing (m)
+  de: Pflanzabstand (m)
+  es: Separación (m)
+  fr: Écartement (m)
+  pt: Espaçamento (m)
+  it: Distanza (m)
+  pl: Odstęp (m)
+  ro: Distanță (m)
+  uk: Відстань (м)
+  nl: Plantafstand (m)
+irrigation_type:
+  en: Irrigation type
+  de: Bewässerungsart
+  es: Tipo de riego
+  fr: Type d'irrigation
+  pt: Tipo de rega
+  it: Tipo di irrigazione
+  pl: Rodzaj nawadniania
+  ro: Tip de irigație
+  uk: Тип зрошення
+  nl: Irrigatietype
+kelter_deliveries:
+  en: Kelter deliveries
+  de: Kelterlieferungen
+  es: Entregas a la bodega
+  fr: Livraisons au chai
+  pt: Entregas na adega
+  it: Consegne al cantiere
+  pl: Dostawy do winnicy
+  ro: Livrări la cramă
+  uk: Поставки на виноградний завод
+  nl: Kelterleveringen
+kelter_name:
+  en: Kelter name
+  de: Keltername
+  es: Nombre de la bodega
+  fr: Nom du chai
+  pt: Nome da adega
+  it: Nome del cantiere
+  pl: Nazwa winnicy
+  ro: Numele cramei
+  uk: Назва заводу
+  nl: Kelternaam
+transport_company:
+  en: Transport company
+  de: Transportunternehmen
+  es: Empresa de transporte
+  fr: Transporteur
+  pt: Empresa de transporte
+  it: Trasportatore
+  pl: Firma transportowa
+  ro: Companie de transport
+  uk: Транспортна компанія
+  nl: Transportbedrijf
+
+# --- G2: alias calculators
+tool_fertilizer_amount_legacy:
+  en: Fertilizer amount (legacy route)
+  de: Düngemittelmenge (alte Route)
+  es: Cantidad de fertilizante (ruta antigua)
+  fr: Quantité d'engrais (ancienne route)
+  pt: Quantidade de fertilizante (rota antiga)
+  it: Quantità di fertilizzante (vecchia rotta)
+  pl: Ilość nawozu (stara trasa)
+  ro: Cantitate de îngrășământ (rută veche)
+  uk: Кількість добрива (старий маршрут)
+  nl: Fosfaat hoeveelheid (oude route)
+tool_profitability_specialized:
+  en: Profitability (specialized crops)
+  de: Wirtschaftlichkeit (Spezialkulturen)
+  es: Rentabilidad (cultivos especializados)
+  fr: Rentabilité (cultures spécialisées)
+  pt: Rentabilidade (culturas especializadas)
+  it: Redditività (colture specializzate)
+  pl: Rentowność (uprawy specjalistyczne)
+  ro: Rentabilitate (culturi specializate)
+  uk: Рентабельність (спеціальні культури)
+  nl: Rentabiliteit (gespecialiseerde gewassen)

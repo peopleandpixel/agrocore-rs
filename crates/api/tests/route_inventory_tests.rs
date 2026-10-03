@@ -567,23 +567,24 @@ fn ui_should_call(path: &str) -> bool {
 
 /// Every registered, readable path has a caller in the Admin UI.
 ///
-/// **Currently failing by design — this is the G2 backlog, not a regression.**
+/// This started at 32 uncovered endpoints and reached zero. What it found along
+/// the way is worth keeping in mind when reading it:
 ///
-/// 32 endpoints are registered, reachable and have no UI caller at all:
-/// 12 `calculate/*`, 5 `specialized/*`, 4 `harvest/*`, 3 `water/*`,
-/// 3 `weather/*`, 2 workforce paths and 3 others. The backend was built ahead of
-/// the UI; nothing made that visible until the route list stopped being
-/// hand-written.
+///   * five pages (`/trees`, `/groups`, `/buildings`, `/livestock`,
+///     `/plot/entities`) were routed, had complete CRUD handlers behind them, and
+///     did nothing — three discarded their form input, one showed a success toast
+///     for a write it never performed, and one rendered four rows of invented
+///     data;
+///   * `/workforce/locations` is a POST-only endpoint where the handler takes the
+///     worker id from the authenticated user, so it is presented as a position
+///     report and not as an editable table;
+///   * two calculations are each registered twice, by `calculation.rs` and by
+///     `nutrition.rs` / `specialized.rs`, with near-identical handler bodies. Both
+///     paths are live, so both are offered.
 ///
-/// Marked `#[ignore]` so the suite is green and the failure is attributed to the
-/// task that owns it. The assertion stays in place — removing an ignored test is
-/// the easy way to lose the finding, and `docs/tasks.md` G2 carries the list.
-///
-/// ```bash
-/// cargo test -p agrocore-api --test route_inventory_tests -- --ignored
-/// ```
+/// The assertion is that a readable path with no caller is a defect, whether the
+/// missing caller is a page that does nothing or a page that was never built.
 #[actix_web::test]
-#[ignore = "G2: 32 registered endpoints have no UI caller; see docs/tasks.md"]
 async fn every_ui_facing_route_is_reachable_from_the_admin_ui() {
     let registered = registered_routes().await;
 

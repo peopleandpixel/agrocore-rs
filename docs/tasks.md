@@ -422,75 +422,72 @@ From phase 4, not started so far.
 - [ ] Digital twin: virtual farm model for scenario planning
 - [ ] Blockchain traceability: supply chain transparencyW
 
-## G2 — API endpoints with no UI caller (found by J20, 2026-10-03)
+## G2 — API endpoints with no UI caller (found by J20, completed 2026-10-03)
 
 The route inventory test (`crates/api/tests/route_inventory_tests.rs`) probes the
 running application and compares every registered path against what the Admin UI
-actually calls. What started as 32 uncovered endpoints turned out to be two
-different defects, and the difference matters:
+actually calls. It started at 32 uncovered endpoints and reached zero.
 
-### Done: five pages that were shells
+### Five pages that were shells
 
-`/trees`, `/groups`, `/buildings`, `/livestock` and `/plot/entities` had routes
-in the router and complete handlers in the backend, and the pages themselves did
-nothing. They collected form input and discarded it:
+`/trees`, `/groups`, `/buildings`, `/livestock` and `/plot/entities` were routed,
+had complete CRUD handlers in the backend, and the pages themselves did nothing.
+They collected form input and discarded it:
 
 ```rust
 spawn_local(async move { let _ = (label.get(), count.get()); })
 ```
 
 `buildings.rs` was worse — it showed a success toast for a write it never
-performed. `plot_subentity.rs` was worst: it rendered four rows of invented data
-(a herd called "Herde 1", two goats, four cork oaks) hard-coded in the markup, so
-it looked like a working overview while showing nothing about the tenant.
+performed. `plot_subentity.rs` was worst: it rendered four rows of invented data — a herd
+called "Herde 1", two goats, four cork oaks — hard-coded in the markup, so it
+looked like a working overview while showing nothing about the tenant. (That
+sentence is still in the module's doc comment, describing what it used to do.)
 
-All five now call the API and support list, create, update and delete. The
-livestock page also sends `livestock_type` and `status`, which `CreateAnimalDto`
-requires without a Rust default, so a create was previously going to fail with a
-422 the page could not have surfaced.
+All five now call the API and support list, create, update and delete.
 
-### Remaining: 29 endpoints with no page at all
+The livestock page also sends `livestock_type` and `status`, which
+`CreateAnimalDto` requires without a Rust default — the request would have been
+rejected with a 422 the page could not have surfaced.
 
-These have no UI surface whatsoever — not a broken one, none:
+### 27 endpoints that had no page at all
 
-| Area | Count | Paths |
-|---|---|---|
-| `calculate/*` | 12 | difficulty-surcharge, forage-demand, harvest-estimation, nitrogen-demand, nutrition/balance, nutrition/demand, nutrition/fertilizer-amount, profitability, tree-crown-volume, weather/fetch, weather/providers, workflow/follow-ups |
-| `specialized/*` | 5 | olive-groves, olive-oil-records, vineyards, kelter-deliveries, profitability |
-| `harvest/*` | 4 | seasons, lots, deliveries, cold-chain |
-| `water/*` | 3 | sources, quotas, usage |
-| `weather/*` | 3 | frost-warnings, frost-warnings/active, pest-risks |
-| workforce | 2 | logs, locations |
-| other | 3 | compliance/applicator-licenses, nutrition/fertilizer-amount, calculate groups not covered above |
+Committed as 0.39.0 for the five pages above; 0.40.0 covers the 27 endpoints.
 
-Some of these already have a client function in `api.rs` that nothing calls —
-`calculate_material_request`, `calculate_nutrition_demand`, `calculate_water_rate`
-and `fetch_specialized_sites` among them. That is a separate defect: a working
-API binding with no UI consumer, which the route test cannot see because the path
-literal is present in the source.
+| Page | Endpoints |
+|---|---|
+| `/calculators` | 12 `calculate/*` plus the two duplicate registrations of fertiliser-amount and profitability |
+| `/water` | 3 `water/*` — sources, usage, quotas |
+| `/harvest` | 4 `harvest/*` — seasons, lots, deliveries, cold chain |
+| `/agriculture` | 5 `specialized/*` — olive groves, olive oil records, vineyards, kelter deliveries |
+| `/weather/warnings` | 3 `weather/*` — frost warnings, active frost warnings, pest risks |
+| `/worker/logs`, `/worker/locations` | 2 `workforce/*` |
+| `/compliance/licenses` | 1 `compliance/applicator-licenses` |
 
-- [ ] **G2a — 12 `calculate/*` endpoints have no UI** — agronomic calculators.
-      Three already have client functions; the other nine have neither.
-- [ ] **G2b — 5 `specialized/*` endpoints have no UI** — olive groves, olive oil
-      records, vineyards, kelter deliveries, profitability.
-- [ ] **G2c — 4 `harvest/*` endpoints have no UI** — seasons, lots, deliveries,
-      cold chain.
-- [ ] **G2d — 3 `water/*` endpoints have no UI** — sources, quotas, usage.
-- [ ] **G2e — 3 `weather/*` endpoints have no UI** — frost warnings (list and
-      active), pest risks.
-- [ ] **G2f — workforce logs and locations have no UI** — both exist in the
-      backend; the workers page shows neither.
-- [ ] **G2g — 4 client functions with no consumer** — working API bindings in
-      `api.rs` that no component calls. Invisible to the route test, because the
-      path literal is in the source.
-- [ ] **G2h — 109 i18n keys are missing from `app.yml`** — pages reference
-      `crate::t!(t, "btn_save")` and similar for keys that do not exist, so the
-      key name is rendered instead of the label. Found while adding the G2 pages;
-      pre-existing and unrelated to them.
+Three findings worth keeping:
 
-- [x] **J20 — API contract test could not fail** — the route list was
-      hand-written, so renaming or removing a handler left the test green. It is
-      now read from the running application by probing, and the UI path list is
-      read from the UI sources. A negative check (renaming `/livestock` to
-      `/livestock-renamed`) was run to confirm the test actually fails when a
-      route disappears.
+- `/workforce/locations` is not a CRUD collection. `POST` takes the worker id from
+  the authenticated user, not from the body, so a client cannot report a position
+  on someone else's behalf. The page offers the current positions and a way to
+  post your own — no edit-and-delete table, which would imply a capability the
+  endpoint does not have.
+- Two calculations are registered twice, by `calculation.rs` and by
+  `nutrition.rs` / `specialized.rs`, with near-identical handler bodies. Both paths
+  are live and both are now reachable.
+- The enum wire values differ per enum and are not guessable: `CropType` and
+  `RiskLevel` carry lowercase serde renames, `WaterSourceType` and `IrrigationMethod`
+  carry `strum` snake_case but no serde rename and so serialise as the variant
+  name, and `LotStatus` is lower-case. Each select was checked against its enum.
+
+### Still open
+
+- [ ] **G2i — a page can be unreachable without any test noticing** — a route
+      that no page renders, and a page that is neither routed nor embedded, both
+      go undetected. A test was written for this and did not hold up: it passed
+      with the `/water` route and its import deleted. Two causes were found and
+      fixed along the way (a `<`-scan that swept up 161 names, and a component
+      counting as embedded because its own `pub fn` line matched), and one was
+      not. It was removed rather than shipped, because a test that cannot fail is
+      worse than no test. The route inventory tests that remain do hold: each was
+      checked against a deliberately broken input.
+

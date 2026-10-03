@@ -2865,3 +2865,1407 @@ pub async fn add_animal_grazing(
     )
     .await
 }
+
+// --- Workforce: work logs and worker locations ---
+//
+// `GET /workforce/logs` and `GET /workforce/locations` had no UI caller. The
+// locations endpoint is not a CRUD collection: `POST /locations` is what a
+// worker's own device calls to report where it is, and the handler fills in the
+// worker id from the authenticated user rather than accepting one — a client
+// cannot report a location on someone else's behalf.
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct WorkLogDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub worker_id: uuid::Uuid,
+    pub date: String,
+    pub hours_worked: f64,
+    pub overtime_hours: f64,
+    pub rest_period_hours: f64,
+    pub task_description: String,
+    pub site_id: Option<uuid::Uuid>,
+    pub is_night_shift: bool,
+    pub breaks_taken: i32,
+    pub created_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateWorkLogRequest {
+    pub worker_id: uuid::Uuid,
+    pub date: String,
+    pub hours_worked: f64,
+    pub overtime_hours: f64,
+    pub rest_period_hours: f64,
+    pub task_description: String,
+    pub site_id: Option<uuid::Uuid>,
+    pub is_night_shift: bool,
+    pub breaks_taken: i32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateWorkLogRequest {
+    pub date: Option<String>,
+    pub hours_worked: Option<f64>,
+    pub overtime_hours: Option<f64>,
+    pub rest_period_hours: Option<f64>,
+    pub task_description: Option<String>,
+    pub site_id: Option<uuid::Uuid>,
+    pub is_night_shift: Option<bool>,
+    pub breaks_taken: Option<i32>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct WorkerLocationDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub worker_id: uuid::Uuid,
+    pub lat: f64,
+    pub lng: f64,
+    pub timestamp: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct ReportLocationRequest {
+    pub lat: f64,
+    pub lng: f64,
+    pub current_task_id: Option<uuid::Uuid>,
+}
+
+pub async fn fetch_work_logs() -> Result<PaginatedResponse<WorkLogDto>, String> {
+    get_json("/api/v1/workforce/logs", true).await
+}
+
+pub async fn create_work_log(req: CreateWorkLogRequest) -> Result<WorkLogDto, String> {
+    post_json("/api/v1/workforce/logs", &req, true).await
+}
+
+pub async fn update_work_log(
+    id: uuid::Uuid,
+    req: UpdateWorkLogRequest,
+) -> Result<WorkLogDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!("/api/v1/workforce/logs/{}", id)));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<WorkLogDto>().await.map_err(|e| e.to_string())
+}
+
+pub async fn delete_work_log(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(&format!("/api/v1/workforce/logs/{}", id), true).await
+}
+
+/// The latest reported position of every worker in the tenant.
+pub async fn fetch_worker_locations() -> Result<Vec<WorkerLocationDto>, String> {
+    get_json("/api/v1/workforce/locations", true).await
+}
+
+/// Report the caller's own position.
+///
+/// The handler takes the worker id from the authenticated user, not from the
+/// body, so there is no `worker_id` field here to get wrong.
+pub async fn report_own_location(req: ReportLocationRequest) -> Result<WorkerLocationDto, String> {
+    post_json("/api/v1/workforce/locations", &req, true).await
+}
+
+// --- Weather: frost warnings and pest risks ---
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct FrostWarningDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub station_id: uuid::Uuid,
+    pub threshold_temp_c: f64,
+    pub is_active: bool,
+    pub notify_email: bool,
+    pub notify_sms: bool,
+    pub last_triggered_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateFrostWarningRequest {
+    pub station_id: uuid::Uuid,
+    pub threshold_temp_c: f64,
+    pub is_active: bool,
+    pub notify_email: bool,
+    pub notify_sms: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateFrostWarningRequest {
+    pub threshold_temp_c: Option<f64>,
+    pub is_active: Option<bool>,
+    pub notify_email: Option<bool>,
+    pub notify_sms: Option<bool>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct PestRiskDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub site_id: uuid::Uuid,
+    pub assessment_date: String,
+    pub risk_level: String,
+    pub pest_type: String,
+    pub confidence: f64,
+    pub recommended_action: String,
+    pub model_version: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreatePestRiskRequest {
+    pub site_id: uuid::Uuid,
+    pub assessment_date: String,
+    pub risk_level: String,
+    pub pest_type: String,
+    pub confidence: f64,
+    pub recommended_action: String,
+    pub model_version: String,
+}
+
+pub async fn fetch_frost_warnings() -> Result<PaginatedResponse<FrostWarningDto>, String> {
+    get_json("/api/v1/weather/frost-warnings", true).await
+}
+
+/// Warnings currently in force, across all stations.
+pub async fn fetch_active_frost_warnings() -> Result<Vec<FrostWarningDto>, String> {
+    get_json("/api/v1/weather/frost-warnings/active", true).await
+}
+
+pub async fn create_frost_warning(
+    req: CreateFrostWarningRequest,
+) -> Result<FrostWarningDto, String> {
+    post_json("/api/v1/weather/frost-warnings", &req, true).await
+}
+
+pub async fn update_frost_warning(
+    id: uuid::Uuid,
+    req: UpdateFrostWarningRequest,
+) -> Result<FrostWarningDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!("/api/v1/weather/frost-warnings/{}", id)));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<FrostWarningDto>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+pub async fn delete_frost_warning(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(&format!("/api/v1/weather/frost-warnings/{}", id), true).await
+}
+
+pub async fn fetch_pest_risks() -> Result<PaginatedResponse<PestRiskDto>, String> {
+    get_json("/api/v1/weather/pest-risks", true).await
+}
+
+pub async fn create_pest_risk(req: CreatePestRiskRequest) -> Result<PestRiskDto, String> {
+    post_json("/api/v1/weather/pest-risks", &req, true).await
+}
+
+// --- Compliance: applicator licenses ---
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct ApplicatorLicenseDto {
+    pub id: uuid::Uuid,
+    pub user_id: uuid::Uuid,
+    pub license_type: String,
+    pub license_number: String,
+    pub issued_by: String,
+    pub valid_from: String,
+    pub valid_until: String,
+    pub is_active: bool,
+    pub created_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateApplicatorLicenseRequest {
+    pub user_id: uuid::Uuid,
+    pub license_type: String,
+    pub license_number: String,
+    pub issued_by: String,
+    pub valid_from: String,
+    pub valid_until: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateApplicatorLicenseRequest {
+    pub license_type: Option<String>,
+    pub license_number: Option<String>,
+    pub issued_by: Option<String>,
+    pub valid_from: Option<String>,
+    pub valid_until: Option<String>,
+    pub is_active: Option<bool>,
+}
+
+pub async fn fetch_applicator_licenses() -> Result<PaginatedResponse<ApplicatorLicenseDto>, String>
+{
+    get_json("/api/v1/compliance/applicator-licenses", true).await
+}
+
+pub async fn create_applicator_license(
+    req: CreateApplicatorLicenseRequest,
+) -> Result<ApplicatorLicenseDto, String> {
+    post_json("/api/v1/compliance/applicator-licenses", &req, true).await
+}
+
+pub async fn update_applicator_license(
+    id: uuid::Uuid,
+    req: UpdateApplicatorLicenseRequest,
+) -> Result<ApplicatorLicenseDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!(
+        "/api/v1/compliance/applicator-licenses/{}",
+        id
+    )));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<ApplicatorLicenseDto>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+pub async fn delete_applicator_license(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(
+        &format!("/api/v1/compliance/applicator-licenses/{}", id),
+        true,
+    )
+    .await
+}
+// --- Agronomic calculators (`/calculate/*`) ---
+//
+// Twelve POST endpoints with complete request and response types in the API and
+// no UI at all. Each takes a small set of numbers and returns a result, so they
+// share one page with a tool picker rather than twelve pages.
+//
+// The bodies are `serde_json::Value` rather than typed structs: the shapes differ
+// per tool, and a typed struct per tool would be thirteen more types to keep in
+// step with the API. The field names are the ones
+// `crates/api/src/dto/calculations.rs` deserialises, and the enum values are the
+// wire renames from the domain enums — `CropType::Grape` serialises as "grape",
+// not "Grape", which is the kind of detail that otherwise costs an afternoon.
+
+async fn post_calc(path: &str, body: serde_json::Value) -> Result<serde_json::Value, String> {
+    post_json(path, &body, true).await
+}
+
+pub async fn calc_nutrition_demand(
+    crop_type: &str,
+    expected_yield: f64,
+    area_ha: f64,
+    soil_nitrogen: Option<f64>,
+    soil_phosphorus: Option<f64>,
+    soil_potassium: Option<f64>,
+    organic_matter_percent: Option<f64>,
+) -> Result<serde_json::Value, String> {
+    post_calc(
+        "/api/v1/calculate/nutrition/demand",
+        serde_json::json!({
+            "crop_type": crop_type,
+            "expected_yield": expected_yield,
+            "area_ha": area_ha,
+            "soil_nitrogen": soil_nitrogen,
+            "soil_phosphorus": soil_phosphorus,
+            "soil_potassium": soil_potassium,
+            "organic_matter_percent": organic_matter_percent,
+        }),
+    )
+    .await
+}
+
+pub async fn calc_fertilizer_amount(
+    demand: serde_json::Value,
+    fertilizer_types: Vec<serde_json::Value>,
+    area_ha: f64,
+) -> Result<serde_json::Value, String> {
+    post_calc(
+        "/api/v1/calculate/nutrition/fertilizer-amount",
+        serde_json::json!({
+            "nutrition_demand": demand,
+            "fertilizer_types": fertilizer_types,
+            "area_ha": area_ha,
+        }),
+    )
+    .await
+}
+
+pub async fn calc_nutrition_balance(
+    demand: serde_json::Value,
+    applied_amount_kg: f64,
+    fertilizer: serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    post_calc(
+        "/api/v1/calculate/nutrition/balance",
+        serde_json::json!({
+            "demand": demand,
+            "applied_amount_kg": applied_amount_kg,
+            "fertilizer": fertilizer,
+        }),
+    )
+    .await
+}
+
+pub async fn calc_water_rate(
+    speed_kmh: f64,
+    nozzle_flow_lmin: f64,
+    lane_width: f64,
+    number_of_nozzles: u32,
+) -> Result<serde_json::Value, String> {
+    post_calc(
+        "/api/v1/calculate/water-rate",
+        serde_json::json!({
+            "speed_kmh": speed_kmh,
+            "nozzle_flow_lmin": nozzle_flow_lmin,
+            "lane_width": lane_width,
+            "number_of_nozzles": number_of_nozzles,
+        }),
+    )
+    .await
+}
+
+pub async fn calc_material(
+    method: &str,
+    site_id: uuid::Uuid,
+    dose_per_ha: f64,
+    application_date: Option<String>,
+) -> Result<serde_json::Value, String> {
+    post_calc(
+        "/api/v1/calculate/material",
+        serde_json::json!({
+            "method": method,
+            "site_id": site_id,
+            "dose_per_ha": dose_per_ha,
+            "application_date": application_date,
+        }),
+    )
+    .await
+}
+
+pub async fn calc_tree_crown_volume(
+    crown_diameter: f64,
+    tree_height: f64,
+    trees_per_ha: u32,
+) -> Result<serde_json::Value, String> {
+    post_calc(
+        "/api/v1/calculate/tree-crown-volume",
+        serde_json::json!({
+            "crown_diameter": crown_diameter,
+            "tree_height": tree_height,
+            "trees_per_ha": trees_per_ha,
+        }),
+    )
+    .await
+}
+
+pub async fn calc_forage_demand(
+    body_weight_kg: f64,
+    demand_percent: f64,
+    animal_count: u32,
+) -> Result<serde_json::Value, String> {
+    post_calc(
+        "/api/v1/calculate/forage-demand",
+        serde_json::json!({
+            "body_weight_kg": body_weight_kg,
+            "demand_percent": demand_percent,
+            "animal_count": animal_count,
+        }),
+    )
+    .await
+}
+
+pub async fn calc_nitrogen_demand(
+    area_ha: f64,
+    demand_per_ha: f64,
+) -> Result<serde_json::Value, String> {
+    post_calc(
+        "/api/v1/calculate/nitrogen-demand",
+        serde_json::json!({ "area_ha": area_ha, "demand_per_ha": demand_per_ha }),
+    )
+    .await
+}
+
+pub async fn calc_difficulty_surcharge(
+    base_rate: f64,
+    is_steep: bool,
+    is_heavy_soil: bool,
+    is_narrow: bool,
+) -> Result<serde_json::Value, String> {
+    post_calc(
+        "/api/v1/calculate/difficulty-surcharge",
+        serde_json::json!({
+            "base_rate": base_rate,
+            "is_steep": is_steep,
+            "is_heavy_soil": is_heavy_soil,
+            "is_narrow": is_narrow,
+        }),
+    )
+    .await
+}
+
+pub async fn calc_profitability(
+    yield_amount: f64,
+    price_per_unit: f64,
+    material_costs: f64,
+    labor_costs: f64,
+    machinery_costs: f64,
+    area_ha: f64,
+) -> Result<serde_json::Value, String> {
+    post_calc(
+        "/api/v1/calculate/profitability",
+        serde_json::json!({
+            "yield_amount": yield_amount,
+            "price_per_unit": price_per_unit,
+            "material_costs": material_costs,
+            "labor_costs": labor_costs,
+            "machinery_costs": machinery_costs,
+            "area_ha": area_ha,
+        }),
+    )
+    .await
+}
+
+pub async fn calc_harvest_estimation(
+    current_bbch: u32,
+    target_bbch: u32,
+    avg_temp: f64,
+    base_temp: f64,
+) -> Result<serde_json::Value, String> {
+    post_calc(
+        "/api/v1/calculate/harvest-estimation",
+        serde_json::json!({
+            "current_bbch": current_bbch,
+            "target_bbch": target_bbch,
+            "avg_temp": avg_temp,
+            "base_temp": base_temp,
+        }),
+    )
+    .await
+}
+
+pub async fn calc_workflow_follow_up(
+    order_id: uuid::Uuid,
+    next_status: &str,
+) -> Result<serde_json::Value, String> {
+    post_calc(
+        "/api/v1/calculate/workflow/follow-ups",
+        serde_json::json!({ "order_id": order_id, "next_status": next_status }),
+    )
+    .await
+}
+
+pub async fn calc_weather_fetch(
+    latitude: f64,
+    longitude: f64,
+    provider: Option<String>,
+    api_key: Option<String>,
+) -> Result<serde_json::Value, String> {
+    post_calc(
+        "/api/v1/calculate/weather/fetch",
+        serde_json::json!({
+            "latitude": latitude,
+            "longitude": longitude,
+            "provider": provider,
+            "api_key": api_key,
+        }),
+    )
+    .await
+}
+
+pub async fn calc_weather_providers() -> Result<serde_json::Value, String> {
+    get_json("/api/v1/calculate/weather/providers", true).await
+}
+// --- Water: sources, usage, quotas ---
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct WaterSourceDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub site_id: uuid::Uuid,
+    pub name: String,
+    pub source_type: String,
+    pub capacity_m3: Option<f64>,
+    pub current_usage_m3: f64,
+    pub is_active: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateWaterSourceRequest {
+    pub site_id: uuid::Uuid,
+    pub name: String,
+    pub source_type: String,
+    pub capacity_m3: Option<f64>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateWaterSourceRequest {
+    pub name: Option<String>,
+    pub source_type: Option<String>,
+    pub capacity_m3: Option<f64>,
+    pub is_active: Option<bool>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct WaterUsageDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub site_id: uuid::Uuid,
+    pub source_id: uuid::Uuid,
+    pub usage_date: String,
+    pub volume_m3: f64,
+    pub irrigation_method: String,
+    pub efficiency_pct: Option<f64>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateWaterUsageRequest {
+    pub site_id: uuid::Uuid,
+    pub source_id: uuid::Uuid,
+    pub usage_date: String,
+    pub volume_m3: f64,
+    pub irrigation_method: String,
+    pub efficiency_pct: Option<f64>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateWaterUsageRequest {
+    pub site_id: Option<uuid::Uuid>,
+    pub source_id: Option<uuid::Uuid>,
+    pub usage_date: Option<String>,
+    pub volume_m3: Option<f64>,
+    pub irrigation_method: Option<String>,
+    pub efficiency_pct: Option<f64>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct WaterQuotaDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub source_id: uuid::Uuid,
+    pub site_id: uuid::Uuid,
+    pub year: i32,
+    pub allocated_m3: f64,
+    pub used_m3: f64,
+    pub remaining_m3: f64,
+    pub comunidad_id: Option<uuid::Uuid>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateWaterQuotaRequest {
+    pub source_id: uuid::Uuid,
+    pub site_id: uuid::Uuid,
+    pub year: i32,
+    pub allocated_m3: f64,
+    pub comunidad_id: Option<uuid::Uuid>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateWaterQuotaRequest {
+    pub allocated_m3: Option<f64>,
+    pub used_m3: Option<f64>,
+    pub comunidad_id: Option<uuid::Uuid>,
+}
+
+pub async fn fetch_water_sources() -> Result<PaginatedInventoryResponse<WaterSourceDto>, String> {
+    get_json("/api/v1/water/sources", true).await
+}
+
+pub async fn create_water_source(req: CreateWaterSourceRequest) -> Result<WaterSourceDto, String> {
+    post_json("/api/v1/water/sources", &req, true).await
+}
+
+pub async fn update_water_source(
+    id: uuid::Uuid,
+    req: UpdateWaterSourceRequest,
+) -> Result<WaterSourceDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!("/api/v1/water/sources/{}", id)));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<WaterSourceDto>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+pub async fn delete_water_source(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(&format!("/api/v1/water/sources/{}", id), true).await
+}
+
+pub async fn fetch_water_usage() -> Result<PaginatedInventoryResponse<WaterUsageDto>, String> {
+    get_json("/api/v1/water/usage", true).await
+}
+
+pub async fn create_water_usage(req: CreateWaterUsageRequest) -> Result<WaterUsageDto, String> {
+    post_json("/api/v1/water/usage", &req, true).await
+}
+
+pub async fn update_water_usage(
+    id: uuid::Uuid,
+    req: UpdateWaterUsageRequest,
+) -> Result<WaterUsageDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!("/api/v1/water/usage/{}", id)));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<WaterUsageDto>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+pub async fn delete_water_usage(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(&format!("/api/v1/water/usage/{}", id), true).await
+}
+
+pub async fn fetch_water_quotas() -> Result<PaginatedInventoryResponse<WaterQuotaDto>, String> {
+    get_json("/api/v1/water/quotas", true).await
+}
+
+pub async fn create_water_quota(req: CreateWaterQuotaRequest) -> Result<WaterQuotaDto, String> {
+    post_json("/api/v1/water/quotas", &req, true).await
+}
+
+pub async fn update_water_quota(
+    id: uuid::Uuid,
+    req: UpdateWaterQuotaRequest,
+) -> Result<WaterQuotaDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!("/api/v1/water/quotas/{}", id)));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<WaterQuotaDto>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+pub async fn delete_water_quota(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(&format!("/api/v1/water/quotas/{}", id), true).await
+}
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct HarvestSeasonDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub year: i32,
+    pub label: String,
+    pub start_date: String,
+    pub end_date: Option<String>,
+    pub is_active: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateHarvestSeasonRequest {
+    pub year: i32,
+    pub label: String,
+    pub start_date: String,
+    pub end_date: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateHarvestSeasonRequest {
+    pub label: Option<String>,
+    pub start_date: Option<String>,
+    pub end_date: Option<String>,
+    pub is_active: Option<bool>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct HarvestLotDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub season_id: uuid::Uuid,
+    pub lot_number: String,
+    pub crop_type: String,
+    pub variety: Option<String>,
+    pub quality_target: Option<String>,
+    pub total_weight_kg: f64,
+    pub status: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateHarvestLotRequest {
+    pub season_id: uuid::Uuid,
+    pub lot_number: String,
+    pub site_ids: Vec<uuid::Uuid>,
+    pub crop_type: String,
+    pub variety: Option<String>,
+    pub quality_target: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateHarvestLotRequest {
+    pub lot_number: Option<String>,
+    pub site_ids: Option<Vec<uuid::Uuid>>,
+    pub crop_type: Option<String>,
+    pub variety: Option<String>,
+    pub quality_target: Option<String>,
+    pub total_weight_kg: Option<f64>,
+    pub status: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct HarvestDeliveryDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub lot_id: uuid::Uuid,
+    pub delivery_date: String,
+    pub gross_weight_kg: f64,
+    pub net_weight_kg: f64,
+    pub tare_weight_kg: f64,
+    pub carrier_name: Option<String>,
+    pub vehicle_id: Option<String>,
+    pub quality_notes: Option<String>,
+    pub temperature_at_delivery: Option<f64>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateHarvestDeliveryRequest {
+    pub lot_id: uuid::Uuid,
+    pub delivery_date: String,
+    pub gross_weight_kg: f64,
+    pub tare_weight_kg: f64,
+    pub carrier_name: Option<String>,
+    pub vehicle_id: Option<String>,
+    pub quality_notes: Option<String>,
+    pub temperature_at_delivery: Option<f64>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateHarvestDeliveryRequest {
+    pub delivery_date: Option<String>,
+    pub gross_weight_kg: Option<f64>,
+    pub tare_weight_kg: Option<f64>,
+    pub carrier_name: Option<String>,
+    pub vehicle_id: Option<String>,
+    pub quality_notes: Option<String>,
+    pub temperature_at_delivery: Option<f64>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct ColdChainLogDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub lot_id: uuid::Uuid,
+    pub sensor_id: String,
+    pub recorded_at: String,
+    pub temperature_c: f64,
+    pub humidity_pct: Option<f64>,
+    pub location: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateColdChainLogRequest {
+    pub lot_id: uuid::Uuid,
+    pub sensor_id: String,
+    pub recorded_at: String,
+    pub temperature_c: f64,
+    pub humidity_pct: Option<f64>,
+    pub location: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateColdChainLogRequest {
+    pub lot_id: Option<uuid::Uuid>,
+    pub sensor_id: Option<String>,
+    pub recorded_at: Option<String>,
+    pub temperature_c: Option<f64>,
+    pub humidity_pct: Option<f64>,
+    pub location: Option<String>,
+}
+
+pub async fn fetch_harvest_seasons() -> Result<PaginatedInventoryResponse<HarvestSeasonDto>, String>
+{
+    get_json("/api/v1/harvest/seasons", true).await
+}
+
+pub async fn create_harvest_season(
+    req: CreateHarvestSeasonRequest,
+) -> Result<HarvestSeasonDto, String> {
+    post_json("/api/v1/harvest/seasons", &req, true).await
+}
+
+pub async fn update_harvest_season(
+    id: uuid::Uuid,
+    req: UpdateHarvestSeasonRequest,
+) -> Result<HarvestSeasonDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!("/api/v1/harvest/seasons/{}", id)));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<HarvestSeasonDto>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+pub async fn delete_harvest_season(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(&format!("/api/v1/harvest/seasons/{}", id), true).await
+}
+
+pub async fn fetch_harvest_lots() -> Result<PaginatedInventoryResponse<HarvestLotDto>, String> {
+    get_json("/api/v1/harvest/lots", true).await
+}
+
+pub async fn create_harvest_lot(req: CreateHarvestLotRequest) -> Result<HarvestLotDto, String> {
+    post_json("/api/v1/harvest/lots", &req, true).await
+}
+
+pub async fn update_harvest_lot(
+    id: uuid::Uuid,
+    req: UpdateHarvestLotRequest,
+) -> Result<HarvestLotDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!("/api/v1/harvest/lots/{}", id)));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<HarvestLotDto>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+pub async fn delete_harvest_lot(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(&format!("/api/v1/harvest/lots/{}", id), true).await
+}
+
+pub async fn fetch_harvest_deliveries()
+-> Result<PaginatedInventoryResponse<HarvestDeliveryDto>, String> {
+    get_json("/api/v1/harvest/deliveries", true).await
+}
+
+pub async fn create_harvest_delivery(
+    req: CreateHarvestDeliveryRequest,
+) -> Result<HarvestDeliveryDto, String> {
+    post_json("/api/v1/harvest/deliveries", &req, true).await
+}
+
+pub async fn update_harvest_delivery(
+    id: uuid::Uuid,
+    req: UpdateHarvestDeliveryRequest,
+) -> Result<HarvestDeliveryDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!("/api/v1/harvest/deliveries/{}", id)));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<HarvestDeliveryDto>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+pub async fn delete_harvest_delivery(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(&format!("/api/v1/harvest/deliveries/{}", id), true).await
+}
+
+pub async fn fetch_cold_chain_logs() -> Result<PaginatedInventoryResponse<ColdChainLogDto>, String>
+{
+    get_json("/api/v1/harvest/cold-chain", true).await
+}
+
+pub async fn create_cold_chain_log(
+    req: CreateColdChainLogRequest,
+) -> Result<ColdChainLogDto, String> {
+    post_json("/api/v1/harvest/cold-chain", &req, true).await
+}
+
+pub async fn update_cold_chain_log(
+    id: uuid::Uuid,
+    req: UpdateColdChainLogRequest,
+) -> Result<ColdChainLogDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!("/api/v1/harvest/cold-chain/{}", id)));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<ColdChainLogDto>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+pub async fn delete_cold_chain_log(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(&format!("/api/v1/harvest/cold-chain/{}", id), true).await
+}
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct OliveGroveDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub site_id: uuid::Uuid,
+    pub label: String,
+    pub variety: String,
+    pub planting_year: Option<i32>,
+    pub area_ha: f64,
+    pub tree_count: Option<i32>,
+    pub spacing_m: Option<f64>,
+    pub irrigation_type: Option<String>,
+    pub is_organic: bool,
+    pub certification_body: Option<String>,
+    pub certification_number: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateOliveGroveRequest {
+    pub site_id: uuid::Uuid,
+    pub label: String,
+    pub variety: String,
+    pub planting_year: Option<i32>,
+    pub area_ha: f64,
+    pub tree_count: Option<i32>,
+    pub spacing_m: Option<f64>,
+    pub irrigation_type: Option<String>,
+    pub is_organic: Option<bool>,
+    pub certification_body: Option<String>,
+    pub certification_number: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateOliveGroveRequest {
+    pub label: Option<String>,
+    pub variety: Option<String>,
+    pub planting_year: Option<i32>,
+    pub area_ha: Option<f64>,
+    pub tree_count: Option<i32>,
+    pub spacing_m: Option<f64>,
+    pub irrigation_type: Option<String>,
+    pub is_organic: Option<bool>,
+    pub certification_body: Option<String>,
+    pub certification_number: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct OliveOilRecordDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub olive_grove_id: uuid::Uuid,
+    pub harvest_date: String,
+    pub quantity_kg: f64,
+    pub oil_yield_kg: f64,
+    pub oil_yield_percent: f64,
+    pub acidity_percent: Option<f64>,
+    pub peroxide_value: Option<f64>,
+    pub k232: Option<f64>,
+    pub k270: Option<f64>,
+    pub quality_grade: Option<String>,
+    pub notes: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateOliveOilRecordRequest {
+    pub olive_grove_id: uuid::Uuid,
+    pub harvest_date: String,
+    pub quantity_kg: f64,
+    pub oil_yield_kg: f64,
+    pub oil_yield_percent: f64,
+    pub acidity_percent: Option<f64>,
+    pub peroxide_value: Option<f64>,
+    pub k232: Option<f64>,
+    pub k270: Option<f64>,
+    pub quality_grade: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateOliveOilRecordRequest {
+    pub olive_grove_id: Option<uuid::Uuid>,
+    pub harvest_date: Option<String>,
+    pub quantity_kg: Option<f64>,
+    pub oil_yield_kg: Option<f64>,
+    pub oil_yield_percent: Option<f64>,
+    pub acidity_percent: Option<f64>,
+    pub peroxide_value: Option<f64>,
+    pub k232: Option<f64>,
+    pub k270: Option<f64>,
+    pub quality_grade: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct VineyardDto {
+    pub id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
+    pub site_id: uuid::Uuid,
+    pub doc_area: Option<String>,
+    pub vintage: Option<i32>,
+    pub grape_variety: Option<String>,
+    pub brix_at_harvest: Option<f64>,
+    pub ph_at_harvest: Option<f64>,
+    pub acidity: Option<f64>,
+    pub yield_tons: Option<f64>,
+    pub quality_grade: Option<String>,
+    pub slope_percent: Option<f64>,
+    pub altitude_m: Option<f64>,
+    pub is_organic: bool,
+    pub certification_body: Option<String>,
+    pub certification_number: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateVineyardRequest {
+    pub site_id: uuid::Uuid,
+    pub doc_area: Option<String>,
+    pub vintage: Option<i32>,
+    pub grape_variety: Option<String>,
+    pub brix_at_harvest: Option<f64>,
+    pub ph_at_harvest: Option<f64>,
+    pub acidity: Option<f64>,
+    pub yield_tons: Option<f64>,
+    pub quality_grade: Option<String>,
+    pub slope_percent: Option<f64>,
+    pub altitude_m: Option<f64>,
+    pub is_organic: bool,
+    pub certification_body: Option<String>,
+    pub certification_number: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateVineyardRequest {
+    pub doc_area: Option<String>,
+    pub vintage: Option<i32>,
+    pub grape_variety: Option<String>,
+    pub brix_at_harvest: Option<f64>,
+    pub ph_at_harvest: Option<f64>,
+    pub acidity: Option<f64>,
+    pub yield_tons: Option<f64>,
+    pub quality_grade: Option<String>,
+    pub slope_percent: Option<f64>,
+    pub altitude_m: Option<f64>,
+    pub is_organic: Option<bool>,
+    pub certification_body: Option<String>,
+    pub certification_number: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct KelterDeliveryDto {
+    pub id: uuid::Uuid,
+    pub vineyard_id: uuid::Uuid,
+    pub delivery_date: String,
+    pub gross_weight_kg: f64,
+    pub net_weight_kg: f64,
+    pub lot_number: String,
+    pub kelter_name: String,
+    pub transport_company: Option<String>,
+    pub temperature_c: Option<f64>,
+    pub notes: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateKelterDeliveryRequest {
+    pub vineyard_id: uuid::Uuid,
+    pub delivery_date: String,
+    pub gross_weight_kg: f64,
+    pub net_weight_kg: f64,
+    pub lot_number: String,
+    pub kelter_name: String,
+    pub transport_company: Option<String>,
+    pub temperature_c: Option<f64>,
+    pub notes: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateKelterDeliveryRequest {
+    pub vineyard_id: Option<uuid::Uuid>,
+    pub delivery_date: Option<String>,
+    pub gross_weight_kg: Option<f64>,
+    pub net_weight_kg: Option<f64>,
+    pub lot_number: Option<String>,
+    pub kelter_name: Option<String>,
+    pub transport_company: Option<String>,
+    pub temperature_c: Option<f64>,
+    pub notes: Option<String>,
+}
+
+pub async fn fetch_olive_groves() -> Result<PaginatedInventoryResponse<OliveGroveDto>, String> {
+    get_json("/api/v1/specialized/olive-groves", true).await
+}
+
+pub async fn create_olive_grove(req: CreateOliveGroveRequest) -> Result<OliveGroveDto, String> {
+    post_json("/api/v1/specialized/olive-groves", &req, true).await
+}
+
+pub async fn update_olive_grove(
+    id: uuid::Uuid,
+    req: UpdateOliveGroveRequest,
+) -> Result<OliveGroveDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!(
+        "/api/v1/specialized/olive-groves/{}",
+        id
+    )));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<OliveGroveDto>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+pub async fn delete_olive_grove(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(&format!("/api/v1/specialized/olive-groves/{}", id), true).await
+}
+
+pub async fn fetch_olive_oil_records()
+-> Result<PaginatedInventoryResponse<OliveOilRecordDto>, String> {
+    get_json("/api/v1/specialized/olive-oil-records", true).await
+}
+
+pub async fn create_olive_oil_record(
+    req: CreateOliveOilRecordRequest,
+) -> Result<OliveOilRecordDto, String> {
+    post_json("/api/v1/specialized/olive-oil-records", &req, true).await
+}
+
+pub async fn update_olive_oil_record(
+    id: uuid::Uuid,
+    req: UpdateOliveOilRecordRequest,
+) -> Result<OliveOilRecordDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!(
+        "/api/v1/specialized/olive-oil-records/{}",
+        id
+    )));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<OliveOilRecordDto>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+pub async fn delete_olive_oil_record(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(
+        &format!("/api/v1/specialized/olive-oil-records/{}", id),
+        true,
+    )
+    .await
+}
+
+pub async fn fetch_vineyards() -> Result<PaginatedInventoryResponse<VineyardDto>, String> {
+    get_json("/api/v1/specialized/vineyards", true).await
+}
+
+pub async fn create_vineyard(req: CreateVineyardRequest) -> Result<VineyardDto, String> {
+    post_json("/api/v1/specialized/vineyards", &req, true).await
+}
+
+pub async fn update_vineyard(
+    id: uuid::Uuid,
+    req: UpdateVineyardRequest,
+) -> Result<VineyardDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!("/api/v1/specialized/vineyards/{}", id)));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<VineyardDto>().await.map_err(|e| e.to_string())
+}
+
+pub async fn delete_vineyard(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(&format!("/api/v1/specialized/vineyards/{}", id), true).await
+}
+
+pub async fn fetch_kelter_deliveries()
+-> Result<PaginatedInventoryResponse<KelterDeliveryDto>, String> {
+    get_json("/api/v1/specialized/kelter-deliveries", true).await
+}
+
+pub async fn create_kelter_delivery(
+    req: CreateKelterDeliveryRequest,
+) -> Result<KelterDeliveryDto, String> {
+    post_json("/api/v1/specialized/kelter-deliveries", &req, true).await
+}
+
+pub async fn update_kelter_delivery(
+    id: uuid::Uuid,
+    req: UpdateKelterDeliveryRequest,
+) -> Result<KelterDeliveryDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!(
+        "/api/v1/specialized/kelter-deliveries/{}",
+        id
+    )));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<KelterDeliveryDto>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+pub async fn delete_kelter_delivery(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(
+        &format!("/api/v1/specialized/kelter-deliveries/{}", id),
+        true,
+    )
+    .await
+}
+
+/// The legacy alias for the fertiliser calculator.
+///
+/// `nutrition.rs` and `calculation.rs` each register a fertiliser-amount
+/// endpoint — `/nutrition/fertilizer-amount` and
+/// `/calculate/nutrition/fertilizer-amount` — with two near-identical handler
+/// bodies. Both are live, and the UI is expected to reach both, so the alias is
+/// bound explicitly rather than left as the one path with no caller.
+pub async fn calc_fertilizer_amount_legacy(
+    demand: serde_json::Value,
+    fertilizer_types: Vec<serde_json::Value>,
+    area_ha: f64,
+) -> Result<serde_json::Value, String> {
+    post_calc(
+        "/api/v1/nutrition/fertilizer-amount",
+        serde_json::json!({
+            "nutrition_demand": demand,
+            "fertilizer_types": fertilizer_types,
+            "area_ha": area_ha,
+        }),
+    )
+    .await
+}
+
+/// Profitability for a specialised crop.
+///
+/// `specialized.rs` registers this at `/specialized/profitability` while
+/// `calculation.rs` registers the same calculation at `/calculate/profitability`.
+/// Both are live.
+pub async fn calc_specialized_profitability(
+    yield_amount: f64,
+    price_per_unit: f64,
+    material_costs: f64,
+    labor_costs: f64,
+    machinery_costs: f64,
+    area_ha: f64,
+) -> Result<serde_json::Value, String> {
+    post_calc(
+        "/api/v1/specialized/profitability",
+        serde_json::json!({
+            "yield_amount": yield_amount,
+            "price_per_unit": price_per_unit,
+            "material_costs": material_costs,
+            "labor_costs": labor_costs,
+            "machinery_costs": machinery_costs,
+            "area_ha": area_ha,
+        }),
+    )
+    .await
+}

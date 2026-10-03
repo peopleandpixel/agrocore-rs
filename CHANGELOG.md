@@ -7,6 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.40.0] - 2026-10-03
+
+G2 complete: every registered API endpoint now has a caller in the Admin UI.
+
+### 27 endpoints that had no page at all
+
+The five pages above shipped as 0.39.0; this release is the 27 endpoints.
+
+| Page | Endpoints |
+|---|---|
+| `/calculators` | 12 `calculate/*` plus two duplicate registrations |
+| `/water` | sources, usage, quotas |
+| `/harvest` | seasons, lots, deliveries, cold chain |
+| `/agriculture` | olive groves, olive oil records, vineyards, kelter deliveries |
+| `/weather/warnings` | frost warnings, active warnings, pest risks |
+| `/worker/logs`, `/worker/locations` | work logs, worker positions |
+| `/compliance/licenses` | applicator licenses |
+
+The route inventory test that found them reports zero uncovered endpoints.
+
+### Three things that were not obvious
+
+**`/workforce/locations` is not a CRUD collection.** `POST` takes the worker id
+from the authenticated user rather than from the request body, so a client cannot
+report a position on someone else's behalf. The page shows the current positions
+and lets the caller post their own; there is no edit-and-delete table, because
+that would imply a capability the endpoint does not have.
+
+**Two calculations are registered twice.** `calculation.rs` and `nutrition.rs` each
+mount a fertiliser-amount endpoint, and `calculation.rs` and `specialized.rs` each
+mount a profitability one, with near-identical handler bodies. Both paths are live
+and both are now reachable.
+
+**The enum wire values are not guessable.** `CropType` and `RiskLevel` carry
+lowercase serde renames. `WaterSourceType` and `IrrigationMethod` carry
+`strum(serialize_all = "snake_case")` but no serde rename, so they serialise as
+the variant name — `"Well"`, `"Drip"` — which is not what the strum attribute
+suggests. `LotStatus` is lower-case. Each select was checked against its enum
+rather than inferred.
+
+### A test that could not fail was removed
+
+A test was written to catch a page that is implemented and wired into `api.rs`
+but never registered in the router. It passed with the `/water` route and its
+import deleted, so it was removed rather than shipped. Two causes were found and
+fixed on the way — a `<`-scan that swept up 161 names including `Router` and
+`Icon`, and a component counting as embedded because its own `pub fn` line matched
+— and one was not isolated.
+
+Recorded as G2i. A test that cannot fail is worse than none: it produces
+confidence without cover. The two route inventory tests that remain were each
+checked against a deliberately broken input.
+
+### A near-miss worth noting
+
+Three subagents were dispatched to build the water, harvest and agriculture pages
+in parallel. One overwrote `api.rs` — 2,867 lines down to 602 — while the others
+were writing to it. The file was restored from HEAD and the work redone in
+sequence. Concurrent edits to one shared source file is the failure mode here,
+not the fan-out itself.
+
 ## [0.39.0] - 2026-10-03
 
 G2, part one: five Admin UI pages that did nothing now work.
