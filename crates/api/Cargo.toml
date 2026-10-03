@@ -38,6 +38,7 @@ agrocore-lpis-providers = { path = "../lpis-providers" }
 agrocore-messaging = { path = "../messaging" }
 agrocore-backup = { path = "../backup-service" }
 actix-web = { workspace = true }
+
 actix-files = { workspace = true }
 actix-cors = { workspace = true }
 serde = { workspace = true }
@@ -125,6 +126,9 @@ required-features = ["mocks"]
 name = "reporting_integration_test"
 path = "tests/reporting_integration.rs"
 required-features = ["mocks"]
+
+[[test]]
+name = "route_inventory_tests"
 
 [[test]]
 name = "api_contract_test"

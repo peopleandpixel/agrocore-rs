@@ -5481,3 +5481,538 @@ no_depreciation_records:
   ro: Nu s-au găsit înregistrări de amortizare.
   uk: Записи амортизації не знайдено.
   nl: Geen afschrijvingrecords gevonden.
+
+# --- G2: plot sub-entity pages (trees, groups, buildings)
+# Added for the pages that previously collected form input and discarded it.
+tree_count:
+  en: Count
+  de: Anzahl
+  es: Cantidad
+  fr: Quantité
+  pt: Quantidade
+  it: Quantità
+  pl: Ilość
+  ro: Cantitate
+  uk: Кількість
+  nl: Aantal
+tree_label:
+  en: Label
+  de: Bezeichnung
+  es: Etiqueta
+  fr: Étiquette
+  pt: Rótulo
+  it: Etichetta
+  pl: Etykieta
+  ro: Etichetă
+  uk: Мітка
+  nl: Label
+tree_type:
+  en: Type
+  de: Typ
+  es: Tipo
+  fr: Type
+  pt: Tipo
+  it: Tipo
+  pl: Typ
+  ro: Tip
+  uk: Тип
+  nl: Type
+plot_id_field:
+  en: Plot ID
+  de: Plot-ID
+  es: ID de parcela
+  fr: ID de parcelle
+  pt: ID do talhão
+  it: ID del appezzamento
+  pl: ID działki
+  ro: ID parcelei
+  uk: ID ділянки
+  nl: Perceel-ID
+btn_add:
+  en: Add
+  de: Hinzufügen
+  es: Añadir
+  fr: Ajouter
+  pt: Adicionar
+  it: Aggiungi
+  pl: Dodaj
+  ro: Adaugă
+  uk: Додати
+  nl: Toevoegen
+btn_save:
+  en: Save
+  de: Speichern
+  es: Guardar
+  fr: Enregistrer
+  pt: Guardar
+  it: Salva
+  pl: Zapisz
+  ro: Salvează
+  uk: Зберегти
+  nl: Opslaan
+btn_delete:
+  en: Delete
+  de: Löschen
+  es: Eliminar
+  fr: Supprimer
+  pt: Eliminar
+  it: Elimina
+  pl: Usuń
+  ro: Șterge
+  uk: Видалити
+  nl: Verwijderen
+btn_cancel:
+  en: Cancel
+  de: Abbrechen
+  es: Cancelar
+  fr: Annuler
+  pt: Cancelar
+  it: Annulla
+  pl: Anuluj
+  ro: Anulează
+  uk: Скасувати
+  nl: Annuleren
+no_records:
+  en: No records yet
+  de: Noch keine Einträge
+  es: Aún no hay registros
+  fr: Aucun enregistrement
+  pt: Ainda sem registos
+  it: Nessun record
+  pl: Brak wpisów
+  ro: Nicio înregistrare
+  uk: Записів ще немає
+  nl: Nog geen records
+field_required:
+  en: This field is required
+  de: Dieses Feld ist erforderlich
+  es: Este campo es obligatorio
+  fr: Ce champ est obligatoire
+  pt: Este campo é obrigatório
+  it: Questo campo è obbligatorio
+  pl: To pole jest wymagane
+  ro: Acest câmp este obligatoriu
+  uk: Це поле обов'язкове
+  nl: Dit veld is verplicht
+invalid_uuid:
+  en: Not a valid UUID
+  de: Keine gültige UUID
+  es: UUID no válido
+  fr: UUID invalide
+  pt: UUID inválido
+  it: UUID non valido
+  pl: Nieprawidłowy UUID
+  ro: UUID nevalid
+  uk: Невірний UUID
+  nl: Ongeldige UUID
+parent_group:
+  en: Parent group
+  de: Elterngruppe
+  es: Grupo principal
+  fr: Groupe parent
+  pt: Grupo principal
+  it: Gruppo principale
+  pl: Grupa nadrzędna
+  ro: Grup părinte
+  uk: Батьківська група
+  nl: Bovenliggende groep
+none_label:
+  en: None
+  de: Keine
+  es: Ninguno
+  fr: Aucun
+  pt: Nenhum
+  it: Nessuno
+  pl: Brak
+  ro: Niciunul
+  uk: Немає
+  nl: Geen
+delete_failed:
+  en: Delete failed
+  de: Löschen fehlgeschlagen
+  es: Error al eliminar
+  fr: Échec de la suppression
+  pt: Falha ao eliminar
+  it: Eliminazione non riuscita
+  pl: Nie udało się usunąć
+  ro: Ștergerea a eșuat
+  uk: Не вдалося видалити
+  nl: Verwijderen mislukt
+save_failed:
+  en: Save failed
+  de: Speichern fehlgeschlagen
+  es: Error al guardar
+  fr: Échec de l'enregistrement
+  pt: Falha ao guardar
+  it: Salvataggio non riuscito
+  pl: Nie udało się zapisać
+  ro: Salvarea a eșuat
+  uk: Не вдалося зберегти
+  nl: Opslaan mislukt
+cork_oak:
+  en: Cork oak
+  de: Korkeiche
+  es: Alcornoque
+  fr: Subéro
+  pt: Sobreiro
+  it: Sughero
+  pl: Dąb korkowy
+  ro: Stejar de plut
+  uk: Коркове дуба
+  nl: Kurkeik
+olive:
+  en: Olive
+  de: Olive
+  es: Olivo
+  fr: Olivier
+  pt: Oliveira
+  it: Ulivo
+  pl: Oliwka
+  ro: Măslin
+  uk: Олива
+  nl: Olijf
+almond:
+  en: Almond
+  de: Mandel
+  es: Almendro
+  fr: Amandier
+  pt: Amendoeira
+  it: Mandorlo
+  pl: Migdał
+  ro: Migdal
+  uk: Мигдаль
+  nl: Amandel
+other_label:
+  en: Other
+  de: Sonstige
+  es: Otro
+  fr: Autre
+  pt: Outro
+  it: Altro
+  pl: Inny
+  ro: Altul
+  uk: Інше
+  nl: Overig
+herd:
+  en: Herd
+  de: Herde
+  es: Manada
+  fr: Troupeau
+  pt: Rebanho
+  it: Mandria
+  pl: Stado
+  ro: Turmă
+  uk: Стадо
+  nl: Kudde
+grove_group:
+  en: Grove
+  de: Baumgruppe
+  es: Lindar
+  fr: Verger
+  pt: Pomar
+  it: Frutteto
+  pl: Sad
+  ro: Livadă
+  uk: Сад
+  nl: Boomgaard
+coop_group:
+  en: Coop
+  de: Stall
+  es: Gallinero
+  fr: Poulailler
+  pt: Capela
+  it: Pollaio
+  pl: Kurnik
+  ro: Șir
+  uk: Курник
+  nl: Hennenweide
+barn_type:
+  en: Barn
+  de: Scheune
+  es: Granero
+  fr: Grange
+  pt: Celeiro
+  it: Fienile
+  pl: Obora
+  ro: Șop
+  uk: Хлів
+  nl: Schuur
+coop_type:
+  en: Coop
+  de: Stall
+  es: Gallinero
+  fr: Poulailler
+  pt: Capela
+  it: Pollaio
+  pl: Kurnik
+  ro: Șir
+  uk: Курник
+  nl: Hennenweide
+other_building:
+  en: Other
+  de: Andere
+  es: Otro
+  fr: Autre
+  pt: Outro
+  it: Altro
+  pl: Inny
+  ro: Altul
+  uk: Інше
+  nl: Overig
+
+# --- G2: plot sub-entity overview and livestock page
+plot_subentity_title:
+  en: Plot overview
+  de: Feld-Übersicht
+  es: Resumen de parcelas
+  fr: Aperçu des parcelles
+  pt: Resumo do talhão
+  it: Panoramica appezzamenti
+  pl: Przegląd działek
+  ro: Privire de ansamblu asupra parcelelor
+  uk: Огляд ділянок
+  nl: Perceeloverzicht
+plot_choose:
+  en: Choose a plot
+  de: Feld auswählen
+  es: Elegir parcela
+  fr: Choisir une parcelle
+  pt: Escolher talhão
+  it: Scegli appezzamento
+  pl: Wybierz działkę
+  ro: Alegeți o parcelă
+  uk: Виберіть ділянку
+  nl: Perceel kiezen
+plot_choose_hint:
+  en: Choose a plot to see its groups, trees and buildings
+  de: Wählen Sie ein Feld, um Gruppen, Bäume und Gebäude zu sehen
+  es: Elija una parcela para ver sus grupos, árboles y edificios
+  fr: Choisissez une parcelle pour voir ses groupes, arbres et bâtiments
+  pt: Escolha um talhão para ver grupos, árvores e edifícios
+  it: Scegli un appezzamento per vederne gruppi, alberi ed edifici
+  pl: Wybierz działkę, aby zobaczyć jej grupy, drzewa i budynki
+  ro: Alegeți o parcelă pentru a-i vedea grupurile, arborii și clădirile
+  uk: Виберіть ділянку, щоб побачити її групи, дерева та будівлі
+  nl: Kies een perceel om de groepen, bomen en gebouwen te zien
+plot_subentity_kind:
+  en: Kind
+  de: Art
+  es: Tipo
+  fr: Type
+  pt: Tipo
+  it: Tipo
+  pl: Rodzaj
+  ro: Tip
+  uk: Вид
+  nl: Soort
+kind_group:
+  en: Group
+  de: Gruppe
+  es: Grupo
+  fr: Groupe
+  pt: Grupo
+  it: Gruppo
+  pl: Grupa
+  ro: Grup
+  uk: Група
+  nl: Groep
+kind_tree:
+  en: Tree
+  de: Baum
+  es: Árbol
+  fr: Arbre
+  pt: Árvore
+  it: Albero
+  pl: Drzewo
+  ro: Arbore
+  uk: Дерево
+  nl: Boom
+kind_building:
+  en: Building
+  de: Gebäude
+  es: Edificio
+  fr: Bâtiment
+  pt: Edifício
+  it: Edificio
+  pl: Budynek
+  ro: Clădire
+  uk: Будівля
+  nl: Gebouw
+edit_label:
+  en: Edit
+  de: Bearbeiten
+  es: Editar
+  fr: Modifier
+  pt: Editar
+  it: Modifica
+  pl: Edytuj
+  ro: Editează
+  uk: Редагувати
+  nl: Bewerken
+kind_animal:
+  en: Animal
+  de: Tier
+  es: Animal
+  fr: Animal
+  pt: Animal
+  it: Animale
+  pl: Zwierzę
+  ro: Animal
+  uk: Тварина
+  nl: Dier
+animal_species:
+  en: Species
+  de: Art
+  es: Especie
+  fr: Espèce
+  pt: Espécie
+  it: Specie
+  pl: Gatunek
+  ro: Specie
+  uk: Вид
+  nl: Soort
+animal_birth_date:
+  en: Date of birth
+  de: Geburtsdatum
+  es: Fecha de nacimiento
+  fr: Date de naissance
+  pt: Data de nascimento
+  it: Data di nascita
+  pl: Data urodzenia
+  ro: Data nașterii
+  uk: Дата народження
+  nl: Geboortedatum
+
+# --- G2: livestock page
+animal_identifier:
+  en: Identifier
+  de: Kennung
+  es: Identificador
+  fr: Identifiant
+  pt: Identificador
+  it: Identificativo
+  pl: Identyfikator
+  ro: Identificator
+  uk: Ідентифікатор
+  nl: Kenmerk
+animal_breed:
+  en: Breed
+  de: Rasse
+  es: Raza
+  fr: Race
+  pt: Raça
+  it: Razza
+  pl: Rasa
+  ro: Rasă
+  uk: Порода
+  nl: Ras
+animal_status:
+  en: Status
+  de: Status
+  es: Estado
+  fr: Statut
+  pt: Estado
+  it: Stato
+  pl: Status
+  ro: Stare
+  uk: Статус
+  nl: Status
+goat:
+  en: Goat
+  de: Ziege
+  es: Cabra
+  fr: Chèvre
+  pt: Cabra
+  it: Capra
+  pl: Koza
+  ro: Capră
+  uk: Коза
+  nl: Geit
+sheep:
+  en: Sheep
+  de: Schaf
+  es: Oveja
+  fr: Mouton
+  pt: Ovelha
+  it: Pecora
+  pl: Owca
+  ro: Oaie
+  uk: Вівця
+  nl: Schaap
+cattle:
+  en: Cattle
+  de: Rind
+  es: Vacuno
+  fr: Bovin
+  pt: Bovino
+  it: Bovino
+  pl: Bydło
+  ro: Bovin
+  uk: Велика рогата худоба
+  nl: Rundvee
+pig:
+  en: Pig
+  de: Schwein
+  es: Cerdo
+  fr: Cochon
+  pt: Porco
+  it: Maiale
+  pl: Świnia
+  ro: Porc
+  uk: Свиня
+  nl: Varken
+horse:
+  en: Horse
+  de: Pferd
+  es: Caballo
+  fr: Cheval
+  pt: Cavalo
+  it: Cavallo
+  pl: Koń
+  ro: Cal
+  uk: Кінь
+  nl: Paard
+chicken:
+  en: Chicken
+  de: Huhn
+  es: Gallina
+  fr: Poule
+  pt: Galinha
+  it: Gallo
+  pl: Kurczak
+  ro: Găină
+  uk: Курка
+  nl: Kip
+duck:
+  en: Duck
+  de: Ente
+  es: Pato
+  fr: Canard
+  pt: Pato
+  it: Anatra
+  pl: Kaczka
+  ro: Rață
+  uk: Качка
+  nl: Eend
+turkey:
+  en: Turkey
+  de: Truthahn
+  es: Pavo
+  fr: Dinde
+  pt: Peru
+  it: Tacchino
+  pl: Indyk
+  ro: Curcan
+  uk: Індик
+  nl: Kalkoen
+goose:
+  en: Goose
+  de: Gans
+  es: Oca
+  fr: Oie
+  pt: Gans
+  it: Oca
+  pl: Gęsica
+  ro: Gâscă
+  uk: Гуска
+  nl: Gans

@@ -7,6 +7,151 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.39.0] - 2026-10-03
+
+G2, part one: five Admin UI pages that did nothing now work.
+
+### Five pages were shells
+
+`/trees`, `/groups`, `/buildings`, `/livestock` and `/plot/entities` were in the
+router with complete CRUD handlers behind them in the backend. The pages
+themselves collected form input and threw it away:
+
+```rust
+spawn_local(async move { let _ = (label.get(), count.get()); })
+```
+
+Three variations on the same defect, in increasing order of how much damage they
+could do:
+
+- `buildings.rs` showed a success toast naming the label, type and plot for a
+  write it never performed. A page that claims success for nothing is worse than
+  one that visibly does nothing, because it removes the reason to distrust the
+  message.
+- `plot_subentity.rs` rendered four rows of invented data — a herd called
+  "Herde 1", two goats, four cork oaks, a barn — hard-coded in the markup. It
+  looked like a working overview and said nothing about the tenant's data. An
+  empty plot now shows an empty row, because "no groups" and "four cork oaks"
+  must not look alike.
+
+All five now call the API and support list, create, update and delete.
+
+### A create that could not have worked
+
+`CreateAnimalDto` requires `livestock_type` and `status`, and neither has a
+default on the Rust side. The client struct omitted both, so the deserialised
+request was missing required fields and the call would have been rejected with a
+422 the page had no way to surface. The client struct also returned
+`serde_json::Value` for the animal, which pushed every field access to a runtime
+string lookup; it is typed now.
+
+### 25 i18n keys added
+
+The new pages needed labels, buttons, validation messages and the enum names for
+ten languages. Added to `app.yml`, which parses.
+
+Found while doing it: 109 keys referenced by pages across the UI are missing from
+`app.yml` altogether, so those places render the key name instead of the label.
+Pre-existing, unrelated to this change, recorded as G2h.
+
+### G2 measured again: 32 down to 29
+
+The five entity groups are gone from the uncovered list. What remains has no UI
+at all — not a broken one, none: 12 `calculate/*` endpoints, 5 `specialized/*`,
+4 `harvest/*`, 3 `water/*`, 3 `weather/*`, two workforce paths and three others.
+Broken out as G2a–G2g in `docs/tasks.md`.
+
+G2g is a defect the route test cannot see: four client functions in `api.rs`
+(`calculate_material_request`, `calculate_nutrition_demand`, `calculate_water_rate`,
+`fetch_specialized_sites`) are complete and working, and no component calls them.
+The route test reads path literals, so a bound-but-uncalled endpoint looks covered.
+
+## [0.38.0] - 2026-10-03
+
+J20, J21, and a tenant-deletion bug they surfaced.
+
+### J21 — tenant isolation is now actually verified
+
+`crates/infrastructure/tests/tenant_isolation_rls_tests.rs` adds four tests that
+run under `SET ROLE agrocore_app` rather than the migration superuser, so
+row-level security is enforced instead of bypassed. The existing
+`tenant_isolation_tests.rs` connects as a superuser and therefore verified the
+SQL text, not the isolation.
+
+The tests check that a pinned tenant sees only its own rows — using an unfiltered
+`SELECT`, because a query with a `WHERE` clause passes even with no policy at all
+— that it cannot write or delete another tenant's row, and that it can still write
+its own. `rls_is_actually_active_for_the_app_role` runs first and fails if the app
+role is not subject to RLS, so the other three cannot pass vacuously.
+
+### A tenant could not be deleted
+
+Writing those tests surfaced a bug that made `DELETE /api/v1/system/tenant` fail
+on any tenant that had been used:
+
+1. Three foreign keys on `tenants` (`audit_logs`, `harvest_seasons`,
+   `lpis_reference_parcels`) were declared without `ON DELETE CASCADE`, while
+   every other tenant-scoped table has one. An audit row is written by ordinary
+   use, so a tenant in service for a day could not be deleted — and this is the
+   GDPR erasure path, failing exactly when it is needed.
+2. Adding the cascades turned that into a different failure: 41 tables are
+   cascade children of `tenants` and carry `audit_trigger_function`. Deleting the
+   tenant deleted those rows, each delete fired its trigger, and each trigger
+   tried to write an `audit_logs` row for a tenant that no longer exists —
+   failing against the very foreign key just added.
+
+Migration `0000000008` fixes both and suppresses audit writes during a tenant
+delete via a transaction-scoped session flag set by a `BEFORE DELETE` trigger on
+`tenants`. Nothing is lost: `audit_logs` has a foreign key to `tenants`, so an
+audit row describing the deletion could not outlive the tenant anyway.
+
+Verified against PostgreSQL 17 on a fresh database: without the migration the
+delete raises `audit_logs_tenant_id_fkey`; with it the tenant and its data are
+removed, the cascade fires, and a neighbouring tenant is untouched.
+
+### J20 — the API contract test can now fail
+
+`crates/api/tests/route_inventory_tests.rs` builds the real Actix application and
+probes each candidate path against the running router, so there is no second
+copy of the route list to drift. The UI path list is read from the Admin UI
+sources for the same reason.
+
+The test this replaces compared a hand-written list of 80 paths against a
+hand-written UI list while the handlers registered 187. Nothing compared them, so
+renaming or removing a handler left the test green — which is how J1 and J2
+unregistered a handler without the contract test noticing.
+
+Confirmed by a negative check: renaming `/livestock` to `/livestock-renamed` makes
+the test fail on exactly the affected paths.
+
+### G2 — 32 endpoints have no UI caller
+
+The new test found 32 registered, readable endpoints that the Admin UI never
+calls: 12 `calculate/*`, 5 `specialized/*`, 4 `harvest/*`, 3 `water/*`,
+3 `weather/*`, 2 workforce paths and 3 others. The backend was built ahead of the
+UI and nothing made that visible before.
+
+Recorded as G2 in `docs/tasks.md`. The assertion is marked `#[ignore]` with the
+task id so the suite stays green and the failure is attributed to the work that
+owns it; the list of paths is in the task.
+
+### UI path corrections found along the way
+
+The Admin UI called four paths the API does not serve:
+
+- `/api/v1/workers` → `/api/v1/workforce/workers`
+- `/api/v1/parcels` → `/api/v1/sigpac/parcels`
+- `/api/v1/devices` → `/api/v1/iot/devices`
+- `/api/v1/gdd/accumulated` → `/api/v1/weather/gdd/accumulated`
+
+`/backups` was registered twice in the Leptos router.
+
+`livestock.rs` and `livestock_new.rs` both opened `web::scope("/livestock")`.
+Actix resolves two scopes with the same prefix to the first one only, so one of
+the two modules was unreachable while looking correctly wired in `mod.rs`. The
+herd-record module now mounts at `/livestock/herds`; `/livestock/animals` is
+unchanged.
+
 ## [0.37.0] - 2026-10-03
 
 I4 — password hashing no longer occupies the async runtime — and I3 — the

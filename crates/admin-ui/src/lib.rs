@@ -229,7 +229,6 @@ fn AuthenticatedShell(
                             <Route path=path!("/users") view=|| view! { <UserManagement /> } />
                             <Route path=path!("/settings") view=|| view! { <SettingsPage /> } />
                             <Route path=path!("/backups") view=|| view! { <components::backup::BackupManagement /> } />
-                            <Route path=path!("/backups") view=|| view! { <components::backup::BackupManagement /> } />
                             <Route path=path!("/wizard") view=|| view! { <WizardView /> } />
                             <Route path=path!("/worker/tasks") view=|| view! { <WorkerTasksPage /> } />
                             <Route path=path!("/workers") view=|| view! { <WorkersPage /> } />

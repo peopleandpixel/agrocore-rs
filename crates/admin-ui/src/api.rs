@@ -875,7 +875,45 @@ pub async fn fetch_financial_records() -> Result<PaginatedResponse<serde_json::V
     get_json("/api/v1/finance/financial-records", true).await
 }
 
-pub async fn fetch_animals() -> Result<PaginatedResponse<serde_json::Value>, String> {
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateAnimalRequest {
+    pub species: Option<String>,
+    pub breed: Option<String>,
+    pub identifier: Option<String>,
+    pub birth_date: Option<String>,
+    pub gender: Option<String>,
+    pub status: Option<String>,
+    pub current_site_id: Option<uuid::Uuid>,
+    pub group_id: Option<uuid::Uuid>,
+    pub weight_kg: Option<f64>,
+    pub livestock_type: Option<String>,
+    pub plot_id: Option<uuid::Uuid>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct TreatmentRecordDto {
+    pub id: uuid::Uuid,
+    pub animal_id: uuid::Uuid,
+    pub date: String,
+    pub treatment_type: String,
+    pub medication: String,
+    pub dosage: Option<String>,
+    pub veterinarian: Option<String>,
+    pub withdrawal_days: Option<i32>,
+    pub notes: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateGrazingRequest {
+    pub plot_id: uuid::Uuid,
+    pub site_id: Option<uuid::Uuid>,
+    pub animal_id: Option<uuid::Uuid>,
+    pub start_time: String,
+    pub start_date: Option<String>,
+}
+
+pub async fn fetch_animals() -> Result<PaginatedResponse<AnimalDto>, String> {
     get_json("/api/v1/livestock/animals", true).await
 }
 
@@ -1041,10 +1079,18 @@ pub struct CreateAnimalRequest {
     pub identifier: String,
     pub birth_date: Option<String>,
     pub gender: Option<String>,
+    // `CreateAnimalDto` requires these two; they have no default on the Rust
+    // side, so omitting them deserialised to nothing and the request was
+    // rejected with a 422 the page never surfaced.
+    pub livestock_type: String,
+    pub status: String,
     pub current_site_id: Option<uuid::Uuid>,
+    pub mother_id: Option<uuid::Uuid>,
+    pub father_id: Option<uuid::Uuid>,
+    pub plot_id: Option<uuid::Uuid>,
 }
 
-pub async fn create_animal(req: CreateAnimalRequest) -> Result<serde_json::Value, String> {
+pub async fn create_animal(req: CreateAnimalRequest) -> Result<AnimalDto, String> {
     post_json("/api/v1/livestock/animals", &req, true).await
 }
 
@@ -1807,19 +1853,19 @@ pub struct PaginatedWorkerResponse {
 }
 
 pub async fn fetch_workers() -> Result<PaginatedWorkerResponse, String> {
-    get_json("/api/v1/workers", true).await
+    get_json("/api/v1/workforce/workers", true).await
 }
 
 pub async fn fetch_worker(id: uuid::Uuid) -> Result<WorkerDto, String> {
-    get_json(&format!("/api/v1/workers/{}", id), true).await
+    get_json(&format!("/api/v1/workforce/workers/{}", id), true).await
 }
 
 pub async fn create_worker(req: &CreateWorkerRequest) -> Result<WorkerDto, String> {
-    post_json("/api/v1/workers", req, true).await
+    post_json("/api/v1/workforce/workers", req, true).await
 }
 
 pub async fn update_worker(id: uuid::Uuid, req: &UpdateWorkerRequest) -> Result<WorkerDto, String> {
-    let request = Request::put(&api_url(&format!("/api/v1/workers/{}", id)));
+    let request = Request::put(&api_url(&format!("/api/v1/workforce/workers/{}", id)));
     let request = with_auth(request);
     let resp = request
         .json(&req)
@@ -1887,14 +1933,22 @@ pub async fn fetch_clock_entries(
     worker_id: Option<uuid::Uuid>,
 ) -> Result<PaginatedClockEntryResponse, String> {
     if let Some(wid) = worker_id {
-        get_json(&format!("/api/v1/workers/{}/clock-entries", wid), true).await
+        get_json(
+            &format!("/api/v1/workforce/workers/{}/clock-entries", wid),
+            true,
+        )
+        .await
     } else {
         get_json("/api/v1/workforce/clock-entries", true).await
     }
 }
 
 pub async fn fetch_active_session(worker_id: uuid::Uuid) -> Result<Option<ClockEntryDto>, String> {
-    get_json(&format!("/api/v1/workers/{}/clock-active", worker_id), true).await
+    get_json(
+        &format!("/api/v1/workforce/workers/{}/clock-active", worker_id),
+        true,
+    )
+    .await
 }
 
 pub async fn clock_in(req: &CreateClockEntryRequest) -> Result<ClockEntryDto, String> {
@@ -1932,10 +1986,10 @@ pub async fn fetch_worker_sessions(
         query.push_str(&format!("to={}&", js_sys::encode_uri_component(t)));
     }
     let path = if query.is_empty() {
-        format!("/api/v1/workers/{}/clock-sessions", worker_id)
+        format!("/api/v1/workforce/workers/{}/clock-sessions", worker_id)
     } else {
         format!(
-            "/api/v1/workers/{}/clock-sessions?{}",
+            "/api/v1/workforce/workers/{}/clock-sessions?{}",
             worker_id,
             query.trim_end_matches('&')
         )
@@ -1956,10 +2010,10 @@ pub async fn fetch_total_hours(
         query.push_str(&format!("to={}&", js_sys::encode_uri_component(t)));
     }
     let path = if query.is_empty() {
-        format!("/api/v1/workers/{}/hours-worked", worker_id)
+        format!("/api/v1/workforce/workers/{}/hours-worked", worker_id)
     } else {
         format!(
-            "/api/v1/workers/{}/hours-worked?{}",
+            "/api/v1/workforce/workers/{}/hours-worked?{}",
             worker_id,
             query.trim_end_matches('&')
         )
@@ -2072,12 +2126,12 @@ pub async fn stop_task_for_worker(task_id: uuid::Uuid) -> Result<(), String> {
 
 /// GET /api/v1/parcels — list all parcels
 pub async fn list_parcels() -> Result<Vec<ParcelDto>, String> {
-    get_json("/api/v1/parcels", true).await
+    get_json("/api/v1/sigpac/parcels", true).await
 }
 
 /// GET /api/v1/parcels/{id} — get single parcel
 pub async fn get_parcel(id: uuid::Uuid) -> Result<ParcelDto, String> {
-    get_json(&format!("/api/v1/parcels/{}", id), true).await
+    get_json(&format!("/api/v1/sigpac/parcels/{}", id), true).await
 }
 
 /// GET /api/v1/specialized/sites — specialized site list
@@ -2110,7 +2164,7 @@ pub async fn fetch_gdd_accumulated(
     end: String,
 ) -> Result<f64, String> {
     let path = format!(
-        "/api/v1/gdd/accumulated?site_id={}&start={}&end={}",
+        "/api/v1/weather/gdd/accumulated?site_id={}&start={}&end={}",
         site_id,
         js_sys::encode_uri_component(&start),
         js_sys::encode_uri_component(&end)
@@ -2192,7 +2246,7 @@ pub async fn send_device_command(
     command: serde_json::Value,
 ) -> Result<serde_json::Value, String> {
     post_json(
-        &format!("/api/v1/devices/{}/command", device_id),
+        &format!("/api/v1/iot/devices/{}/command", device_id),
         &command,
         true,
     )
@@ -2233,11 +2287,17 @@ pub struct CustomerDto {
 pub struct AnimalDto {
     pub id: uuid::Uuid,
     pub tenant_id: uuid::Uuid,
-    pub name: Option<String>,
     pub species: String,
     pub breed: Option<String>,
+    pub identifier: String,
     pub birth_date: Option<String>,
+    pub gender: Option<String>,
     pub status: String,
+    pub current_site_id: Option<uuid::Uuid>,
+    pub mother_id: Option<uuid::Uuid>,
+    pub father_id: Option<uuid::Uuid>,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -2558,4 +2618,250 @@ fn encode_path_segment(segment: &str) -> String {
             _ => format!("%{b:02X}"),
         })
         .collect()
+}
+
+// --- Plot sub-entities: trees, groups, buildings ---
+//
+// The `/trees`, `/groups` and `/buildings` routes existed in the backend with
+// list, create, update and delete handlers, and the Admin UI pages for them
+// collected form input and discarded it. These calls are what makes those pages
+// functional.
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct TreeDto {
+    pub id: uuid::Uuid,
+    pub plot_id: uuid::Uuid,
+    pub group_id: Option<String>,
+    pub tree_type: String,
+    pub count: i32,
+    pub label: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateTreeRequest {
+    pub plot_id: uuid::Uuid,
+    pub group_id: Option<String>,
+    pub tree_type: String,
+    pub count: u32,
+    pub label: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateTreeRequest {
+    pub group_id: Option<String>,
+    pub tree_type: Option<String>,
+    pub count: Option<u32>,
+    pub label: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct GroupDto {
+    pub id: uuid::Uuid,
+    pub plot_id: uuid::Uuid,
+    pub parent_group_id: Option<uuid::Uuid>,
+    pub group_type: String,
+    pub label: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateGroupRequest {
+    pub plot_id: uuid::Uuid,
+    pub parent_group_id: Option<uuid::Uuid>,
+    pub group_type: String,
+    pub label: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateGroupRequest {
+    pub parent_group_id: Option<uuid::Uuid>,
+    pub group_type: Option<String>,
+    pub label: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct BuildingDto {
+    pub id: uuid::Uuid,
+    pub plot_id: uuid::Uuid,
+    pub building_type: String,
+    pub label: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateBuildingRequest {
+    pub plot_id: uuid::Uuid,
+    pub building_type: String,
+    pub label: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateBuildingRequest {
+    pub building_type: Option<String>,
+    pub label: Option<String>,
+}
+
+pub async fn fetch_trees() -> Result<PaginatedInventoryResponse<TreeDto>, String> {
+    get_json("/api/v1/trees", true).await
+}
+
+pub async fn fetch_trees_by_plot(
+    plot_id: uuid::Uuid,
+) -> Result<PaginatedInventoryResponse<TreeDto>, String> {
+    get_json(&format!("/api/v1/trees/by-plot/{}", plot_id), true).await
+}
+
+pub async fn create_tree(req: CreateTreeRequest) -> Result<TreeDto, String> {
+    post_json("/api/v1/trees", &req, true).await
+}
+
+pub async fn update_tree(id: uuid::Uuid, req: UpdateTreeRequest) -> Result<TreeDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!("/api/v1/trees/{}", id)));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<TreeDto>().await.map_err(|e| e.to_string())
+}
+
+pub async fn delete_tree(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(&format!("/api/v1/trees/{}", id), true).await
+}
+
+pub async fn fetch_groups() -> Result<PaginatedInventoryResponse<GroupDto>, String> {
+    get_json("/api/v1/groups", true).await
+}
+
+pub async fn fetch_groups_by_plot(
+    plot_id: uuid::Uuid,
+) -> Result<PaginatedInventoryResponse<GroupDto>, String> {
+    get_json(&format!("/api/v1/groups/by-plot/{}", plot_id), true).await
+}
+
+pub async fn fetch_group_children(id: uuid::Uuid) -> Result<Vec<GroupDto>, String> {
+    get_json(&format!("/api/v1/groups/{}/children", id), true).await
+}
+
+pub async fn create_group(req: CreateGroupRequest) -> Result<GroupDto, String> {
+    post_json("/api/v1/groups", &req, true).await
+}
+
+pub async fn update_group(id: uuid::Uuid, req: UpdateGroupRequest) -> Result<GroupDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!("/api/v1/groups/{}", id)));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<GroupDto>().await.map_err(|e| e.to_string())
+}
+
+pub async fn delete_group(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(&format!("/api/v1/groups/{}", id), true).await
+}
+
+pub async fn fetch_buildings() -> Result<PaginatedInventoryResponse<BuildingDto>, String> {
+    get_json("/api/v1/buildings", true).await
+}
+
+pub async fn fetch_buildings_by_plot(
+    plot_id: uuid::Uuid,
+) -> Result<PaginatedInventoryResponse<BuildingDto>, String> {
+    get_json(&format!("/api/v1/buildings/by-plot/{}", plot_id), true).await
+}
+
+pub async fn create_building(req: CreateBuildingRequest) -> Result<BuildingDto, String> {
+    post_json("/api/v1/buildings", &req, true).await
+}
+
+pub async fn update_building(
+    id: uuid::Uuid,
+    req: UpdateBuildingRequest,
+) -> Result<BuildingDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!("/api/v1/buildings/{}", id)));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<BuildingDto>().await.map_err(|e| e.to_string())
+}
+
+pub async fn delete_building(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(&format!("/api/v1/buildings/{}", id), true).await
+}
+
+// --- Livestock ---
+//
+// The `/livestock` page collected a label and a count and discarded them. The
+// animal routes underneath it — list, create, update, delete, treatments,
+// grazing — had no caller at all.
+
+pub async fn update_animal(id: uuid::Uuid, req: UpdateAnimalRequest) -> Result<AnimalDto, String> {
+    let body = req;
+    let request = Request::put(&api_url(&format!("/api/v1/livestock/animals/{}", id)));
+    let request = with_auth(request);
+    let resp = request
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<AnimalDto>().await.map_err(|e| e.to_string())
+}
+
+pub async fn delete_animal(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(&format!("/api/v1/livestock/animals/{}", id), true).await
+}
+
+pub async fn fetch_animal_treatments(id: uuid::Uuid) -> Result<Vec<TreatmentRecordDto>, String> {
+    get_json(
+        &format!("/api/v1/livestock/animals/{}/treatments", id),
+        true,
+    )
+    .await
+}
+
+pub async fn add_animal_treatment(
+    id: uuid::Uuid,
+    req: CreateTreatmentRequest,
+) -> Result<TreatmentRecordDto, String> {
+    post_json(
+        &format!("/api/v1/livestock/animals/{}/treatments", id),
+        &req,
+        true,
+    )
+    .await
+}
+
+pub async fn add_animal_grazing(
+    id: uuid::Uuid,
+    req: CreateGrazingRequest,
+) -> Result<GrazingRecordDto, String> {
+    post_json(
+        &format!("/api/v1/livestock/animals/{}/grazing", id),
+        &req,
+        true,
+    )
+    .await
 }

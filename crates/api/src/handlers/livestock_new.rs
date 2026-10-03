@@ -214,9 +214,22 @@ pub async fn list_livestock_by_herd(
     ))
 }
 
+/// Register the herd-register endpoints.
+///
+/// # Why this is `/livestock/herds` and not `/livestock`
+///
+/// This module and `livestock.rs` were both registered, both opening
+/// `web::scope("/livestock")`. Actix resolves two scopes with the same prefix to
+/// the first one only, so whichever was configured first won and the other was
+/// silently dead — every handler in this file was unreachable while looking
+/// perfectly wired in `mod.rs`.
+///
+/// The two are different domains: `livestock.rs` tracks individual animals
+/// (`/livestock/animals`), this one tracks herd records. They get separate
+/// scopes, so both are reachable.
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
-        web::scope("/livestock")
+        web::scope("/livestock/herds")
             .route("", web::get().to(list_livestock))
             .route("", web::post().to(create_livestock))
             .route("/{id}", web::get().to(get_livestock))

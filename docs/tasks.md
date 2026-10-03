@@ -274,8 +274,10 @@ they have gone unnoticed so far.
 - `test_tenant_creation_and_isolation` — `common/mod.rs:71` uses a fixed `slug = 'test-tenant'` in `create_test_tenant`; as soon as a second test creates the same slug, `tenants_slug_key` fires. Suffix the slug with a uuid per call.
 - `test_tenant_scoped_tables_have_tenant_id` — reports `kelter_deliveries`, `order_sites`, `spatial_ref_sys`, `tenants`, `user_sites`. `kelter_deliveries` independently confirms **B1**: the table has neither `tenant_id` in the schema nor a filter in the repo. `user_sites` and `order_sites` are pure mapping tables and belong in the exception list, as do the PostGIS system table `spatial_ref_sys` and `tenants` itself. Concretely to do: extend the exception list in the test by `order_sites`, `spatial_ref_sys`, `tenants`, `user_sites` and fix `kelter_deliveries` under B1. — no test compares repo INSERT column lists against `information_schema.columns`. A single such test would have found J4, J5 and J6 immediately.
 - [ ] **J20a — The test fixture never ran successfully** — `crates/infrastructure/tests/common/mod.rs`. `testcontainers_modules::postgres` is hardwired to `postgres:11-alpine`; but migration `0000000000` needs PostGIS. All nine integration tests failed with `extension "postgis" is not available` and were therefore never green. Fixed: `GenericImage::new("postgis/postgis", "16-3.4")` plus connect retry. Four tests are still red afterwards (missing table `spatial_properties`, wrong number of INSERT columns, slug unique constraint, tables without `tenant_id`) — they are visible at all for the first time. Fixed in the course of J19.
-- [ ] **J20 — No route completeness test** — no test compares all `#[utoipa::path]` handlers against the registered routes; J1 and J2 went unnoticed because of that.
-- [ ] **J21 — No multi-tenant isolation test** — `infrastructure/tests/database_setup_tests.rs` has six tests, all `#[ignore]`, but none checks that tenant A sees no data from tenant B. With effectively inactive RLS (A3) this is the most important missing test of all.
+- [x] **J20 — No route completeness test** — fixed. `crates/api/tests/route_inventory_tests.rs` builds the real Actix application and probes every candidate path against the running router, so the route list cannot drift from the handlers. The UI path list is read from the Admin UI sources. A negative check — renaming `/livestock` to `/livestock-renamed` — was run to confirm the test actually fails when a route disappears, which the old hand-written list could not do.
+- [x] **J21 — No multi-tenant isolation test** — fixed. `crates/infrastructure/tests/tenant_isolation_rls_tests.rs` adds four tests that run under `SET ROLE agrocore_app` instead of the migration superuser, so RLS is actually enforced. It verifies that a pinned tenant sees only its own rows (with an unfiltered `SELECT`, not a filtered one), cannot write or delete another tenant's row, and can still write its own. The load-bearing test is `rls_is_actually_active_for_the_app_role`: if the app role is not subject to RLS, it fails there rather than letting the other three pass vacuously.
+
+  Writing it surfaced a production bug: `DELETE /api/v1/system/tenant` failed on any tenant that had an audit entry. Three foreign keys on `tenants` lacked `ON DELETE CASCADE`, and fixing them exposed a second failure — the 41 cascade children carry audit triggers that each try to write an `audit_logs` row for a tenant that no longer exists. Migration 8 fixes both. Reproduced against PostgreSQL 17: without it the delete raises `audit_logs_tenant_id_fkey`, with it the tenant and its data are removed and a neighbouring tenant is untouched.
 
 ---
 
@@ -419,3 +421,76 @@ From phase 4, not started so far.
 - [ ] Augmented reality: field data overlay on the live camera
 - [ ] Digital twin: virtual farm model for scenario planning
 - [ ] Blockchain traceability: supply chain transparencyW
+
+## G2 — API endpoints with no UI caller (found by J20, 2026-10-03)
+
+The route inventory test (`crates/api/tests/route_inventory_tests.rs`) probes the
+running application and compares every registered path against what the Admin UI
+actually calls. What started as 32 uncovered endpoints turned out to be two
+different defects, and the difference matters:
+
+### Done: five pages that were shells
+
+`/trees`, `/groups`, `/buildings`, `/livestock` and `/plot/entities` had routes
+in the router and complete handlers in the backend, and the pages themselves did
+nothing. They collected form input and discarded it:
+
+```rust
+spawn_local(async move { let _ = (label.get(), count.get()); })
+```
+
+`buildings.rs` was worse — it showed a success toast for a write it never
+performed. `plot_subentity.rs` was worst: it rendered four rows of invented data
+(a herd called "Herde 1", two goats, four cork oaks) hard-coded in the markup, so
+it looked like a working overview while showing nothing about the tenant.
+
+All five now call the API and support list, create, update and delete. The
+livestock page also sends `livestock_type` and `status`, which `CreateAnimalDto`
+requires without a Rust default, so a create was previously going to fail with a
+422 the page could not have surfaced.
+
+### Remaining: 29 endpoints with no page at all
+
+These have no UI surface whatsoever — not a broken one, none:
+
+| Area | Count | Paths |
+|---|---|---|
+| `calculate/*` | 12 | difficulty-surcharge, forage-demand, harvest-estimation, nitrogen-demand, nutrition/balance, nutrition/demand, nutrition/fertilizer-amount, profitability, tree-crown-volume, weather/fetch, weather/providers, workflow/follow-ups |
+| `specialized/*` | 5 | olive-groves, olive-oil-records, vineyards, kelter-deliveries, profitability |
+| `harvest/*` | 4 | seasons, lots, deliveries, cold-chain |
+| `water/*` | 3 | sources, quotas, usage |
+| `weather/*` | 3 | frost-warnings, frost-warnings/active, pest-risks |
+| workforce | 2 | logs, locations |
+| other | 3 | compliance/applicator-licenses, nutrition/fertilizer-amount, calculate groups not covered above |
+
+Some of these already have a client function in `api.rs` that nothing calls —
+`calculate_material_request`, `calculate_nutrition_demand`, `calculate_water_rate`
+and `fetch_specialized_sites` among them. That is a separate defect: a working
+API binding with no UI consumer, which the route test cannot see because the path
+literal is present in the source.
+
+- [ ] **G2a — 12 `calculate/*` endpoints have no UI** — agronomic calculators.
+      Three already have client functions; the other nine have neither.
+- [ ] **G2b — 5 `specialized/*` endpoints have no UI** — olive groves, olive oil
+      records, vineyards, kelter deliveries, profitability.
+- [ ] **G2c — 4 `harvest/*` endpoints have no UI** — seasons, lots, deliveries,
+      cold chain.
+- [ ] **G2d — 3 `water/*` endpoints have no UI** — sources, quotas, usage.
+- [ ] **G2e — 3 `weather/*` endpoints have no UI** — frost warnings (list and
+      active), pest risks.
+- [ ] **G2f — workforce logs and locations have no UI** — both exist in the
+      backend; the workers page shows neither.
+- [ ] **G2g — 4 client functions with no consumer** — working API bindings in
+      `api.rs` that no component calls. Invisible to the route test, because the
+      path literal is in the source.
+- [ ] **G2h — 109 i18n keys are missing from `app.yml`** — pages reference
+      `crate::t!(t, "btn_save")` and similar for keys that do not exist, so the
+      key name is rendered instead of the label. Found while adding the G2 pages;
+      pre-existing and unrelated to them.
+
+- [x] **J20 — API contract test could not fail** — the route list was
+      hand-written, so renaming or removing a handler left the test green. It is
+      now read from the running application by probing, and the UI path list is
+      read from the UI sources. A negative check (renaming `/livestock` to
+      `/livestock-renamed`) was run to confirm the test actually fails when a
+      route disappears.
