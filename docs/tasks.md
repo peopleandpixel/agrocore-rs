@@ -479,15 +479,41 @@ Three findings worth keeping:
   carry `strum` snake_case but no serde rename and so serialise as the variant
   name, and `LotStatus` is lower-case. Each select was checked against its enum.
 
-### Still open
+### G2i — a page can be unreachable without any test noticing (fixed)
 
-- [ ] **G2i — a page can be unreachable without any test noticing** — a route
-      that no page renders, and a page that is neither routed nor embedded, both
-      go undetected. A test was written for this and did not hold up: it passed
-      with the `/water` route and its import deleted. Two causes were found and
-      fixed along the way (a `<`-scan that swept up 161 names, and a component
-      counting as embedded because its own `pub fn` line matched), and one was
-      not. It was removed rather than shipped, because a test that cannot fail is
-      worse than no test. The route inventory tests that remain do hold: each was
-      checked against a deliberately broken input.
+The check for this was removed in 0.40.0 because it could not fail: it passed with
+the `/water` route and its import deleted. It is back, and it does fail.
 
+Two of the three causes are understood:
+
+- **The embedding scan was a heuristic.** It collected every capitalised name that
+  followed a `<` or a `(` anywhere under `admin-ui/src` and called it "rendered".
+  That swept up 161 names — `Router`, `Routes`, `Icon`, `UserRole` — because
+  `>Icon<` matches too. Every page looked embedded, so nothing was ever reported.
+- **A component matched its own declaration.** The pattern `Name(` matched the
+  `pub fn WaterManagement(` line in the very file that declares it. Same effect.
+
+The third was the heuristic itself, so it is gone. Which components are embedded
+rather than routed is now declared in `EMBEDDED_NOT_ROUTED`, each with a reason a
+reviewer can check, and the two that are building blocks rather than pages are
+recognised by `is_widget`. A hand-maintained list cannot rot the way a heuristic
+does, because a new entry that is wrong reads as wrong.
+
+Two assertions in the file were quietly weakened by the same bug and are fixed at
+the same time:
+
+- `sole_path` requires its input to be a trimmed, comma-terminated line, so passing
+  it an offset substring silently returned `None` — and the route scan used it, so
+  the first version of this test reported "no routes were parsed out of lib.rs".
+  It now reads the literal with `literal_after`, as the rest of the file does.
+- `#[test]` on a synchronous test in this file did not compile: `use actix_web::test`
+  puts a module named `test` in scope, so the attribute resolved to Actix's
+  async test macro and the error read "the async keyword is missing". The import is
+  now `test as awtest`.
+
+`the_page_reachability_check_can_still_fail` keeps the discrimination honest on
+synthetic input, and the real check was verified against a broken tree by hand:
+deleting the `/water` route reports `WaterManagement`; pointing a route at a
+component that does not exist reports the route.
+
+42 page components, 36 routes, 4 embedded, 2 widgets.

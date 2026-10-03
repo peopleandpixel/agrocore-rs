@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.41.0] - 2026-10-03
+
+G2i fixed: a page can no longer be implemented, wired into `api.rs`, and left
+unreachable from the router without any test noticing.
+
+### The check that could not fail
+
+The test for this was removed in 0.40.0 because it passed with the `/water` route
+and its import deleted — the one thing it existed to catch. It is back and it
+fails.
+
+Two of the three causes were found:
+
+- The embedding scan collected every capitalised name following a `<` or a `(`
+  anywhere under `admin-ui/src`. That is 161 names, including `Router`, `Routes`,
+  `Icon` and `UserRole`, because `>Icon<` matches as well. Every page counted as
+  embedded, so nothing was ever reported.
+- A component matched its own declaration: the pattern `Name(` hit the
+  `pub fn WaterManagement(` line in the file that declares it.
+
+The third cause was the heuristic itself, so it is gone. Which components are
+embedded rather than routed is declared in `EMBEDDED_NOT_ROUTED`, each with a
+reason, and the two that are building blocks rather than pages go through
+`is_widget`. A list reads as wrong when it is wrong; a heuristic does not.
+
+### Two assertions the same bug had quietly weakened
+
+- `sole_path` only accepts a trimmed, comma-terminated line. Handed an offset
+  substring it returns `None` silently — and the route scan used it, so the first
+  version of this test reported "no routes were parsed out of lib.rs". It now uses
+  `literal_after`, as the rest of the file does.
+- `#[test]` on a synchronous test in this file did not compile. `use
+  actix_web::test` brings a module named `test` into scope, so the attribute
+  resolved to Actix's async test macro and the compiler said "the async keyword is
+  missing from the function declaration". The import is now `test as awtest`.
+
+The discrimination is pinned by `the_page_reachability_check_can_still_fail`, on
+synthetic input rather than by editing `lib.rs` — a test that mutates the working
+tree to prove a point has to restore it, and a run that dies in between leaves the
+tree broken for whatever runs next.
+
+42 page components, 36 routes, 4 embedded, 2 widgets.
+
+Gates: fmt, check, clippy -D warnings, workspace tests.
+
 ## [0.40.0] - 2026-10-03
 
 G2 complete: every registered API endpoint now has a caller in the Admin UI.

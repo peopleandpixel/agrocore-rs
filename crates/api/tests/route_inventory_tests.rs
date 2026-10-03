@@ -54,7 +54,7 @@
 //! A route assembled at runtime by string concatenation. None exists today.
 //! `every_registration_shape_is_covered` fails loudly if one is added.
 
-use actix_web::{App, http::StatusCode, test};
+use actix_web::{App, http::StatusCode, test as awtest};
 use std::collections::{BTreeMap, BTreeSet};
 
 const ROOT: &str = "/api/v1";
@@ -313,14 +313,14 @@ fn concrete(path: &str) -> String {
 
 /// Probe every candidate against the real application.
 async fn registered_routes() -> BTreeSet<String> {
-    let app = test::init_service(App::new().configure(agrocore_api::handlers::configure)).await;
+    let app = awtest::init_service(App::new().configure(agrocore_api::handlers::configure)).await;
 
     let mut found = BTreeSet::new();
     for candidate in candidates() {
-        let req = test::TestRequest::get()
+        let req = awtest::TestRequest::get()
             .uri(&concrete(&candidate))
             .to_request();
-        let resp = test::call_service(&app, req).await;
+        let resp = awtest::call_service(&app, req).await;
         if resp.status() != StatusCode::NOT_FOUND {
             found.insert(candidate);
         }
@@ -707,3 +707,253 @@ async fn every_ui_path_resolves_to_a_registered_route() {
 
     println!("✅ all {} UI paths resolve to a registered route", ui.len());
 }
+
+/// Every page that exists must be reachable, and the router must not carry
+/// entries the UI has no component for.
+///
+/// This is a separate assertion from the API-path one and it is not redundant.
+/// The API tests read path literals out of `api.rs`; they say nothing about which
+/// Leptos routes exist. A page can be fully implemented, wired into `api.rs`, and
+/// never registered in the router — it compiles, the API tests pass, and no user
+/// can reach it.
+///
+/// That is not hypothetical. Seven pages were in exactly that state while this work
+/// was in progress. Their `<Route>` entries were written by a patch whose anchor
+/// text no longer matched after `rustfmt`, so the insertions silently did nothing,
+/// and the API test stayed green throughout because it never looked at the router.
+///
+/// Reachability has two forms and both count: a route renders the component, or a
+/// parent view embeds it. Which components take the second form is declared in
+/// `EMBEDDED_NOT_ROUTED` below, with the reason for each.
+///
+/// An earlier version inferred this from the source — collect every capitalised
+/// name following a `<` or a `(` anywhere under `admin-ui/src` and call it
+/// "rendered". It could not fail: a component matched its own `pub fn` line, so
+/// every page counted as embedded, and deleting the `/water` route and its import
+/// still left the test green. A hand-maintained list cannot rot the way a
+/// heuristic does, and the reason string makes each entry reviewable.
+/// `every_page_component_is_reachable_detects_a_missing_route` is the proof that
+/// the check has teeth.
+#[actix_web::test]
+async fn every_page_component_is_reachable() {
+    let ui_src = admin_ui_dir();
+
+    let source = std::fs::read_to_string(ui_src.join("lib.rs")).expect("read admin-ui lib.rs");
+
+    // The routes the router declares, with the component each renders. One
+    // `<Route ... />` element at a time: after a patch two routes can end up on one
+    // line, and the second is then invisible to a line-based read.
+    let mut routed: Vec<(String, String)> = Vec::new();
+    for line in strip_comments(&source) {
+        for element in line.split("<Route").skip(1) {
+            let (Some(path_at), Some(view_at)) =
+                (element.find("path!("), element.find("view=|| view! { <"))
+            else {
+                continue;
+            };
+            if path_at > view_at {
+                continue;
+            }
+            let route = literal_after(element, "path!(")
+                .unwrap_or_default()
+                .to_string();
+            let component = element[view_at + "view=|| view! { <".len()..]
+                .split(|c: char| !(c.is_alphanumeric() || c == '_' || c == ':'))
+                .next()
+                .unwrap_or_default()
+                .rsplit("::")
+                .next()
+                .unwrap_or_default()
+                .to_string();
+            if !route.is_empty() && !component.is_empty() {
+                routed.push((route, component));
+            }
+        }
+    }
+
+    // The page components defined in the components module.
+    let components_dir = ui_src.join("components");
+    let mut defined: Vec<String> = Vec::new();
+    for entry in std::fs::read_dir(&components_dir)
+        .unwrap_or_else(|e| panic!("read {}: {e}", components_dir.display()))
+        .flatten()
+    {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("rs") {
+            continue;
+        }
+        let file = std::fs::read_to_string(&path).expect("read component");
+        for line in strip_comments(&file) {
+            // `#[component]` may be followed by another attribute, so look for the
+            // `pub fn` on a line of its own rather than for a fixed amount of
+            // whitespace after the attribute. `inventory.rs` carries
+            // `#[allow(unused_variables)]` between the two.
+            if !line.trim_start().starts_with("pub fn ") {
+                continue;
+            }
+            let name = line
+                .trim_start()
+                .trim_start_matches("pub fn ")
+                .chars()
+                .take_while(|c| c.is_alphanumeric() || *c == '_')
+                .collect::<String>();
+            if !name.is_empty()
+                && name.chars().next().is_some_and(|c| c.is_uppercase())
+                && !defined.contains(&name)
+            {
+                defined.push(name);
+            }
+        }
+    }
+
+    assert!(
+        !routed.is_empty(),
+        "no routes were parsed out of lib.rs — the scan is broken, not the UI"
+    );
+    assert!(
+        defined.len() > 20,
+        "only {} page components were found in components/ — the scan is broken, \
+         not the UI",
+        defined.len()
+    );
+
+    // A route naming a component that does not exist is worse than a page with no
+    // route: the router compiles, the component is unresolved, and the route renders
+    // nothing at all.
+    let mut dangling: Vec<String> = routed
+        .iter()
+        .filter(|(_, comp)| !defined.contains(comp))
+        .map(|(route, comp)| format!("{route} -> {comp}"))
+        .collect();
+    if !dangling.is_empty() {
+        dangling.sort();
+        eprintln!("\n❌ route(s) rendering a component that does not exist:\n");
+        for d in &dangling {
+            eprintln!("   - {d}");
+        }
+        panic!("{} routes render a missing component", dangling.len());
+    }
+
+    let mut unreachable: Vec<String> = defined
+        .iter()
+        .filter(|c| !routed.iter().any(|(_, comp)| comp == *c))
+        .filter(|c| !EMBEDDED_NOT_ROUTED.iter().any(|(name, _)| name == c) && !is_widget(c))
+        .cloned()
+        .collect();
+    if !unreachable.is_empty() {
+        unreachable.sort();
+        eprintln!(
+            "\n❌ {} page component(s) exist but nothing renders them:\n",
+            unreachable.len()
+        );
+        for c in &unreachable {
+            eprintln!("   - {c}");
+        }
+        eprintln!(
+            "\n   A page that compiles but is neither routed nor embedded cannot be \
+             reached by a user."
+        );
+        panic!("{} pages are unreachable", unreachable.len());
+    }
+
+    println!(
+        "✅ all {} page components are reachable ({} routes)",
+        defined.len(),
+        routed.len()
+    );
+}
+
+/// Components that are building blocks rather than pages.
+///
+/// These carry `#[component]` like a page does, so the scan cannot tell them
+/// apart by shape. They have no route because they have no `IntoView` of their own
+/// worth a URL: a required-field marker and a polygon drawing surface are used
+/// inside other pages. Called through `is_widget` rather than listed here, so a
+/// new form helper does not need to be registered by hand.
+fn is_widget(name: &str) -> bool {
+    name == "RequiredLabel" || name == "FieldPolygonEditor"
+}
+
+/// Proof that `every_page_component_is_reachable` can actually fail.
+///
+/// The check reads two source files and applies two exclusion lists, which is
+/// exactly the shape of a test that silently passes. This one asserts the
+/// discrimination directly, on synthetic input, so the real check cannot lose its
+/// teeth unnoticed: it feeds the same logic a page that is routed, a page that is
+/// neither routed nor embedded, and a route pointing at a component that does not
+/// exist, and requires each to be classified correctly.
+///
+/// It is deliberately not a test that edits `lib.rs`. A test that mutates the
+/// working tree to prove a point has to restore it, and a run that dies between the
+/// edit and the restore leaves the tree broken for whatever runs next.
+#[test]
+fn the_page_reachability_check_can_still_fail() {
+    // The same three predicates the real check uses.
+    let classify = |routed: &[(&str, &str)], defined: &[&str], name: &str| -> &'static str {
+        if routed.iter().any(|(_, comp)| *comp == name) {
+            return "routed";
+        }
+        if EMBEDDED_NOT_ROUTED.iter().any(|(n, _)| *n == name) {
+            return "embedded";
+        }
+        if is_widget(name) {
+            return "widget";
+        }
+        // Defined but unrouted is the orphan case; not defined at all is the
+        // dangling-route case. `defined` is checked first because a component that
+        // is not in it can never be rendered by anything.
+        if defined.contains(&name) {
+            "unreachable"
+        } else {
+            "dangling"
+        }
+    };
+
+    let routed = [
+        ("/water", "WaterManagement"),
+        ("/harvest", "HarvestManagement"),
+    ];
+    let defined = [
+        "WaterManagement",
+        "HarvestManagement",
+        "ToastContainer",
+        "RequiredLabel",
+        "OrphanPage",
+    ];
+
+    assert_eq!(classify(&routed, &defined, "WaterManagement"), "routed");
+    assert_eq!(classify(&routed, &defined, "ToastContainer"), "embedded");
+    assert_eq!(classify(&routed, &defined, "RequiredLabel"), "widget");
+    // A page that exists but that no route renders and nothing embeds. This is the
+    // case the whole check exists for, and the case an earlier version of it missed.
+    assert_eq!(classify(&routed, &defined, "OrphanPage"), "unreachable");
+    // A route pointing at something that is not defined anywhere: the router would
+    // compile and render nothing.
+    assert_eq!(classify(&routed, &defined, "NoSuchPage"), "dangling");
+}
+
+/// Components rendered as part of another view, which correctly have no route of
+/// their own.
+///
+/// Kept as a list with reasons rather than inferred from the source. The inferred
+/// version could not fail: a component matched its own `pub fn` line, so every page
+/// counted as embedded. See the doc comment above.
+const EMBEDDED_NOT_ROUTED: &[(&str, &str)] = &[
+    (
+        "LoginView",
+        "the sign-in page; the shell renders it instead of the router for an \
+         unauthenticated session",
+    ),
+    (
+        "SetupAssistant",
+        "part of the shell in lib.rs, shown to a tenant without an onboarding record",
+    ),
+    (
+        "ServerSettingsPanel",
+        "a panel inside the settings page, not a page of its own",
+    ),
+    (
+        "ToastContainer",
+        "mounted once by the shell; every action reports through it",
+    ),
+];
