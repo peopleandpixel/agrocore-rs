@@ -1,6 +1,6 @@
 # GitHub Repository Settings – Manual Setup Guide
 
-> **Diese Einstellungen kannst nur DU als Repository-Owner vornehmen.** Ich habe alle Dateien vorbereitet – du musst nur in den GitHub-Settings klicken.
+> **Only YOU as the repository owner can make these settings.** I have prepared all files – you just have to click through the GitHub settings.
 
 ---
 
@@ -13,33 +13,33 @@ Farm operations platform – fields, tasks, livestock, finance, compliance, weat
 
 ### Website (About section → ⚙️ Edit)
 - **Website**: `https://github.com/peopleandpixel/agrocore-rs` (or your custom domain if you have one)
-- Wenn du eine Demo-Instanz hast: `https://demo.agrocore.rs` (später)
+- If you have a demo instance: `https://demo.agrocore.rs` (later)
 
 ### Topics (About section → ⚙️ Edit → Topics)
-**Kopiere diese Liste genau:**
+**Copy this list exactly:**
 ```
 rust, agriculture, farm-management, postgis, lpis, sigpac, brp, rpg, ilpis, sian, actix-web, leptos, open-source, gpl-3, local-first, docker, nats, precision-agriculture, multi-language, i18n
 ```
-> **Tipp**: Max 20 Topics – diese 19 sind optimal für Auffindbarkeit.
+> **Tip**: Max 20 topics – these 19 are optimal for discoverability.
 
 ### Social Preview Image
 1. Settings → General → Social preview → **Upload an image**
-2. Wähle: `docs/agrocore_RS.png` (bereits im Repo)
-3. Das Bild wird bei Twitter/X, LinkedIn, Slack, Discord, Matrix als Preview angezeigt
+2. Choose: `docs/agrocore_RS.png` (already in the repo)
+3. The image is shown as a preview on Twitter/X, LinkedIn, Slack, Discord, Matrix
 
 ---
 
 ## 2. Features (Settings → General → Features)
 
-**Aktiviere:**
-- ✅ **Issues** (schon an)
-- ✅ **Projects** (optional, für Roadmap-Boards)
-- ✅ **Wiki** (deaktivieren – wir nutzen docs/ + Discussions)
-- ✅ **Discussions** ⭐ **WICHTIG** – für Community-Q&A, Show & Tell, Farmer-Feedback
-- ✅ **Sponsorships** (schon über FUNDING.yml, aber hier sichtbar machen)
+**Enable:**
+- ✅ **Issues** (already on)
+- ✅ **Projects** (optional, for roadmap boards)
+- ✅ **Wiki** (disable – we use docs/ + Discussions)
+- ✅ **Discussions** ⭐ **IMPORTANT** – for community Q&A, show & tell, farmer feedback
+- ✅ **Sponsorships** (already via FUNDING.yml, but make it visible here)
 
-**Deaktiviere:**
-- ❌ Wiki (nutzt docs/ Ordner)
+**Disable:**
+- ❌ Wiki (we use the docs/ folder)
 
 ---
 
@@ -50,41 +50,41 @@ rust, agriculture, farm-management, postgis, lpis, sigpac, brp, rpg, ilpis, sian
 
 **Required:**
 - ✅ Require a pull request before merging
-  - ✅ Require approvals: **1** (du alleine → 1 reicht)
+  - ✅ Require approvals: **1** (you're on your own → 1 is enough)
   - ✅ Dismiss stale PR approvals when new commits are pushed
-  - ✅ Require review from code owners (wenn CODEOWNERS existiert)
+  - ✅ Require review from code owners (if CODEOWNERS exists)
 - ✅ Require status checks to pass before merging
   - ✅ Require branches to be up to date before merging
-  - **Status checks** (werden nach erstem CI-Run erscheinen):
+  - **Status checks** (will appear after the first CI run):
     - `Quality Gates`
     - `Tests`
     - `Build Admin UI WASM`
     - `Docker Build`
     - `Security Audit`
 - ✅ Require conversation resolution before merging
-- ✅ Require signed commits (optional, aber empfohlen)
+- ✅ Require signed commits (optional, but recommended)
 - ✅ Require linear history
 - ✅ Do not allow bypassing the above settings
 
-**Optional (später):**
-- ✅ Require deployments to succeed (wenn du Staging/Prod Environments hast)
+**Optional (later):**
+- ✅ Require deployments to succeed (if you have staging/prod environments)
 
 ---
 
 ## 4. Security & Analysis (Settings → Security & analysis)
 
-**Aktiviere ALLES:**
+**Enable EVERYTHING:**
 - ✅ Dependency graph
 - ✅ Dependabot alerts
-- ✅ Dependabot security updates (auto-PRs für Security-Fixes)
-- ✅ Dependabot version updates (braucht `.github/dependabot.yml` – siehe unten)
-- ✅ Code scanning alerts (CodeQL – GitHub führt Rust-Analysis automatisch durch)
+- ✅ Dependabot security updates (auto-PRs for security fixes)
+- ✅ Dependabot version updates (requires `.github/dependabot.yml` – see below)
+- ✅ Code scanning alerts (CodeQL – GitHub runs Rust analysis automatically)
 - ✅ Secret scanning alerts
 - ✅ Secret scanning push protection
 
 ---
 
-## 5. Dependabot Configuration (Erstelle `.github/dependabot.yml`)
+## 5. Dependabot Configuration (Create `.github/dependabot.yml`)
 
 ```yaml
 # .github/dependabot.yml
@@ -141,24 +141,24 @@ updates:
 
 ## 6. Environments (Settings → Environments)
 
-**Erstelle zwei Environments:**
-1. **staging** – für Preview-Deployments
-2. **production** – für Releases
+**Create two environments:**
+1. **staging** – for preview deployments
+2. **production** – for releases
 
-**Protection rules für `production`:**
-- ✅ Required reviewers: `@peopleandpixel` (du)
+**Protection rules for `production`:**
+- ✅ Required reviewers: `@peopleandpixel` (you)
 - ✅ Wait timer: 5 minutes
 - ✅ Deployment branches: `main` only
 
 ---
 
-## 7. Pages (Settings → Pages) – für Documentation / Landingpages
+## 7. Pages (Settings → Pages) – for documentation / landing pages
 
 **Source**: `Deploy from a branch`
-**Branch**: `main` / `docs` (oder `gh-pages` wenn du separate docs baust)
-**Folder**: `/docs` (für GitHub Pages aus `docs/` Ordner)
+**Branch**: `main` / `docs` (or `gh-pages` if you build separate docs)
+**Folder**: `/docs` (for GitHub Pages from the `docs/` folder)
 
-> Damit kannst du `https://peopleandpixel.github.io/agrocore-rs/` für Docs/Marketing nutzen.
+> This lets you use `https://peopleandpixel.github.io/agrocore-rs/` for docs/marketing.
 
 ---
 
@@ -168,47 +168,47 @@ updates:
 - ✅ Allow all actions and reusable workflows
 
 **Workflow permissions:**
-- ✅ Read and write permissions (für Release-Action, Docker Push, etc.)
-- ✅ Allow GitHub Actions to create and approve pull requests (für Dependabot)
+- ✅ Read and write permissions (for the release action, Docker push, etc.)
+- ✅ Allow GitHub Actions to create and approve pull requests (for Dependabot)
 
 ---
 
 ## 9. Collaborators & Teams (Settings → Collaborators)
 
-**Falls du Co-Maintainer hinzufügst:**
-- Role: `Maintain` oder `Admin`
-- Teams: erstelle `maintainers` Team mit Write-Zugriff
+**If you add co-maintainers:**
+- Role: `Maintain` or `Admin`
+- Teams: create a `maintainers` team with write access
 
 ---
 
 ## 10. Notifications (Personal Settings → Notifications)
 
-**Für dich empfohlen:**
+**Recommended for you:**
 - ✅ Automatically watch repositories you contribute to
-- ✅ Email notifications für: Security alerts, Dependabot alerts, Failed workflows
-- ✅ GitHub Mobile App installieren (Push für Critical Alerts)
+- ✅ Email notifications for: security alerts, Dependabot alerts, failed workflows
+- ✅ Install the GitHub Mobile App (push for critical alerts)
 
 ---
 
 ## 11. Repository Secrets (Settings → Secrets and variables → Actions)
 
-**Für CI/CD (bereits in ci-cd.yml referenziert):**
-| Secret Name | Wert | Beschreibung |
-|-------------|------|--------------|
-| `DOCKERHUB_USERNAME` | `dein_dockerhub_user` | Für `docker push` |
+**For CI/CD (already referenced in ci-cd.yml):**
+| Secret Name | Value | Description |
+|-------------|-------|-------------|
+| `DOCKERHUB_USERNAME` | `dein_dockerhub_user` | For `docker push` |
 | `DOCKERHUB_TOKEN` | `dckr_pat_xxx` | Docker Hub Access Token (Read/Write) |
 
-**Optional (später):**
-| Secret Name | Wert |
-|-------------|------|
-| `CARGO_REGISTRY_TOKEN` | Für `cargo publish` (wenn du Crates auf crates.io veröffentlichst) |
-| `GHCR_TOKEN` | `ghp_xxx` – wenn du statt Docker Hub GHCR nutzt (schon in GITHUB_TOKEN) |
+**Optional (later):**
+| Secret Name | Value |
+|-------------|-------|
+| `CARGO_REGISTRY_TOKEN` | For `cargo publish` (if you publish crates on crates.io) |
+| `GHCR_TOKEN` | `ghp_xxx` – if you use GHCR instead of Docker Hub (already in GITHUB_TOKEN) |
 
 ---
 
 ## 12. Custom Properties (Settings → Properties) – Optional
 
-**Repository properties** (für Organization-Level Reporting):
+**Repository properties** (for organization-level reporting):
 - `project-type`: `application`
 - `domain`: `agriculture`
 - `tech-stack`: `rust,actix,leptos,postgis,nats`
@@ -220,57 +220,57 @@ updates:
 
 ## 13. Webhooks (Settings → Webhooks) – Optional
 
-**Für externe Integrationen:**
-- Discord/Slack Notifications bei Releases
-- Netlify/Vercel Deploy Hook für Docs-Seite
-- Custom Deployment Webhook
+**For external integrations:**
+- Discord/Slack notifications on releases
+- Netlify/Vercel deploy hook for the docs site
+- Custom deployment webhook
 
 ---
 
-## ✅ Checklist – Alles erledigt?
+## ✅ Checklist – Everything done?
 
-| Kategorie | Item | Done? |
+| Category | Item | Done? |
 |-----------|------|-------|
-| **Basics** | Description gesetzt | ☐ |
-| **Basics** | Website gesetzt | ☐ |
-| **Basics** | **19 Topics** gesetzt | ☐ |
-| **Basics** | Social Preview Image (`docs/agrocore_RS.png`) | ☐ |
-| **Features** | **Discussions aktiviert** | ☐ |
-| **Features** | Wiki deaktiviert | ☐ |
-| **Branches** | Branch Protection `main` mit 5 Checks | ☐ |
-| **Security** | Alle 7 Security Features an | ☐ |
+| **Basics** | Description set | ☐ |
+| **Basics** | Website set | ☐ |
+| **Basics** | **19 topics** set | ☐ |
+| **Basics** | Social preview image (`docs/agrocore_RS.png`) | ☐ |
+| **Features** | **Discussions enabled** | ☐ |
+| **Features** | Wiki disabled | ☐ |
+| **Branches** | Branch protection `main` with 5 checks | ☐ |
+| **Security** | All 7 security features on | ☐ |
 | **Security** | `.github/dependabot.yml` committed | ☐ |
-| **Environments** | `staging` + `production` erstellt | ☐ |
-| **Pages** | GitHub Pages aus `/docs` aktiviert | ☐ |
+| **Environments** | `staging` + `production` created | ☐ |
+| **Pages** | GitHub Pages enabled from `/docs` | ☐ |
 | **Actions** | Write permissions + PR approval | ☐ |
 | **Secrets** | `DOCKERHUB_USERNAME` + `DOCKERHUB_TOKEN` | ☐ |
-| **Files** | Alle neuen Files committed & gepusht | ☐ |
+| **Files** | All new files committed & pushed | ☐ |
 
 ---
 
-## 🚀 Nach dem Push – Was passiert automatisch?
+## 🚀 After the push – what happens automatically?
 
-1. **CI/CD läuft** → Badges in README werden grün
-2. **Dependabot PRs** erscheinen montags
-3. **CodeQL Scans** laufen wöchentlich
-4. **Discussions** Tab ist da → Community kann Fragen stellen
-5. **Sponsor Button** erscheint im Header
-6. **Issue Templates** greifen bei "New Issue"
-7. **PR Template** greift bei "New Pull Request"
+1. **CI/CD runs** → badges in the README turn green
+2. **Dependabot PRs** appear on Mondays
+3. **CodeQL scans** run weekly
+4. **Discussions** tab is there → community can ask questions
+5. **Sponsor button** appears in the header
+6. **Issue templates** kick in on "New Issue"
+7. **PR template** kicks in on "New Pull Request"
 
 ---
 
-## 📝 Nächste Commits (kopierfertig)
+## 📝 Next commits (copy-paste ready)
 
 ```bash
 cd /home/jens/RustroverProjects/agrocore-rs
 
-# Alle neuen Dateien hinzufügen
+# Add all new files
 git add README.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md \
   .github/FUNDING.yml .github/dependabot.yml \
   .github/ISSUE_TEMPLATE/ .github/PULL_REQUEST_TEMPLATE.md
 
-# Commit mit DCO sign-off
+# Commit with DCO sign-off
 git commit -s -m "chore: optimize GitHub presence
 
 - README: updated badges, LPIS table, one-liner, screenshots placeholder
@@ -289,9 +289,9 @@ git push origin main
 
 ---
 
-## 🎯 Danach: Erste Discussions eröffnen
+## 🎯 Afterwards: open the first Discussions
 
-Gehe zu **Discussions** → **New discussion** und erstelle diese 3 Kategorien:
+Go to **Discussions** → **New discussion** and create these 3 categories:
 
 | Category | Title | Body |
 |----------|-------|------|
@@ -301,8 +301,8 @@ Gehe zu **Discussions** → **New discussion** und erstelle diese 3 Kategorien:
 
 ---
 
-**Fertig!** 🎉 Dein Repository ist jetzt professionell aufgestellt für:
-- **Entwickler** (klare Contribution-Guides, CI/CD, Security)
-- **Landwirte** (Discussions, mehrsprachig, LPIS-Fokus)
-- **Sponsoren** (FUNDING.yml, Sponsor Button)
-- **Suchmaschinen** (Topics, Description, Social Preview)
+**Done!** 🎉 Your repository is now professionally set up for:
+- **Developers** (clear contribution guides, CI/CD, security)
+- **Farmers** (Discussions, multilingual, LPIS focus)
+- **Sponsors** (FUNDING.yml, sponsor button)
+- **Search engines** (topics, description, social preview)

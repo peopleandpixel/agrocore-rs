@@ -7,6 +7,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.35.0] - 2026-10-03
+
+Documentation brought back in line with the code, and the demo data made
+locale-neutral English.
+
+### Documentation is now English and current
+
+The documentation had drifted: `docs/API.md`, `docs/FLYER.md` and
+`docs/TECHNICAL.md` were all stamped `0.8.3` and the README badge `0.15.0`,
+while the project was at `0.34.0`. Five files were still written in German.
+
+- `docs/tasks.md`, `docs/TECHNICAL.md`, `docs/optimizations.md`,
+  `GITHUB_SETUP_GUIDE.md` and `docs/FLYER.md` translated to English. Task IDs,
+  checkbox states, paths, SQL and route references verified byte-identical.
+- **`docs/API.md` documented a settings API that no longer exists.** It described
+  `GET/PUT /api/v1/settings/lpis` reading from `config/lpis-providers.toml` with
+  `https://sigpac.example.com/wfs` as the example URL — the endpoint was removed
+  in 0.34.0. Replaced with the actual surface: the key/value API, the five
+  settings groups and the database-backed LPIS provider list.
+- **`docs/TECHNICAL.md` listed 18 migration files that do not exist.** The real
+  set is 7 numbered files; the documented names were invented. Replaced with the
+  actual filenames and descriptions, plus the two rules the layout depends on:
+  `sqlx::migrate!` rejects unnumbered files (which is why the demo seed lives in
+  `scripts/`), and demo data is not a migration.
+- The endpoint summary in `docs/API.md` claimed "140+" and summed a table of
+  estimates. Now derived from the `#[utoipa::path]` annotations in
+  `crates/api/src/openapi.rs` — the same source the served Swagger document uses —
+  giving 162 annotated endpoints.
+- The handler-module count in `docs/TECHNICAL.md` was 27; there are 33.
+- `docs/FLYER.md` Recent Highlights now describe what the project actually does:
+  server-side settings, a working backup lifecycle, enforced tenant isolation.
+- README database row corrected: 7 migrations and 71 tables, not "15 migrations
+  (34 tables)".
+
+### Keeping documentation current
+
+The reason the docs drifted is that nothing required updating them. That is now
+written down in `CONTRIBUTING.md`, with a table mapping each kind of change to
+the file it must update, and two rules that would have caught this:
+
+- Documentation that describes current state is updated **in the same change that
+  alters it**, not batched for a release.
+- Counts in the docs are derived from the code, never estimated. An estimated
+  endpoint total is wrong within two versions, which is exactly what happened.
+
+### Demo data is locale-neutral English
+
+`scripts/demo_seed.sql` and `crates/api/src/handlers/demo.rs` carried German
+names, terms and locale data. The demo is read by people who do not read German,
+so a German site label is as opaque as a wrong one.
+
+- Names: Hans Müller → Hans Miller; Nordfeld → North Field; Südhang → South
+  Slope; Westweide → West Pasture; Haupthalle → Main Barn.
+- Terms: Bodenarten, Rindergülle, Aussaat, Dünger, Wirtschaftsbegriffe
+  translated. The cattle breed Fleckvieh became Holstein Friesian and the wheat
+  variety Akteur became Cadenza, because a German cultivar name is not
+  recognisable to an English reader either.
+- **Locale data removed, not just translated:** German IBANs (`DE…`) became
+  `GB…`, `+49` phone numbers became `+1`, German addresses became generic ones,
+  and the supplier names (Raiffeisen, BayWa) became neutral companies on
+  `.example` domains. The demo tenant's language moved from `de` to `en`.
+  Machine brands (Fendt, Claas, Amazone) stay — they are real international
+  manufacturers named in English farming documents too.
+
+### Demo seed is idempotent for content
+
+`ON CONFLICT (id) DO UPDATE SET updated_at = NOW()` made the seed re-runnable
+but only for the timestamp: a corrected demo value survived every subsequent
+seed, which is why a stale `MaisTer` product name persisted after the file had
+been fixed. The conflict clauses now refresh the descriptive columns per table.
+
+Found while doing it: `inventory_locations` has a `name` column, not `label`, so
+a blanket conflict clause failed with `column excluded.label does not exist`.
+Verified by running the seed twice — no duplicate rows.
+
+Seed runs clean against a freshly migrated database (71 tables, all 7
+migrations). fmt, check, clippy -D warnings, the full workspace test run and the
+ignored database tests all pass.
+
 ## [0.34.0] - 2026-10-02
 
 Settings API for every resource (F3), and LPIS configuration read from the

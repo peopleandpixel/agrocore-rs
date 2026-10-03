@@ -1,8 +1,15 @@
 # AgroCore-RS API Documentation
 
-> Version: 0.8.3  
+> Version: 0.35.0  
 > Base URL: `http://localhost:8080`  
 > API Prefix: `/api/v1`
+
+> **Keeping this document current.** The version line above tracks the workspace
+> version in `Cargo.toml`. Endpoint sections must be added when a route is added,
+> not at release time: this file is the only API reference outside the generated
+> Swagger UI, so a new endpoint that is missing here is undiscoverable for anyone
+> not reading the handler source. When you add a route, add it here in the same
+> change.
 
 ---
 
@@ -1143,43 +1150,106 @@ Generates a veterinary report Excel file for livestock treatments.
 
 Base path: `/api/v1/settings`
 
-### 20.1 LPIS Provider Settings
+Configuration is stored in the `system_settings` table. A row with
+`tenant_id IS NULL` is a system-wide default that every tenant inherits; a row
+with a `tenant_id` is that tenant's override. Reads merge the two, writes are
+always tenant-scoped.
 
-**Endpoint:** `GET /api/v1/settings/lpis`
+### 20.1 Key/Value Settings
 
-Loads LPIS provider configuration from `config/lpis-providers.toml`.
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/api/v1/settings` | GET | All effective settings for the tenant |
+| `/api/v1/settings` | PUT | Write several settings in one request |
+| `/api/v1/settings/keys` | GET | Every known key, including unset ones |
+| `/api/v1/settings/{key}` | GET | One key |
+| `/api/v1/settings/{key}` | PUT | Write one key |
+| `/api/v1/settings/{key}` | DELETE | Drop the tenant override |
+| `/api/v1/settings/restore-defaults` | POST | Remove every tenant override |
+
+A `null` value removes the override rather than storing JSON null, which would
+look like a real setting that simply has no value.
 
 **Response (200):**
 ```json
 {
-  "providers": {
-    "ES": {
-      "base_url": "https://sigpac.example.com/wfs",
+  "settings": [
+    {
+      "key": "company.name",
+      "value": "AgroCore Farm",
+      "value_type": "string",
+      "is_default": true,
+      "default_value": "\"AgroCore Farm\"",
+      "description": "Company or farm name shown on documents",
+      "is_sensitive": false,
+      "updated_at": "2026-10-02T07:15:00Z",
+      "updated_by": null
+    }
+  ]
+}
+```
+
+`is_default` is what lets a UI show a field as inherited and offer a reset,
+instead of silently displaying a value the tenant never chose.
+
+### 20.2 Settings Groups
+
+Each resource has one endpoint that reads and writes its fields together, so a
+client does not have to know every key name and every type.
+
+| Endpoint | Method | Fields |
+|---|---|---|
+| `/api/v1/settings/groups` | GET | Index of groups with their declared fields |
+| `/api/v1/settings/backup` | GET/PUT | enabled, schedule_db, schedule_config, timezone, retention_daily/weekly/monthly/yearly, verification_enabled |
+| `/api/v1/settings/notification` | GET/PUT | email_enabled, push_enabled |
+| `/api/v1/settings/weather` | GET/PUT | provider, cache_ttl_seconds |
+| `/api/v1/settings/locale` | GET/PUT | default_language, supported_languages, timezone, date_format |
+| `/api/v1/settings/company` | GET/PUT | name, tax_id, email, phone, address, website, country |
+
+- An unknown field is rejected instead of being written under a key nothing
+  reads back.
+- A value of the wrong type is rejected at the edge. A string under a numeric
+  field would be accepted by the database and then silently ignored by every
+  reader using `as_u64()`.
+- Writes are partial: only the fields present in the request are written.
+- `null` resets that field to the system default.
+- The response to a `PUT` is the stored state, not an acknowledgement, so a
+  corrected or clamped value becomes visible.
+
+### 20.3 LPIS Provider Settings
+
+**Endpoint:** `GET /api/v1/settings/lpis/providers`
+
+Lists the provider configuration per country, read from `system_settings` under
+`lpis.providers.<COUNTRY>.` with the built-in real endpoints as the fallback.
+
+```json
+{
+  "providers": [
+    {
+      "base_url": "https://sigpac.mapa.gob.es/wfs",
       "timeout_seconds": 30,
       "cache_ttl_seconds": 3600,
       "rate_limit_requests_per_second": 10,
       "rate_limit_burst_size": 20,
-      "enabled": true
-    },
-    "NL": { ... }
-  },
-  "cache_backend": "memory",
-  "cache_default_ttl_seconds": 3600,
-  "cache_max_entries": 10000
+      "enabled": true,
+      "configured": "ES"
+    }
+  ]
 }
 ```
 
-**Endpoint:** `PUT /api/v1/settings/lpis`
+`configured` names the country and distinguishes a tenant override from a
+built-in default. A country with no endpoint is reported as disabled rather than
+given a placeholder URL.
 
-Updates provider configuration. Requires `restart_required: true` in response — changes take effect on service restart.
-
-**Endpoint:** `GET /api/v1/settings/lpis/providers`
-
-Lists all available provider configurations with defaults for all 8 supported countries.
+Credentials are deliberately not part of this API: a settings row is readable by
+every admin of the tenant.
 
 **Roles:** admin only
 
 ---
+
 
 ## 21. System
 
@@ -1315,29 +1385,33 @@ Deletes a tenant and all associated data. **Irreversible.** Use with extreme cau
 
 ## 23. API Endpoints Summary
 
-| Module           | Endpoints | Auth Required | Tags          |
-|------------------|-----------|---------------|---------------|
-| Health           | 1         | No            | system        |
-| Auth             | 2         | No (login)    | auth          |
-| System           | 3         | Yes           | system        |
-| Sites            | 8         | Yes           | sites         |
-| Orders           | 8         | Yes           | orders, tasks |
-| Users            | 5         | Yes           | users         |
-| Workforce        | 15        | Yes           | workforce     |
-| Equipment        | 5         | Yes           | equipment     |
-| Tasks            | 5         | Yes           | tasks         |
-| Weather          | 10        | Yes           | weather       |
-| Compliance       | 18        | Yes           | compliance    |
-| Specialized      | 7+        | Yes           | specialized   |
-| Water            | 15        | Yes           | water         |
-| Harvest          | 19        | Yes           | harvest       |
-| Livestock        | 5         | Yes           | livestock     |
-| Finance          | 15        | Yes           | finance       |
-| IoT              | 8         | Yes           | iot           |
-| SIGPAC           | 3         | Yes           | sigpac        |
-| Reporting        | 4         | Yes           | reporting     |
-| Settings         | 3         | Yes           | settings      |
-| **Total**        | **140+**  | **Most**      | 21 tags       |
+Counts are derived from the `#[utoipa::path]` annotations in
+`crates/api/src/openapi.rs`, which is the same source the served OpenAPI
+document is generated from.
+
+| Module            | Documented endpoints | Auth required |
+|-------------------|----------------------|---------------|
+| Auth              | 2                    | No (login)    |
+| System            | included above       | Yes           |
+| Sites             | 8                    | Yes           |
+| Orders            | 6                    | Yes           |
+| Tasks             | 5                    | Yes           |
+| Users             | 5                    | Yes           |
+| Customers         | 7                    | Yes           |
+| Livestock         | 7                    | Yes           |
+| Weather           | 7                    | Yes           |
+| IoT               | 8                    | Yes           |
+| Finance           | 9                    | Yes           |
+| Settings          | 19                   | Yes (admin)   |
+| Reporting         | 3                    | Yes           |
+| SIGPAC            | 3                    | Yes           |
+| Other modules     | remaining            | Yes           |
+| **Total annotated** | **162**            | **Most**      |
+
+The annotated count is lower than the number of registered routes: several
+handler modules document only their main endpoints. Both numbers grow together —
+when a module adds routes, its `#[utoipa::path]` list should grow with it, or the
+Swagger UI under-reports the surface.
 
 ---
 

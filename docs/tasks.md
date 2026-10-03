@@ -1,88 +1,85 @@
 # Agrocore-RS Open Tasks
 
-Letztes Update: 2026-10-01
+Last updated: 2026-10-01
 
-Nur offene Arbeit. Erledigte Phasen und Module sind entfernt; die Historie steht im
-CHANGELOG. Reihenfolge nach Priorität, innerhalb einer Priorität nach Abhängigkeit.
+Open work only. Completed phases and modules have been removed; the history lives in the
+CHANGELOG. Ordered by priority, within a priority by dependency.
 
-**Task 0 ist vorrangig vor allen Feature-Themen.** Er enthält sechs sofort ausnutzbare
-Sicherheitslücken und die Voraussetzungen dafür, dass Konfiguration und Backend-
-Funktionen überhaupt über die AdminUI bedienbar werden. Die Feature-Listen P0–P4 gelten
-als Arbeit, die erst nach Task 0 sinnvoll begonnen werden kann.
+**Task 0 takes precedence over all feature topics.** It contains six immediately exploitable
+security holes plus the prerequisites for configuration and backend functions to be operable
+through the AdminUI at all. The P0–P4 feature lists count as work that can only sensibly be
+started after Task 0.
 
-Legende: **P0** blockiert den Betrieb · **P1** MVP · **P2** wichtig · **P3** Komfort ·
-**P4** Zukunft.
+Legend: **P0** blocks operation · **P1** MVP · **P2** important · **P3** convenience ·
+**P4** future.
 
 ---
 
-## Task 0 — Sicherheits-, Vollständigkeits- und Performance-Audit (AKUT)
+## Task 0 — Security, completeness and performance audit (URGENT)
 
-Code-Audit vom 2026-10-01 über den gesamten Workspace (154 API-Routen, 33 Handler-Module,
-17 Crates). Befunde sind am Code verifiziert, nicht nur gesichtet.
+Code audit from 2026-10-01 across the entire workspace (154 API routes, 33 handler modules,
+17 crates). Findings were verified against the code, not merely sighted.
 
-**Zielbild:** Das System muss im normalen Modus **und** im Demo-Modus vollständig
-funktionsfähig sein: alle Konfigurationen über die AdminUI einstellbar, alle
-Backend-Funktionen über die AdminUI steuerbar.
+**Target state:** the system must be fully functional in normal mode **and** in demo mode:
+all configurations settable via the AdminUI, all backend functions controllable via the
+AdminUI.
 
-**Reihenfolge:** erst Korrektheit (I0, J1, J2, D1), dann Sicherheit (A–E), dann
-Persistenz (F), dann fehlende Backend-Funktionen (G), dann die AdminUI (H), dann
-Performance (I3–I16).
+**Order:** first correctness (I0, J1, J2, D1), then security (A–E), then persistence (F),
+then missing backend functions (G), then the AdminUI (H), then performance (I3–I16).
 
-**Übergeordnetes Muster:** Bei fast jedem Problem existiert die Infrastruktur, aber die
-Verdrahtung fehlt. `is_revoked()` ist definiert und wird nie aufgerufen. `add_treatment`
-existiert, die Route dahinter ist nicht registriert. `stock_in` existiert, wird nie
-aufgerufen. `find_by_refresh_token` existiert, gibt `None` zurück. `mocks`-Feature
-existiert, wird nie aktiviert. Das sind Verdrahtungsdefekte, keine Featuredefekte — und
-tendenziell deutlich billiger zu beheben als neue Funktionen zu schreiben.
+**Overarching pattern:** for almost every problem the infrastructure exists but the wiring is
+missing. `is_revoked()` is defined and never called. `add_treatment` exists, the route behind
+it is not registered. `stock_in` exists, never called. `find_by_refresh_token` exists, returns
+`None`. The `mocks` feature exists, is never enabled. These are wiring defects, not feature
+defects — and tend to be considerably cheaper to fix than writing new functionality.
 
-**Stand:** Alle vier Analysen sind ausgewertet — Blöcke A–J, 149 offene Punkte. Jeder
-Befund wurde am Code oder gegen das Schema verifiziert, nicht nur gesichtet. `cargo check
---workspace` läuft sauber durch: es sind durchweg **Laufzeit-Bugs**, keine Compile-Fehler.
+**Status:** all four analyses have been evaluated — blocks A–J, 149 open items. Every finding
+was verified against the code or against the schema, not merely sighted. `cargo check
+--workspace` passes cleanly: these are **runtime bugs** throughout, not compile errors.
 
-**Die drei Clusters, die zuerst zu beheben sind:**
+**The three clusters to fix first:**
 
-1. **I1 — acht Tabellen fehlen im Schema.** Sieben Repos sind zur Laufzeit tot. `spatial_objects` wird von jedem GPS-Ping abgefragt, der Fehler wird per `unwrap_or_default()` geschluckt — die Standortzuordnung funktioniert nie und fällt nicht auf.
-2. **A1 — Privilege Escalation** per `PUT /users/{eigene_id}`.
-3. **J1/J2 — nicht registrierte Handler.** `/sigpac/parcels`, `/livestock/animals` und alle drei Site-Import-Endpunkte existieren nicht; der 719-Zeilen-`ImportService` ist toter Code.
+1. **I1 — eight tables are missing from the schema.** Seven repos are dead at runtime. `spatial_objects` is queried by every GPS ping, the error is swallowed via `unwrap_or_default()` — location assignment never works and never surfaces.
+2. **A1 — privilege escalation** via `PUT /users/{own_id}`.
+3. **J1/J2 — unregistered handlers.** `/sigpac/parcels`, `/livestock/animals` and all three site-import endpoints do not exist; the 719-line `ImportService` is dead code.
 
-**Hinweis zu I1:** Der Schema-Drift war der schwerwiegendste Einzelbefund des Audits.
-I1, I2 und J6 sind erledigt (Migration `0000000003_missing_domain_tables.sql`). Damit
-sind sechs Repos wieder funktionsfähig, der GPS-Ping liefert wieder Daten, und die
-Fehler werden nicht mehr verschluckt.
+**Note on I1:** the schema drift was the most severe single finding of the audit.
+I1, I2 and J6 are done (migration `0000000003_missing_domain_tables.sql`). Six repos are
+functional again, the GPS ping returns data again, and the errors are no longer swallowed.
 
-**Weiterer Fund aus I1:** In `tree.rs`, `group.rs`, `building.rs` und `livestock.rs`
-fehlte `tenant_id` im INSERT, obwohl alle SELECTs danach filtern — neu angelegte
-Datensätze wären nicht auffindbar gewesen. Behoben.
+**Further finding from I1:** in `tree.rs`, `group.rs`, `building.rs` and `livestock.rs`,
+`tenant_id` was missing from the INSERT although all SELECTs filter on it afterwards — newly
+created records would have been unfindable. Fixed.
 
-### Block A — Sofort ausnutzbar, existenzielle Folgen (P0)
+### Block A — Immediately exploitable, existential consequences (P0)
 
-- [x] **A1 — Privilege Escalation: jeder User kann sich zum Admin machen** — erledigt (2026-10-01). `update_user` prüft jetzt `if dto.0.roles.is_some() || dto.0.is_active.is_some() { auth.require_admin()?; }` — Rollenwechsel und Aktivitätsstatus sind Admin-only, unabhängig davon, ob der eigene Account betroffen ist. Dazu ein neues `PUT /api/v1/users/me` mit `UpdateOwnProfileDto`, das nur `firstname`, `lastname`, `password`, `language`, `color` annimmt; alle übrigen Domain-Felder werden explizit auf `None` gesetzt, damit das Repository die Spalten unangetastet lässt. Die Route ist **vor** `/users/{id}` registriert, sonst würde `{id}` den Pfad „me" schlucken. `UpdateUserDto.password` verlangt jetzt `min = 12` statt der 8 aus `CreateUserDto` — über die alte Lücke ließ sich ein bestehendes Passwort auf einen leeren String setzen, das ist mit A1 und D3 behoben. 9 Regressionstests in `crates/api/tests/privilege_escalation_tests.rs`. — `handlers/users.rs:153-157`. `if let Err(e) = auth.require_admin() && auth.0.user_id != user_id` hebt den Admin-Check auf, sobald die eigene ID angesprochen wird. Der Body enthält `roles`, und `postgres/user.rs:318` bindet es ungeprüft. Angriff: `PUT /api/v1/users/{eigene_id}` mit `{"roles":["Admin"]}` → voller Admin-Zugriff. Rollenwechsel und `is_active` strikt admin-only; eigenes Profil über ein `/me`-Endpoint mit Feld-Whitelist (`firstname`, `lastname`, `password`, `language`).
-- [x] **A2 — Demo-Routen löschen echte Tenants, unauthentifiziert** — erledigt (2026-10-01). Zwei unabhängige Barrieren: `require_demo_access()` in `handlers/demo.rs` prüft `AppState.demo_endpoints_enabled` (aus `ALLOW_DEMO_ENDPOINTS`, Default **aus**) **und** `auth.require_admin()`. Alle drei Endpunkte (`/seed`, `/reset`, `/summary`) nehmen jetzt einen `AuthExtractor`; vorher tat das keiner, auch `/summary` nicht. Die OpenAPI-Deklarationen tragen jetzt `security(("bearer_auth"))` sowie 401/403, vorher fehlten beide. Zusätzlich das hartkodierte `b"demo123"` entfernt: das Passwort kommt aus `DEMO_ADMIN_PASSWORD` mit Default `demo1234-agrocore`, und wird beim Fehlen der Variablen geloggt. Siehe G2 für die Passwort-Vereinheitlichung. 6 Regressionstests in `crates/api/tests/demo_endpoint_auth_tests.rs`. — `handlers/demo.rs:19-22,37,559`. `/seed`, `/reset`, `/summary` ohne `AuthExtractor`. `reset` erzwingt `reset=true` und führt `DELETE FROM tenants WHERE id = $1` mit Cascade aus; der Tenant-Slug kommt aus dem Request-Body. Zusätzlich hartkodiertes Admin-Passwort `demo123` (`:117`). Routen hinter `#[cfg(feature = "demo")]` + `require_admin()` + Env-Gate `ALLOW_DEMO_ENDPOINTS`; Passwort entfernen.
-- [x] **Pin-Integration: Tenant-Pin in allen Datenbankpfaden** — erledigt (2026-10-02). A3 hatte die Policies scharf geschaltet, aber noch nichts setzte `app.current_tenant_id`. Ohne Pin liefern alle Repos null Zeilen. Behoben:
+- [x] **A1 — Privilege escalation: any user can make themselves admin** — done (2026-10-01). `update_user` now checks `if dto.0.roles.is_some() || dto.0.is_active.is_some() { auth.require_admin()?; }` — role changes and active status are admin-only, regardless of whether the own account is affected. Plus a new `PUT /api/v1/users/me` with `UpdateOwnProfileDto`, which only accepts `firstname`, `lastname`, `password`, `language`, `color`; all other domain fields are explicitly set to `None` so the repository leaves the columns untouched. The route is registered **before** `/users/{id}`, otherwise `{id}` would swallow the path "me". `UpdateUserDto.password` now requires `min = 12` instead of the 8 from `CreateUserDto` — via the old gap an existing password could be set to an empty string; this is fixed together with A1 and D3. 9 regression tests in `crates/api/tests/privilege_escalation_tests.rs`. — `handlers/users.rs:153-157`. `if let Err(e) = auth.require_admin() && auth.0.user_id != user_id` cancels the admin check as soon as the own ID is addressed. The body contains `roles`, and `postgres/user.rs:318` binds it unchecked. Attack: `PUT /api/v1/users/{own_id}` with `{"roles":["Admin"]}` → full admin access. Role changes and `is_active` strictly admin-only; own profile via a `/me` endpoint with a field whitelist (`firstname`, `lastname`, `password`, `language`).
+- [x] **A2 — Demo routes delete real tenants, unauthenticated** — done (2026-10-01). Two independent barriers: `require_demo_access()` in `handlers/demo.rs` checks `AppState.demo_endpoints_enabled` (from `ALLOW_DEMO_ENDPOINTS`, default **off**) **and** `auth.require_admin()`. All three endpoints (`/seed`, `/reset`, `/summary`) now take an `AuthExtractor`; previously not one of them did, not even `/summary`. The OpenAPI declarations now carry `security(("bearer_auth"))` as well as 401/403, both of which were previously missing. Additionally the hardcoded `b"demo123"` was removed: the password comes from `DEMO_ADMIN_PASSWORD` with default `demo1234-agrocore`, and is logged when the variable is missing. See G2 for the password unification. 6 regression tests in `crates/api/tests/demo_endpoint_auth_tests.rs`. — `handlers/demo.rs:19-22,37,559`. `/seed`, `/reset`, `/summary` without `AuthExtractor`. `reset` forces `reset=true` and runs `DELETE FROM tenants WHERE id = $1` with cascade; the tenant slug comes from the request body. Additionally hardcoded admin password `demo123` (`:117`). Routes behind `#[cfg(feature = "demo")]` + `require_admin()` + env gate `ALLOW_DEMO_ENDPOINTS`; remove the password.
+- [x] **Pin integration: tenant pin in all database paths** — done (2026-10-02). A3 had armed the policies, but nothing set `app.current_tenant_id` yet. Without a pin all repos return zero rows. Fixed:
 
-  **`crates/infrastructure/src/postgres/tenant_pool.rs`** — `TenantPool` pinnt vor jeder Query:
-  - `set_config('app.current_tenant_id', ...)` und `set_config('app.is_superadmin','false')` auf **derselben** Verbindung, die die Query ausführt.
-  - implementiert sqlx `Executor`, damit 317 Aufrufstellen in 47 Repos unverändert bleiben und der Pin nicht vergessen werden kann.
-  - `begin()` sendet zuerst ein explizites `BEGIN` vor `set_config(..., true)`. `SET LOCAL` außerhalb eines Transaktionsblocks ist ein No-op — die andere Reihenfolge sieht funktionierend aus und setzt den Pin dann beim ersten Statement zurück.
-  - `unscoped()` nutzt die Nil-UUID: passt zu keinem Tenant, verweigert also alles. Fail-closed für Bootstrap-Arbeit.
-  - 7 Tests in `tests/tenant_pin_tests.rs`. Der entscheidende: `checkout_does_not_inherit_previous_tenant` — eine wiederverwendete Poolverbindung darf keinen Tenant eines vorherigen Requests übernehmen.
+  **`crates/infrastructure/src/postgres/tenant_pool.rs`** — `TenantPool` pins before every query:
+  - `set_config('app.current_tenant_id', ...)` and `set_config('app.is_superadmin','false')` on the **same** connection that executes the query.
+  - implements sqlx `Executor`, so 317 call sites in 47 repos stay unchanged and the pin cannot be forgotten.
+  - `begin()` sends an explicit `BEGIN` before `set_config(..., true)`. `SET LOCAL` outside a transaction block is a no-op — the other order looks like it works and then resets the pin on the first statement.
+  - `unscoped()` uses the nil UUID: matches no tenant and therefore denies everything. Fail-closed for bootstrap work.
+  - 7 tests in `tests/tenant_pin_tests.rs`. The decisive one: `checkout_does_not_inherit_previous_tenant` — a reused pool connection must not inherit a previous request's tenant.
 
-  **Bootstrap-Pfade bewusst ungepinnt**, mit Begründung im Code: `system/setup` und `demo/seed` erzeugen den ersten Tenant, können also nichts pinnen. `demo/summary` ermittelt den Tenant erst ungepinnt und pinnt danach auf dessen ID. `demo/seed` pinnt seine Transaktion direkt nach der Tenant-Anlage um.
+  **Bootstrap paths deliberately unpinned**, with the reasoning in the code: `system/setup` and `demo/seed` create the first tenant and so cannot pin anything. `demo/summary` determines the tenant unpinned first and then pins to its ID. `demo/seed` switches its transaction over to the pin right after the tenant is created.
 
-  **Ein Auth-Pfad braucht eine Ausnahme, weil er den Pin noch nicht kennt:** Login liest den Tenant *aus* der User-Zeile. `users_select` verlangt `tenant_id = get_current_tenant_id()`, was dort nicht existiert. Rolle `agrocore_auth` (NOLOGIN, SELECT auf `users` + `user_sites`, Policy nur für diese Rolle) löst das. Verifiziert: unter `agrocore_app` liefert die Abfrage weiterhin 0 Zeilen, die Ausnahme ist also begrenzt.
+  **One auth path needs an exception because it does not yet know the pin:** login reads the tenant *from* the user row. `users_select` requires `tenant_id = get_current_tenant_id()`, which does not exist there. The role `agrocore_auth` (NOLOGIN, SELECT on `users` + `user_sites`, policy only for this role) solves it. Verified: under `agrocore_app` the query still returns 0 rows, so the exception is bounded.
 
-  **Durch das Wirksamschalten vier weitere echte Bugs sichtbar geworden**, alle gegen eine frisch migrierte Datenbank verifiziert:
-  - **Login komplett kaputt.** Fehlende Grants für 10 nach der RLS-Migration angelegte Tabellen; `user_sites` wird vom Login-Join gebraucht, also schlug jeder Login mit `permission denied` fehl.
-  - **Refresh-Token-Write wirkungslos.** `update_refresh_token` schrieb ungepinnt, `users_update` verlangt den Pin → UPDATE traf 0 Zeilen → Handler meldete ehrlich `false`. Das war vorher als stilles Scheitern übersehen worden.
-  - **`#[sqlx(json)]` auf `Option<T>` ist falsch.** sqlx kennt `json` (erzeugt `Json<T>`, nicht-null) und `json(nullable)` (erzeugt `Option<Json<T>>`). 29 Felder in 10 Dateien waren falsch annotiert. Ursache für `unexpected null; try decoding as an Option`.
-  - **Schema-Drift bei `orders`:** `order_type` war `VARCHAR` statt JSONB, `planned_date`/`deadline_date` waren `DATE` gegen `DateTime`, und `started_at`/`completed_at` existierten in der Tabelle überhaupt nicht. `GET /api/v1/orders` war dadurch unerreichbar. 5 Konformance-Tests in `tests/order_schema_tests.rs`.
-  - **37 `NUMERIC`-Spalten gegen `f64` in Rust.** Jede Entity, die eine davon berührte, scheiterte am Decode — `GET /api/v1/customers` an `vat_rate`. Auf `DOUBLE PRECISION` normalisiert, iterativ statt per Liste, damit die Lücke nicht zurückkommt.
+  **Making it effective exposed four further real bugs**, all verified against a freshly migrated database:
+  - **Login completely broken.** Missing grants for 10 tables created by the RLS migration; `user_sites` is needed by the login join, so every login failed with `permission denied`.
+  - **Refresh-token write had no effect.** `update_refresh_token` wrote unpinned, `users_update` requires the pin → UPDATE hit 0 rows → the handler honestly reported `false`. This had previously been overlooked as a silent failure.
+  - **`#[sqlx(json)]` on `Option<T>` is wrong.** sqlx knows `json` (produces `Json<T>`, non-null) and `json(nullable)` (produces `Option<Json<T>>`). 29 fields in 10 files were annotated incorrectly. Cause of `unexpected null; try decoding as an Option`.
+  - **Schema drift on `orders`:** `order_type` was `VARCHAR` instead of JSONB, `planned_date`/`deadline_date` were `DATE` against `DateTime`, and `started_at`/`completed_at` did not exist in the table at all. `GET /api/v1/orders` was therefore unreachable. 5 conformance tests in `tests/order_schema_tests.rs`.
+  - **37 `NUMERIC` columns against `f64` in Rust.** Every entity touching one of them failed to decode — `GET /api/v1/customers` at `vat_rate`. Normalized to `DOUBLE PRECISION`, iteratively rather than by list, so the gap does not come back.
 
-  **Demo-Seed war fachlich falsch** und hätte nach den Typkorrekturen weiterhin 500er erzeugt: `seeding` und `fertilizing` existieren als `OrderType` nicht (korrekt: `soil_work`, `fertilization`), und `{"mode":"Manual"}` schrieb PascalCase, wo snake_case erwartet wird.
+  **Demo seed was substantively wrong** and would have kept producing 500s after the type fixes: `seeding` and `fertilizing` do not exist as `OrderType` (correct: `soil_work`, `fertilization`), and `{"mode":"Manual"}` wrote PascalCase where snake_case is expected.
 
-  **NATS war ein harter Startup-Blocker.** Ein fehlender Broker brach den gesamten API-Start ab, obwohl die Publisher ohnehin `let _ = …publish()` taten. Messaging ist jetzt optional; `MESSAGING_REQUIRED=1` erzwingt es, wenn es deploymentskritisch ist. Reports brauchen den Broker weiterhin und sagen das explizit.
+  **NATS was a hard startup blocker.** A missing broker aborted the entire API start, even though the publishers did `let _ = …publish()` anyway. Messaging is now optional; `MESSAGING_REQUIRED=1` enforces it when it is deployment-critical. Reports still need the broker and say so explicitly.
 
-  **Verifiziert gegen eine frische Datenbank, alle Migrationen von null, Demo-Seed geladen:**
+  **Verified against a fresh database, all migrations from zero, demo seed loaded:**
   ```text
   POST /api/v1/auth/login       -> 200
   GET  /api/v1/health          -> 200
@@ -95,99 +92,98 @@ Datensätze wären nicht auffindbar gewesen. Behoben.
   GET  /api/v1/tasks           -> 200
   ```
 
-- [x] **A3 — RLS existiert, war aber wirkungslos** — erledigt (2026-10-01). Drei Ursachen, alle behoben:
+- [x] **A3 — RLS exists, but had no effect** — done (2026-10-01). Three causes, all fixed:
 
-  **1. Die Verbindungsrolle war Superuser mit BYPASSRLS.** Gemessen auf dieser Installation: `agrocore` hat `rolsuper = true` **und** `rolbypassrls = true`. PostgreSQL exemptet solche Rollen von RLS **bedingungslos** — `FORCE ROW LEVEL SECURITY` ändert daran nichts. Solange die Anwendung als diese Rolle verbindet, sind 190 Policies Dekoration. Migration `0000000004_force_rls.sql` führt `agrocore_app` ein (NOSUPERUSER, NOBYPASSRLS, NOLOGIN) und der Pool schaltet per `after_connect` mit `SET ROLE agrocore_app` darauf um.
+  **1. The connection role was a superuser with BYPASSRLS.** Measured on this installation: `agrocore` has `rolsuper = true` **and** `rolbypassrls = true`. PostgreSQL exempts such roles from RLS **unconditionally** — `FORCE ROW LEVEL SECURITY` changes nothing. As long as the application connects as that role, 190 policies are decoration. Migration `0000000004_force_rls.sql` introduces `agrocore_app` (NOSUPERUSER, NOBYPASSRLS, NOLOGIN) and the pool switches to it via `after_connect` with `SET ROLE agrocore_app`.
 
-  **2. `FORCE ROW LEVEL SECURITY` fehlte** (0 Treffer). Die Migration setzt es auf alle 62 Tabellen mit RLS — verifiziert: 62 Tabellen, alle mit `relforcerowsecurity`.
+  **2. `FORCE ROW LEVEL SECURITY` was missing** (0 hits). The migration sets it on all 62 tables with RLS — verified: 62 tables, all with `relforcerowsecurity`.
 
-  **3. `app.current_tenant_id` wurde nirgends gesetzt** (0 Treffer im Rust-Code). `get_current_tenant_id()` lieferte NULL, jede Policy verglich `tenant_id = NULL`. Ich habe die Policies empirisch geprüft: mit Pin auf Tenant A sieht die Rolle nur A-Daten, Tenant B nur B, unbekannte UUID und kaputter Wert ergeben 0 Zeilen.
+  **3. `app.current_tenant_id` was set nowhere** (0 hits in the Rust code). `get_current_tenant_id()` returned NULL, every policy compared `tenant_id = NULL`. I checked the policies empirically: with a pin on tenant A the role sees only A's data, tenant B only B's, an unknown UUID and a broken value yield 0 rows.
 
-  **Dabei zwei echte Bugs gefunden, die erst durch das wirksam Schalten sichtbar wurden:**
-  - `sigpac_parcels` hatte RLS aktiviert, aber **keine Policy**. Mit FORCE hätte das jede Zeile für jeden verweigert.
-  - `tenants` hatte Policies für SELECT/UPDATE/DELETE, aber **keine für INSERT**. Mit FORCE wäre `POST /api/v1/system/setup` — der Endpunkt, der den ersten Tenant anlegt — für jede Installation gescheitert. Policy `tenants_insert ... WITH CHECK (true)` ergänzt: Tenant-Anlage ist eine Setup-Aktion, die vor dem Bestehen eines Tenants stattfindet, also nicht mandantengefiltert.
-  - 6 Tabellen mit `tenant_id`-Spalte hatten gar kein RLS; für alle außer `tenants` ergänzt.
+  **Two real bugs found along the way, only visible once it actually took effect:**
+  - `sigpac_parcels` had RLS enabled but **no policy**. With FORCE that would have denied every row to everyone.
+  - `tenants` had policies for SELECT/UPDATE/DELETE but **none for INSERT**. With FORCE, `POST /api/v1/system/setup` — the endpoint that creates the first tenant — would have failed for every installation. Added policy `tenants_insert ... WITH CHECK (true)`: tenant creation is a setup action that happens before a tenant exists, so it is not tenant-filtered.
+  - 6 tables with a `tenant_id` column had no RLS at all; added for all except `tenants`.
 
-  **Geschaltet über `AGROCORE_RLS_ENABLED`**, nicht per Release: die Policies vor dem Pin zu aktivieren würde alle Repos null Zeilen liefern lassen. Der Schalter ist jetzt eine Konfigurationsänderung, kein koordiniertes Release. 5 Tests in `crates/infrastructure/tests/rls_tests.rs` belegen die Wirkung. — Init-Migration + Workspace. 190 Policies, 50× `ENABLE ROW LEVEL SECURITY`, aber `app.current_tenant_id` wird nirgends gesetzt (0 Treffer im Rust-Code) und `FORCE ROW LEVEL SECURITY` fehlt (0 Treffer). Verbindung als Tabellen-Owner umgeht RLS. Die gesamte Tenant-Isolation hängt damit zu 100 % an den Repo-Queries. `SET LOCAL app.current_tenant_id` pro Transaktion setzen, `FORCE ROW LEVEL SECURITY` ergänzen, eigene App-Role ohne `LOGIN`. Die `agrocore_app`-Rolle wird derzeit nur für Views grantet und ist für Isolation nutzlos.
-- [x] **A4 — JWT-Revocation wird nie geprüft, Logout ist wirkungslos** — erledigt (2026-10-01). `AuthExtractor` prüft nach erfolgreichem `decode` die `jti` gegen `AppState.token_revocation.is_revoked(...)` und lehnt mit 401 „Token revoked" ab. Dafür musste der `FromRequest`-Future von `Ready` auf einen `Pin<Box<dyn Future>>` umgestellt werden, weil die Revocation-Liste asynchron ist (Redis oder In-Memory); `from_request` klont Header und State-Handle, damit der Future nichts leiht. Vorher take nur `revoke()` auf, nie `is_revoked()` — ein gestohlener Token blieb bis zum Ablauf gültig, und die UI sendete den Logout-Request gar nicht (H6). — `middleware.rs:90`. `is_revoked()` ist definiert, hat aber null Aufrufe; nur `revoke()` wird genutzt. Logout und Passwortwechsel widerrufen nichts — ein gestohlener Token bleibt 30 Minuten gültig. In `AuthExtractor::from_request` nach erfolgreichem `decode` prüfen.
-- [x] **A5 — JWT-Secret fällt auf `"dev-secret"` zurück** — erledigt (2026-10-01). `run_server` bricht jetzt mit einem `io::Error` ab, bevor der Server lauscht. `validate_jwt_secret()` liefert nicht mehr nur `bool`, sondern `Result<(), JwtSecretError>` mit zwei Varianten: `DevSecret` (unset) und `TooShort { length, minimum }` — die Behebung unterscheidet sich, also muss die Meldung es auch. Zusätzlich zur bisherigen Prüfung gegen das Literal gilt jetzt eine Mindestlänge von 32 Zeichen (`JWT_SECRET_MIN_LENGTH`, Breite eines SHA-256-Digests als übliche Untergrenze für einen symmetrischen HMAC-Schlüssel). Der Entwicklungs-Ausweg `ALLOW_DEV_SECRET=1` entschärft nur den Default-Secret-Check, nie die Längenprüfung. 5 Tests in `crates/api/tests/jwt_secret_tests.rs`. — `shared/config.rs:105,132-134,277`. `validate_jwt_secret()` existiert, hat aber null Aufrufer. Production ohne `JWT_SECRET` bedeutet: jeder kann HS256-Admin-Tokens fälschen und sich in beliebige Tenants setzen. In `main.rs` vor `run_server` hart abbrechen, Länge ≥ 32 Bytes erzwingen (`ALLOW_DEV_SECRET=1` als Opt-out für Entwicklung).
+  **Switched via `AGROCORE_RLS_ENABLED`**, not per release: activating the policies before the pin would make all repos return zero rows. The switch is now a configuration change, not a coordinated release. 5 tests in `crates/infrastructure/tests/rls_tests.rs` demonstrate the effect. — Init migration + workspace. 190 policies, 50× `ENABLE ROW LEVEL SECURITY`, but `app.current_tenant_id` is set nowhere (0 hits in the Rust code) and `FORCE ROW LEVEL SECURITY` is missing (0 hits). Connecting as the table owner bypasses RLS. The entire tenant isolation therefore depends 100 % on the repo queries. Set `SET LOCAL app.current_tenant_id` per transaction, add `FORCE ROW LEVEL SECURITY`, add a dedicated app role without `LOGIN`. The `agrocore_app` role is currently only granted for views and is useless for isolation.
+- [x] **A4 — JWT revocation is never checked, logout is ineffective** — done (2026-10-01). After a successful `decode`, `AuthExtractor` checks the `jti` against `AppState.token_revocation.is_revoked(...)` and rejects with 401 "Token revoked". This required switching the `FromRequest` future from `Ready` to a `Pin<Box<dyn Future>>`, because the revocation list is asynchronous (Redis or in-memory); `from_request` clones the headers and the state handle so the future borrows nothing. Previously only `revoke()` was called, never `is_revoked()` — a stolen token stayed valid until expiry, and the UI did not even send the logout request (H6). — `middleware.rs:90`. `is_revoked()` is defined but has zero call sites; only `revoke()` is used. Logout and password change revoke nothing — a stolen token remains valid for 30 minutes. Check in `AuthExtractor::from_request` after a successful `decode`.
+- [x] **A5 — JWT secret falls back to `"dev-secret"`** — done (2026-10-01). `run_server` now aborts with an `io::Error` before the server listens. `validate_jwt_secret()` no longer returns just `bool`, but `Result<(), JwtSecretError>` with two variants: `DevSecret` (unset) and `TooShort { length, minimum }` — the remedy differs, so the message must too. In addition to the previous check against the literal there is now a minimum length of 32 characters (`JWT_SECRET_MIN_LENGTH`, the width of a SHA-256 digest as the usual lower bound for a symmetric HMAC key). The development escape hatch `ALLOW_DEV_SECRET=1` only softens the default-secret check, never the length check. 5 tests in `crates/api/tests/jwt_secret_tests.rs`. — `shared/config.rs:105,132-134,277`. `validate_jwt_secret()` exists but has zero callers. Production without `JWT_SECRET` means: anyone can forge HS256 admin tokens and put themselves into arbitrary tenants. Hard-abort in `main.rs` before `run_server`, enforce length ≥ 32 bytes (`ALLOW_DEV_SECRET=1` as opt-out for development).
 
-### Block B — Tenant-Bruch und Datenverlust (P0)
+### Block B — Tenant breakage and data loss (P0)
 
-- [x] **B1 — IDOR auf `kelter_deliveries`** — erledigt (2026-10-01). **Korrektur zum Audit:** Die Tabelle existierte sehr wohl, in `0000000000` bei Zeile 875 — sie hatte nur keine `tenant_id`-Spalte, und die RLS-Policies des Init-Schemas scopen über `vineyard_id IN (SELECT id FROM vineyards WHERE tenant_id = ...)`, was das Repository vollständig umgeht. Migration `0000000003` ergänzt deshalb per `ALTER TABLE` eine `tenant_id`-Spalte statt die Tabelle neu anzulegen, mit Backfill aus dem zugehörigen Weinberg. Eine verwaiste Zeile ohne Weinbergs-Tenant bricht die Migration mit einer klaren Meldung ab, statt sie still einem beliebigen Mandanten zuzuordnen. Alle sieben Repository-Methoden filtern jetzt `WHERE tenant_id = $n`; `KelterDelivery` hat das Feld im Domain-Modell. **Verifiziert** mit vier Integrationstests in `crates/infrastructure/tests/tenant_isolation_tests.rs` und direkt gegen die Datenbank: Tenant B sieht in `find_all` nur eigene Zeilen, `find_by_id` mit korrekter UUID liefert nichts, ein Cross-Tenant-`DELETE` betrifft 0 Zeilen, `find_by_vineyard` bleibt gescoped. `test_tenant_scoped_tables_have_tenant_id`: `kelter_deliveries` hat weder eine `tenant_id`-Spalte im Schema noch einen Filter im Repository — `postgres/kelter_delivery.rs:18,37,43,73,148,169`. Alle sieben Methoden nehmen `tid: TenantId` entgegen und verwenden es in keiner einzigen Query; `find_all` liefert global über alle Mandanten. Die Tabelle existiert in keiner Migration, die Queries würden zur Laufzeit fehlschlagen. `AND tenant_id = $n` in allen Queries ergänzen; Migration mit `tenant_id NOT NULL` + FK anlegen.
-- [ ] **B2 — Restore überschreibt eine vom Client benannte Datenbank** — `handlers/backup.rs:218`. `target_database` kommt ungeprüft aus dem Request, `RestoreRequest` wird nicht validiert (anders als `CreateBackupRequest`). Serverseitig aus der Backup-Konfiguration ableiten, Feld aus dem DTO entfernen.
-- [ ] **B3 — `delete_device` prüft die Tenant-Zugehörigkeit nicht** — `handlers/iot.rs:345-361`. Die Bedingung `device.tenant_id != auth.tenant_id && !auth.is_admin()` ist nach dem vorangestellten `require_admin()` immer `false`; das `DELETE` hat selbst keine Tenant-Bedingung. Ein Mandanten-Admin kann Geräte anderer Mandanten löschen. Admin darf die Tenant-Grenze nicht aufheben — Superadmin als separates, global vergebenes Flag.
+- [x] **B1 — IDOR on `kelter_deliveries`** — done (2026-10-01). **Correction to the audit:** the table did exist, in `0000000000` at line 875 — it simply had no `tenant_id` column, and the RLS policies of the init schema scope over `vineyard_id IN (SELECT id FROM vineyards WHERE tenant_id = ...)`, which the repository bypasses entirely. Migration `0000000003` therefore adds a `tenant_id` column via `ALTER TABLE` instead of recreating the table, with a backfill from the associated vineyard. An orphaned row without a vineyard's tenant aborts the migration with a clear message instead of silently assigning it to an arbitrary tenant. All seven repository methods now filter `WHERE tenant_id = $n`; `KelterDelivery` has the field in the domain model. **Verified** with four integration tests in `crates/infrastructure/tests/tenant_isolation_tests.rs` and directly against the database: tenant B sees only its own rows in `find_all`, `find_by_id` with a correct UUID returns nothing, a cross-tenant `DELETE` affects 0 rows, `find_by_vineyard` stays scoped. `test_tenant_scoped_tables_have_tenant_id`: `kelter_deliveries` has neither a `tenant_id` column in the schema nor a filter in the repository — `postgres/kelter_delivery.rs:18,37,43,73,148,169`. All seven methods take `tid: TenantId` and use it in not a single query; `find_all` returns globally across all tenants. The table exists in no migration, the queries would fail at runtime. Add `AND tenant_id = $n` to all queries; create the migration with `tenant_id NOT NULL` + FK.
+- [ ] **B2 — Restore overwrites a database named by the client** — `handlers/backup.rs:218`. `target_database` comes unchecked from the request, `RestoreRequest` is not validated (unlike `CreateBackupRequest`). Derive it server-side from the backup configuration, remove the field from the DTO.
+- [ ] **B3 — `delete_device` does not check tenant membership** — `handlers/iot.rs:345-361`. The condition `device.tenant_id != auth.tenant_id && !auth.is_admin()` is always `false` after the preceding `require_admin()`; the `DELETE` itself has no tenant condition. A tenant admin can delete devices of other tenants. Admin must not lift the tenant boundary — superadmin as a separate, globally granted flag.
 
-### Block C — Informationsleck und Abusbarkeit (P1)
+### Block C — Information leak and abusability (P1)
 
-- [ ] **C1 — DB-Fehlermeldungen mit Schema-Details gehen an den Client** — `api/error.rs:103-106`, `postgres/error_mapper.rs:9-11`. `self.0.to_string()` für alle Fehlertypen inklusive `Database`; Postgres-Meldungen enthalten Tabellen-, Constraint- und Spaltennamen. Dazu explizit durchgereichte Details: `backup.rs:112,220`, `settings.rs:198`, `auth.rs:60,113,124,157,195,216`, `reporting.rs:66,103,136,173`, `system.rs:121`. Bei 500 generische Message plus Korrelations-ID ausgeben und nur serverseitig loggen; `map_db_error` auf Constraint-Codes statt -Messages abbilden.
-- [ ] **C2 — `/metrics/db` und `/metrics/business` ohne Authentifizierung** — `api/lib.rs:158-162`, global registriert, ohne `AuthExtractor`. Enthält Query-Timings, Pool-Statistiken und Datensatzanzahlen pro Tenant. Eigenen Governor-Scope plus `require_admin()`, oder an ein separates Port/Mesh-Netz binden.
-- [ ] **C3 — Kein Payload-Limit, DoS über den Import** — `api/main.rs`. Kein `JsonConfig`/Payload-Limit gesetzt; der GeoJSON-/Shapefile-Import nimmt unbegrenzte Bodies in den Speicher.
-- [ ] **C4 — CORS fällt still auf `permissive` zurück** — `api/lib.rs:55-75`. Ohne `CORS_ALLOWED_ORIGINS` gilt `Cors::permissive()`, im anderen Zweig `allow_any_header` mit `supports_credentials`. Nur ein `warn!` als Schutz. In Production hart fehlschlagen statt `permissive` zu setzen.
+- [ ] **C1 — DB error messages with schema details go to the client** — `api/error.rs:103-106`, `postgres/error_mapper.rs:9-11`. `self.0.to_string()` for all error types including `Database`; Postgres messages contain table, constraint and column names. Plus explicitly passed-through details: `backup.rs:112,220`, `settings.rs:198`, `auth.rs:60,113,124,157,195,216`, `reporting.rs:66,103,136,173`, `system.rs:121`. On 500 emit a generic message plus a correlation ID and log only server-side; map `map_db_error` to constraint codes instead of messages.
+- [ ] **C2 — `/metrics/db` and `/metrics/business` without authentication** — `api/lib.rs:158-162`, registered globally, without `AuthExtractor`. Contains query timings, pool statistics and record counts per tenant. Own governor scope plus `require_admin()`, or bind to a separate port/mesh network.
+- [ ] **C3 — No payload limit, DoS via the import** — `api/main.rs`. No `JsonConfig`/payload limit set; the GeoJSON/shapefile import takes unbounded bodies into memory.
+- [ ] **C4 — CORS silently falls back to `permissive`** — `api/lib.rs:55-75`. Without `CORS_ALLOWED_ORIGINS` `Cors::permissive()` applies, in the other branch `allow_any_header` with `supports_credentials`. Only a `warn!` as protection. Hard-fail in production instead of setting `permissive`.
 
-### Block D — Fehlende Authentifizierungsmechanik (P1)
+### Block D — Missing authentication mechanism (P1)
 
-- [x] **D1 — Refresh-Token-Mechanik ist komplett tot, drei echte Stubs** — erledigt (2026-10-01). Die drei Methoden in `postgres/user.rs` sind implementiert: `find_by_refresh_token` filtert Ablauf und `is_active` bereits im SQL, damit ein abgelaufener Token von einem unbekannten nicht unterscheidbar ist; `invalidate_refresh_token` setzt beide Spalten auf NULL und meldet über `WHERE refresh_token IS NOT NULL`, ob wirklich etwas widerrufen wurde; `update_refresh_token` schreibt Token und Ablauf plus `updated_at`. In `auth.rs` prüfen Login und Refresh jetzt den Rückgabewert — vorher prüfte nur `map_err`, ein `Ok(false)` wäre durchgerutscht, der Client hätte 200 mit einem Token bekommen, der nie in der Datenbank stand. Der Refresh rotiert den Token, wodurch Wiederverwendung erkennbar wird. — `postgres/user.rs:402-420`, aufgerufen aus `handlers/auth.rs:51-58` und `:122-124`. `find_by_refresh_token` gibt `Ok(None)` zurück (`:405`, mit dem Kommentar „Simplified - not fully implemented"), `invalidate_refresh_token` und `update_refresh_token` geben je `Ok(false)` (`:410`, `:419`). Die Spalten `refresh_token` und `refresh_token_expires_at` existieren (Migration `:301-302`) und werden in `authenticate()` (`:372`) korrekt geschrieben. **Der Fehler bleibt still:** `auth.rs:60` prüft nur mit `map_err`, der Stub liefert aber `Ok(false)` — kein Fehler. Der Login antwortet also 200 und übergibt dem Client einen Refresh-Token, der nie in der Datenbank steht; `/auth/refresh` gibt daraufhin immer 401 (`:97`), `/auth/logout` (`:163`) widerruft nichts, weil `Ok(false)` kein Fehler ist. Drei echte Queries ergänzen (`WHERE refresh_token = $1 AND refresh_token_expires_at > NOW() AND is_active = true`, Invalidierung auf `NULL`, Update mit Token und Ablauf) **und** die drei Rückgabewerte in `auth.rs:58-60`/`:122-124`/`:163` explizit prüfen. Opaque 32-Byte-Zufallswert hashen (SHA-256), Rotation und Reuse-Detection ergänzen.
-- [ ] **D2 — Impersonation ist tot und potentiell zu weit** — `handlers/auth.rs:177-184`. Der Rollenvergleich prüft case-sensitiv auf `"admin"`/`"superadmin"`, JWT-Rollen werden aber als `"Admin"` erzeugt → niemand kann impersonieren. Würde der Vergleich case-insensitiv, blieben drei Probleme: der Impersonations-Token landet nicht in der Revocation-Liste, es gibt keinen Audit-Log-Eintrag, der Impersonations-JWT trägt keinen `impersonator_id`-Claim. Absichtlich deaktivieren (`ALLOW_IMPERSONATION`-Gate), Audit-Log-Pflicht.
-- [x] **D3 — Passwort-Update ohne Mindestlänge** — mit A1 erledigt (2026-10-01). `UpdateUserDto.password` hat jetzt `#[validate(length(min = 12, max = 128))]`; `UpdateOwnProfileDto.password` ebenfalls. `CreateUserDto` bleibt bei 8, um bestehende Konten nicht zu brechen. Tests dafür in `privilege_escalation_tests.rs`. — `dto/user.rs:96`. `password: Option<String>` ohne `#[validate(...)]`, während `CreateUserDto:67` `min = 8` setzt. Über A1 ausnutzbar, damit ist das Passwort auf einen leeren String setzbar. `length(min = 12, max = 128)` plus Rehash beim Login.
+- [x] **D1 — Refresh-token mechanism completely dead, three real stubs** — done (2026-10-01). The three methods in `postgres/user.rs` are implemented: `find_by_refresh_token` filters expiry and `is_active` already in SQL, so an expired token is indistinguishable from an unknown one; `invalidate_refresh_token` sets both columns to NULL and reports via `WHERE refresh_token IS NOT NULL` whether something was really revoked; `update_refresh_token` writes token plus expiry plus `updated_at`. In `auth.rs`, login and refresh now check the return value — previously only `map_err` was checked, an `Ok(false)` would have slipped through and the client would have received a 200 with a token that was never in the database. The refresh rotates the token, which makes reuse detectable. — `postgres/user.rs:402-420`, called from `handlers/auth.rs:51-58` and `:122-124`. `find_by_refresh_token` returns `Ok(None)` (`:405`, with the comment "Simplified - not fully implemented"), `invalidate_refresh_token` and `update_refresh_token` return `Ok(false)` each (`:410`, `:419`). The columns `refresh_token` and `refresh_token_expires_at` exist (migration `:301-302`) and are written correctly in `authenticate()` (`:372`). **The bug stays silent:** `auth.rs:60` only checks via `map_err`, but the stub returns `Ok(false)` — no error. Login therefore answers 200 and hands the client a refresh token that is never in the database; `/auth/refresh` then always returns 401 (`:97`), `/auth/logout` (`:163`) revokes nothing, because `Ok(false)` is not an error. Add three real queries (`WHERE refresh_token = $1 AND refresh_token_expires_at > NOW() AND is_active = true`, invalidation to `NULL`, update with token and expiry) **and** explicitly check the three return values in `auth.rs:58-60`/`:122-124`/`:163`. Hash an opaque 32-byte random value (SHA-256), add rotation and reuse detection.
+- [ ] **D2 — Impersonation is dead and potentially too far** — `handlers/auth.rs:177-184`. The role comparison checks case-sensitively for `"admin"`/`"superadmin"`, but JWT roles are generated as `"Admin"` → nobody can impersonate. If the comparison were case-insensitive, three problems would remain: the impersonation token does not land in the revocation list, there is no audit log entry, the impersonation JWT carries no `impersonator_id` claim. Deliberately disable (`ALLOW_IMPERSONATION` gate), require an audit log.
+- [x] **D3 — Password update without a minimum length** — done together with A1 (2026-10-01). `UpdateUserDto.password` now has `#[validate(length(min = 12, max = 128))]`; `UpdateOwnProfileDto.password` likewise. `CreateUserDto` stays at 8, in order not to break existing accounts. Tests for this in `privilege_escalation_tests.rs`. — `dto/user.rs:96`. `password: Option<String>` without `#[validate(...)]`, while `CreateUserDto:67` sets `min = 8`. Exploitable via A1, meaning the password can be set to an empty string. `length(min = 12, max = 128)` plus rehash on login.
 
-### Block E — Fehlende Validierung (P1)
+### Block E — Missing validation (P1)
 
-- [ ] **E1 — 132 POST/PUT-Routen, nur 36 `.validate()`-Aufrufe** — ohne jedes `validate()`: `agriculture.rs` (8), `weather.rs` (10), `workforce.rs` (9), `harvest.rs` (8), `compliance.rs` (7), `finance.rs` (6), `water.rs` (6), `livestock.rs` (4), `breed/building/group/tree/variety/livestock_new.rs` (je 2), `nutrition.rs` (2). `validator::Validate` mit Längen-, Wertebereichs- und Enum-Constraints auf alle Command-DTOs; `require_manager()` als Minimum auf allen schreibenden Routen.
-- [ ] **E2 — `per_page` ohne Cap, Memory-DoS** — `shared` Pagination wird ohne Obergrenze durchgereicht (`postgres/user.rs:128`, `equipment.rs:128`); nur `sigpac.rs:92` begrenzt mit `.min(200)`. Cap im Deserializer auf maximal 200, `page` ebenfalls begrenzen.
+- [ ] **E1 — 132 POST/PUT routes, only 36 `.validate()` calls** — without any `validate()`: `agriculture.rs` (8), `weather.rs` (10), `workforce.rs` (9), `harvest.rs` (8), `compliance.rs` (7), `finance.rs` (6), `water.rs` (6), `livestock.rs` (4), `breed/building/group/tree/variety/livestock_new.rs` (2 each), `nutrition.rs` (2). `validator::Validate` with length, range and enum constraints on all command DTOs; `require_manager()` as a minimum on all writing routes.
+- [ ] **E2 — `per_page` without a cap, memory DoS** — `shared` pagination is passed through without an upper bound (`postgres/user.rs:128`, `equipment.rs:128`); only `sigpac.rs:92` limits with `.min(200)`. Cap in the deserializer at 200 maximum, limit `page` as well.
 
-### Block F — Konfiguration ist nicht persistierbar (P0, Voraussetzung für das Zielbild)
+### Block F — Configuration is not persistable (P0, prerequisite for the target state)
 
-Ohne diese Punkte ist das Zielbild „alle Konfigurationen über die AdminUI einstellbar"
-nicht erreichbar. Es gibt derzeit **keine Stelle im Schema**, an der Konfiguration
-gespeichert werden könnte.
+Without these items the target state "all configurations settable via the AdminUI" is not
+reachable. There is currently **no place in the schema** where configuration could be stored.
 
-- [x] **F1 — Keine Settings-/Config-Tabelle im gesamten Schema** — `migrations/*.sql`. Einziger Treffer ist `soil_moisture_configs`; es existiert keine `system_settings`, `tenant_settings` oder allgemeine `config`-Tabelle. Migration anlegen: Schlüssel, Wert (JSONB), Tenant-Bezug, `updated_at`, `updated_by`; Versionierung und Defaults vorsehen.
-- [x] **F2 — Backup-Konfiguration ist hartkodiert, das Update speichert nichts** — `handlers/backup.rs:41-70`. `get_backup_config` gibt fixe Werte zurück (`schedule_db: "0 2 * * *"`, `enabled: true`, `targets_count: 0`). `update_backup_config` enthält `// TODO: Persist config changes`, antwortet aber mit Erfolg — der Admin glaubt, es sei gespeichert. Auf `system_settings` umstellen; Ziele, Zeitplan, Retention und Verifikation wirklich persistieren und beim Start laden.
-- [x] **F3 — Settings-API kennt nur LPIS** — `handlers/settings.rs:34-44`. Registriert sind ausschließlich `/settings/lpis` (GET/PUT) und `/settings/lpis/providers`. Der Rest des Backends hat keine Konfigurationsendpunkte. Ressourcen für Backup, Scheduler, Benachrichtigungen, Wetter, LPIS-Cache, Mandant, Sicherheit und Darstellung ergänzen.
-- [x] **F4 — Nur-LPIS-Settings schreibt in eine TOML-Datei im Dateisystem** — `handlers/settings.rs:15-32,196-198`. `find_config_file()` sucht relativ von `current_dir` nach oben; `update_lpis_settings` schreibt nach `config/lpis-providers.toml`. Das funktioniert nicht containerisiert und nicht mandantenfähig. In die Datenbank verlagern; Dateipfad und Config-Fehler dürfen nicht an den Client gehen (siehe C1).
-- [x] **F5 — Debug-Ausgaben im Produktivcode** — `handlers/settings.rs:77,82,89,104`. Viermal `eprintln!("DEBUG HANDLER: ...")` mit Dateipfad und Config-Details; geht bei jedem Settings-Aufruf auf stdout. Entfernen, stattdessen strukturiert loggen.
-- [ ] **F6 — LPIS-Provider-Credentials liegen in einer versionierten TOML-Datei** — Provider-URLs und Zugangsdaten stehen in `config/lpis-providers.toml` statt mandantenfähig in der DB. Als Secrets behandeln, Credentials nicht in eine versionierte Datei schreiben.
+- [x] **F1 — No settings/config table anywhere in the schema** — `migrations/*.sql`. The only hit is `soil_moisture_configs`; there is no `system_settings`, `tenant_settings` or general `config` table. Create a migration: key, value (JSONB), tenant reference, `updated_at`, `updated_by`; plan for versioning and defaults.
+- [x] **F2 — Backup configuration is hardcoded, the update stores nothing** — `handlers/backup.rs:41-70`. `get_backup_config` returns fixed values (`schedule_db: "0 2 * * *"`, `enabled: true`, `targets_count: 0`). `update_backup_config` contains `// TODO: Persist config changes`, but answers with success — the admin believes it was saved. Switch to `system_settings`; really persist targets, schedule, retention and verification, and load them at startup.
+- [x] **F3 — Settings API only knows LPIS** — `handlers/settings.rs:34-44`. Only `/settings/lpis` (GET/PUT) and `/settings/lpis/providers` are registered. The rest of the backend has no configuration endpoints. Add resources for backup, scheduler, notifications, weather, LPIS cache, tenant, security and appearance.
+- [x] **F4 — LPIS-only settings write to a TOML file in the filesystem** — `handlers/settings.rs:15-32,196-198`. `find_config_file()` searches relatively upwards from `current_dir`; `update_lpis_settings` writes to `config/lpis-providers.toml`. This does not work containerized and is not tenant-capable. Move it into the database; the file path and config errors must not go to the client (see C1).
+- [x] **F5 — Debug output in production code** — `handlers/settings.rs:77,82,89,104`. Four times `eprintln!("DEBUG HANDLER: ...")` with file path and config details; goes to stdout on every settings call. Remove, log structured instead.
+- [ ] **F6 — LPIS provider credentials live in a versioned TOML file** — provider URLs and credentials are in `config/lpis-providers.toml` instead of tenant-capable in the DB. Treat as secrets, do not write credentials into a versioned file.
 
-### Block G — Backend-Funktionen fehlen (P0, nicht nur in der UI)
+### Block G — Backend functions missing (P0, not only in the UI)
 
-Die AdminUI kann diese Funktionen nicht anbieten, weil sie im Backend nicht existieren.
+The AdminUI cannot offer these functions because they do not exist in the backend.
 
-- [ ] **G1 — Kein Update für die Kern-Entities** — `handlers/{sites,equipment,orders,users,inventory,tasks}.rs`. `web::put()` und `web::patch()` kommen im gesamten Backend **null Mal** vor; es gibt nur Create und Delete. Sites, Equipment, Orders, Tasks und Inventar sind darüber nicht bearbeitbar. PUT-Routen plus Repo-`update` mit demselben Tenant-Filter wie `create` ergänzen.
-- [x] **G2 — Die beiden Demo-Seed-Wege erzeugen unterschiedliche Passwörter** — erledigt (2026-10-01) im Zuge von A2. Eine Quelle definiert jetzt das Passwort: `DEMO_ADMIN_PASSWORD`, Default `demo1234-agrocore` (17 Zeichen, erfüllt das seit v0.25.0 geltende Minimum von 12). Alle drei Stellen lesen daraus beziehungsweise verwenden denselben Wert: `handlers/demo.rs` (`DEMO_DEFAULT_PASSWORD`), `scripts/demo_seed.sql` (Argon2id-Hash neu erzeugt) und `scripts/dev.sh` (Anzeige nutzt die Variable statt eines Literals). Empirisch verifiziert: der Hash akzeptiert `demo1234-agrocore` und lehnt `demo1234` sowie `demo123` ab. — `scripts/demo_seed.sql` speichert für `admin@demo.local` einen Argon2id-Hash, der mit `demo1234` verifiziert (empirisch gegen `argon2 0.6`/`password-hash 0.6` geprüft); `handlers/demo.rs:117` hasht dagegen `b"demo123"`, und `scripts/dev.sh:471` zeigt `demo1234` an. Wer über den API-Seed geht, kann sich mit dem angezeigten Passwort nicht anmelden und umgekehrt. Eine Quelle definieren und beide Wege daraus ableiten.
-- [ ] **G3 — Demo-Modus ist kein Modus, sondern ein einmaliger Seed** — `DEMO_MODE` kommt im gesamten Rust-Code **nirgends** vor, weder in der API noch in der AdminUI. Der Modus existiert nur als Shell-Seed in `scripts/dev.sh` und `scripts/demo_seed.sql`. Durchgängig verdrahten: Flag in `AppState`, Guard-Middleware, abweichendes Verhalten (schreibgeschützt für Produktionsdaten, Resets erlaubt), Anzeige in der UI.
-- [ ] **G4 — Tote Repository-Stubs entfernen** — siehe D1. Die Refresh-Token-Stubs zusätzlich aus dem `UserRepository`-Trait entfernen, damit tote Signaturen nicht erhalten bleiben.
+- [ ] **G1 — No update for the core entities** — `handlers/{sites,equipment,orders,users,inventory,tasks}.rs`. `web::put()` and `web::patch()` occur **zero times** in the entire backend; there is only create and delete. Sites, equipment, orders, tasks and inventory are not editable that way. Add PUT routes plus repo `update` with the same tenant filter as `create`.
+- [x] **G2 — The two demo seed paths produce different passwords** — done (2026-10-01) in the course of A2. One source now defines the password: `DEMO_ADMIN_PASSWORD`, default `demo1234-agrocore` (17 characters, meets the minimum of 12 in force since v0.25.0). All three places read from it or use the same value: `handlers/demo.rs` (`DEMO_DEFAULT_PASSWORD`), `scripts/demo_seed.sql` (Argon2id hash regenerated) and `scripts/dev.sh` (the display uses the variable instead of a literal). Empirically verified: the hash accepts `demo1234-agrocore` and rejects `demo1234` as well as `demo123`. — `scripts/demo_seed.sql` stores an Argon2id hash for `admin@demo.local` that verifies with `demo1234` (empirically checked against `argon2 0.6`/`password-hash 0.6`); `handlers/demo.rs:117` hashes `b"demo123"` instead, and `scripts/dev.sh:471` displays `demo1234`. Anyone going through the API seed cannot log in with the displayed password and vice versa. Define one source and derive both paths from it.
+- [ ] **G3 — Demo mode is not a mode but a one-time seed** — `DEMO_MODE` occurs **nowhere** in the entire Rust code, neither in the API nor in the AdminUI. The mode exists only as a shell seed in `scripts/dev.sh` and `scripts/demo_seed.sql`. Wire it through consistently: flag in `AppState`, guard middleware, divergent behavior (read-only for production data, resets allowed), display in the UI.
+- [ ] **G4 — Remove dead repository stubs** — see D1. Additionally remove the refresh-token stubs from the `UserRepository` trait so dead signatures are not preserved.
 
-### Block H — AdminUI erreicht große Teile des Backends nicht (P1)
+### Block H — AdminUI does not reach large parts of the backend (P1)
 
-33 Backend-Bereiche werden von der UI überhaupt nicht angesprochen. Verifiziert durch
-Abgleich aller 154 Routen gegen die 102 von der UI genutzten Pfade.
+33 backend areas are not addressed by the UI at all. Verified by comparing all 154 routes
+against the 102 paths used by the UI.
 
-- [x] **H1 — Die Settings-Seite ist reine Anzeige** — `admin-ui/src/components/settings.rs` (395 Zeilen). Null `Input`, null `Checkbox`, null `Select`, null `on_input`, null API-Schreibaufrufe. Keine einzige Konfiguration ist editierbar. Formulare gegen F3 bauen.
-- [ ] **H2 — Keine Update-Funktionen in der UI** — `admin-ui/src/api.rs`, 46 Schreibfunktionen. Nur `user` und `worker` haben vollständiges CRUD; alle anderen Entities nur Create und Delete. Selbst wo das Backend PUT anbietet, wird es nicht aufgerufen. Funktionssatz zu G1 ergänzen und Edit-Formulare in den Detailseiten ergänzen.
-- [x] **H3 — Backups sind in der UI nicht vorhanden** — `handlers/backup.rs` bietet Config, Liste, Detail, Status, Restore und Delete; die UI ruft davon nichts auf. Backup-Seite bauen: Konfiguration, manueller Backup-Lauf, Liste mit Status und Fortschritt, Restore inklusive `dry_run`, Fehlerprotokoll. Hängt an F2, sonst ist die Konfiguration nicht speicherbar.
-- [ ] **H4 — Fünf komplette Seiten sind Attrappen** — `admin-ui/src/components/`. `groups.rs` (23 Z.), `trees.rs` (19 Z.), `livestock.rs` (19 Z.) und `buildings.rs` (34 Z.) haben Formulare, deren Submit-Handler nur `let _ = (label.get(), ...)` ausführen — es geht nichts an das Backend. **Schlimmer: `buildings.rs:21` zeigt eine Erfolgsmeldung „Gebäude angelegt" ohne jeden HTTP-Aufruf**, der Nutzer glaubt also, es sei gespeichert. `plot_subentity.rs:11-14` ist eine hartkodierte Beispieltabelle („Herde 1", „Ziegen", „Korkeiche"). Die serverseitigen CRUD-Pendanten `/groups`, `/trees`, `/buildings`, `/livestock` sind fertig und werden nie benutzt. Alle fünf Seiten verdrahten oder entfernen; eine gefälschte Erfolgsmeldung darf nicht bleiben.
-- [ ] **H5 — Neun API-Wrapper sind tot** — `admin-ui/src/api.rs`. Definiert, aber ohne jeden Aufrufer in `components/`: `stock_in`, `stock_out`, `transfer_inventory`, `adjust_inventory` (die gesamte Lager-Logik), `update_inventory_item`, `update_worker`, `refresh_token`, `logout`, `fetch_health`. Der Bestand kann darüber weder aufgefüllt noch entnommen noch umgelagert noch korrigiert werden.
-- [x] **H6 — Der Logout-Button sendet keinen Request** — mit A4 behoben (2026-10-01). Die serverseitige Seite (Revocation-Prüfung im Extractor) ist damit abgeschlossen; der clientseitige Aufruf von `api::logout()` aus `lib.rs:343-347` ist noch offen und als solcher in H5 vermerkt. — `admin-ui/src/lib.rs:343-347`. Er ruft nur `api::clear_auth_token()` und `clear_user_role()` im Browser und lädt neu; `/api/v1/auth/logout` wird nie aufgerufen. Zusammen mit A4 bleibt der JWT serverseitig gültig — nach dem Logout kann der Token weiterverwendet werden. Auf `api::logout()` umstellen.
-- [ ] **H7 — `livestock_new::configure` ist doppelt registriert, `livestock::configure` gar nicht** — `api/handlers/mod.rs:244` und `:250` rufen beide `livestock_new::configure` auf; `livestock::configure` kommt nirgends vor. Damit sind die Routen aus `livestock.rs` — darunter `/livestock/animals/{id}/treatments` (`:212`) und `/grazing` (`:213`) — **nicht erreichbar**, obwohl die UI die Wrapper `add_treatment` und die Grazing-Aufrufe besitzt. Zusätzlich ist `/nutrition/*` doppelt registriert (`calculation.rs:34` und `nutrition.rs:12`). Beide Konsolidieren und prüfen, welche Scope gewinnt.
-- [ ] **H8 — Die Settings-Seite täuscht Bedienbarkeit vor** — `admin-ui/src/components/settings.rs`. Die LPIS-Sektion (`:302-354`) zeigt acht Länderkarten mit `<input>` **ohne `prop:value`, ohne `on:input` und ohne Signal** (`:325,329,333,337,342`); der Button (`:351`) hat **kein `on:click`**. Sieht wie ein Formular aus, ist aber eine Attrappe. Die Zeitzone (`:293-296`) hat einen `<select>` ohne `on:change`. Systemstatus (`:361-373`) sind statische Badges, die Version ist als `"v0.4.2-stable"` hartkodiert (`:372`), obwohl das Projekt bei `0.23.0` steht. Das Firmenprofil (`:53-66`) liegt ausschließlich in `localStorage` (`api.rs:133-140`) — pro Gerät, nicht mandantenfähig, bei Tenant-Wechsel verloren. `fetch_lpis_providers` (`api.rs:2090`) existiert, wird aber nie aufgerufen.
-- [ ] **H9 — Vier große Feature-Blöcke sind serverseitig fertig und clientseitig nicht vorhanden** — Für diese Bereiche existieren die Routen vollständig, die UI hat nichts: **Backup** (12 Routen, `backup.rs`), **Wasser** (12, `water.rs`), **Harvest** (16, `harvest.rs`), **Agrar-Spezial** (16, `agriculture.rs` mit `olive-groves`, `olive-oil-records`, `vineyards`, `kelter-deliveries`). Dazu IoT (`iot.rs`, `send_device_command`-Wrapper vorhanden) und 11 von 13 `/calculate/*`-Endpunkten. Das sind rund 80 Routen ohne jede Bedienoberfläche.
-- [ ] **H10 — Workforce Task-Fortschritt ist unsichtbar** — Alle 5 Routen unter `/workforce/tasks/{id}/status*` werden nicht aufgerufen, obwohl sechs Wrapper in `api.rs:1351-1409` existieren. Task-Fortschritt, Aggregation und Worker-Status sind damit über die UI nicht einsehbar; `/workforce/logs` und `/workforce/locations` ebenfalls komplett ungenutzt.
-- [ ] **H11 — Lagerbestand ist nicht buchbar** — Alle vier Buchungspfade `/inventory/stock-in`, `stock-out`, `transfer`, `adjust` werden nicht aufgerufen (Wrapper vorhanden, `api.rs:1697-1710`). Ohne sie lässt sich kein Bestand verändern. Zusätzlich sind `fetch_all_inventory_transactions` (`api.rs:2126`), die Transaktionen je Item (`api.rs:1671`) und `POST /inventory/locations` ungenutzt.
-- [ ] **H12 — Compliance- und Wetterbereiche ungenutzt** — `/compliance/fertilizer` komplett, `/compliance/applicator-licenses` komplett, `/compliance/plant-protection` nur lesend; `/weather/frost-warnings` (+ `/active`), `/weather/gdd`, `/gdd/accumulated`, `/pest-risks` komplett; `create_weather_station` (`api.rs:1086`) und `create_weather_data` (`api.rs:1105`) tot. Kein Stations-Management.
-- [ ] **H13 — Weitere nicht genutzte Bereiche** — `profitability`, `seasons`, `quotas`, `cold-chain`, `deliveries`, `olive-groves`, `vineyards`, `pest-risks`, `phenology`, `harvest`, `breed`, `variety`, `building`, `lots`, `water-rate`, `workflow`, `groups`, `logs`, `config`, `demo`, `material`, `stations`, `sources`, `data`, `summary`, `usage`, `difficulty-surcharge`, `tree-crown-volume`, `nitrogen-demand`, `agriculture`. Für jedes prüfen: bewusst ausgeblendet (dokumentieren) oder fehlende Seite ergänzen.
+- [x] **H1 — The settings page is pure display** — `admin-ui/src/components/settings.rs` (395 lines). Zero `Input`, zero `Checkbox`, zero `Select`, zero `on_input`, zero API write calls. Not a single configuration is editable. Build forms against F3.
+- [ ] **H2 — No update functions in the UI** — `admin-ui/src/api.rs`, 46 write functions. Only `user` and `worker` have full CRUD; all other entities only create and delete. Even where the backend offers PUT, it is not called. Add the function set to G1 and add edit forms to the detail pages.
+- [x] **H3 — Backups do not exist in the UI** — `handlers/backup.rs` offers config, list, detail, status, restore and delete; the UI calls none of it. Build a backup page: configuration, manual backup run, list with status and progress, restore including `dry_run`, error log. Depends on F2, otherwise the configuration is not persistable.
+- [ ] **H4 — Five complete pages are dummies** — `admin-ui/src/components/`. `groups.rs` (23 lines), `trees.rs` (19 lines), `livestock.rs` (19 lines) and `buildings.rs` (34 lines) have forms whose submit handlers only execute `let _ = (label.get(), ...)` — nothing goes to the backend. **Worse: `buildings.rs:21` shows a success message "Building created" without any HTTP call**, so the user believes it was saved. `plot_subentity.rs:11-14` is a hardcoded example table ("Herd 1", "Goats", "Cork oak"). The server-side CRUD counterparts `/groups`, `/trees`, `/buildings`, `/livestock` are finished and never used. Wire up or remove all five pages; a faked success message must not remain.
+- [ ] **H5 — Nine API wrappers are dead** — `admin-ui/src/api.rs`. Defined but without any caller in `components/`: `stock_in`, `stock_out`, `transfer_inventory`, `adjust_inventory` (the entire stock logic), `update_inventory_item`, `update_worker`, `refresh_token`, `logout`, `fetch_health`. Stock can neither be replenished, withdrawn, transferred nor corrected that way.
+- [x] **H6 — The logout button sends no request** — fixed together with A4 (2026-10-01). The server-side part (revocation check in the extractor) is thus complete; the client-side call of `api::logout()` from `lib.rs:343-347` is still open and is noted as such in H5. — `admin-ui/src/lib.rs:343-347`. It only calls `api::clear_auth_token()` and `clear_user_role()` in the browser and reloads; `/api/v1/auth/logout` is never called. Together with A4 the JWT remains valid server-side — after logout the token can still be reused. Switch to `api::logout()`.
+- [ ] **H7 — `livestock_new::configure` is registered twice, `livestock::configure` not at all** — `api/handlers/mod.rs:244` and `:250` both call `livestock_new::configure`; `livestock::configure` occurs nowhere. Thus the routes from `livestock.rs` — among them `/livestock/animals/{id}/treatments` (`:212`) and `/grazing` (`:213`) — are **unreachable**, even though the UI has the wrappers `add_treatment` and the grazing calls. Additionally `/nutrition/*` is registered twice (`calculation.rs:34` and `nutrition.rs:12`). Consolidate both and check which scope wins.
+- [ ] **H8 — The settings page fakes operability** — `admin-ui/src/components/settings.rs`. The LPIS section (`:302-354`) shows eight country cards with `<input>` **without `prop:value`, without `on:input` and without a signal** (`:325,329,333,337,342`); the button (`:351`) has **no `on:click`**. It looks like a form but is a dummy. The timezone (`:293-296`) has a `<select>` without `on:change`. System status (`:361-373`) are static badges, the version is hardcoded as `"v0.4.2-stable"` (`:372`) although the project is at `0.23.0`. The company profile (`:53-66`) lives exclusively in `localStorage` (`api.rs:133-140`) — per device, not tenant-capable, lost on a tenant switch. `fetch_lpis_providers` (`api.rs:2090`) exists but is never called.
+- [ ] **H9 — Four large feature blocks are finished server-side and absent client-side** — for these areas the routes exist completely, the UI has nothing: **Backup** (12 routes, `backup.rs`), **Water** (12, `water.rs`), **Harvest** (16, `harvest.rs`), **Agriculture special** (16, `agriculture.rs` with `olive-groves`, `olive-oil-records`, `vineyards`, `kelter-deliveries`). Plus IoT (`iot.rs`, `send_device_command` wrapper present) and 11 of 13 `/calculate/*` endpoints. That is around 80 routes without any user interface.
+- [ ] **H10 — Workforce task progress is invisible** — all 5 routes under `/workforce/tasks/{id}/status*` are not called, although six wrappers exist in `api.rs:1351-1409`. Task progress, aggregation and worker status are therefore not viewable via the UI; `/workforce/logs` and `/workforce/locations` are likewise completely unused.
+- [ ] **H11 — Stock cannot be booked** — all four booking paths `/inventory/stock-in`, `stock-out`, `transfer`, `adjust` are not called (wrappers present, `api.rs:1697-1710`). Without them no stock can be changed. Additionally `fetch_all_inventory_transactions` (`api.rs:2126`), the transactions per item (`api.rs:1671`) and `POST /inventory/locations` are unused.
+- [ ] **H12 — Compliance and weather areas unused** — `/compliance/fertilizer` completely, `/compliance/applicator-licenses` completely, `/compliance/plant-protection` read-only only; `/weather/frost-warnings` (+ `/active`), `/weather/gdd`, `/gdd/accumulated`, `/pest-risks` completely; `create_weather_station` (`api.rs:1086`) and `create_weather_data` (`api.rs:1105`) dead. No station management.
+- [ ] **H13 — Further unused areas** — `profitability`, `seasons`, `quotas`, `cold-chain`, `deliveries`, `olive-groves`, `vineyards`, `pest-risks`, `phenology`, `harvest`, `breed`, `variety`, `building`, `lots`, `water-rate`, `workflow`, `groups`, `logs`, `config`, `demo`, `material`, `stations`, `sources`, `data`, `summary`, `usage`, `difficulty-surcharge`, `tree-crown-volume`, `nitrogen-demand`, `agriculture`. For each, check: deliberately hidden (document) or add the missing page.
 
 ### Block I — Performance (P0/P1)
 
-Audit vom 2026-10-01, Indizes gegen die Queries abgeglichen. Effektangaben sind
-Erwartungen aus Query-Shape- und Index-Analyse, nicht gemessen.
+Audit from 2026-10-01, indexes compared against the queries. Effect figures are expectations
+from query-shape and index analysis, not measured.
 
-#### I-0 Korrektheitsdefekt vor Performance: acht Tabellen fehlen im Schema (P0)
+#### I-0 Correctness defect before performance: eight tables missing from the schema (P0)
 
-Acht Tabellen werden von Repos abgefragt, existieren aber in **keiner** Migration
-(52 Queries betroffen). Die betroffenen Funktionen sind zur Laufzeit tot:
+Eight tables are queried by repos but exist in **no** migration (52 queries affected). The
+affected functions are dead at runtime:
 
-| Tabelle | Queries | Repo |
+| Table | Queries | Repo |
 |---|---|---|
 | `spatial_objects` | 5 | `site.rs` |
 | `buildings` | 8 | `building.rs` |
@@ -198,228 +194,228 @@ Acht Tabellen werden von Repos abgefragt, existieren aber in **keiner** Migratio
 | `animal_treatments` | 2 | `animal.rs` |
 | `animal_grazing_records` | 1 | `animal.rs` |
 
-- [x] **I1 — Migrationen für die acht fehlenden Tabellen schreiben** — erledigt in `migrations/0000000003_missing_domain_tables.sql` (2026-10-01). **Dabei zusätzlich gefunden und behoben:** die INSERTs in `tree.rs`, `group.rs`, `building.rs` und `livestock.rs` haben `tenant_id` nicht gebunden, obwohl alle SELECTs danach filtern — ein neu angelegter Datensatz wäre nicht auffindbar gewesen. Migration ist dreimal hintereinander auf derselben Datenbank gelaufen (Idempotenz bestätigt), alle vier Migrationen laufen in einer frischen Datenbank in Reihenfolge durch, der Demo-Seed läuft danach durch. — Die Repos sind implementiert, das Schema nicht. Der Fehler wird zusätzlich verschluckt: `api/handlers/workforce.rs:353,364` ruft `spatial_object_repo().find_containing_point(...)` mit `.unwrap_or_default()`. Jeder GPS-Ping eines Workers läuft damit zweimal in eine nicht existierende Tabelle, das Ergebnis ist immer leer, und die Standort-zu-Feld-Zuordnung **funktioniert nie, ohne zu auffallen**. Erst die Migrationen schreiben, dann I8 (N+1 dort) — jede darauf aufgebaute Optimierung ist vorher wirkungslos.
-- [x] **I2 — Fehler nicht mehr verschlucken** — erledigt in `handlers/workforce.rs` (2026-10-01). Die beiden `.unwrap_or_default()` auf `spatial_object_repo().find_containing_point(...)` sind durch `match` mit `warn!` ersetzt: Tenant, Koordinaten und Fehlertext werden geloggt, der Location-Ping läuft weiter, aber der Fehler ist nicht mehr unsichtbar. — Alle `.unwrap_or_default()` auf Repo-Aufrufen in `workforce.rs` und ähnlichen Stellen durch Logging mit Tenant- und Objektbezug ersetzen; ein leeres Ergebnis darf nicht von einem Fehler ununterscheidbar sein.
+- [x] **I1 — Write migrations for the eight missing tables** — done in `migrations/0000000003_missing_domain_tables.sql` (2026-10-01). **Additionally found and fixed along the way:** the INSERTs in `tree.rs`, `group.rs`, `building.rs` and `livestock.rs` did not bind `tenant_id`, although all SELECTs filter on it afterwards — a newly created record would have been unfindable. The migration has been run three times in a row on the same database (idempotency confirmed), all four migrations run through in order in a fresh database, and the demo seed runs through afterwards. — The repos are implemented, the schema is not. The error is additionally swallowed: `api/handlers/workforce.rs:353,364` calls `spatial_object_repo().find_containing_point(...)` with `.unwrap_or_default()`. Every GPS ping of a worker therefore hits a non-existent table twice, the result is always empty, and the location-to-field assignment **never works, without ever surfacing**. First write the migrations, then I8 (the N+1 is there) — every optimization built on that is ineffective before.
+- [x] **I2 — Stop swallowing errors** — done in `handlers/workforce.rs` (2026-10-01). The two `.unwrap_or_default()` on `spatial_object_repo().find_containing_point(...)` are replaced by `match` with `warn!`: tenant, coordinates and error text are logged, the location ping continues, but the error is no longer invisible. — Replace all `.unwrap_or_default()` on repo calls in `workforce.rs` and similar places with logging including tenant and object context; an empty result must not be indistinguishable from an error.
 
-#### I-A Sofort, hohe Wirkung, kleiner Aufwand (P0)
+#### I-A Immediate, high impact, low effort (P0)
 
-- [ ] **I3 — SIGPAC-Near-Point-Suche nutzt den GIST-Index nicht (PostGIS-Typ-Mismatch)** — `handlers/sigpac.rs:353-354`. Die Query filtert auf `ST_DWithin(geography(geometry), geography(...))`, der vorhandene Index ist `USING GIST(geometry)` (Migration `:1496`), also auf `geometry`, nicht `geography`. Die Umhüllung macht den Index unbenutzbar → Seq-Scan über alle SIGPAC-Parzellen, zusätzlich `ORDER BY ST_Distance` als K-Sort-Sortierung ohne Distanzindex. `CREATE INDEX idx_sigpac_parcels_geog ON sigpac_parcels USING GIST (geography(geometry));` — größter Einzelhebel im Repo.
-- [ ] **I4 — Argon2 blockiert den Async-Runtime-Thread** — `postgres/user.rs:183-187`. `Argon2::default().hash_password(...)` läuft direkt im `async move`-Block, 50–100 ms CPU pro Login. Im gesamten Workspace gibt es null `spawn_blocking`-Aufrufe. In `tokio::task::spawn_blocking` wrappen — ein Login blockiert aktuell alle Worker des Tokio-Runtime-Threads.
-- [ ] **I5 — LPIS-HTTP-Cache ist implementiert, aber nie aktiviert** — `lpis-providers/src/base.rs:76` setzt `cache: None`; `create_default_registry()` (`lpis-providers/src/lib.rs:23-63`) ruft nie `.with_cache(...)`. `get_cached_or_fetch` (`:122-134`) umgeht den Cache-Zweig also immer. Jeder Import-Site löst einen HTTP-Request zu SIGPAC/BRP aus. `LpisCache` (moka) in der Registry bauen und je Provider setzen.
-- [ ] **I6 — Audit-Trigger auf Hochfrequenz-Tabellen** — Migration `:1735-1759` installiert `audit_trigger_*` auf jede Tabelle mit `tenant_id`, auch auf `worker_locations`, `clock_entries`, `worker_task_statuses`, `task_data`, `weather_data`, `soil_moisture_readings`. `audit_trigger_function` schreibt pro Zeile `to_jsonb(OLD)+to_jsonb(NEW)`. Beim Location-Ping: zwei Writes plus zwei JSONB-Serialisierungen statt einem. Trigger für Hochfrequenz-Tabellen droppen; dort ist Audit fachlich über `work_logs` bereits abgedeckt.
+- [ ] **I3 — SIGPAC near-point search does not use the GIST index (PostGIS type mismatch)** — `handlers/sigpac.rs:353-354`. The query filters on `ST_DWithin(geography(geometry), geography(...))`, the existing index is `USING GIST(geometry)` (migration `:1496`), so on `geometry`, not `geography`. The wrapping makes the index unusable → seq scan over all SIGPAC parcels, plus `ORDER BY ST_Distance` as a K-sort sort without a distance index. `CREATE INDEX idx_sigpac_parcels_geog ON sigpac_parcels USING GIST (geography(geometry));` — the single biggest lever in the repo.
+- [ ] **I4 — Argon2 blocks the async runtime thread** — `postgres/user.rs:183-187`. `Argon2::default().hash_password(...)` runs directly in the `async move` block, 50–100 ms CPU per login. Across the entire workspace there are zero `spawn_blocking` calls. Wrap in `tokio::task::spawn_blocking` — one login currently blocks all workers of the Tokio runtime thread.
+- [ ] **I5 — LPIS HTTP cache is implemented but never enabled** — `lpis-providers/src/base.rs:76` sets `cache: None`; `create_default_registry()` (`lpis-providers/src/lib.rs:23-63`) never calls `.with_cache(...)`. So `get_cached_or_fetch` (`:122-134`) always bypasses the cache branch. Every import site triggers an HTTP request to SIGPAC/BRP. Build an `LpisCache` (moka) into the registry and set it per provider.
+- [ ] **I6 — Audit triggers on high-frequency tables** — migration `:1735-1759` installs `audit_trigger_*` on every table with `tenant_id`, including on `worker_locations`, `clock_entries`, `worker_task_statuses`, `task_data`, `weather_data`, `soil_moisture_readings`. `audit_trigger_function` writes `to_jsonb(OLD)+to_jsonb(NEW)` per row. On a location ping: two writes plus two JSONB serializations instead of one. Drop the trigger for high-frequency tables; audit is substantively covered there by `work_logs` anyway.
 
-#### I-B N+1-Muster (P1)
+#### I-B N+1 patterns (P1)
 
-- [ ] **I7 — Clock-In→Clock-Out-Auflösung pro Zeile** — `postgres/clock_entry.rs:164-190` (`find_sessions`) und `:281-298` (`total_hours_worked`). Beide laden alle Clock-Ins im Zeitfenster und fragen **pro Clock-In** erneut ab. Bei 30 Tagen × 2 Events ≈ 60 sequenzielle Roundtrips. `LEFT JOIN LATERAL` auf den nächsten ClockOut; der Index `idx_clock_entries_worker_time(worker_id, timestamp)` (Migration `:1596`) deckt das bereits ab. 60 Roundtrips → 1.
-- [ ] **I8 — Inventar-Bestände pro Artikel aggregiert** — `postgres/inventory_item.rs:106-140` (`find_below_minimum`) und `:158-191` (`find_balances`). Beide laden ohne Kompensation alle aktiven Items und fragen **pro Item** eine `SUM()`-Query. `LEFT JOIN` mit `GROUP BY i.id` statt Schleife; zusätzlich `CREATE INDEX idx_inv_txns_item_created ON inventory_transactions(item_id, created_at DESC)` fehlt (vorhanden sind nur tenant/type/created_at/batch/expiration, `:1586-1590`). 201 Queries → 1.
-- [ ] **I9 — Tier-Behandlungen im Veterinär-Report** — `reporting-service/src/main.rs:192-209`. Pro Animal (bis `per_page: 500`, `:171`) eine `find_treatments_by_animal`-Query → 1 + 500 Roundtrips. Eine JOIN-Query.
+- [ ] **I7 — Clock-in→clock-out resolution per row** — `postgres/clock_entry.rs:164-190` (`find_sessions`) and `:281-298` (`total_hours_worked`). Both load all clock-ins in the time window and query again **per clock-in**. At 30 days × 2 events ≈ 60 sequential roundtrips. `LEFT JOIN LATERAL` on the next clock-out; the index `idx_clock_entries_worker_time(worker_id, timestamp)` (migration `:1596`) already covers this. 60 roundtrips → 1.
+- [ ] **I8 — Inventory balances aggregated per item** — `postgres/inventory_item.rs:106-140` (`find_below_minimum`) and `:158-191` (`find_balances`). Both load all active items without compensation and run a `SUM()` query **per item**. `LEFT JOIN` with `GROUP BY i.id` instead of the loop; additionally `CREATE INDEX idx_inv_txns_item_created ON inventory_transactions(item_id, created_at DESC)` is missing (only tenant/type/created_at/batch/expiration exist, `:1586-1590`). 201 queries → 1.
+- [ ] **I9 — Animal treatments in the veterinary report** — `reporting-service/src/main.rs:192-209`. Per animal (up to `per_page: 500`, `:171`) a `find_treatments_by_animal` query → 1 + 500 roundtrips. One JOIN query.
 
-#### I-C Fehlende Indizes (P1)
+#### I-C Missing indexes (P1)
 
-- [ ] **I10 — Zehn fehlende Indizes** — Abgleich Migration gegen Queries: `inventory_item.rs:58` `(item_id, created_at DESC)`; `order.rs:74,271` `(tenant_id, created_at DESC)` (nur `tenant_id`, `:1411`); `weather_data.rs:67` `(tenant_id, timestamp DESC)` (nur `(station_id, timestamp DESC)`, `:1426`); `tasks` `(tenant_id, status)` und `(status, scheduled_start)` (`:1420-1424`); `animal.rs:80` `(tenant_id, created_at DESC)` (keiner); `harvest_lot.rs:43` `(tenant_id, created_at DESC)` (nur `tenant_id`, `:1430`); `frost_warning.rs:123` partiell `(tenant_id, created_at DESC) WHERE is_active`; `tenant.rs:37` `(is_active, id)`; `customer.rs:235` trgm auf `company` und `customer_number` (trgm nur auf `name`,`email`, `:1628-1629`); `equipment.rs:144` `lower(label)`/`lower(code)` mit `gin_trgm_ops`. Jeder Punkt verwandelt Sort+Scan in Index-Scan, bei 50k–1M Zeilen Faktor 10–100 in der p95-Latenz.
+- [ ] **I10 — Ten missing indexes** — migration compared against queries: `inventory_item.rs:58` `(item_id, created_at DESC)`; `order.rs:74,271` `(tenant_id, created_at DESC)` (only `tenant_id`, `:1411`); `weather_data.rs:67` `(tenant_id, timestamp DESC)` (only `(station_id, timestamp DESC)`, `:1426`); `tasks` `(tenant_id, status)` and `(status, scheduled_start)` (`:1420-1424`); `animal.rs:80` `(tenant_id, created_at DESC)` (none); `harvest_lot.rs:43` `(tenant_id, created_at DESC)` (only `tenant_id`, `:1430`); `frost_warning.rs:123` partial `(tenant_id, created_at DESC) WHERE is_active`; `tenant.rs:37` `(is_active, id)`; `customer.rs:235` trgm on `company` and `customer_number` (trgm only on `name`,`email`, `:1628-1629`); `equipment.rs:144` `lower(label)`/`lower(code)` with `gin_trgm_ops`. Each item turns sort+scan into index scan; at 50k–1M rows a factor of 10–100 in p95 latency.
 
-#### I-D Payload, Pagination, Transaktionen (P1)
+#### I-D Payload, pagination, transactions (P1)
 
-- [ ] **I11 — `SELECT *` auf breiten JSONB-/Geometrie-Tabellen (167 Fundstellen)** — `site.rs:104-112` und `:161-180` laden `boundary` (GEOMETRY), `center`, `plots`, `properties`, `custom_fields`, `lpis_data`, `sigpac_data`, `row_config`, `bbch_stage`. Bei 500 Sites mit Polygonen ergibt das eine Multi-MB-Payload pro Listenseite. Ebenso `tree.rs:45`, `group.rs:45`, `building.rs:52`, `livestock.rs:52`, `order.rs:74`, `worker_task_status.rs`, `task_data.rs:49`. Listen-Queries auf eine DTO-Spaltenliste reduzieren (das `SiteDb`-Muster in `site.rs` zeigt es für Details), Geometrie nur im Detail-Endpoint.
-- [ ] **I12 — Queries ohne `LIMIT`** — `inventory_item.rs:98,150`; `equipment.rs:680` (`equipment_fuel_consumption`) und `:743` (`equipment_usage_log`) — komplette Historie pro Gerät ohne LIMIT und ohne Zeitfenster; `order.rs:111,239`; `livestock.rs:130`, `tree.rs:123`, `group.rs:123`, `breed.rs:74`, `variety.rs:83` (Stammdaten komplett); `frost_warning.rs:123`; `plant_protection_record.rs:170`; `api/handlers/iot.rs:130-145` lädt **alle** `iot_devices` des Tenants und filtert `site_id`/`status` in Rust, ohne Pagination in der Antwort. Durch `Pagination` (Default 20, max 500, `shared/src/lib.rs:71-85`) ersetzen, für Historien zusätzlich ein Zeitfenster.
-- [ ] **I13 — Zwei Queries pro Listen-Request (`COUNT` + `SELECT`)** — Durchgängig in etwa 25 Repos (`site.rs:98+104`, `user.rs:132+140`, `equipment.rs:190+214`, `customer.rs:233+243`, `weather_data.rs:61+67`). Der `COUNT(*)` läuft mit demselben Filter und skaliert linear. Keyset-Paging statt `OFFSET`, `total` per `COUNT(*) OVER()` nur wenn wirklich benötigt. Halbiert die Roundtrips und eliminiert die OFFSET-Tiefenkosten.
-- [ ] **I14 — Fehlende Transaktionen bei Multi-Write** — `order.rs:139-154` (INSERT + Audit-Log), `order.rs:170-208` (SELECT + UPDATE + Audit-Log, nicht atomar, TOCTOU auf `old_order`), `handlers/workforce.rs:446-560` (pro Order `update()` + `publish()` + `find_by_user_id()` + `work_log_repo().create()`), `handlers/orders.rs:328-337` (Folge-Orders in Schleife einzeln committet). Repo-Updates um eine `&mut Transaction`-Variante ergänzen; Batch-Operationen in `import_service.rs:56-95,408-493` ebenfalls transaktional plus `UNNEST`-Batch-Insert. Korrektheitsgewinn primär.
-- [ ] **I15 — Keine Kompression** — `api/lib.rs:146-169`, Middleware-Kette `Prometheus → SecurityHeaders → Governor → CORS → Metrics`, **kein `Compress`**. Bei GeoJSON-, Excel- und SIGPAC-Antworten im MB-Bereich. `Compress::default()` ergänzen, ~70–85 % weniger Transferbytes für textbasierte Antworten.
+- [ ] **I11 — `SELECT *` on wide JSONB/geometry tables (167 hit sites)** — `site.rs:104-112` and `:161-180` load `boundary` (GEOMETRY), `center`, `plots`, `properties`, `custom_fields`, `lpis_data`, `sigpac_data`, `row_config`, `bbch_stage`. At 500 sites with polygons that yields a multi-MB payload per list page. Same for `tree.rs:45`, `group.rs:45`, `building.rs:52`, `livestock.rs:52`, `order.rs:74`, `worker_task_status.rs`, `task_data.rs:49`. Reduce list queries to a DTO column list (the `SiteDb` pattern in `site.rs` shows it for details), geometry only in the detail endpoint.
+- [ ] **I12 — Queries without `LIMIT`** — `inventory_item.rs:98,150`; `equipment.rs:680` (`equipment_fuel_consumption`) and `:743` (`equipment_usage_log`) — complete history per device without LIMIT and without a time window; `order.rs:111,239`; `livestock.rs:130`, `tree.rs:123`, `group.rs:123`, `breed.rs:74`, `variety.rs:83` (master data completely); `frost_warning.rs:123`; `plant_protection_record.rs:170`; `api/handlers/iot.rs:130-145` loads **all** `iot_devices` of the tenant and filters `site_id`/`status` in Rust, without pagination in the response. Replace with `Pagination` (default 20, max 500, `shared/src/lib.rs:71-85`), for histories additionally a time window.
+- [ ] **I13 — Two queries per list request (`COUNT` + `SELECT`)** — consistently in about 25 repos (`site.rs:98+104`, `user.rs:132+140`, `equipment.rs:190+214`, `customer.rs:233+243`, `weather_data.rs:61+67`). The `COUNT(*)` runs with the same filter and scales linearly. Keyset paging instead of `OFFSET`, `total` via `COUNT(*) OVER()` only if genuinely needed. Halves the roundtrips and eliminates the deep OFFSET costs.
+- [ ] **I14 — Missing transactions on multi-write** — `order.rs:139-154` (INSERT + audit log), `order.rs:170-208` (SELECT + UPDATE + audit log, not atomic, TOCTOU on `old_order`), `handlers/workforce.rs:446-560` (per order `update()` + `publish()` + `find_by_user_id()` + `work_log_repo().create()`), `handlers/orders.rs:328-337` (follow-up orders committed individually in a loop). Add a `&mut Transaction` variant to the repo updates; make the batch operations in `import_service.rs:56-95,408-493` transactional too, plus `UNNEST` batch insert. Primarily a correctness gain.
+- [ ] **I15 — No compression** — `api/lib.rs:146-169`, middleware chain `Prometheus → SecurityHeaders → Governor → CORS → Metrics`, **no `Compress`**. For GeoJSON, Excel and SIGPAC responses in the MB range. Add `Compress::default()`, ~70–85 % fewer transfer bytes for text-based responses.
 
-#### I-E Blocking Work auf Async-Threads (P1)
+#### I-E Blocking work on async threads (P1)
 
-- [ ] **I16 — Kein `spawn_blocking` im gesamten Workspace, fünf CPU-Schwerpunkte** — Null Treffer verifiziert. Betroffen: **LPIS-Parsing** (`lpis-providers/src/sigpac.rs:146-200`, `gml_to_polygon` mit tausenden `parse::<f64>()`, bei `per_page` bis 1000 Parzellen Sekunden CPU); **Excel-Reports** (`reporting-service/src/main.rs:134-166,180-213`, `rust_xlsxwriter` synchron in async); **Geometrie-Service** (`geometry-service/src/worker.rs:62-88`, Flächen- und Contains-Berechnung direkt in der NATS-Consumer-Loop, blockiert alle weiteren `geometry.request`); **Checksummen** (`backup-service/src/verification.rs:214-239`, SHA-256 über geladene Dateien); **Geodäsie im Domain-Layer** (`domain/src/entities/spatial/mod.rs`, Haversine pro Objekt in `site.rs:561-564`). Alle fünf in `spawn_blocking` wrappen, für Geometrie zusätzlich `rayon::par_iter`. Beim LPIS-Bulk-Import der wichtigste Punkt.
+- [ ] **I16 — No `spawn_blocking` anywhere in the workspace, five CPU hotspots** — zero hits verified. Affected: **LPIS parsing** (`lpis-providers/src/sigpac.rs:146-200`, `gml_to_polygon` with thousands of `parse::<f64>()`, seconds of CPU at `per_page` up to 1000 parcels); **Excel reports** (`reporting-service/src/main.rs:134-166,180-213`, `rust_xlsxwriter` synchronous in async); **geometry service** (`geometry-service/src/worker.rs:62-88`, area and contains computation directly in the NATS consumer loop, blocks all further `geometry.request`); **checksums** (`backup-service/src/verification.rs:214-239`, SHA-256 over loaded files); **geodesy in the domain layer** (`domain/src/entities/spatial/mod.rs`, Haversine per object in `site.rs:561-564`). Wrap all five in `spawn_blocking`, for geometry additionally `rayon::par_iter`. The most important one during LPIS bulk import.
 
-### Block J — Nicht verdrahteter Code und Schema-Drift (P0/P1)
+### Block J — Unwired code and schema drift (P0/P1)
 
-Befunde aus der Analyse fehlender Implementierungen. `cargo check --workspace` läuft
-sauber durch — es sind durchweg **Laufzeit-Bugs**, keine Compile-Fehler. Genau deshalb
-sind sie bisher unentdeckt geblieben.
+Findings from the analysis of missing implementations. `cargo check --workspace` passes
+cleanly — these are **runtime bugs** throughout, not compile errors. Precisely for that reason
+they have gone unnoticed so far.
 
-#### J-A Module und Handler ohne Registrierung (P0)
+#### J-A Modules and handlers without registration (P0)
 
-- [x] **J1 — `sigpac` und `livestock` sind deklariert, aber nie registriert** — erledigt (2026-10-01). Beide `.configure(...)` ergänzt, damit `/api/v1/sigpac/parcels` (3 Routen) und `/api/v1/livestock/animals` (7 Routen) existieren; sie waren in `openapi.rs` dokumentiert, gab es aber nicht. Die gleichzeitig zweimal registrierte `livestock_new::configure` ist auf einmaliges Vorkommen reduziert. Die beiden Livestock-Module teilen sich den Prefix `/livestock`, nutzen aber verschiedene Unterpfade (`/animals…` gegen `/`, `/{id}`, `/by-plot/…`), es gibt also keine Kollision. — `handlers/mod.rs`. Beide Module sind als `pub mod` deklariert und besitzen ein fertiges `configure()`, werden aber nie aufgerufen (verifiziert: 22 `.configure()`-Aufrufe, weder `sigpac::configure` noch `livestock::configure`). Damit existieren `/api/v1/sigpac/parcels` (3 Routen) und `/api/v1/livestock/animals` (7 Routen) **nicht**, obwohl sie in `openapi.rs:243-251` dokumentiert sind. Konsequenz: `animal_repo` ist komplett unerreichbar, und der Veterinär-Export bricht mit, weil `reporting-service/src/main.rs:175,196` das Repo direkt nutzt. Beide `.configure(...)` ergänzen.
-- [x] **J2 — Drei Site-Import-Handler ohne Route, der gesamte `ImportService` ist toter Code** — erledigt (2026-10-01). `POST /sites/import`, `POST /sites/import/geojson` und `POST /sites/import/shapefile` registriert und dabei bewusst **vor** `/sites/{id}` platziert, sonst hätte das Id-Muster „import" als UUID zu parsen versucht. Damit sind 719 Zeilen `ImportService` (LPIS-Registry, GeoJSON, Geozero-Shapefile) und die passenden Wrapper in der Admin-UI (`api.rs`) erstmals erreichbar. — `handlers/sites.rs`. `import_sites` (`:238`), `import_geojson` (`:270`) und `import_shapefile` (`:302`) sind vollständig implementiert und nutzen `ImportService` mit LPIS-Registry und Geozero-Shapefile-Parsing (719 Zeilen Service-Code) — haben aber **keine Route** (verifiziert: keine `web::resource` mit `import` in `sites.rs`). Routen ergänzen; dabei statische Pfade **vor** `/sites/{id}` registrieren, sonst schluckt das `{id}`-Resource die Namen.
-- [x] **J3 — `livestock_new::configure` doppelt registriert** — mit J1 behoben (2026-10-01). — siehe H7. `mod.rs:244` und `:250` rufen beide dieselbe Funktion auf.
+- [x] **J1 — `sigpac` and `livestock` are declared but never registered** — done (2026-10-01). Both `.configure(...)` added, so that `/api/v1/sigpac/parcels` (3 routes) and `/api/v1/livestock/animals` (7 routes) exist; they were documented in `openapi.rs` but did not exist. The simultaneously double-registered `livestock_new::configure` is reduced to a single occurrence. The two livestock modules share the prefix `/livestock` but use different subpaths (`/animals…` vs. `/`, `/{id}`, `/by-plot/…`), so there is no collision. — `handlers/mod.rs`. Both modules are declared as `pub mod` and have a finished `configure()`, but are never called (verified: 22 `.configure()` calls, neither `sigpac::configure` nor `livestock::configure`). Thus `/api/v1/sigpac/parcels` (3 routes) and `/api/v1/livestock/animals` (7 routes) **do not exist**, although they are documented in `openapi.rs:243-251`. Consequence: `animal_repo` is completely unreachable, and the veterinary export breaks because `reporting-service/src/main.rs:175,196` uses the repo directly. Add both `.configure(...)`.
+- [x] **J2 — Three site-import handlers without a route, the entire `ImportService` is dead code** — done (2026-10-01). `POST /sites/import`, `POST /sites/import/geojson` and `POST /sites/import/shapefile` registered and deliberately placed **before** `/sites/{id}`, otherwise the id pattern would have tried to parse "import" as a UUID. Thus 719 lines of `ImportService` (LPIS registry, GeoJSON, Geozero shapefiles) and the matching wrappers in the Admin UI (`api.rs`) are reachable for the first time. — `handlers/sites.rs`. `import_sites` (`:238`), `import_geojson` (`:270`) and `import_shapefile` (`:302`) are fully implemented and use `ImportService` with the LPIS registry and Geozero shapefile parsing (719 lines of service code) — but have **no route** (verified: no `web::resource` with `import` in `sites.rs`). Add routes; when doing so register the static paths **before** `/sites/{id}`, otherwise the `{id}` resource swallows the names.
+- [x] **J3 — `livestock_new::configure` registered twice** — fixed together with J1 (2026-10-01). — see H7. `mod.rs:244` and `:250` both call the same function.
 
-#### J-B Schema-Drift (P0)
+#### J-B Schema drift (P0)
 
-- [ ] **J4 — Rund 45 Spalten, die die Repos erwarten, existieren im Schema nicht** — teilweise abgearbeitet: `animals.identifier`, `animals.livestock_type` und `animals.status` sind in Migration `0000000003` ergänzt, mit Backfill aus `tag_number`/`species` und einem BEFORE-Trigger, der `livestock_type` bei jedem INSERT und UPDATE aus `species` ableitet. Offen bleiben die übrigen Tabellen, darunter `work_logs` mit komplett abweichendem Schema. Abgleich aller INSERT/UPDATE/FROM-Spaltenlisten gegen `information_schema` (nur drei `ALTER TABLE ADD COLUMN` im Bestand). Am schwersten: **`work_logs`** — das Repo braucht `date, hours_worked, overtime_hours, rest_period_hours, task_description, site_id, is_night_shift, breaks_taken` (`work_log.rs:85`), die Migration hat stattdessen `task_id, started_at, ended_at, duration_minutes, notes`. Komplettes Schema-Mismatch. Weitere: `weather_data` (`wind_direction_deg, solar_radiation_wm2, pressure_hpa, soil_temperature_c, soil_moisture_percent, leaf_wetness`), `growing_degree_days` (`base_temp_c, actual_mean_temp_c, gdd, accumulated_gdd, crop_type` — Migration hat `min_temp_c/max_temp_c/gdd_base_10/gdd_base_5`), `financial_records` (`amount, category, reference_id` vs. `amount_eur, currency, date, invoice_ref`), `olive_oil_records.grove_id` vs. `olive_grove_id`, dazu `harvest_lots.site_ids`, `pac_applications.documents_urls/eco_schemes/total_eligible_area`, `pest_risks.confidence`, `cost_centers.cost_center_type/reference_id`, `audit_logs.ip_address`, `animals.identifier/status`, `workers.contract_type/language`, `weather_stations.manufacturer/model/serial_number`, `worker_task_statuses.updated_at`, `task_data.ended_at/handoff_to_worker_id/is_session_complete`, `plant_protection_records.pre_harvest_days/re_entry_days/total_quantity/applicator_license`, `applicator_licenses.license_type`, `compliance_checklists.items`, `equipment_maintenance_log.downtime_hours/labor_hours`. Konsolidierte Drift-Migration mit `ADD COLUMN IF NOT EXISTS`.
-- [ ] **J5 — `varieties` und `breeds` haben keine `tenant_id`-Spalte, ihre Repos filtern aber danach** — Migration: `varieties` hat nur `id, category, name, origin, created_at`, `breeds` nur `id, species, name, origin, created_at`. Die Repos filtern mit `tenant_id = $2` (`variety.rs:21,43,50,154,176`) — das ist ein weiterer Schema-Bug mit Datenwirkung: Varianten und Rassen sind **global statt mandantenisoliert**. Spalte ergänzen und mit FK auf `tenants` versehen.
-- [x] **J6 — Naming-Bugs statt fehlender Tabellen: `animal_treatments`, `animal_grazing_records`, `water_usages`** — erledigt (2026-10-01). `animal.rs` fragte `animal_treatments` und `animal_grazing_records` ab; die Tabellen heißen `treatment_records` (Migration `:676`) und `grazing_records` (`:665`), zusätzlich schrieb das Repo `treatment_date` statt `date`. Auf die vorhandenen Tabellen umgestellt, kein neues Schema nötig. `water_usages` wurde per `ALTER TABLE water_usage RENAME TO water_usages` gelöst, damit alle Aufrufstellen gleichzeitig stimmen.
+- [ ] **J4 — Around 45 columns the repos expect do not exist in the schema** — partially worked through: `animals.identifier`, `animals.livestock_type` and `animals.status` were added in migration `0000000003`, with a backfill from `tag_number`/`species` and a BEFORE trigger that derives `livestock_type` from `species` on every INSERT and UPDATE. The remaining tables stay open, among them `work_logs` with a completely divergent schema. Compare all INSERT/UPDATE/FROM column lists against `information_schema` (only three `ALTER TABLE ADD COLUMN` exist in the current state). The most severe: **`work_logs`** — the repo needs `date, hours_worked, overtime_hours, rest_period_hours, task_description, site_id, is_night_shift, breaks_taken` (`work_log.rs:85`), the migration instead has `task_id, started_at, ended_at, duration_minutes, notes`. Complete schema mismatch. Further: `weather_data` (`wind_direction_deg, solar_radiation_wm2, pressure_hpa, soil_temperature_c, soil_moisture_percent, leaf_wetness`), `growing_degree_days` (`base_temp_c, actual_mean_temp_c, gdd, accumulated_gdd, crop_type` — migration has `min_temp_c/max_temp_c/gdd_base_10/gdd_base_5`), `financial_records` (`amount, category, reference_id` vs. `amount_eur, currency, date, invoice_ref`), `olive_oil_records.grove_id` vs. `olive_grove_id`, plus `harvest_lots.site_ids`, `pac_applications.documents_urls/eco_schemes/total_eligible_area`, `pest_risks.confidence`, `cost_centers.cost_center_type/reference_id`, `audit_logs.ip_address`, `animals.identifier/status`, `workers.contract_type/language`, `weather_stations.manufacturer/model/serial_number`, `worker_task_statuses.updated_at`, `task_data.ended_at/handoff_to_worker_id/is_session_complete`, `plant_protection_records.pre_harvest_days/re_entry_days/total_quantity/applicator_license`, `applicator_licenses.license_type`, `compliance_checklists.items`, `equipment_maintenance_log.downtime_hours/labor_hours`. Consolidated drift migration with `ADD COLUMN IF NOT EXISTS`.
+- [ ] **J5 — `varieties` and `breeds` have no `tenant_id` column, but their repos filter on it** — migration: `varieties` has only `id, category, name, origin, created_at`, `breeds` only `id, species, name, origin, created_at`. The repos filter with `tenant_id = $2` (`variety.rs:21,43,50,154,176`) — this is a further schema bug with data impact: varieties and breeds are **global instead of tenant-isolated**. Add the column and give it an FK to `tenants`.
+- [x] **J6 — Naming bugs instead of missing tables: `animal_treatments`, `animal_grazing_records`, `water_usages`** — done (2026-10-01). `animal.rs` queried `animal_treatments` and `animal_grazing_records`; the tables are called `treatment_records` (migration `:676`) and `grazing_records` (`:665`), and the repo additionally wrote `treatment_date` instead of `date`. Switched to the existing tables, no new schema needed. `water_usages` was solved with `ALTER TABLE water_usage RENAME TO water_usages`, so that all call sites are correct at the same time.
 
-#### J-C Platzhalter-Daten und gelogene Rückmeldungen (P0)
+#### J-C Placeholder data and false feedback (P0)
 
-- [x] **J7 — `delete_backup` löscht nichts, gibt aber Erfolg zurück** — `handlers/backup.rs:239-267`. Die Funktion prüft nur `get_job_status` und antwortet 200 mit „deleted", ohne ein Objekt aus dem Storage zu entfernen. Zusammen mit F2 und H3 eine von drei Stellen, an denen die Backup-API Erfolg vortäuscht.
-- [ ] **J8 — `get_device_telemetry` liefert immer leer, `send_command` lügt über den Status** — `handlers/iot.rs:404-408` gibt `measurements: vec![]` mit dem Kommentar „would query a time-series database"; `:463-464` setzt `CommandStatus::Sent`, **ohne etwas zu publizieren**. `AppState` hat nur `messaging: Arc<MessagingClient>` (NATS); der `MqttClient` aus `agrocore-messaging` wird in `lib.rs:113` nicht instanziiert, obwohl `AgroCoreConfig.mqtt_broker` existiert. `UnifiedMessagingClient` aufnehmen, Status erst nach bestätigtem Publish setzen, Telemetrie in eine Tabelle mit `timestamp`-Index und Retention schreiben.
-- [ ] **J9 — `fetch_weather` liefert hartcodierte Werte** — `handlers/calculation.rs:514-524` gibt `temperature_c: Some(20.5)`, `humidity: 65.0`, `pressure: 1013.25` zurück. Der geparste Provider wird in `_service_type` (`:508-512`) verworfen. Die drei echten Provider existieren bereits in `crates/weather-service/src/providers/`. An `agrocore_weather::WeatherAggregator` anbinden oder den Handler entfernen.
-- [x] **J10 — `list_lpis_providers` erfindet Base-URLs** — `handlers/settings.rs:236-246` gibt `https://{country}.example.com/wfs` zurück statt der echten `ProviderConfig::default()`-Werte. Platzhalter-Domains, die als Konfiguration aussehen.
+- [x] **J7 — `delete_backup` deletes nothing but returns success** — `handlers/backup.rs:239-267`. The function only checks `get_job_status` and answers 200 with "deleted", without removing an object from storage. Together with F2 and H3 one of three places where the backup API pretends success.
+- [ ] **J8 — `get_device_telemetry` always returns empty, `send_command` lies about the status** — `handlers/iot.rs:404-408` returns `measurements: vec![]` with the comment "would query a time-series database"; `:463-464` sets `CommandStatus::Sent`, **without publishing anything**. `AppState` only has `messaging: Arc<MessagingClient>` (NATS); the `MqttClient` from `agrocore-messaging` is not instantiated in `lib.rs:113`, although `AgroCoreConfig.mqtt_broker` exists. Include `UnifiedMessagingClient`, only set the status after a confirmed publish, write telemetry into a table with a `timestamp` index and retention.
+- [ ] **J9 — `fetch_weather` returns hardcoded values** — `handlers/calculation.rs:514-524` returns `temperature_c: Some(20.5)`, `humidity: 65.0`, `pressure: 1013.25`. The parsed provider is discarded in `_service_type` (`:508-512`). The three real providers already exist in `crates/weather-service/src/providers/`. Hook up to `agrocore_weather::WeatherAggregator` or remove the handler.
+- [x] **J10 — `list_lpis_providers` invents base URLs** — `handlers/settings.rs:236-246` returns `https://{country}.example.com/wfs` instead of the real `ProviderConfig::default()` values. Placeholder domains that look like configuration.
 
-#### J-D Toter Code und nicht aktivierbare Features (P1)
+#### J-D Dead code and features that cannot be enabled (P1)
 
-- [ ] **J11 — Zwei Domain-Traits ohne jede Implementierung** — `domain/src/repositories.rs:694` `SoilMoistureReadingRepo` und `:744` `SoilMoistureAlertRepo` (je vier Methoden): keine Postgres-Implementierung, kein `db`-Accessor, kein Handler-Routing. Die Tabellen existieren, und `weather-service/src/worker.rs:245` ruft `process_soil_misture_alerts(...)` auf — **der Alarm-Pfad läuft ins Leere**. Repos nach dem vorhandenen `repo!`-Muster nachziehen und in `PostgresDb` vorinstanziieren.
-- [ ] **J12 — `mocks`- und `depreciation`-Feature sind nicht aktivierbar** — `api/Cargo.toml:72`, `domain/Cargo.toml:25`, `infrastructure/Cargo.toml:28` deklarieren `mocks`; kein Crate referenziert es. Damit ist `#[cfg_attr(feature = "mocks", automock)]` an 61 Repository-Traits wirkungslos — **es existiert kein einziger Mock**, alle Handler-Tests brauchen eine echte DB. `depreciation` ist über `#![cfg(feature = "depreciation")]` in `domain/src/lib.rs:1-2` ausgeschaltet, `domain/src/depreciation.rs` (58 Zeilen) wird nie kompiliert, und `run_monthly_amortization` (`:52`) hat null Aufrufer. Features aktivieren oder entfernen.
-- [ ] **J13 — Toter Konfigurationscode** — `shared/src/config.rs:65` `mqtt_broker` und `:68` `rust_log` haben null Verwendungen; der MQTT-Client liest stattdessen hartcodierte Env-Vars. Verdrahten oder entfernen. Dazu `domain/src/repositories.rs:15` `VisibilityAwareEntity` — leerer Marker-Trait mit null Implementierungen.
-- [ ] **J14 — `scheduler::stop()` und weitere Stubs** — `scheduler/src/service.rs:79` loggt „graceful shutdown not fully implemented" und tut sonst nichts: keine Cancel-Token, laufende Jobs werden nicht abgebrochen. `backup-service/src/manifest.rs:136` `get_schema_version()` gibt immer `Ok("unknown")`. `messaging/src/lib.rs:475` `try_deliver` ist `Ok(())` ohne Zustellbestätigung (deshalb ist J8 nicht sauber lösbar). `notification/types.rs:132` `health_check()` → `Ok(())` und `:144` `is_available()` → immer `true`: **die Notification-Kanal-Health-Checks sind blind**.
-- [ ] **J15 — Compliance-Filter laden die ganze Tabelle und filtern in Rust** — `handlers/compliance.rs:212-234` und `:249-271` rufen `find_all(Pagination::default())` und filtern in Rust, mit eigenem Kommentar „would require a find_by_site method". Bei wachsendem Bestand bricht das Performance **und** Korrektheit, weil nur die erste Default-Seite berücksichtigt wird. `find_by_site`/`find_by_type` im Repo ergänzen.
-- [ ] **J16 — Düngekosten sind ein fester Prozentsatz** — `handlers/nutrition.rs:101` setzt `cost_eur: total_amount * 0.5 // Placeholder cost`. Finanziell relevant für PAC- und Kostenstellenberichte.
-- [ ] **J17 — `iot.rs` umgeht den Repo-Layer** — rohes `sqlx::query` auf `iot_devices` mit einem JSONB-Blob pro Gerät (`find_device:47-61`). Funktional, bricht aber das `Repository<T>`-Pattern und die `measure_sqlx_query!`-Instrumentierung.
+- [ ] **J11 — Two domain traits without any implementation** — `domain/src/repositories.rs:694` `SoilMoistureReadingRepo` and `:744` `SoilMoistureAlertRepo` (four methods each): no Postgres implementation, no `db` accessor, no handler routing. The tables exist, and `weather-service/src/worker.rs:245` calls `process_soil_misture_alerts(...)` — **the alert path leads nowhere**. Add the repos following the existing `repo!` pattern and pre-instantiate them in `PostgresDb`.
+- [ ] **J12 — The `mocks` and `depreciation` features cannot be enabled** — `api/Cargo.toml:72`, `domain/Cargo.toml:25`, `infrastructure/Cargo.toml:28` declare `mocks`; no crate references it. Thus `#[cfg_attr(feature = "mocks", automock)]` on 61 repository traits is ineffective — **not a single mock exists**, all handler tests need a real database. `depreciation` is switched off via `#![cfg(feature = "depreciation")]` in `domain/src/lib.rs:1-2`, `domain/src/depreciation.rs` (58 lines) is never compiled, and `run_monthly_amortization` (`:52`) has zero callers. Enable or remove the features.
+- [ ] **J13 — Dead configuration code** — `shared/src/config.rs:65` `mqtt_broker` and `:68` `rust_log` have zero uses; the MQTT client instead reads hardcoded env vars. Wire up or remove. Plus `domain/src/repositories.rs:15` `VisibilityAwareEntity` — an empty marker trait with zero implementations.
+- [ ] **J14 — `scheduler::stop()` and further stubs** — `scheduler/src/service.rs:79` logs "graceful shutdown not fully implemented" and does nothing else: no cancel token, running jobs are not aborted. `backup-service/src/manifest.rs:136` `get_schema_version()` always returns `Ok("unknown")`. `messaging/src/lib.rs:475` `try_deliver` is `Ok(())` without delivery confirmation (which is why J8 is not cleanly solvable). `notification/types.rs:132` `health_check()` → `Ok(())` and `:144` `is_available()` → always `true`: **the notification channel health checks are blind**.
+- [ ] **J15 — Compliance filters load the whole table and filter in Rust** — `handlers/compliance.rs:212-234` and `:249-271` call `find_all(Pagination::default())` and filter in Rust, with their own comment "would require a find_by_site method". With a growing inventory this breaks performance **and** correctness, because only the first default page is taken into account. Add `find_by_site`/`find_by_type` to the repo.
+- [ ] **J16 — Fertilizer costs are a fixed percentage** — `handlers/nutrition.rs:101` sets `cost_eur: total_amount * 0.5 // Placeholder cost`. Financially relevant for PAC and cost-center reports.
+- [ ] **J17 — `iot.rs` bypasses the repo layer** — raw `sqlx::query` on `iot_devices` with a JSONB blob per device (`find_device:47-61`). Functional, but breaks the `Repository<T>` pattern and the `measure_sqlx_query!` instrumentation.
 
-#### J-E Fehlende Tests an genau den Stellen, an denen es gebrochen ist (P1)
+#### J-E Missing tests exactly where it broke (P1)
 
-- [ ] **J18 — Auth-Round-Trip ist untestet** — kein Test ruft `find_by_refresh_token` auf, deshalb blieb der Totalausfall unentdeckt. Test `login → refresh → logout` ergänzen.
-- [x] **J19 — Kein Migrations-Schema-Assertion-Test** — teilweise erledigt (2026-10-01). Drei Tests in `crates/infrastructure/tests/database_setup_tests.rs` prüfen jetzt Tabellenexistenz, Mandantenbezug und die Lesbarkeit neu angelegter Zeilen; alle drei laufen grün gegen das PostGIS-Testimage. Der Teil, der die **Spaltenlisten** der Repos gegen `information_schema` vergleicht, fehlt weiterhin — er würde J4 und J5 automatisch finden.
+- [ ] **J18 — The auth round-trip is untested** — no test calls `find_by_refresh_token`, which is why the total failure went unnoticed. Add a `login → refresh → logout` test.
+- [x] **J19 — No migration schema assertion test** — partially done (2026-10-01). Three tests in `crates/infrastructure/tests/database_setup_tests.rs` now check table existence, tenant reference and the readability of newly created rows; all three run green against the PostGIS test image. The part that compares the **column lists** of the repos against `information_schema` is still missing — it would find J4 and J5 automatically.
 
-**Befunde aus dem ersten erfolgreichen Fixture-Lauf (4 grün, 5 rot).** Die Fixture-Arbeit hat fünf vorbestehende Defekte erstmals sichtbar gemacht; die roten Tests sind nicht durch die Migration verursacht:
+**Findings from the first successful fixture run (4 green, 5 red).** The fixture work made five pre-existing defects visible for the first time; the red tests are not caused by the migration:
 
-- `test_repository_tables_exist`, `test_new_domain_rows_are_tenant_scoped`, `test_postgis_extension_enabled`, `test_uuid_ossp_extension_enabled` — grün.
-- `test_database_migrations_applied` — erwartet die Tabelle `spatial_properties`, die keine Migration anlegt; entweder Tabelle nachziehen oder Erwartung entfernen.
-- `test_site_crud_operations` und `test_updated_at_trigger` — beide scheitern an `INSERT has more target columns than expressions`. Zwei Tests, eine Ursache: der gemeinsame Site-INSERT in der Testumgebung hat mehr Zielspalten als gebundene Werte.
-- `test_tenant_creation_and_isolation` — `common/mod.rs:71` verwendet im `create_test_tenant` fest `slug = 'test-tenant'`; sobald ein zweiter Test denselben Slug anlegt, greift `tenants_slug_key`. Slug pro Aufruf uuid-suffixieren.
-- `test_tenant_scoped_tables_have_tenant_id` — meldet `kelter_deliveries`, `order_sites`, `spatial_ref_sys`, `tenants`, `user_sites`. `kelter_deliveries` bestätigt **B1** unabhängig: die Tabelle hat weder `tenant_id` im Schema noch einen Filter im Repo. `user_sites` und `order_sites` sind reine Zuordnungstabellen und gehören in die Ausnahmeliste, ebenso die PostGIS-Systemtabelle `spatial_ref_sys` und `tenants` selbst. Konkret zu tun: Ausnahmeliste im Test um `order_sites`, `spatial_ref_sys`, `tenants`, `user_sites` erweitern und `kelter_deliveries` unter B1 beheben. — kein Test vergleicht Repo-INSERT-Spaltenlisten gegen `information_schema.columns`. Ein einziger solcher Test hätte J4, J5 und J6 sofort gefunden.
-- [ ] **J20a — Der Test-Fixture lief nie erfolgreich** — `crates/infrastructure/tests/common/mod.rs`. `testcontainers_modules::postgres` ist fest auf `postgres:11-alpine` verdrahtet; Migration `0000000000` braucht aber PostGIS. Alle neun Integrationstests scheiterten an `extension "postgis" is not available` und waren damit nie grün. Behoben: `GenericImage::new("postgis/postgis", "16-3.4")` plus Connect-Retry. Vier Tests sind danach immer noch rot (fehlende Tabelle `spatial_properties`, falscher INSERT-Spaltenzahl, Slug-Unique-Constraint, Tabellen ohne `tenant_id`) — jetzt sind sie erstmals überhaupt sichtbar. Im Rahmen von J19 behoben.
-- [ ] **J20 — Kein Route-Vollständigkeits-Test** — kein Test gleicht alle `#[utoipa::path]`-Handler gegen die registrierten Routen ab; J1 und J2 blieben dadurch unbemerkt.
-- [ ] **J21 — Kein Multi-Tenant-Isolationstest** — `infrastructure/tests/database_setup_tests.rs` hat sechs Tests, alle `#[ignore]`, aber keiner prüft, dass Tenant A keine Daten von Tenant B sieht. Bei faktisch inaktivem RLS (A3) ist das der wichtigste fehlende Test überhaupt.
+- `test_repository_tables_exist`, `test_new_domain_rows_are_tenant_scoped`, `test_postgis_extension_enabled`, `test_uuid_ossp_extension_enabled` — green.
+- `test_database_migrations_applied` — expects the table `spatial_properties`, which no migration creates; either add the table or remove the expectation.
+- `test_site_crud_operations` and `test_updated_at_trigger` — both fail with `INSERT has more target columns than expressions`. Two tests, one cause: the shared site INSERT in the test environment has more target columns than bound values.
+- `test_tenant_creation_and_isolation` — `common/mod.rs:71` uses a fixed `slug = 'test-tenant'` in `create_test_tenant`; as soon as a second test creates the same slug, `tenants_slug_key` fires. Suffix the slug with a uuid per call.
+- `test_tenant_scoped_tables_have_tenant_id` — reports `kelter_deliveries`, `order_sites`, `spatial_ref_sys`, `tenants`, `user_sites`. `kelter_deliveries` independently confirms **B1**: the table has neither `tenant_id` in the schema nor a filter in the repo. `user_sites` and `order_sites` are pure mapping tables and belong in the exception list, as do the PostGIS system table `spatial_ref_sys` and `tenants` itself. Concretely to do: extend the exception list in the test by `order_sites`, `spatial_ref_sys`, `tenants`, `user_sites` and fix `kelter_deliveries` under B1. — no test compares repo INSERT column lists against `information_schema.columns`. A single such test would have found J4, J5 and J6 immediately.
+- [ ] **J20a — The test fixture never ran successfully** — `crates/infrastructure/tests/common/mod.rs`. `testcontainers_modules::postgres` is hardwired to `postgres:11-alpine`; but migration `0000000000` needs PostGIS. All nine integration tests failed with `extension "postgis" is not available` and were therefore never green. Fixed: `GenericImage::new("postgis/postgis", "16-3.4")` plus connect retry. Four tests are still red afterwards (missing table `spatial_properties`, wrong number of INSERT columns, slug unique constraint, tables without `tenant_id`) — they are visible at all for the first time. Fixed in the course of J19.
+- [ ] **J20 — No route completeness test** — no test compares all `#[utoipa::path]` handlers against the registered routes; J1 and J2 went unnoticed because of that.
+- [ ] **J21 — No multi-tenant isolation test** — `infrastructure/tests/database_setup_tests.rs` has six tests, all `#[ignore]`, but none checks that tenant A sees no data from tenant B. With effectively inactive RLS (A3) this is the most important missing test of all.
 
 ---
 
-## P0 — Kritisch
+## P0 — Critical
 
-### Notification-Kanäle vervollständigen
+### Complete the notification channels
 
-Aus Phase 8 Abschnitt 3. Der Dispatcher ist produktiv, aber die Kanalliste ist unvollständig.
+From phase 8 section 3. The dispatcher is productive, but the channel list is incomplete.
 
-- [ ] Push-Kanäle: Firebase (FCM), APNs, WebPush (`crates/messaging/src/notification/channel.rs`)
-- [ ] Inbound-Webhooks für den Empfang (WhatsApp, Telegram, Email-Reply)
-- [ ] Weitere E-Mail- und SMS-Provider: Postmark, Vonage, Plivo, Sms77
-- [ ] Tenant-User-Preferences (welcher Kanal für wen, Ruhezeiten, Eskalation)
+- [ ] Push channels: Firebase (FCM), APNs, WebPush (`crates/messaging/src/notification/channel.rs`)
+- [ ] Inbound webhooks for receiving (WhatsApp, Telegram, email reply)
+- [ ] Additional email and SMS providers: Postmark, Vonage, Plivo, Sms77
+- [ ] Tenant user preferences (which channel for whom, quiet hours, escalation)
 
-### Backup-Service abschließen
+### Finish the backup service
 
-Aus Phase 8 Abschnitt 4. Betrifft `crates/backup-service/`.
+From phase 8 section 4. Affects `crates/backup-service/`.
 
-- [ ] SFTP-Host-Key-Pinning gegen eine `known_hosts`-Datei — `check_server_key` akzeptiert aktuell jeden Schlüssel (`sftp_backend.rs`), das ist ein offener MITM-Risiko
-- [ ] Cloud-Downloads speicherschonend machen — `object_store` 0.11 liefert keinen asynchronen Byte-Stream, `GetResult::bytes()` lädt das Objekt komplett. Betrifft S3, Azure und GCS; Local, SFTP und WebDAV streamen bereits
-- [ ] Integrationstests gegen echte Cloud-Instanzen (S3/MinIO, Azure Blob, GCS) in CI
-- [ ] Integrationstests gegen echte SFTP- und WebDAV-Server
-- [ ] NATS-Progress-Events (0–100 %) durch Integrationstests absichern
-- [ ] Age- und KMS-Verschlüsselung — aktuell nur AES-256-GCM (`encryption.rs`)
-- [ ] Disaster-Recovery-Runbook: RTO < 15 Min für eine 50-GB-Datenbank, Single Tenant
+- [ ] SFTP host key pinning against a `known_hosts` file — `check_server_key` currently accepts any key (`sftp_backend.rs`), that is an open MITM risk
+- [ ] Make cloud downloads memory-efficient — `object_store` 0.11 provides no async byte stream, `GetResult::bytes()` loads the object completely. Affects S3, Azure and GCS; Local, SFTP and WebDAV already stream
+- [ ] Integration tests against real cloud instances (S3/MinIO, Azure Blob, GCS) in CI
+- [ ] Integration tests against real SFTP and WebDAV servers
+- [ ] Secure the NATS progress events (0–100 %) with integration tests
+- [ ] Age and KMS encryption — currently only AES-256-GCM (`encryption.rs`)
+- [ ] Disaster recovery runbook: RTO < 15 min for a 50 GB database, single tenant
 
 ---
 
 ## P1 — MVP
 
-### Kunden & Verkauf
+### Customers & sales
 
-- [ ] CSA-Verwaltung: Abonnement-Boxen, Lieferplanung
-- [ ] Großhandelsaufträge: Staffelpreise, Lieferplanung
-- [ ] Direktverkauf: Onlineshop, Zahlungsabwicklung
+- [ ] CSA management: subscription boxes, delivery planning
+- [ ] Wholesale orders: tiered prices, delivery planning
+- [ ] Direct sales: online shop, payment processing
 
-### Tierhaltung
+### Livestock
 
-- [ ] Zucht-Records: Brunft, KI, Kalbung, Paarung
-- [ ] Futteraufnahme-Tracking: Ration, Verschwendung, Futterwert
-- [ ] Milchproduktions-Tracking: Tagesproduktion, Butterfett, Protein
-- [ ] Bewegungsdokumentation: Geburten, Todesfälle, Käufe, Verkäufe
-- [ ] Weide-Management: Flächenrotation, Ruheperioden, Tierstandort
+- [ ] Breeding records: heat detection, AI, calving, mating
+- [ ] Feed intake tracking: ration, waste, feed value
+- [ ] Milk production tracking: daily production, butterfat, protein
+- [ ] Movement documentation: births, deaths, purchases, sales
+- [ ] Pasture management: area rotation, rest periods, animal location
 
-### Finanzen
+### Finances
 
-- [ ] Buchhaltungs-Integration: QuickBooks, Xero, doppelte Buchführung
-- [ ] Budgetierung und Prognosen: geplant versus tatsächlich
-- [ ] Feldkalkulation: Eingangs- versus Ausgangswerte
-- [ ] Umsatz-Tracking pro Kultur
-- [ ] Geldfluss-Management: Verbindlichkeiten und Zahlungseingänge planen
-- [ ] Steuerberichtswesen: Schedule F, Abschreibungen, Düngerkosten-Abzug
-- [ ] Eingangskosten-Tracking: Saatgut, Dünger, Chemikalien, Kraftstoff, QR-Scans
-- [ ] Abschreibung in den Finanzbericht integrieren — die Berechnung (`depreciation.rs`) und der monatliche Timer laufen, aber `/financial/reports` wertet sie noch nicht aus
+- [ ] Accounting integration: QuickBooks, Xero, double-entry bookkeeping
+- [ ] Budgeting and forecasts: planned vs. actual
+- [ ] Field costing: input vs. output values
+- [ ] Revenue tracking per crop
+- [ ] Cash flow management: plan liabilities and payment receipts
+- [ ] Tax reporting: Schedule F, depreciation, fertilizer cost deduction
+- [ ] Input cost tracking: seed, fertilizer, chemicals, fuel, QR scans
+- [ ] Integrate depreciation into the financial report — the calculation (`depreciation.rs`) and the monthly timer run, but `/financial/reports` does not evaluate them yet
 
-### Katalog-Import
+### Catalog import
 
-- [ ] `scripts/import_catalog.py`: vollständige Kataloge als CSV erzeugen und nach `varieties`/`breeds` importieren. Quellen: VIVC-Rebsorten (>12k), Oliven-DB (>260), FAO-Tierrassen. Lazy-Load-Suche für die Admin-UI vorbereiten
-
----
-
-## P2 — Wichtig
-
-### Monitoring & Observability
-
-Aus Phase 4, bisher nicht begonnen.
-
-- [ ] Query-Dauer-Monitoring (sqlx-Middleware oder `sqlx-metrics`)
-- [ ] Pool-Auslastung: aktive und idle Verbindungen
-- [ ] Slow-Query-Erkennung mit Logging
-- [ ] Span-Attribute: Tenant-ID, User-ID, Operationstyp
-- [ ] Tracing über alle Service-Grenzen hinweg standardisieren
-
-### Business Metrics
-
-- [ ] Aktive Geräte pro Tenant
-- [ ] Übertragene Telemetrie-Nachrichten pro Stunde
-- [ ] Erfolgreich verarbeitete Import-Dateien
-
-### Mobile First
-
-- [ ] Offline-first Mobile-App mit Sync bei wiederhergestellter Konnektivität
-- [ ] Barcode- und QR-Code-Scanner: Equipment, Inventar, Feld-ID
-- [ ] GPS-Feld-Grenzen (Boundary Recording)
-- [ ] Mobile Zeiterfassung: Clock-In/Clock-Out mit GPS
-- [ ] Sprach-zu-Text-Notizen
-- [ ] Foto-Dokumentation: Anhänge an Tasks, Probleme, Inspektionen
-- [ ] Push-Benachrichtigungen: Wetterwarnungen, Task-Erinnerungen
-- [ ] Feldaktivitäten-Recording in Echtzeit: Pflanzen, Spritzen, Ernten
-- [ ] Ernte-Daten-Import von Combine-Harvestern
-- [ ] Drohnen- und UAV-Integration: NDVI-Bilder
+- [ ] `scripts/import_catalog.py`: generate complete catalogs as CSV and import them into `varieties`/`breeds`. Sources: VIVC grape varieties (>12k), olive DB (>260), FAO terraces. Prepare lazy-load search for the Admin UI
 
 ---
 
-## P3 — Komfort
+## P2 — Important
 
-### Präzisionslandwirtschaft
+### Monitoring & observability
 
-- [ ] Variable Düngungspläne: VRA für Sämaschinen, Spritzer, Streuer
-- [ ] GPS-Autosteuerung: Anbindung an Lenksysteme
-- [ ] Drohnen-Spritzen-Integration: Management und Steuerung
-- [ ] Automatisierte Bewässerungssteuerung über IoT-Ventile
+From phase 4, not started so far.
 
-### Nachhaltigkeit & Compliance
+- [ ] Query duration monitoring (sqlx middleware or `sqlx-metrics`)
+- [ ] Pool utilization: active and idle connections
+- [ ] Slow query detection with logging
+- [ ] Span attributes: tenant ID, user ID, operation type
+- [ ] Standardize tracing across all service boundaries
 
-- [ ] Kohlenstoff-Gutschriften-Tracking: CO₂-Sequestrierung messen und berichten
-- [ ] Wasser-Nutzungs-Monitoring: Bewässerungseffizienz, regulatorische Compliance
-- [ ] Chemische-Anwendungs-Logs: REI, beschränkte Verwendung
-- [ ] Biologische Zertifizierung: Eingangs-Tracking, Pufferzonen, Inspektionen
-- [ ] Nachhaltigkeits-Metriken: Bodengesundheit, Biodiversität, Düngerreduktion
+### Business metrics
 
-### Business-Features
+- [ ] Active devices per tenant
+- [ ] Telemetry messages transmitted per hour
+- [ ] Successfully processed import files
 
-- [ ] Multi-Betriebs-Management: Haltereien, Pachtverträge, Mieter
-- [ ] Vertragslandwirtschaft: Erzeuger-Verträge, Qualitätsprämien
-- [ ] Lohnarbeits-Management: Gehälter, Zertifizierungen, Planung
-- [ ] Equipment-Sharing: Vermietungsmarktplatz zwischen Betrieben
-- [ ] Versicherungs-Integration: Schadensdokumentation, Risikobewertung
+### Mobile first
+
+- [ ] Offline-first mobile app with sync when connectivity is restored
+- [ ] Barcode and QR code scanner: equipment, inventory, field ID
+- [ ] GPS field boundaries (boundary recording)
+- [ ] Mobile time tracking: clock-in/clock-out with GPS
+- [ ] Voice-to-text notes
+- [ ] Photo documentation: attachments to tasks, problems, inspections
+- [ ] Push notifications: weather warnings, task reminders
+- [ ] Real-time field activity recording: planting, spraying, harvesting
+- [ ] Harvest data import from combine harvesters
+- [ ] Drone and UAV integration: NDVI images
 
 ---
 
-## P4 — Zukunft
+## P3 — Convenience
 
-### KI-Analytics (Modul 17)
+### Precision agriculture
 
-- [ ] Anforderungen für Ertragsprognosen definieren
-- [ ] Anforderungen für Krankheits- und Schädlingsfrühwarnsysteme definieren
-- [ ] Anforderungen für Bewässerungs-, Düngungs-, KPI-, Satelliten-Monitoring- und generatives Reporting definieren
-- [ ] Computer Vision: Pflanzenkrankheiten, Unkrauterkennung
-- [ ] KI-Beratungsassistent: Chat-Interface für agronomische Fragen
-- [ ] Generative KI für die betriebliche Planung
-- [ ] Implementierung erst nach Stabilisierung der Produktionsmodule und der Sync-Grundlagen
+- [ ] Variable fertilization plans: VRA for seeders, sprayers, spreaders
+- [ ] GPS auto-steer: integration with steering systems
+- [ ] Drone spraying integration: management and control
+- [ ] Automated irrigation control via IoT valves
 
-### KI & Robotik
+### Sustainability & compliance
 
-- [ ] Roboter-Krähen: autonome Steuerung und Monitoring
-- [ ] Autonome Geräte: Flotten-Management für selbstfahrende Traktoren
+- [ ] Carbon credit tracking: measure and report CO₂ sequestration
+- [ ] Water usage monitoring: irrigation efficiency, regulatory compliance
+- [ ] Chemical application logs: REI, restricted use
+- [ ] Organic certification: input tracking, buffer zones, inspections
+- [ ] Sustainability metrics: soil health, biodiversity, fertilizer reduction
 
-### Fortgeschrittene Technologien
+### Business features
 
-- [ ] Augmented Reality: Feld-Daten-Overlay auf der Live-Kamera
-- [ ] Digital Twin: virtuelles Betriebsmodell für Szenario-Planung
-- [ ] Blockchain-Rückverfolgbarkeit: LieferkettentransparenzW
+- [ ] Multi-farm management: holdings, leases, tenants
+- [ ] Contract farming: producer contracts, quality premiums
+- [ ] Labor management: wages, certifications, planning
+- [ ] Equipment sharing: rental marketplace between farms
+- [ ] Insurance integration: damage documentation, risk assessment
+
+---
+
+## P4 — Future
+
+### AI analytics (module 17)
+
+- [ ] Define requirements for yield forecasts
+- [ ] Define requirements for early warning systems for disease and pests
+- [ ] Define requirements for irrigation, fertilization, KPI, satellite monitoring and generative reporting
+- [ ] Computer vision: plant diseases, weed detection
+- [ ] AI advisory assistant: chat interface for agronomic questions
+- [ ] Generative AI for operational planning
+- [ ] Implementation only after the production modules and the sync foundations are stabilized
+
+### AI & robotics
+
+- [ ] Robot weeding: autonomous control and monitoring
+- [ ] Autonomous machinery: fleet management for self-driving tractors
+
+### Advanced technologies
+
+- [ ] Augmented reality: field data overlay on the live camera
+- [ ] Digital twin: virtual farm model for scenario planning
+- [ ] Blockchain traceability: supply chain transparencyW

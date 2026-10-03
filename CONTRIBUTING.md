@@ -220,6 +220,40 @@ cargo test --package lpis-providers --features=mocks -- <country_code>::tests --
 - **Doc comments** – `///` for public APIs, include examples
 - **Architecture decisions** – `docs/adr/<number>-<title>.md` (if needed)
 
+### Language
+
+**All documentation is English.** Markdown files, doc comments, CHANGELOG
+entries and commit messages. A German sentence in a doc file is a defect, not a
+style choice — the audience includes people who do not read German.
+
+Demo data in `scripts/demo_seed.sql` and `crates/api/src/handlers/demo.rs`
+follows the same rule, and goes further: names, addresses, phone numbers, bank
+details and language codes must be locale-neutral, so the demo is readable from
+anywhere. German IBANs and `+49` phone numbers were replaced for that reason.
+
+### Keeping docs current
+
+Documentation that describes the current state must be updated **in the same
+change that alters that state**. Do not batch it for a release.
+
+| Change | Update |
+|---|---|
+| Add or remove a route | `docs/API.md` — the endpoint section and the summary table |
+| Change a request/response shape | `docs/API.md` — the affected example |
+| Add a setting or change its default | `migrations/*.sql` seed block and `docs/API.md` if it is exposed |
+| Change the schema | `docs/TECHNICAL.md` — the schema section |
+| Bump the version | The version line in `docs/API.md`, `docs/FLYER.md`, `docs/TECHNICAL.md` and the README badge |
+| Add a feature | `docs/FLYER.md` — Recent Highlights |
+
+The version stamp in each of those files tracks the workspace version in
+`Cargo.toml`. They drifted from 0.8.3 to 0.15.0 to 0.34.0 before this rule
+existed, which is why it is written down here.
+
+Counts in the docs — endpoint totals, table counts, migration counts, test counts
+— must be derived from the code, not estimated. `docs/API.md` takes its endpoint
+count from the `#[utoipa::path]` annotations in `crates/api/src/openapi.rs`,
+which is the same source the served Swagger document uses.
+
 ---
 
 ## 🔧 Code Style & Quality

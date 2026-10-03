@@ -3,7 +3,7 @@
 
 ---
 
-### Version 0.8.3 | Built in Rust | GPL-3.0 License
+### Version 0.35.0 | Built in Rust | GPL-3.0 License
 
 **AgroCore-RS** is a unified farm operations platform that consolidates field management, task planning, workforce coordination, IoT sensor integration, compliance tracking, harvest logistics, livestock management, and financial reporting into a single, local-first system.
 
@@ -54,7 +54,7 @@ AgroCore-RS unifies all farm operations into a single system that runs **locally
 - **Checklist Management** — GAP, Organic, GlobalGAP, HACCP checklist templates
 - **Audit Trail** — Complete change history with user attribution
 - **Plant Protection Records** — Pesticide application tracking with applicator licenses
-- **Fertilizer Records** — Düngemittel application with compliance reporting
+- **Fertilizer Records** — Fertilizer application with compliance reporting
 - **PAC Applications** — EU agricultural fund application management with status tracking
 
 ### 5. Harvest Logistics
@@ -193,16 +193,25 @@ Systemd unit files included in `systemd_units/` for production service managemen
 
 ---
 
-## CURRENT VERSION: 0.8.3
+## CURRENT VERSION: 0.35.0
 
 ### Recent Highlights
+- **Server-Side Settings** — typed key/value configuration in PostgreSQL with
+  per-tenant overrides and inherited system defaults; every configuration in the
+  app is editable from the admin UI, not just in the browser
+- **Working Backup Lifecycle** — real configuration persistence, listing from
+  storage, and deletion that actually removes objects across all targets
+- **Enforced Tenant Isolation** — row-level security with `FORCE`, an
+  application role without `BYPASSRLS`, and a `TenantPool` that pins
+  `app.current_tenant_id` on the connection running each query
+- **Multi-Country LPIS** — 8 national parcel systems, configuration stored in the
+  database per tenant instead of a file on disk
 - **Full IoT Integration** — MQTT Bridge, Home Assistant Auto-Discovery, Device Registry
-- **Multi-Country LPIS** — 8 national parcel systems with configurable providers
 - **Offline-First Sync Engine** — Complete offline capability with conflict resolution
 - **Advanced RBAC** — 4-role system with granular per-resource permissions
 - **Webhook System** — Event-driven external integrations via NATS
-- **Performance Optimizations** — DecodingKey caching, PgPool config, repo macro, topic precomputation, role mapping optimization
-- **Full Integration Test Suite** — 100+ tests covering all 17 modules
+- **Full Integration Test Suite** — 162 annotated endpoints and a test suite
+  covering the database layer, tenant isolation and the repositories
 - **SIGPAC API Integration** — 3 endpoints for Spanish parcel queries
 
 ---
