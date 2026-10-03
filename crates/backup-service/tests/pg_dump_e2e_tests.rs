@@ -157,7 +157,7 @@ async fn restore_roundtrips_data() {
         .expect("create scratch database");
 
     let result = pg
-        .restore_from_storage(&storage, &target, &dump_name, Some(scratch_url.clone()))
+        .restore_into_named_database(&storage, &target, &dump_name, &scratch_url)
         .await;
     result.expect("pg_restore from storage");
 

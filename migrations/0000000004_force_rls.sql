@@ -51,14 +51,21 @@ BEGIN
     -- them; ALTER is idempotent and makes the migration self-healing.
     EXECUTE 'ALTER ROLE agrocore_app NOSUPERUSER NOBYPASSRLS';
 
-    -- The connection role has to be allowed to switch into it.
+    -- The role that is running this migration has to be allowed to switch into
+    -- `agrocore_app`. Which role that is depends on the deployment: the docker
+    -- setup connects as `agrocore`, CI as `test`. Hardcoding a name made the
+    -- migration abort with `role "agrocore" does not exist` wherever the
+    -- connection role differed -- including every CI run.
+    --
+    -- `current_user` is the role the migration executes as, which is the role
+    -- that later issues `SET ROLE agrocore_app`.
     IF NOT EXISTS (
         SELECT 1 FROM pg_auth_members m
         JOIN pg_roles r ON r.oid = m.roleid
-        JOIN pg_roles u ON u.oid = m.member
-        WHERE r.rolname = 'agrocore_app' AND u.rolname = 'agrocore'
+        WHERE r.rolname = 'agrocore_app' AND m.member = current_user::regrole
     ) THEN
-        EXECUTE 'GRANT agrocore_app TO agrocore';
+        EXECUTE format('GRANT agrocore_app TO %I', current_user);
+        RAISE NOTICE 'Granted agrocore_app to the connection role %', current_user;
     END IF;
 END
 $$;

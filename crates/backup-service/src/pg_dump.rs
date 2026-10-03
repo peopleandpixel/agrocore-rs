@@ -143,14 +143,60 @@ impl PgDump {
     ///
     /// The dump is never held in memory: bytes are read from storage in chunks
     /// and written to the child process as they arrive.
+    /// Restore a dump into an explicitly named database.
+    ///
+    /// Only for verification, which restores into a throwaway database created
+    /// for the check. The production restore path must not use this: it is the
+    /// variant that lets a caller choose the destination, which is exactly the
+    /// capability the API does not expose. Everything else in the crate restores
+    /// through [`Self::restore_from_storage`].
+    pub async fn restore_into_named_database(
+        &self,
+        storage: &Arc<dyn StorageBackendTrait>,
+        target: &BackupTarget,
+        object_name: &str,
+        database_url: &str,
+    ) -> BackupResult<()> {
+        self.run_restore(storage, target, object_name, database_url)
+            .await
+    }
+
+    /// The connection string of the pool this instance was built with.
+    ///
+    /// Verification needs it to reach a sibling database on the same server:
+    /// `pg_restore` takes a connection string, not a pool, so the URL has to be
+    /// recoverable from somewhere.
+    pub fn database_url(&self) -> &str {
+        &self.database_url
+    }
+
+    /// Restore a dump into the configured database.
+    ///
+    /// There is deliberately no target-database parameter. `pg_restore` runs with
+    /// `--clean`, so whatever it is pointed at is emptied first: a target
+    /// supplied by the caller would let a restore wipe an arbitrary database on
+    /// the server. The destination is the configured `DATABASE_URL` and nothing
+    /// else.
     pub async fn restore_from_storage(
         &self,
         storage: &Arc<dyn StorageBackendTrait>,
         target: &BackupTarget,
         object_name: &str,
-        target_db: Option<String>,
     ) -> BackupResult<()> {
-        let dbname = target_db.unwrap_or_else(|| self.database_url.clone());
+        let dbname = self.database_url.clone();
+        self.run_restore(storage, target, object_name, &dbname)
+            .await
+    }
+
+    /// The actual `pg_restore` invocation, shared by both entry points.
+    async fn run_restore(
+        &self,
+        storage: &Arc<dyn StorageBackendTrait>,
+        target: &BackupTarget,
+        object_name: &str,
+        dbname: &str,
+    ) -> BackupResult<()> {
+        let dbname = dbname.to_string();
 
         let mut cmd = tokio::process::Command::new("pg_restore");
         cmd.arg("--no-owner")

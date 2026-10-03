@@ -7,6 +7,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.36.0] - 2026-10-03
+
+Closes the two remaining P0 tenant-boundary breaks (B2, B3). Both had the same
+root cause, and it was not the two handlers the audit named.
+
+### `is_admin()` was treated as a superadmin flag
+
+`is_admin()` is a role *within* a tenant. Six places in `handlers/iot.rs` used it
+as if it granted cross-tenant access, and every guard of the shape
+
+```rust
+if device.tenant_id != auth.0.tenant_id && !auth.is_admin() {
+    return Err(forbidden(...));
+}
+```
+
+was constant-false: the handler had already called `require_admin()` or
+`require_any_role(vec!["admin", "manager"])`, so `is_admin()` was true for every
+caller that reached the check, making `!auth.is_admin()` false and the whole
+condition false. The guard could never reject anything.
+
+**B3 — `delete_device` deleted across tenants.** The check was dead and the
+`DELETE` behind it had no tenant condition of its own, so any tenant admin could
+delete any device on the server. The tenant predicate now lives in the statement:
+
+```sql
+DELETE FROM iot_devices WHERE device_id = $1 AND tenant_id = $2
+```
+
+A handler-body check does not protect the row; anything that reaches the DELETE
+without passing the check deletes across tenants.
+
+**Two more holes closed by the same reasoning,** both in the same file and both
+found while removing the pattern:
+
+- `create_device` accepted a `tenant_id` from the request, so a tenant admin
+  could register a device against another tenant. The row was then invisible to
+  that tenant and unreachable through the tenant-scoped queries.
+- `list_devices` honoured a `tenant_id` query parameter for admins, so any tenant
+  admin could read another tenant's device registry. The parameter is now
+  rejected outright.
+
+`is_admin()` no longer appears anywhere in `handlers/iot.rs`. Cross-tenant
+visibility needs a separate, globally granted flag — that is a distinct piece of
+work, not something a tenant role can stand in for.
+
+### B2 — restore could target a database named by the client
+
+`RestoreRequest.target_database` came unchecked from the request and was passed
+straight through `BackupService::restore` to `pg_restore`. The invocation runs
+with `--clean`, which drops the objects in the destination before writing: a
+caller-chosen target made a restore into a data-destruction primitive against any
+database on the server.
+
+- The field is removed from `RestoreRequest`, so it is absent from the OpenAPI
+  schema and cannot be sent at all. Leaving it in the DTO would keep advertising a
+  capability that no longer exists.
+- `BackupService::restore` and `PgDump::restore_from_storage` no longer take a
+  database name; the destination is the configured `DATABASE_URL`.
+- Backup verification restores into a throwaway database it created itself. That
+  is the one legitimate case, and it is now the separately named
+  `PgDump::restore_into_named_database`, so the narrow purpose is visible at the
+  call site instead of hiding in a general-purpose parameter.
+- The handler now rejects a `backup_id` in the body that disagrees with the path
+  segment, rather than ignoring it. Silently preferring one of two
+  contradicting identifiers is how a client ends up believing it restored A while
+  the server restored B.
+
+### Tests
+
+6 tests in `crates/api/tests/tenant_boundary_tests.rs`. They assert on source
+text rather than runtime behaviour, which deserves an explanation: both bugs are
+about *which code path exists*, not a computed value. A behavioural test would
+need a request naming a second real database, and asserting that the second
+database was untouched proves only that the fixture was wired correctly — the
+same class of test that let the bug through, since the old code had no path a
+test could drive without a live second database.
+
+What source assertions cannot catch: a future author reintroducing the same
+capability under different wording. That is what code review and the DB-level
+tenant-isolation tests are for.
+
+fmt, check, clippy -D warnings, the full workspace test run and the ignored
+database tests all pass.
+
 ## [0.35.0] - 2026-10-03
 
 Documentation brought back in line with the code, and the demo data made

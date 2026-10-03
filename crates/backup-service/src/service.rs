@@ -626,12 +626,11 @@ impl BackupService {
     /// `dry_run` validates that the dump object exists and is readable without
     /// writing anything, which lets callers confirm a backup is restorable
     /// before committing to the operation.
-    pub async fn restore(
-        &self,
-        backup_id: Uuid,
-        target_db: Option<String>,
-        dry_run: bool,
-    ) -> BackupResult<RestoreOutcome> {
+    /// Restore a backup into the configured database.
+    ///
+    /// The destination is not a parameter: see [`PgDump::restore_from_storage`]
+    /// for why a caller-supplied target cannot be safe here.
+    pub async fn restore(&self, backup_id: Uuid, dry_run: bool) -> BackupResult<RestoreOutcome> {
         info!("Starting restore for backup: {backup_id} (dry_run={dry_run})");
 
         let (target, object_name) = self
@@ -660,7 +659,7 @@ impl BackupService {
 
         let restore_result = self
             .pg_dump
-            .restore_from_storage(&self.storage, &target, &object_name, target_db)
+            .restore_from_storage(&self.storage, &target, &object_name)
             .await;
 
         crate::metrics::BackupMetrics::get().record_restore(restore_result.is_ok());

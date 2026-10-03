@@ -167,8 +167,16 @@ impl VerificationManager {
         // Find the dump file for this backup
         let dump_name = format!("db/dump_{}.dump", backup_id);
 
+        // Verification restores into a throwaway database it created itself, so
+        // naming the destination here is safe. The production restore path has no
+        // such option — see `PgDump::restore_from_storage`.
+        //
+        // The URL is derived by swapping the database name in the configured
+        // connection string: the test database lives on the same server, so
+        // everything up to the path is already correct.
+        let test_db_url = swap_database_in_url(self.pg_dump.database_url(), test_db_name);
         self.pg_dump
-            .restore_from_storage(storage, target, &dump_name, Some(test_db_name.to_string()))
+            .restore_into_named_database(storage, target, &dump_name, &test_db_url)
             .await?;
 
         info!(
@@ -313,4 +321,17 @@ impl VerificationManager {
         info!("Schema verification passed for database {}", test_db_name);
         Ok(())
     }
+}
+
+/// Point a PostgreSQL URL at a different database on the same server.
+///
+/// Verification creates a throwaway database next to the real one and restores
+/// into it. `pg_restore` takes a connection string rather than a pool, so the
+/// URL has to be rewritten; everything before the database name — user,
+/// password, host, port — is already correct for the sibling database.
+fn swap_database_in_url(url: &str, database: &str) -> String {
+    let (base, _) = url.rsplit_once('/').unwrap_or((url, ""));
+    // Drop any query parameters the original URL carried.
+    let base = base.split('?').next().unwrap_or(base);
+    format!("{base}/{database}")
 }

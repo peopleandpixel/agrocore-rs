@@ -388,7 +388,15 @@ async fn restore_backup(
 
     let backup_id = path.into_inner();
 
-    // Get backup service from app state
+    // The path segment is authoritative. Rejecting a mismatch rather than
+    // ignoring it means a client cannot believe it restored backup A when the
+    // handler restored B.
+    if req.backup_id != backup_id {
+        return Err(ApiError::validation(
+            "backup_id in the body must match the id in the path",
+        ));
+    }
+
     let backup_service = state
         .backup_service
         .as_ref()
@@ -406,7 +414,7 @@ async fn restore_backup(
 
     // Run restore
     let outcome = backup_service
-        .restore(backup_id, req.target_database.clone(), req.dry_run)
+        .restore(backup_id, req.dry_run)
         .await
         .map_err(|e| ApiError::internal(format!("Restore failed: {}", e)))?;
 

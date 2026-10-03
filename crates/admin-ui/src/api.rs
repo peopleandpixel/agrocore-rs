@@ -2526,10 +2526,6 @@ pub async fn restore_backup(id: &str, dry_run: bool) -> Result<RestoreResultDto,
         &format!("/api/v1/backup/backups/{id}/restore"),
         &serde_json::json!({
             "backup_id": id,
-            // The server derives the target database from its own configuration.
-            // Sending one from the client would allow restoring into an
-            // arbitrary database.
-            "target_database": serde_json::Value::Null,
             "dry_run": dry_run,
         }),
         true,

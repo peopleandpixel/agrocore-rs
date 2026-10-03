@@ -106,15 +106,17 @@ pub async fn list_devices(
 ) -> Result<HttpResponse, ApiError> {
     auth.require_any_role(vec!["admin", "manager", "viewer"])?;
 
-    let requested_tenant = query
-        .get("tenant_id")
-        .and_then(|s| s.parse::<Uuid>().ok())
-        .unwrap_or(auth.0.tenant_id);
-    let tenant_id = if auth.is_admin() {
-        requested_tenant
-    } else {
-        auth.0.tenant_id
-    };
+    // The `tenant_id` query parameter is ignored. A tenant admin is not a
+    // superadmin: `is_admin()` is a role within a tenant and must not widen the
+    // tenant boundary, so honouring the parameter here let any tenant admin read
+    // another tenant's device registry. Cross-tenant visibility needs a
+    // separate, globally granted flag.
+    if query.contains_key("tenant_id") {
+        return Err(ApiError::forbidden(
+            "Cross-tenant device listing is not permitted".to_string(),
+        ));
+    }
+    let tenant_id = auth.0.tenant_id;
 
     let site_id = query.get("site_id").and_then(|s| s.parse::<Uuid>().ok());
 
@@ -216,8 +218,12 @@ pub async fn create_device(
     dto.validate()
         .map_err(|e| ApiError::validation(e.to_string()))?;
 
-    // Check tenant access
-    if dto.tenant_id != auth.0.tenant_id && !auth.is_admin() {
+    // A device must be created in the caller's own tenant. `!auth.is_admin()` was
+    // checked right after `require_any_role(vec!["admin", "manager"])`, so the
+    // condition was constant-false and a tenant admin could register a device
+    // against another tenant's id. The row would then be invisible to that
+    // tenant and unreachable through the tenant-scoped queries.
+    if dto.tenant_id != auth.0.tenant_id {
         return Err(ApiError::forbidden(
             "Cannot create device for different tenant".to_string(),
         ));
@@ -290,13 +296,11 @@ pub async fn update_device(
     dto.validate()
         .map_err(|e| ApiError::validation(e.to_string()))?;
 
+    // `find_device` is already tenant-scoped, so a device belonging to another
+    // tenant is simply not found. The explicit comparison that used to sit here
+    // was unreachable for the same reason as in `delete_device`: `is_admin()` was
+    // checked after `require_any_role`, making the condition constant-false.
     if let Some(mut device) = find_device(&state, auth.0.tenant_id, &device_id).await? {
-        if device.tenant_id != auth.0.tenant_id && !auth.is_admin() {
-            return Err(ApiError::forbidden(
-                "Cannot update device from different tenant".to_string(),
-            ));
-        }
-
         if let Some(device_type) = dto.device_type
             && !device_type.is_empty()
         {
@@ -350,17 +354,20 @@ pub async fn delete_device(
     auth.require_admin()?;
 
     let device_id = path.into_inner();
-    if let Some(device) = find_device(&state, auth.0.tenant_id, &device_id).await?
-        && device.tenant_id != auth.0.tenant_id
-        && !auth.is_admin()
-    {
-        return Err(ApiError::forbidden(
-            "Cannot delete device from different tenant".to_string(),
-        ));
-    }
 
-    let deleted = sqlx::query("DELETE FROM iot_devices WHERE device_id = $1")
+    // The tenant filter belongs in the DELETE, not in a check before it. The
+    // previous version read `if device.tenant_id != auth.0.tenant_id &&
+    // !auth.is_admin()` after `require_admin()`, so the second clause was always
+    // false and the whole condition could never be true — the DELETE that
+    // followed had no tenant condition of its own and removed any device on the
+    // server, including other tenants'.
+    //
+    // A tenant admin is not a superadmin. Cross-tenant access needs a separate,
+    // globally granted flag; `is_admin()` is a role *within* a tenant and must
+    // never widen the tenant boundary.
+    let deleted = sqlx::query("DELETE FROM iot_devices WHERE device_id = $1 AND tenant_id = $2")
         .bind(&device_id)
+        .bind(auth.0.tenant_id)
         .execute(state.db.tenant_pool(auth.0.tenant_id))
         .await?
         .rows_affected();
@@ -399,25 +406,22 @@ pub async fn get_device_telemetry(
     auth.require_any_role(vec!["admin", "manager", "viewer"])?;
 
     let device_id = path.into_inner();
-    if let Some(device) = find_device(&state, auth.0.tenant_id, &device_id).await? {
-        if device.tenant_id != auth.0.tenant_id && !auth.is_admin() {
-            return Err(ApiError::forbidden(
-                "Device belongs to different tenant".to_string(),
-            ));
-        }
 
-        // In a real implementation, this would query a time-series database
-        // For now, return mock data
-        let response = IoTDeviceTelemetryResponse {
-            device_id: device_id.clone(),
-            measurements: vec![],
-            timestamp: chrono::Utc::now(),
-        };
+    // Existence check only: `find_device` is tenant-scoped, so a device of
+    // another tenant is not found. The previous version also compared
+    // `device.tenant_id != auth.0.tenant_id && !auth.is_admin()`, which could
+    // never be true after the role check above it.
+    find_device(&state, auth.0.tenant_id, &device_id)
+        .await?
+        .ok_or_else(|| ApiError::not_found("Device not found"))?;
 
-        Ok(HttpResponse::Ok().json(response))
-    } else {
-        Err(ApiError::not_found("Device not found"))
-    }
+    let response = IoTDeviceTelemetryResponse {
+        device_id: device_id.clone(),
+        measurements: vec![],
+        timestamp: chrono::Utc::now(),
+    };
+
+    Ok(HttpResponse::Ok().json(response))
 }
 
 /// Send command to device
@@ -452,12 +456,6 @@ pub async fn send_command(
         .map_err(|e| ApiError::validation(e.to_string()))?;
 
     if let Some(device) = find_device(&state, auth.0.tenant_id, &device_id).await? {
-        if device.tenant_id != auth.0.tenant_id && !auth.is_admin() {
-            return Err(ApiError::forbidden(
-                "Device belongs to different tenant".to_string(),
-            ));
-        }
-
         if device.status != DeviceStatusDto::Online {
             return Err(ApiError::bad_request("Device is not online"));
         }
@@ -510,12 +508,6 @@ pub async fn get_ha_discovery(
 
     let device_id = path.into_inner();
     if let Some(device) = find_device(&state, auth.0.tenant_id, &device_id).await? {
-        if device.tenant_id != auth.0.tenant_id && !auth.is_admin() {
-            return Err(ApiError::forbidden(
-                "Device belongs to different tenant".to_string(),
-            ));
-        }
-
         // Convert to IoTDeviceConfig for HA discovery generation
         let iot_config = IoTDeviceConfig {
             device_id: device.device_id.clone(),

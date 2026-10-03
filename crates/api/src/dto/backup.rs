@@ -40,12 +40,19 @@ pub struct BackupSummaryResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Validate)]
 pub struct RestoreRequest {
+    /// Kept for compatibility with clients that echo the id they just called
+    /// with; the path segment is authoritative and the two must agree.
     pub backup_id: Uuid,
-    pub target_database: Option<String>,
     /// Validate that the backup is restorable without writing to the database.
     #[serde(default)]
     pub dry_run: bool,
 }
+
+// There is deliberately no `target_database` field. `pg_restore` runs with
+// `--clean`, so the destination is emptied before the dump is written; a target
+// named by the client would let a restore wipe any database on the server. The
+// destination is the configured `DATABASE_URL`, server-side, and is not
+// something a request can influence.
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct RestoreResponse {
