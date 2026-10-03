@@ -54,8 +54,8 @@ anyhow = "1.0.104"
 tracing = { version = "0.1.44", features = ["std"] }
 tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt"] }
 tracing-actix-web = "0.7.22"
-utoipa = { version = "5.5.0", features = ["actix_extras", "uuid", "chrono"] }
-utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web", "vendored"] }
+utoipa = { version = "6.0.0", features = ["actix_extras", "uuid", "chrono"] }
+utoipa-swagger-ui = { version = "10.0.1", features = ["actix-web", "vendored"] }
 actix-web-prometheus = "0.1.2"
 prometheus = "0.14.0"
 chrono = { version = "0.4.45", features = ["serde"] }
