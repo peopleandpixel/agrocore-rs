@@ -2378,6 +2378,56 @@ pub async fn restore_default_settings() -> Result<RestoreDefaultsResponse, Strin
 }
 
 // ---------------------------------------------------------------------------
+// Settings groups (tasks.md F3)
+// ---------------------------------------------------------------------------
+
+/// The available groups and their declared fields.
+///
+/// Used to render the settings page from the server's own field list rather
+/// than a copy in the client, which is what let the two drift apart.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SettingsGroupInfo {
+    pub namespace: String,
+    pub fields: Vec<SettingsGroupField>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SettingsGroupField {
+    pub name: String,
+    pub key: String,
+    /// Human-readable expected type, e.g. "a string".
+    pub value_type: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SettingsGroupsResponse {
+    pub groups: Vec<SettingsGroupInfo>,
+}
+
+pub async fn fetch_setting_groups() -> Result<SettingsGroupsResponse, String> {
+    get_json("/api/v1/settings/groups", true).await
+}
+
+/// Read one settings group.
+///
+/// Returns the raw object rather than a typed struct: the group shapes differ,
+/// and the editor renders from the declared field list.
+pub async fn fetch_setting_group(namespace: &str) -> Result<serde_json::Value, String> {
+    get_json(&format!("/api/v1/settings/{namespace}"), true).await
+}
+
+/// Write a settings group.
+///
+/// Sends only the fields present in `values`, so the endpoint's partial-update
+/// behaviour keeps the fields this call did not mention.
+pub async fn save_setting_group(
+    namespace: &str,
+    values: serde_json::Map<String, serde_json::Value>,
+) -> Result<serde_json::Value, String> {
+    put_json(&format!("/api/v1/settings/{namespace}"), &values, true).await
+}
+
+// ---------------------------------------------------------------------------
 // Backups
 // ---------------------------------------------------------------------------
 

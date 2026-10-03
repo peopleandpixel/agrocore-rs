@@ -9,6 +9,7 @@ use utoipa_swagger_ui::SwaggerUi;
 pub mod dto;
 pub mod error;
 pub mod handlers;
+pub mod lpis_settings;
 pub mod metrics;
 pub mod middleware;
 pub mod openapi;

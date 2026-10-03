@@ -21,6 +21,7 @@ pub mod nutrition;
 pub mod orders;
 pub mod reporting;
 pub mod settings;
+pub mod settings_groups;
 pub mod sigpac;
 pub mod sites;
 pub mod specialized;

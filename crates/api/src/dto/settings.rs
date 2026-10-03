@@ -11,6 +11,13 @@ pub struct LpisProviderConfig {
     pub rate_limit_requests_per_second: u32,
     pub rate_limit_burst_size: u32,
     pub enabled: bool,
+    /// The country this entry describes, and whether the tenant configured it or
+    /// the value is the built-in default.
+    ///
+    /// Needed because the listing now returns the real upstream URLs instead of
+    /// invented ones, so a client cannot tell a configured provider from a
+    /// default by comparing domains.
+    pub configured: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]

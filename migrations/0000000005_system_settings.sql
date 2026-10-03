@@ -118,3 +118,35 @@ ON CONFLICT (COALESCE(tenant_id, '00000000-0000-0000-0000-000000000000'::uuid), 
 DO UPDATE SET value = EXCLUDED.value,
               value_type = EXCLUDED.value_type,
               description = EXCLUDED.description;
+
+-- ---------------------------------------------------------------------------
+-- LPIS providers (tasks.md F4/F6).
+--
+-- These used to live in `config/lpis-providers.toml`, found by walking up from
+-- the current directory. That does not work in a container, where the working
+-- directory is `/`, and it is not tenant-scoped: every tenant shared one
+-- provider list. The real upstream URLs are seeded here so a fresh installation
+-- works without anyone editing a file.
+--
+-- Only the URL and the tunables are stored. Credentials are secrets and are
+-- deliberately not part of this table — a settings row is readable by every
+-- admin of its tenant.
+-- ---------------------------------------------------------------------------
+INSERT INTO system_settings (tenant_id, key, value, value_type, description, is_sensitive)
+VALUES
+    (NULL, 'lpis.providers.ES.base_url', '"https://sigpac.mapa.gob.es/wfs"',    'string', 'SIGPAC (Spain) WFS endpoint',       FALSE),
+    (NULL, 'lpis.providers.NL.base_url', '"https://geodata.nationaalgeoregister.nl/brppercelen/wfs"', 'string', 'BRP (Netherlands) WFS endpoint', FALSE),
+    (NULL, 'lpis.providers.FR.base_url', '"https://geoservices.ign.fr/rpg/wfs"', 'string', 'RPG (France) WFS endpoint',          FALSE),
+    (NULL, 'lpis.providers.PT.base_url', '"https://ide.ifap.pt/wfs"',           'string', 'iLPIS (Portugal) WFS endpoint',       FALSE),
+    (NULL, 'lpis.providers.IT.base_url', '"https://geoservizi.agenziaentrate.gov.it/ItalyWFS"', 'string', 'SIAN (Italy) WFS endpoint', FALSE),
+    (NULL, 'lpis.providers.DE.base_url', '"https://www.geoportal.de/epsg-service/epsg-ows11"', 'string', 'LPIS (Germany) WFS endpoint', FALSE),
+    (NULL, 'lpis.providers.PL.base_url', '"https://www.gdos.gov.pl"',           'string', 'LPIS (Poland) WFS endpoint',          FALSE),
+    (NULL, 'lpis.providers.AT.base_url', '"https://www.inspektorat.at/"',       'string', 'INVEKOS (Austria) WFS endpoint',       FALSE),
+    (NULL, 'lpis.cache.enabled',          'true',                             'boolean', 'Cache LPIS responses',               FALSE),
+    (NULL, 'lpis.cache.backend',          '"memory"',                         'string',  'Cache backend: memory or redis',      FALSE),
+    (NULL, 'lpis.cache.default_ttl_seconds', '3600',                           'number',  'Default LPIS response lifetime',      FALSE),
+    (NULL, 'lpis.cache.max_entries',      '10000',                             'number',  'Maximum cached LPIS responses',      FALSE)
+ON CONFLICT (COALESCE(tenant_id, '00000000-0000-0000-0000-000000000000'::uuid), key)
+DO UPDATE SET value = EXCLUDED.value,
+              value_type = EXCLUDED.value_type,
+              description = EXCLUDED.description;

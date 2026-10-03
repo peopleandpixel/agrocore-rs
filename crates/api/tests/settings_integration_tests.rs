@@ -1,33 +1,76 @@
 use actix_web::{App, http::StatusCode, test};
 use agrocore_api::handlers::configure;
 
+/// Every settings route must be registered.
+///
+/// Asserts "not 404", because a missing route answers 404 while a registered
+/// one answers 401 or 403 without a token. This is what caught the LPIS routes
+/// disappearing when the file-based handlers were replaced by the database-backed
+/// ones.
 #[actix_web::test]
 async fn test_settings_routes_configured() {
-    // Just verify the routes are configured correctly
     let app = test::init_service(App::new().configure(configure)).await;
 
-    // Test that the routes exist (they return 401/403/404 instead of 404 Not Found for unknown routes)
-    let req = test::TestRequest::get()
-        .uri("/api/v1/settings/lpis/providers")
-        .to_request();
+    let registered = [
+        ("GET", "/api/v1/settings"),
+        ("PUT", "/api/v1/settings"),
+        ("GET", "/api/v1/settings/keys"),
+        ("POST", "/api/v1/settings/restore-defaults"),
+        ("GET", "/api/v1/settings/groups"),
+        ("GET", "/api/v1/settings/lpis/providers"),
+        ("GET", "/api/v1/settings/backup"),
+        ("PUT", "/api/v1/settings/backup"),
+        ("GET", "/api/v1/settings/notification"),
+        ("PUT", "/api/v1/settings/notification"),
+        ("GET", "/api/v1/settings/weather"),
+        ("PUT", "/api/v1/settings/weather"),
+        ("GET", "/api/v1/settings/locale"),
+        ("PUT", "/api/v1/settings/locale"),
+        ("GET", "/api/v1/settings/company"),
+        ("PUT", "/api/v1/settings/company"),
+    ];
 
-    let resp = test::call_service(&app, req).await;
-    // Route exists but returns 401/403 because no auth - not 404
-    assert_ne!(resp.status(), StatusCode::NOT_FOUND);
+    for (method, uri) in registered {
+        let req = match method {
+            "GET" => test::TestRequest::get().uri(uri),
+            "PUT" => test::TestRequest::put().uri(uri),
+            "POST" => test::TestRequest::post().uri(uri),
+            _ => unreachable!("unsupported method in the list"),
+        };
 
-    let req = test::TestRequest::get()
-        .uri("/api/v1/settings/lpis")
-        .to_request();
+        let resp = test::call_service(&app, req.to_request()).await;
+        assert_ne!(
+            resp.status(),
+            StatusCode::NOT_FOUND,
+            "{method} {uri} is not registered"
+        );
+    }
+}
 
-    let resp = test::call_service(&app, req).await;
-    assert_ne!(resp.status(), StatusCode::NOT_FOUND);
+/// The key-scoped routes use a path segment, so they are checked separately.
+#[actix_web::test]
+async fn test_setting_key_routes_configured() {
+    let app = test::init_service(App::new().configure(configure)).await;
 
-    let req = test::TestRequest::put()
-        .uri("/api/v1/settings/lpis")
-        .to_request();
+    for (method, uri) in [
+        ("GET", "/api/v1/settings/company.name"),
+        ("PUT", "/api/v1/settings/company.name"),
+        ("DELETE", "/api/v1/settings/company.name"),
+    ] {
+        let req = match method {
+            "GET" => test::TestRequest::get().uri(uri),
+            "PUT" => test::TestRequest::put().uri(uri),
+            "DELETE" => test::TestRequest::delete().uri(uri),
+            _ => unreachable!("unsupported method in the list"),
+        };
 
-    let resp = test::call_service(&app, req).await;
-    assert_ne!(resp.status(), StatusCode::NOT_FOUND);
+        let resp = test::call_service(&app, req.to_request()).await;
+        assert_ne!(
+            resp.status(),
+            StatusCode::NOT_FOUND,
+            "{method} {uri} is not registered"
+        );
+    }
 }
 
 #[cfg(test)]
@@ -43,6 +86,7 @@ mod config_serialization_tests {
             rate_limit_requests_per_second: 20,
             rate_limit_burst_size: 30,
             enabled: true,
+            configured: Some(String::from("PT")),
         };
 
         let toml_str = toml::to_string(&config).unwrap();
@@ -57,6 +101,7 @@ mod config_serialization_tests {
         );
         assert_eq!(config.rate_limit_burst_size, parsed.rate_limit_burst_size);
         assert_eq!(config.enabled, parsed.enabled);
+        assert_eq!(config.configured, parsed.configured);
     }
 
     #[test]

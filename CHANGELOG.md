@@ -7,6 +7,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.34.0] - 2026-10-02
+
+Settings-API für alle Ressourcen (F3) und LPIS-Konfiguration aus der
+Datenbank statt aus einer TOML-Datei (F4, F6, J10).
+
+### Gruppen-Endpunkte (F3)
+
+- Neu: `GET /api/v1/settings/groups` sowie `GET/PUT
+  /api/v1/settings/{backup,notification,weather,locale,company}`. Bisher
+  musste ein Client jeden Schlüsselnamen und jeden Typ kennen; jetzt liest er
+  `GET /api/v1/settings/backup` und bekommt die Felder der Gruppe.
+- Jede Gruppe deklariert ihre Felder mit Typ. Ein unbekanntes Feld wird
+  abgelehnt, statt unter einem Schlüssel zu landen, den niemand zurückliest.
+- Ein falscher Typ wird am Rand abgelehnt. Ein String unter einem numerischen
+  Feld würde von der Datenbank akzeptiert und dann von jedem Leser mit
+  `as_u64()` stillschweigend ignoriert.
+- Alle Gruppen nutzen dieselben `system_settings`-Zeilen wie die Key/Value-API.
+  Ein Wert, der über eine Gruppe geschrieben wurde, ist über die Key/Value-API
+  sichtbar und umgekehrt.
+- `null` setzt das Tenant-Override auf den Systemdefault zurück.
+- Sensible Werte werden über Gruppen nicht zurückgegeben: die Gruppe weiß nicht,
+  was ihr Wert bedeutet, und kann ihn nicht gezielt schwärzen.
+- Die Antwort auf einen Schreibvorgang ist der gespeicherte Zustand, damit ein
+  korrigierter oder teilweise abgelehnter Wert sichtbar wird.
+
+### LPIS aus der Datenbank (F4, F6, J10)
+
+- `find_config_file()` suchte relativ vom Arbeitsverzeichnis nach oben nach
+  `config/lpis-providers.toml`. Im Container, wo das Arbeitsverzeichnis `/` ist,
+  existiert die Datei nicht; und sie war nicht mandantenfähig, alle Mandanten
+  teilten sich eine Provider-Liste.
+- Neu: `crates/api/src/lpis_settings.rs` liest aus `system_settings` unter
+  `lpis.providers.<COUNTRY>.`, mit den echten Endpunkten als Fallback.
+- `list_lpis_providers` gab `https://{country}.example.com/wfs` zurück. Diese
+  Domains waren erfunden und sahen wie Konfiguration aus; jetzt wird der
+  konfigurierte bzw. eingebaute Endpunkt gemeldet, und ein Land ohne Endpunkt
+  als deaktiviert.
+- `LpisProviderConfig.configured` sagt dem Client, ob ein Eintrag konfiguriert
+  oder ein eingebauter Default ist — ohne Domainvergleich nicht erkennbar.
+- Credentials gehören nicht in `system_settings`: eine Settings-Zeile ist für
+  jeden Admin des Mandanten lesbar.
+- Die Debug-`eprintln!` aus dem Handler sind mit dem Dateipfad verschwunden;
+  Fehler werden strukturiert geloggt.
+- 12 LPIS-Defaults in Migration 5, darunter die echten URLs.
+
+### Routenreihenfolge
+
+- Aktix matcht in Registrierungsreihenfolge, und `/{key}` passt auf jedes
+  einzelne Segment. Ohne Reihenfolgedisziplin las `/backup` als Setting
+  „backup" und `/lpis/providers` als Schlüssel „lpis". Die Gruppen liegen jetzt
+  im selben Scope vor `/{key}`; ein zweiter gleichnamiger Scope hätte die
+  Key/Value-Routen stillschweigend verschluckt.
+- Der Routentest prüft jetzt alle 16 Settings-Routen einzeln statt einer
+  dreifachen Wiederholung derselben URI, und hat das Verschlucken gefunden.
+
+### Toolchain
+
+- Das CachyOS-Paket `rustc` startet nicht mehr: `libLLVM.so.23.1` exportiert
+  `_M_mutate` für `wchar_t`, nicht für `char`, und bindet die Symbole an einen
+  `LLVM_23.1`-Versionsknoten, den die Bibliothek nicht führt. Ein
+  GCC-16-Update hat `libstdc++` in die Richtung inkompatibel gemacht.
+  Eine selfcontained-Toolchain via rustup nach `~/.rustup` läuft wieder.
+
+### Tests
+
+- 8 Tests in `crates/api/tests/settings_groups_tests.rs`: geteilte Speicherung,
+  Typablehnung ohne Override, unbekanntes Feld, Reset auf Default,
+  Mandanten-Isolation des Firmenprofils, echte LPIS-Endpunkte, gezieltes
+  Provider-Override, deklarierte Typen der Defaults.
+
+fmt, check, clippy -D warnings, kompletter Workspace-Testlauf und die
+ignorierten Datenbanktests grün.
+
 ## [0.33.0] - 2026-10-02
 
 Schließt die zwei verbleibenden Stellen, an denen die Backup-API Erfolg
