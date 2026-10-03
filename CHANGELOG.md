@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.37.0] - 2026-10-03
+
+I4 — password hashing no longer occupies the async runtime — and I3 — the
+SIGPAC near-point search finally uses an index.
+
+### Argon2 off the async worker (I4)
+
+Argon2 is deliberately slow; that is what makes a stolen hash expensive to attack.
+The default parameters cost 50–100 ms of pure CPU. Running that inside an `async`
+task holds a Tokio worker for the whole duration, and the runtime has a fixed pool
+of workers — so every other request landing on the same worker waits.
+
+That makes authentication a denial-of-service primitive: a handful of concurrent
+login attempts occupies every worker without needing many connections, and while
+they are being hashed the process serves nothing else.
+
+**Four call sites, not one.** Hashing appeared in `PgUserRepo::create`,
+`handlers/system.rs` and `handlers/demo.rs`; verification in the login path. All
+four now go through a new `agrocore_infrastructure::password` module, whose
+`hash_password` and `verify_password` move the work to the blocking pool.
+
+The module exists so the wrapper cannot be forgotten. A call site that hashes
+inline looks correct in review — `hash_password` reads fine until you notice the
+missing `spawn_blocking`, and nothing about the code says the difference matters.
+
+The stored hash is parsed before the blocking hop, so a malformed hash is
+reported without occupying a thread at all.
+
+Five unit tests, including one that asserts what the fix is actually for: two
+concurrent hashes on a *single-threaded* runtime must finish in roughly the time
+of one rather than the sum. Run inline, the second call cannot start until the
+first finishes, so the test fails. That is the property, not a proxy for it.
+
+### SIGPAC near-point search uses an index (I3)
+
+`handlers/sigpac.rs` filters with `ST_DWithin(geography(geometry), geography(<point>), <radius>)`,
+but the only spatial index on `sigpac_parcels` was `USING GIST (geometry)`.
+
+`ST_DWithin(geography, geography, distance)` has no `geometry` overload — the
+distance argument is in metres, which only makes sense for the geodetic type.
+Wrapping the column in `geography(...)` is a function call, and the planner cannot
+match a function call against an index on the raw column. So the query
+sequentially scanned every parcel the tenant owns, then filtered, on every
+near-point request.
+
+Measured on this schema with 500 parcels:
+
+| | plan | time |
+|---|---|---|
+| before | `Seq Scan on sigpac_parcels` | 50.0 ms |
+| after | `Index Scan using idx_sigpac_parcels_geog` | 0.33 ms |
+
+The ratio grows with the table: a sequential scan reads every row, an index scan
+reads only the matching bounding boxes.
+
+Both indexes are kept. `geometry` remains correct for the predicates that stay in
+that type — exact `ST_Intersects`, `ST_Contains` — and dropping it would regress
+those. The same mismatch was present on `lpis_reference_parcels`, so the index was
+added there too rather than leaving the next person to rediscover it.
+
+fmt, check, clippy -D warnings, the full workspace test run and the ignored
+database tests all pass.
+
 ## [0.36.0] - 2026-10-03
 
 Closes the two remaining P0 tenant-boundary breaks (B2, B3). Both had the same

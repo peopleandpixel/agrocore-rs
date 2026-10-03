@@ -1,6 +1,6 @@
 # AgroCore-RS API Documentation
 
-> Version: 0.36.0  
+> Version: 0.37.0  
 > Base URL: `http://localhost:8080`  
 > API Prefix: `/api/v1`
 

@@ -155,7 +155,6 @@ pub async fn seed_demo(
 
     // Create Admin User
     let user_id = Uuid::new_v4();
-    use argon2::PasswordHasher;
     use password_hash::phc::SaltString;
 
     let _salt = SaltString::generate();
@@ -170,10 +169,12 @@ pub async fn seed_demo(
         );
         DEMO_DEFAULT_PASSWORD.to_string()
     });
-    let password_hash = argon2::Argon2::default()
-        .hash_password(demo_password.as_bytes())
-        .map_err(|e| SharedError::Internal(format!("Hashing error: {}", e)))?
-        .to_string();
+    // Argon2 costs 50-100 ms of CPU; hashing inline would occupy the async
+    // worker. See `agrocore_infrastructure::password` for why this must go
+    // through the blocking pool.
+    let password_hash = agrocore_infrastructure::password::hash_password(demo_password.clone())
+        .await
+        .map_err(|_| SharedError::Internal("Hashing error".to_string()))?;
 
     let roles = vec![UserRole::Admin];
 

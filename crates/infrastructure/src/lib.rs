@@ -3,6 +3,7 @@
 #![allow(dead_code)]
 mod defaults;
 mod jwt;
+pub mod password;
 pub mod postgres;
 
 pub use defaults::{default_bind_addr, default_nats_url};

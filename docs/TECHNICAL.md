@@ -1,6 +1,6 @@
 # AgroCore-RS — Technical Documentation
 
-> Version: 0.36.0
+> Version: 0.37.0
 > Last updated: 2026-08-11
 > License: GPL-3.0-or-later
 

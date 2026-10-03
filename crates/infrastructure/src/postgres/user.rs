@@ -14,7 +14,6 @@ agrocore_shared::pg_repo!(PgUserRepo);
 use crate::jwt::generate_jwt;
 use crate::postgres::error_mapper::map_db_error;
 use crate::postgres::tenant_pool::TenantPool;
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use password_hash::phc::SaltString;
 use rand::rng;
 
@@ -208,11 +207,12 @@ impl UserRepository for PgUserRepo {
         let language = dto.language;
 
         Box::pin(async move {
-            let argon2 = Argon2::default();
-            let password_hash = argon2
-                .hash_password(password_hash.as_bytes())
-                .map_err(|e| SharedError::Internal(format!("Password hashing failed: {}", e)))?
-                .to_string();
+            // Argon2 costs 50-100 ms of CPU. Hashing inline would occupy the
+            // async worker for that whole time, so concurrent user creations
+            // would stall every other request on the same worker.
+            let password_hash = crate::password::hash_password(password_hash)
+                .await
+                .map_err(SharedError::Internal)?;
 
             let user = sqlx::query_as::<_, User>(
                 r#"INSERT INTO users (tenant_id, firstname, lastname, email, password_hash, roles, is_active, internal_cost_per_hour, external_cost_per_hour, color, language, created_at, updated_at)
@@ -409,11 +409,10 @@ impl UserRepository for PgUserRepo {
                 .await
                 .map_err(map_db_error)?;
 
-            let argon2 = Argon2::default();
-            let parsed_hash = PasswordHash::new(&user.password_hash)
-                .map_err(|e| SharedError::Internal(format!("Invalid password hash: {}", e)))?;
-            argon2
-                .verify_password(password.as_bytes(), &parsed_hash)
+            // Same reasoning as the hashing above: verification is the other
+            // half of the login cost and was blocking the worker inline.
+            crate::password::verify_password(password, user.password_hash.clone())
+                .await
                 .map_err(|_| SharedError::Unauthorized("Invalid credentials".to_string()))?;
 
             let token = generate_jwt(user.id, user.tenant_id.0, &user.roles)

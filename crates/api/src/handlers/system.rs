@@ -114,18 +114,16 @@ pub async fn initial_setup(
     // 3. Create Admin User
     let admin_id = Uuid::new_v4();
     info!("Creating admin user with id: {}", admin_id);
-    // Replicating Argon2 hashing from PgUserRepo to ensure atomicity within the transaction
-    use argon2::PasswordHasher;
-    use password_hash::phc::SaltString;
-
-    let _salt = SaltString::generate();
-    let password_hash = argon2::Argon2::default()
-        .hash_password(dto.admin.password.as_bytes())
-        .map_err(|e| {
-            error!("Password hashing failed: {}", e);
-            SharedError::Internal(format!("Hashing error: {}", e))
-        })?
-        .to_string();
+    // Argon2 costs 50-100 ms of CPU and would occupy the async worker inline,
+    // stalling every other request on it. `crate::password::hash_password` moves
+    // the work to the blocking pool.
+    let password_hash =
+        agrocore_infrastructure::password::hash_password(dto.admin.password.clone())
+            .await
+            .map_err(|e| {
+                error!("Password hashing failed: {}", e);
+                SharedError::Internal("Hashing error".to_string())
+            })?;
 
     let roles = vec![UserRole::Admin];
 

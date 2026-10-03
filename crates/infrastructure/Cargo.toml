@@ -17,7 +17,7 @@ uuid = { workspace = true }
 anyhow = { workspace = true }
 agrocore-logging = { path = "../logging", features = ["dev-console"] }
 futures = { workspace = true }
-tokio = { workspace = true, features = ["time"] }
+tokio = { workspace = true, features = ["time", "rt"] }
 jsonwebtoken = { workspace = true }
 argon2 = { workspace = true }
 password-hash = { workspace = true }
