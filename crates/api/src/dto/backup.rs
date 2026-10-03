@@ -33,6 +33,9 @@ pub struct BackupSummaryResponse {
     pub completed_at: Option<chrono::DateTime<chrono::Utc>>,
     pub total_size_bytes: u64,
     pub target_count: usize,
+    /// False when no manifest was found and the id and type were inferred from
+    /// the object name.
+    pub manifest_backed: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Validate)]

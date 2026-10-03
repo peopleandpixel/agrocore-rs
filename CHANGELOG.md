@@ -7,6 +7,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.33.0] - 2026-10-02
+
+Schließt die zwei verbleibenden Stellen, an denen die Backup-API Erfolg
+vortäuschte (J7, H3), und macht `list_backups` real. Zusammen mit 0.32.0 ist
+damit keine Backup-Funktion mehr eine Attrappe.
+
+### Löschen löscht (J7)
+
+- `delete_backup` entfernte nichts. Die Funktion prüfte nur `get_job_status` und
+  antwortete `200 {"success": true}`; wer ein Backup zum Freigeben von Platz
+  löschte, zahlte weiter dafür, und der Retention-Sweep fand das Objekt später
+  wieder.
+- Neue Service-Methode `delete_backup_objects`, die über das Manifest auflöst,
+  welche Objekte zu einem Backup gehören. Ein volles Backup schreibt Dump,
+  Checksumme und Manifest — nur den Dump zu löschen hätte den Rest zurückgelassen
+  und die Liste hätte das Backup weiter angezeigt.
+- Löschung über alle konfigurierten Ziele. Ein repliziertes Backup auf einem
+  Ziel zu löschen hätte eine wiederherstellbare Kopie stehen gelassen.
+- Manifest wird zuletzt gelöscht, damit eine Teillöschung beschreibbar bleibt:
+  die Liste des Backups überlebt, bis die Objekte selbst weg sind.
+- Ein fehlgeschlagenes Ziel wird gesammelt statt abgebrochen. `failed_targets`
+  ist nicht leer, dann antwortet der Handler mit einem Fehler statt mit Erfolg —
+  eine Teillöschung, die als Erfolg gemeldet wird, ist die alte Täuschungsart an
+  anderer Stelle.
+- Der In-Memory-Job wird verworfen. Ohne das beantwortet
+  `GET /backup/backups/{id}` weiter für ein Backup, das es nicht mehr gibt.
+- Abbruch bei laufendem Backup: sonst schreibt ein Job weiter auf Objekte, die
+  gerade entfernt werden.
+- `manifest_object_name` jetzt geteilt zwischen Schreiber und Löscher. Weichen die
+  beiden ab, bleibt das Manifest zurück.
+
+### Liste liest aus dem Storage
+
+- `list_backups` gab `vec![]` zurück. Jetzt liest es Storage-Manifeste und
+  Dump-Objekte, sodass die Liste einen Neustart überlebt — der Job-State im
+  Speicher tut das nicht.
+- Ohne Manifest wird die ID aus dem Objektnamen abgeleitet statt per
+  `Uuid::new_v4()` erfunden. Eine erfundene ID ließ die UI einen Löschen-Button
+  anbieten, der nichts auflösen konnte.
+- Das gleiche Backup auf mehreren Zielen ist ein Backup, nicht drei. Sonst
+  läge ein repliziertes Backup mehrfach in der Liste und ließe sich mehrfach
+  erfolgreich löschen.
+- Ein nicht erreichbares Ziel leert die Liste nicht mehr, es wird geloggt.
+- `manifest_backed` in der Response: ohne Manifest sind ID und Typ abgeleitet,
+  das muss der Client unterscheiden können.
+
+### Backup-Seite (H3)
+
+- Neue Route `/backups` mit Navigationseintrag, sichtbar für Admins.
+- Konfiguration: beide Zeitpläne, Zeitzone, vier Retention-Stufen,
+  Verifikation, An/Aus.
+- Das Speichern rendert die Konfiguration, die der Server zurückgibt, nicht das
+  Formular. Der Handler beantwortet einen Schreibvorgang mit dem gespeicherten
+  Zustand, damit ein abgelehnter oder korrigierter Wert hier sichtbar wird.
+- Manuelle Backups: Datenbank, Konfiguration, vollständig.
+- Liste mit ID, Typ, Status, Beginn, Größe, Zielanzahl und Aktionen.
+- Restore führt immer erst `dry_run` aus und fragt danach, weil Restore nicht
+  umkehrbar ist und die aktuelle Datenbank überschreibt.
+- Das Löschen nennt Anzahl der Objekte und freigegelegten Speicher.
+- Ohne Manifest wird die Zeile als solche markiert, weil die ID dann nicht
+  sicher auflösbar ist.
+- Neue API-Wrapper: Konfiguration, Liste, Start, Detail, Status, Restore,
+  Löschen.
+
+### Tests
+
+- 5 Tests in `crates/backup-service/tests/delete_backup_tests.rs` gegen einen
+  echten lokalen Storage-Backend, weil zu beweisen ist, dass Dateien die Platte
+  verlassen: Datei gelöscht, unbekanntes Backup schlägt fehl, alle Ziele
+  gelöscht, Dump plus Checksumme plus Manifest gelöscht, fremde Backups bleiben.
+
+fmt, check, clippy -D warnings, kompletter Workspace-Testlauf und die 45
+ignorierten Datenbanktests grün.
+
 ## [0.32.0] - 2026-10-02
 
 Behebt F2 auf F1: die Backup-Konfiguration wird jetzt in `system_settings`

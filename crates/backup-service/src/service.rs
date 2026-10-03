@@ -82,7 +82,18 @@ pub struct BackupSummary {
     pub started_at: DateTime<Utc>,
     pub completed_at: Option<DateTime<Utc>>,
     pub total_size_bytes: u64,
+    /// How many targets hold this backup. One dump replicated to three targets
+    /// is one backup with `target_count == 3`, not three backups.
     pub target_count: usize,
+    /// Object names this backup consists of, used by deletion to walk exactly
+    /// what belongs to it.
+    pub object_names: Vec<String>,
+    /// Targets already counted in `target_count`, so a replica is not counted
+    /// twice.
+    pub object_names_seen: Vec<String>,
+    /// Whether a manifest was found. Without one the id and type are inferred,
+    /// which the API surfaces so a client does not treat them as authoritative.
+    pub manifest_backed: bool,
 }
 
 pub struct BackupService {
@@ -709,35 +720,165 @@ impl BackupService {
     }
 
     /// List backups found across all configured targets, newest first.
+    ///
+    /// The listing is built from storage, so it survives a restart: a backup in
+    /// the bucket is still listed after the in-memory job state is gone. Where a
+    /// manifest exists it is authoritative, because it records the real backup
+    /// id and type; a bare dump file is listed by its parsed timestamp instead,
+    /// so no entry is silently dropped.
+    ///
+    /// The same object found on several targets is one backup, not several: the
+    /// targets are replicas of one dump, and listing them individually would
+    /// make a replicated backup look like three backups an admin could delete
+    /// "successfully" twice.
     pub async fn list_backups(&self) -> BackupResult<Vec<BackupSummary>> {
-        let mut summaries = Vec::new();
+        let mut by_object: std::collections::BTreeMap<String, BackupSummary> =
+            std::collections::BTreeMap::new();
+        let mut seen_targets: std::collections::HashMap<String, std::collections::HashSet<String>> =
+            std::collections::HashMap::new();
 
         for target in &self.config.targets {
-            let objects = self
-                .storage
-                .list_objects(target, "")
-                .await
-                .unwrap_or_default();
+            let target_id = target.target_id();
+
+            // Manifests first: they carry the authoritative id and type.
+            for (backup_id, summary) in self.list_from_manifests(target).await? {
+                by_object.insert(backup_id.to_string(), summary);
+                seen_targets
+                    .entry(backup_id.to_string())
+                    .or_default()
+                    .insert(target_id.clone());
+            }
+        }
+
+        // Then bare dump files, for backups taken before manifests existed.
+        for target in &self.config.targets {
+            let target_id = target.target_id();
+            let objects = match self.storage.list_objects(target, "").await {
+                Ok(list) => list,
+                // One unreachable target must not empty the whole listing.
+                Err(e) => {
+                    warn!("Could not list objects on {target_id}: {e}");
+                    continue;
+                }
+            };
+
             for (name, size) in objects {
-                // Only dump objects represent backups.
                 if !name.ends_with(".dump") {
                     continue;
                 }
+                // Skip anything already covered by a manifest.
+                if by_object
+                    .values()
+                    .any(|s| s.object_names.iter().any(|n| n == &name))
+                {
+                    continue;
+                }
+
                 let started_at = Self::parse_dump_timestamp(&name).unwrap_or_else(Utc::now);
-                summaries.push(BackupSummary {
-                    id: Uuid::new_v4(),
+                let key = name.clone();
+                let entry = by_object.entry(key).or_insert_with(|| BackupSummary {
+                    // No manifest means no recorded id. A fresh random one would
+                    // be wrong in a harmful way: the UI would offer a delete for
+                    // an id that resolves to nothing, and `get_job_status` would
+                    // never find it.
+                    id: Self::backup_id_from_object_name(&name).unwrap_or_else(Uuid::new_v4),
                     backup_type: BackupType::Database,
                     status: BackupStatus::Completed,
                     started_at,
                     completed_at: Some(started_at),
                     total_size_bytes: size,
-                    target_count: 1,
+                    target_count: 0,
+                    object_names: vec![name.clone()],
+                    object_names_seen: Vec::new(),
+                    manifest_backed: false,
                 });
+                entry.total_size_bytes = size;
+                // Count replicas, not listings: the same dump on three targets is
+                // one backup stored three times.
+                if !entry.object_names_seen.contains(&target_id) {
+                    entry.target_count += 1;
+                    entry.object_names_seen.push(target_id.clone());
+                }
             }
         }
 
+        let mut summaries: Vec<BackupSummary> = by_object.into_values().collect();
         summaries.sort_by_key(|b| std::cmp::Reverse(b.started_at));
         Ok(summaries)
+    }
+
+    /// Manifest-backed listings for one target.
+    async fn list_from_manifests(
+        &self,
+        target: &BackupTarget,
+    ) -> BackupResult<Vec<(Uuid, BackupSummary)>> {
+        let mut result = Vec::new();
+
+        // Manifests live under a known prefix, so listing that prefix is enough.
+        let objects = match self.storage.list_objects(target, "manifests/").await {
+            Ok(list) => list,
+            Err(e) => {
+                warn!("Could not list manifests: {e}");
+                return Ok(result);
+            }
+        };
+
+        for (name, _) in objects {
+            if !name.ends_with(".json") {
+                continue;
+            }
+            let Some(backup_id) = Self::backup_id_from_manifest_name(&name) else {
+                continue;
+            };
+            let Some(manifest) = self.storage.load_manifest(target, &backup_id).await? else {
+                continue;
+            };
+
+            let object_names: Vec<String> = manifest
+                .targets
+                .iter()
+                .flat_map(|t| t.objects.iter().map(|o| o.name.clone()))
+                .collect();
+
+            result.push((
+                backup_id,
+                BackupSummary {
+                    id: backup_id,
+                    backup_type: manifest.backup_type,
+                    status: manifest.status,
+                    started_at: manifest.started_at,
+                    completed_at: Some(manifest.completed_at),
+                    total_size_bytes: manifest.total_size_bytes,
+                    target_count: 1,
+                    object_names,
+                    object_names_seen: Vec::new(),
+                    manifest_backed: true,
+                },
+            ));
+        }
+
+        Ok(result)
+    }
+
+    /// Extract a backup id embedded in `manifests/<uuid>.json`.
+    fn backup_id_from_manifest_name(name: &str) -> Option<Uuid> {
+        let stem = name.strip_prefix("manifests/")?.strip_suffix(".json")?;
+        Uuid::parse_str(stem).ok()
+    }
+
+    /// Extract a backup id embedded in an object name, when present.
+    ///
+    /// Object names are built as `<label>_<stamp>.dump` or, when a job id is
+    /// available, with the id embedded. Only the second form can be resolved
+    /// back to a real id.
+    fn backup_id_from_object_name(name: &str) -> Option<Uuid> {
+        let stem = name.rsplit_once('.')?.0;
+        for part in stem.split('_') {
+            if let Ok(id) = Uuid::parse_str(part) {
+                return Some(id);
+            }
+        }
+        None
     }
 
     /// Extract the timestamp encoded in `<label>_<YYYYMMDD>_<HHMMSS>.dump`.
@@ -758,6 +899,41 @@ impl BackupService {
             chrono::NaiveDateTime::parse_from_str(&format!("{date} {time}"), "%Y%m%d %H%M%S")
                 .ok()?;
         Some(DateTime::from_naive_utc_and_offset(naive, Utc))
+    }
+
+    /// Delete a backup and every object belonging to it.
+    ///
+    /// The manifest is the source of truth for which objects belong to a
+    /// backup, so deletion walks it rather than guessing from the object name:
+    /// a full backup writes a dump, a checksum and a manifest, and deleting only
+    /// the dump would leave the rest behind.
+    ///
+    /// Objects are removed across all configured targets, because a backup is
+    /// replicated and deleting it from one target only would leave a restorable
+    /// copy behind. A target that fails is collected in `failed_targets` rather
+    /// than aborting the whole operation — the remaining targets are still worth
+    /// cleaning, and the caller is told exactly what did not happen.
+    pub async fn delete_backup(&self, backup_id: Uuid) -> BackupResult<DeleteOutcome> {
+        info!("Deleting backup {backup_id}");
+
+        let outcome =
+            delete_backup_objects(self.storage.as_ref(), &self.config.targets, backup_id).await?;
+
+        // Drop the in-memory job so a deleted backup stops appearing in status
+        // lookups. Without this, `GET /backup/backups/{id}` keeps answering for a
+        // backup that no longer exists.
+        {
+            let mut state = self.job_state.write().await;
+            state.remove(&backup_id);
+        }
+
+        info!(
+            "Deleted backup {backup_id}: {} objects, {} bytes",
+            outcome.deleted_objects.len(),
+            outcome.bytes_freed
+        );
+
+        Ok(outcome)
     }
 
     pub async fn get_job_status(&self, job_id: Uuid) -> Option<BackupJob> {
@@ -791,4 +967,124 @@ pub struct RestoreOutcome {
     pub object_name: String,
     pub bytes_restored: u64,
     pub dry_run: bool,
+}
+
+/// Result of a delete operation.
+///
+/// `failed_targets` names the targets where at least one object could not be
+/// removed. A non-empty list means the deletion is partial, and the caller must
+/// say so rather than reporting success.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct DeleteOutcome {
+    pub backup_id: Uuid,
+    pub deleted_objects: Vec<String>,
+    pub bytes_freed: u64,
+    pub failed_targets: Vec<String>,
+}
+
+/// Delete every object belonging to `backup_id` across all targets.
+///
+/// Free-standing so it can be tested against a real storage backend without
+/// constructing a whole `BackupService`, which needs a database and NATS.
+///
+/// The manifest is the source of truth for which objects belong to a backup:
+/// a full backup writes a dump, a checksum and a manifest, and deleting only the
+/// dump would leave the rest behind. Objects are removed across every target,
+/// because a backup is replicated and deleting it from one target would leave a
+/// restorable copy. A failing target is collected in `failed_targets` rather
+/// than aborting — the remaining targets are still worth cleaning, and the
+/// caller is told exactly what did not happen.
+pub async fn delete_backup_objects(
+    storage: &dyn crate::storage::StorageBackendTrait,
+    targets: &[BackupTarget],
+    backup_id: Uuid,
+) -> BackupResult<DeleteOutcome> {
+    let mut deleted: Vec<String> = Vec::new();
+    let mut bytes_freed: u64 = 0;
+    let mut failed_targets: Vec<String> = Vec::new();
+    let mut found_any = false;
+
+    for target in targets {
+        let target_id = target.target_id();
+
+        // Objects recorded in the manifest, plus the manifest itself.
+        let mut objects: Vec<(String, u64)> = Vec::new();
+        match storage.load_manifest(target, &backup_id).await {
+            Ok(Some(manifest)) => {
+                found_any = true;
+                for target_manifest in &manifest.targets {
+                    for object in &target_manifest.objects {
+                        objects.push((object.name.clone(), object.size_bytes));
+                    }
+                }
+            }
+            Ok(None) => {}
+            Err(e) => {
+                warn!("Could not read manifest for {backup_id}: {e}");
+                failed_targets.push(target_id.clone());
+                continue;
+            }
+        }
+
+        if objects.is_empty() {
+            // No manifest: fall back to name matching, so a backup taken before
+            // manifests were persisted can still be deleted.
+            if let Ok(listed) = storage.list_objects(target, "").await {
+                let id_string = backup_id.to_string();
+                for (name, size) in listed {
+                    if name.contains(&id_string) {
+                        found_any = true;
+                        objects.push((name, size));
+                    }
+                }
+            }
+        }
+
+        if objects.is_empty() {
+            continue;
+        }
+
+        let mut target_failed = false;
+        for (name, size) in objects {
+            match storage.delete_object(target, &name).await {
+                Ok(()) => {
+                    deleted.push(name);
+                    bytes_freed += size;
+                }
+                Err(e) => {
+                    // Keep going: one unreadable object must not strand the rest
+                    // of the backup in storage.
+                    warn!("Could not delete {name} on {target_id}: {e}");
+                    target_failed = true;
+                }
+            }
+        }
+
+        // Remove the manifest last, so a partial deletion stays describable: the
+        // record of what this backup contained survives until the objects
+        // themselves are gone.
+        if !target_failed {
+            let manifest_name = crate::manifest::manifest_object_name(&backup_id);
+            if storage.delete_object(target, &manifest_name).await.is_ok() {
+                deleted.push(manifest_name);
+            }
+        }
+
+        if target_failed {
+            failed_targets.push(target_id);
+        }
+    }
+
+    if !found_any {
+        return Err(BackupError::NotFound(format!(
+            "Backup {backup_id} not found in any target"
+        )));
+    }
+
+    Ok(DeleteOutcome {
+        backup_id,
+        deleted_objects: deleted,
+        bytes_freed,
+        failed_targets,
+    })
 }

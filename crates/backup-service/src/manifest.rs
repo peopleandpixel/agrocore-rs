@@ -111,7 +111,7 @@ impl ManifestManager {
     ) -> crate::error::BackupResult<()> {
         let json = serde_json::to_vec_pretty(manifest)
             .map_err(crate::error::BackupError::Serialization)?;
-        let object_name = format!("manifests/{}.json", manifest.backup_id);
+        let object_name = manifest_object_name(&manifest.backup_id);
 
         storage.upload_bytes(target, &object_name, &json).await?;
         Ok(())
@@ -137,4 +137,13 @@ impl ManifestManager {
         // Could query database for migration version
         Ok("unknown".to_string())
     }
+}
+
+/// Object name a manifest is stored under.
+///
+/// Shared by the writer and by deletion: if the two disagreed, a deleted backup
+/// would leave its manifest behind and the next listing would report a backup
+/// whose objects are gone.
+pub fn manifest_object_name(backup_id: &uuid::Uuid) -> String {
+    format!("manifests/{backup_id}.json")
 }

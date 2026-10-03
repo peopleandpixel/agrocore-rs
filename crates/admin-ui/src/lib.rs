@@ -34,8 +34,8 @@ use crate::components::worker_tasks::WorkerTasksPage;
 use crate::components::workers::WorkersPage;
 use I::{
     ImMagicWand, LuBeef, LuBox, LuBriefcase, LuChartBar, LuChartNoAxesColumn, LuCircleUser,
-    LuClipboardList, LuCloudSun, LuFileDown, LuHistory, LuLayoutDashboard, LuLogOut, LuMap,
-    LuMapPin, LuMenu, LuSettings, LuSquareCheck, LuSun, LuTractor, LuUsers, LuWallet,
+    LuClipboardList, LuCloudSun, LuDatabase, LuFileDown, LuHistory, LuLayoutDashboard, LuLogOut,
+    LuMap, LuMapPin, LuMenu, LuSettings, LuSquareCheck, LuSun, LuTractor, LuUsers, LuWallet,
 };
 use icondata as I;
 use leptos::prelude::*;
@@ -228,6 +228,8 @@ fn AuthenticatedShell(
                             <Route path=path!("/compliance") view=|| view! { <CompliancePage /> } />
                             <Route path=path!("/users") view=|| view! { <UserManagement /> } />
                             <Route path=path!("/settings") view=|| view! { <SettingsPage /> } />
+                            <Route path=path!("/backups") view=|| view! { <components::backup::BackupManagement /> } />
+                            <Route path=path!("/backups") view=|| view! { <components::backup::BackupManagement /> } />
                             <Route path=path!("/wizard") view=|| view! { <WizardView /> } />
                             <Route path=path!("/worker/tasks") view=|| view! { <WorkerTasksPage /> } />
                             <Route path=path!("/workers") view=|| view! { <WorkersPage /> } />
@@ -300,6 +302,9 @@ fn AuthenticatedShell(
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
                         <a href="/compliance"><Icon icon=LuChartNoAxesColumn width="20" height="20" />{crate::t!(t, "nav_compliance")}</a>
+                    </li>
+                    <li class=move || if view_mode.get() == ViewMode::Full && user_role.get() == UserRole::Admin { "" } else { "hidden" }>
+                        <a href="/backups"><Icon icon=LuDatabase width="20" height="20" />"Backups"</a>
                     </li>
                     <li><a href="/settings"><Icon icon=LuSettings width="20" height="20" />{crate::t!(t, "nav_settings")}</a></li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>

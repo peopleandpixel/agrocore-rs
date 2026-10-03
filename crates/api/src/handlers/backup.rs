@@ -232,11 +232,40 @@ async fn update_backup_config(
 }
 
 async fn list_backups(
-    _state: web::Data<AppState>,
-    _auth: AuthExtractor,
+    state: web::Data<AppState>,
+    auth: AuthExtractor,
 ) -> Result<HttpResponse, ApiError> {
-    // TODO: Implement listing from backup service
-    let backups: Vec<BackupSummaryResponse> = vec![];
+    auth.require_any_role(vec!["admin", "manager"])?;
+
+    let backup_service = state
+        .backup_service
+        .as_ref()
+        .ok_or_else(|| ApiError::internal("Backup service not available"))?;
+
+    // Read from storage rather than returning an empty vec: the listing has to
+    // survive a restart, because the in-memory job state does not.
+    let summaries = backup_service.list_backups().await.map_err(|e| {
+        error!("Failed to list backups: {e}");
+        ApiError::internal("Backups could not be listed")
+    })?;
+
+    let backups: Vec<BackupSummaryResponse> = summaries
+        .into_iter()
+        .map(|s| BackupSummaryResponse {
+            id: s.id,
+            backup_type: s.backup_type.to_string(),
+            status: s.status.to_string(),
+            started_at: s.started_at,
+            completed_at: s.completed_at,
+            total_size_bytes: s.total_size_bytes,
+            target_count: s.target_count,
+            // Surfaced because without a manifest the id and type are inferred
+            // from the object name; a client must not treat them as
+            // authoritative.
+            manifest_backed: s.manifest_backed,
+        })
+        .collect();
+
     Ok(HttpResponse::Ok().json(backups))
 }
 
@@ -407,23 +436,54 @@ async fn delete_backup(
 
     let backup_id = path.into_inner();
 
-    // Get backup service from app state
     let backup_service = state
         .backup_service
         .as_ref()
         .ok_or_else(|| ApiError::internal("Backup service not available"))?;
 
-    let _job = backup_service
+    // Deleting a backup that is still running would leave a writer behind on
+    // objects that are being removed.
+    if backup_service
         .get_job_status(backup_id)
         .await
-        .ok_or_else(|| ApiError::not_found("Backup job not found"))?;
+        .is_some_and(|job| job.status == BackupStatus::Running)
+    {
+        return Err(ApiError::validation(
+            "Cannot delete a backup that is still running",
+        ));
+    }
 
-    // TODO: Actually delete from storage
-    // For now just return success
-    info!("Backup {} deleted by user {}", backup_id, auth.0.user_id);
+    let outcome = backup_service.delete_backup(backup_id).await.map_err(|e| {
+        error!("Failed to delete backup {backup_id}: {e}");
+        match e {
+            agrocore_backup::error::BackupError::NotFound(_) => {
+                ApiError::not_found("Backup not found")
+            }
+            _ => ApiError::internal("Backup could not be deleted"),
+        }
+    })?;
+
+    info!(
+        "Backup {} deleted by user {}: {} objects, {} bytes",
+        backup_id,
+        auth.0.user_id,
+        outcome.deleted_objects.len(),
+        outcome.bytes_freed
+    );
+
+    // A partial deletion must not be reported as success. The response says
+    // what did not happen instead of hiding it behind a 200.
+    if !outcome.failed_targets.is_empty() {
+        return Err(ApiError::internal(format!(
+            "Backup partially deleted; these targets could not be cleaned: {}",
+            outcome.failed_targets.join(", ")
+        )));
+    }
 
     Ok(HttpResponse::Ok().json(json!({
         "success": true,
-        "message": format!("Backup {} deleted", backup_id),
+        "message": format!("Backup {backup_id} deleted"),
+        "deleted_objects": outcome.deleted_objects.len(),
+        "bytes_freed": outcome.bytes_freed,
     })))
 }

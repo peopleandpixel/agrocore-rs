@@ -2377,6 +2377,127 @@ pub async fn restore_default_settings() -> Result<RestoreDefaultsResponse, Strin
         .map_err(|e| e.to_string())
 }
 
+// ---------------------------------------------------------------------------
+// Backups
+// ---------------------------------------------------------------------------
+
+/// The stored backup configuration.
+///
+/// Returned by both the GET and the PUT: the handler answers a write with the
+/// configuration as saved, so the UI renders what the server has rather than
+/// what was typed.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BackupConfigDto {
+    pub enabled: bool,
+    pub schedule_db: String,
+    pub schedule_config: String,
+    pub timezone: String,
+    pub targets_count: usize,
+    pub retention_daily: u32,
+    pub retention_weekly: u32,
+    pub retention_monthly: u32,
+    pub retention_yearly: u32,
+    pub verification_enabled: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BackupSummaryDto {
+    pub id: String,
+    pub backup_type: String,
+    pub status: String,
+    pub started_at: String,
+    pub completed_at: Option<String>,
+    pub total_size_bytes: u64,
+    pub target_count: usize,
+    /// False when no manifest was found and the id and type were inferred from
+    /// the object name.
+    #[serde(default)]
+    pub manifest_backed: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BackupRunDto {
+    pub id: String,
+    pub backup_type: String,
+    pub status: String,
+    pub started_at: String,
+    pub completed_at: Option<String>,
+    pub target_ids: Vec<String>,
+    pub total_size_bytes: u64,
+    pub error: Option<String>,
+    pub progress: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RestoreResultDto {
+    pub success: bool,
+    pub message: String,
+}
+
+pub async fn fetch_backup_config() -> Result<BackupConfigDto, String> {
+    get_json("/api/v1/backup/config", true).await
+}
+
+/// Save the backup configuration.
+///
+/// Sends only the fields that were filled in, because the endpoint is a partial
+/// update: sending an unchanged field as an empty string would overwrite a
+/// stored schedule with nothing.
+pub async fn save_backup_config(config: &BackupConfigDto) -> Result<BackupConfigDto, String> {
+    put_json("/api/v1/backup/config", config, true).await
+}
+
+/// Backups found in storage, newest first.
+pub async fn fetch_backups() -> Result<Vec<BackupSummaryDto>, String> {
+    get_json("/api/v1/backup/backups", true).await
+}
+
+/// Start a backup. `backup_type` is "database", "config" or "full".
+pub async fn create_backup(backup_type: &str) -> Result<BackupRunDto, String> {
+    post_json(
+        "/api/v1/backup/backups",
+        &serde_json::json!({ "backup_type": backup_type }),
+        true,
+    )
+    .await
+}
+
+pub async fn fetch_backup(id: &str) -> Result<BackupRunDto, String> {
+    get_json(&format!("/api/v1/backup/backups/{id}"), true).await
+}
+
+pub async fn fetch_backup_status(id: &str) -> Result<serde_json::Value, String> {
+    get_json(&format!("/api/v1/backup/backups/{id}/status"), true).await
+}
+
+/// Restore a backup. `dry_run` checks readability without writing.
+pub async fn restore_backup(id: &str, dry_run: bool) -> Result<RestoreResultDto, String> {
+    post_json(
+        &format!("/api/v1/backup/backups/{id}/restore"),
+        &serde_json::json!({
+            "backup_id": id,
+            // The server derives the target database from its own configuration.
+            // Sending one from the client would allow restoring into an
+            // arbitrary database.
+            "target_database": serde_json::Value::Null,
+            "dry_run": dry_run,
+        }),
+        true,
+    )
+    .await
+}
+
+pub async fn delete_backup(id: &str) -> Result<serde_json::Value, String> {
+    let req = Request::delete(&api_url(&format!("/api/v1/backup/backups/{id}")));
+    let resp = with_auth(req).send().await.map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("Error: {}", resp.status()));
+    }
+    resp.json::<serde_json::Value>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
 /// Percent-encode one path segment.
 ///
 /// Setting keys contain a dot, which is legal in a path segment, but encoding

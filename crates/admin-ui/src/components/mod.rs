@@ -1,5 +1,6 @@
 pub mod analytics;
 pub mod audit;
+pub mod backup;
 pub mod buildings;
 pub mod compliance;
 pub mod customers;
