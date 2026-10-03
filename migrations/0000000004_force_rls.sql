@@ -328,9 +328,20 @@ GRANT SELECT ON users TO agrocore_auth;
 -- authentication role, whose reach ends with the login query.
 GRANT SELECT ON user_sites TO agrocore_auth;
 
--- `SET LOCAL ROLE` requires membership, and the connection role `agrocore` is
--- the one that owns the pool.
-GRANT agrocore_auth TO agrocore;
+-- `SET LOCAL ROLE` requires membership. The role that has it is the one this
+-- migration runs as, which differs per deployment (`agrocore` in docker, `test`
+-- in CI) -- hardcoding the name aborted the migration wherever it differed.
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_auth_members m
+        JOIN pg_roles r ON r.oid = m.roleid
+        WHERE r.rolname = 'agrocore_auth' AND m.member = current_user::regrole
+    ) THEN
+        EXECUTE format('GRANT agrocore_auth TO %I', current_user);
+    END IF;
+END
+$$;
 
 -- The `users_select` policy from the init migration is
 --   is_superadmin() OR tenant_id = get_current_tenant_id()

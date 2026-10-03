@@ -50,21 +50,6 @@ impl PostgresTestFixture {
         );
         let pool = retry_connect(&test_database_url, 10).await?;
 
-        // Migration 4 grants `agrocore_app` to a role named `agrocore`, because
-        // that is the connection role of the deployment. The container connects
-        // as `test_user`, so the migration would abort on a missing role before
-        // ever creating a policy. Create the role here as a plain group role:
-        // NOLOGIN, so nothing can actually connect as it, and `test_user` is a
-        // member, which is what the migration's GRANT needs.
-        sqlx::query("CREATE ROLE agrocore NOLOGIN")
-            .execute(&pool)
-            .await
-            .ok();
-        sqlx::query("GRANT agrocore TO test_user")
-            .execute(&pool)
-            .await
-            .ok();
-
         sqlx::migrate!("../../migrations").run(&pool).await?;
 
         let database = Database::Postgres(

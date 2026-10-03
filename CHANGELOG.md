@@ -89,6 +89,24 @@ What source assertions cannot catch: a future author reintroducing the same
 capability under different wording. That is what code review and the DB-level
 tenant-isolation tests are for.
 
+
+### CI: migration 4 aborted on every run
+
+The CI job connects as `test`, but migration `0000000004_force_rls.sql` granted
+`agrocore_app` and `agrocore_auth` to a hardcoded `agrocore` role, so the
+migration aborted with `role "agrocore" does not exist` before creating a single
+policy. The local docker setup uses `agrocore`, which is why it passed here and
+failed only in CI.
+
+Both grants now go to `current_user`, which is the role the migration executes as
+and the role that later issues `SET ROLE agrocore_app`. Verified by running all
+seven migrations against a fresh database as a separate `test` role: 71 tables,
+63 with `FORCE ROW LEVEL SECURITY`, and both application roles granted to `test`.
+
+With that fixed, the test fixture no longer needs its workaround of pre-creating
+an `agrocore` group role just to get migration 4 past the GRANT — the workaround
+had been hiding this from every local run.
+
 fmt, check, clippy -D warnings, the full workspace test run and the ignored
 database tests all pass.
 
