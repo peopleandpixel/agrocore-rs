@@ -9,312 +9,308 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.34.0] - 2026-10-02
 
-Settings-API für alle Ressourcen (F3) und LPIS-Konfiguration aus der
-Datenbank statt aus einer TOML-Datei (F4, F6, J10).
+Settings API for every resource (F3), and LPIS configuration read from the
+database instead of a TOML file (F4, F6, J10).
 
-### Gruppen-Endpunkte (F3)
+### Group endpoints (F3)
 
-- Neu: `GET /api/v1/settings/groups` sowie `GET/PUT
-  /api/v1/settings/{backup,notification,weather,locale,company}`. Bisher
-  musste ein Client jeden Schlüsselnamen und jeden Typ kennen; jetzt liest er
-  `GET /api/v1/settings/backup` und bekommt die Felder der Gruppe.
-- Jede Gruppe deklariert ihre Felder mit Typ. Ein unbekanntes Feld wird
-  abgelehnt, statt unter einem Schlüssel zu landen, den niemand zurückliest.
-- Ein falscher Typ wird am Rand abgelehnt. Ein String unter einem numerischen
-  Feld würde von der Datenbank akzeptiert und dann von jedem Leser mit
-  `as_u64()` stillschweigend ignoriert.
-- Alle Gruppen nutzen dieselben `system_settings`-Zeilen wie die Key/Value-API.
-  Ein Wert, der über eine Gruppe geschrieben wurde, ist über die Key/Value-API
-  sichtbar und umgekehrt.
-- `null` setzt das Tenant-Override auf den Systemdefault zurück.
-- Sensible Werte werden über Gruppen nicht zurückgegeben: die Gruppe weiß nicht,
-  was ihr Wert bedeutet, und kann ihn nicht gezielt schwärzen.
-- Die Antwort auf einen Schreibvorgang ist der gespeicherte Zustand, damit ein
-  korrigierter oder teilweise abgelehnter Wert sichtbar wird.
+- New: `GET /api/v1/settings/groups` plus `GET/PUT
+  /api/v1/settings/{backup,notification,weather,locale,company}`. Previously a
+  client had to know every key name and every type; now it reads
+  `GET /api/v1/settings/backup` and gets the group's fields.
+- Each group declares its fields with their type. An unknown field is
+  rejected instead of landing under a key nothing reads back.
+- A wrong type is rejected at the edge. A string under a numeric field would be
+  accepted by the database and then silently ignored by every reader using
+  `as_u64()`.
+- All groups use the same `system_settings` rows as the key/value API. A value
+  written through a group is visible through the key/value API and vice versa.
+- `null` resets the tenant override to the system default.
+- Sensitive values are not returned through a group: the group does not know
+  what its value means and cannot redact it selectively.
+- The response to a write is the stored state, so a corrected or partially
+  rejected value becomes visible.
 
-### LPIS aus der Datenbank (F4, F6, J10)
+### LPIS from the database (F4, F6, J10)
 
-- `find_config_file()` suchte relativ vom Arbeitsverzeichnis nach oben nach
-  `config/lpis-providers.toml`. Im Container, wo das Arbeitsverzeichnis `/` ist,
-  existiert die Datei nicht; und sie war nicht mandantenfähig, alle Mandanten
-  teilten sich eine Provider-Liste.
-- Neu: `crates/api/src/lpis_settings.rs` liest aus `system_settings` unter
-  `lpis.providers.<COUNTRY>.`, mit den echten Endpunkten als Fallback.
-- `list_lpis_providers` gab `https://{country}.example.com/wfs` zurück. Diese
-  Domains waren erfunden und sahen wie Konfiguration aus; jetzt wird der
-  konfigurierte bzw. eingebaute Endpunkt gemeldet, und ein Land ohne Endpunkt
-  als deaktiviert.
-- `LpisProviderConfig.configured` sagt dem Client, ob ein Eintrag konfiguriert
-  oder ein eingebauter Default ist — ohne Domainvergleich nicht erkennbar.
-- Credentials gehören nicht in `system_settings`: eine Settings-Zeile ist für
-  jeden Admin des Mandanten lesbar.
-- Die Debug-`eprintln!` aus dem Handler sind mit dem Dateipfad verschwunden;
-  Fehler werden strukturiert geloggt.
-- 12 LPIS-Defaults in Migration 5, darunter die echten URLs.
+- `find_config_file()` walked up from the working directory looking for
+  `config/lpis-providers.toml`. In a container, where the working directory is
+  `/`, that file does not exist; and it was not tenant-scoped, so every tenant
+  shared one provider list.
+- New: `crates/api/src/lpis_settings.rs` reads from `system_settings` under
+  `lpis.providers.<COUNTRY>.`, with the real endpoints as the fallback.
+- `list_lpis_providers` returned `https://{country}.example.com/wfs`. Those
+  domains were invented and looked like configuration; now the configured or
+  built-in endpoint is reported, and a country without one as disabled.
+- `LpisProviderConfig.configured` tells the client whether an entry is
+  configured or a built-in default — indistinguishable otherwise without
+  comparing domains.
+- Credentials do not belong in `system_settings`: a settings row is readable by
+  every admin of the tenant.
+- The debug `eprintln!` calls are gone with the file path; errors are logged
+  structurally.
+- 12 LPIS defaults in migration 5, including the real URLs.
 
-### Routenreihenfolge
+### Route ordering
 
-- Aktix matcht in Registrierungsreihenfolge, und `/{key}` passt auf jedes
-  einzelne Segment. Ohne Reihenfolgedisziplin las `/backup` als Setting
-  „backup" und `/lpis/providers` als Schlüssel „lpis". Die Gruppen liegen jetzt
-  im selben Scope vor `/{key}`; ein zweiter gleichnamiger Scope hätte die
-  Key/Value-Routen stillschweigend verschluckt.
-- Der Routentest prüft jetzt alle 16 Settings-Routen einzeln statt einer
-  dreifachen Wiederholung derselben URI, und hat das Verschlucken gefunden.
+- Actix matches in registration order, and `/{key}` matches any single
+  segment. Without ordering discipline `/backup` was read as the setting
+  "backup" and `/lpis/providers` as the key "lpis". The groups now sit in the
+  same scope ahead of `/{key}`; a second scope with the same prefix would have
+  silently swallowed the key/value routes.
+- The route test now checks all 16 settings routes individually instead of
+  repeating the same URI three times, and it caught the swallowing.
 
 ### Toolchain
 
-- Das CachyOS-Paket `rustc` startet nicht mehr: `libLLVM.so.23.1` exportiert
-  `_M_mutate` für `wchar_t`, nicht für `char`, und bindet die Symbole an einen
-  `LLVM_23.1`-Versionsknoten, den die Bibliothek nicht führt. Ein
-  GCC-16-Update hat `libstdc++` in die Richtung inkompatibel gemacht.
-  Eine selfcontained-Toolchain via rustup nach `~/.rustup` läuft wieder.
+- The CachyOS `rustc` package no longer starts: `libLLVM.so.23.1` exports
+  `_M_mutate` for `wchar_t` but not for `char`, and binds the symbols to an
+  `LLVM_23.1` version node the library does not carry. A GCC 16 update made
+  `libstdc++` incompatible in that direction. A self-contained toolchain via
+  rustup into `~/.rustup` works again.
 
 ### Tests
 
-- 8 Tests in `crates/api/tests/settings_groups_tests.rs`: geteilte Speicherung,
-  Typablehnung ohne Override, unbekanntes Feld, Reset auf Default,
-  Mandanten-Isolation des Firmenprofils, echte LPIS-Endpunkte, gezieltes
-  Provider-Override, deklarierte Typen der Defaults.
+- 8 tests in `crates/api/tests/settings_groups_tests.rs`: shared storage, type
+  rejection without an override, unknown field, reset to default, tenant
+  isolation of the company profile, real LPIS endpoints, targeted provider
+  override, declared types of the defaults.
 
-fmt, check, clippy -D warnings, kompletter Workspace-Testlauf und die
-ignorierten Datenbanktests grün.
-
+fmt, check, clippy -D warnings, the full workspace test run and the ignored
+database tests all pass.
 ## [0.33.0] - 2026-10-02
 
-Schließt die zwei verbleibenden Stellen, an denen die Backup-API Erfolg
-vortäuschte (J7, H3), und macht `list_backups` real. Zusammen mit 0.32.0 ist
-damit keine Backup-Funktion mehr eine Attrappe.
+Closes the last two places where the backup API faked success (J7, H3), and makes
+`list_backups` real. Together with 0.32.0 no backup function is a dummy any
+more.
 
-### Löschen löscht (J7)
+### Deleting actually deletes (J7)
 
-- `delete_backup` entfernte nichts. Die Funktion prüfte nur `get_job_status` und
-  antwortete `200 {"success": true}`; wer ein Backup zum Freigeben von Platz
-  löschte, zahlte weiter dafür, und der Retention-Sweep fand das Objekt später
-  wieder.
-- Neue Service-Methode `delete_backup_objects`, die über das Manifest auflöst,
-  welche Objekte zu einem Backup gehören. Ein volles Backup schreibt Dump,
-  Checksumme und Manifest — nur den Dump zu löschen hätte den Rest zurückgelassen
-  und die Liste hätte das Backup weiter angezeigt.
-- Löschung über alle konfigurierten Ziele. Ein repliziertes Backup auf einem
-  Ziel zu löschen hätte eine wiederherstellbare Kopie stehen gelassen.
-- Manifest wird zuletzt gelöscht, damit eine Teillöschung beschreibbar bleibt:
-  die Liste des Backups überlebt, bis die Objekte selbst weg sind.
-- Ein fehlgeschlagenes Ziel wird gesammelt statt abgebrochen. `failed_targets`
-  ist nicht leer, dann antwortet der Handler mit einem Fehler statt mit Erfolg —
-  eine Teillöschung, die als Erfolg gemeldet wird, ist die alte Täuschungsart an
-  anderer Stelle.
-- Der In-Memory-Job wird verworfen. Ohne das beantwortet
-  `GET /backup/backups/{id}` weiter für ein Backup, das es nicht mehr gibt.
-- Abbruch bei laufendem Backup: sonst schreibt ein Job weiter auf Objekte, die
-  gerade entfernt werden.
-- `manifest_object_name` jetzt geteilt zwischen Schreiber und Löscher. Weichen die
-  beiden ab, bleibt das Manifest zurück.
+- `delete_backup` removed nothing. It only checked `get_job_status` and replied
+  `200 {"success": true}`; anyone deleting a backup to free space kept paying
+  for it, and the retention sweep later found the object again.
+- New service method `delete_backup_objects` resolves which objects belong to a
+  backup through the manifest. A full backup writes a dump, a checksum and a
+  manifest — deleting only the dump would have left the rest behind, and the
+  listing would still have shown the backup.
+- Deletion covers every configured target. Deleting a replicated backup from
+  one target would leave a restorable copy behind.
+- The manifest is deleted last, so a partial deletion stays describable: the
+  backup's inventory survives until the objects themselves are gone.
+- A failing target is collected rather than aborting. A non-empty
+  `failed_targets` makes the handler answer with an error instead of success —
+  reporting a partial deletion as success is the old deception in a different
+  place.
+- The in-memory job is discarded. Without that, `GET /backup/backups/{id}`
+  keeps answering for a backup that no longer exists.
+- Refused while a backup is running: otherwise a job keeps writing to objects
+  that are being removed.
+- `manifest_object_name` is now shared between writer and deleter. If the two
+  disagreed, the manifest would survive.
 
-### Liste liest aus dem Storage
+### Listing reads from storage
 
-- `list_backups` gab `vec![]` zurück. Jetzt liest es Storage-Manifeste und
-  Dump-Objekte, sodass die Liste einen Neustart überlebt — der Job-State im
-  Speicher tut das nicht.
-- Ohne Manifest wird die ID aus dem Objektnamen abgeleitet statt per
-  `Uuid::new_v4()` erfunden. Eine erfundene ID ließ die UI einen Löschen-Button
-  anbieten, der nichts auflösen konnte.
-- Das gleiche Backup auf mehreren Zielen ist ein Backup, nicht drei. Sonst
-  läge ein repliziertes Backup mehrfach in der Liste und ließe sich mehrfach
-  erfolgreich löschen.
-- Ein nicht erreichbares Ziel leert die Liste nicht mehr, es wird geloggt.
-- `manifest_backed` in der Response: ohne Manifest sind ID und Typ abgeleitet,
-  das muss der Client unterscheiden können.
+- `list_backups` returned `vec![]`. It now reads storage manifests and dump
+  objects, so the listing survives a restart — the in-memory job state does
+  not.
+- Without a manifest the ID is derived from the object name instead of being
+  invented with `Uuid::new_v4()`. An invented ID had the UI offer a delete
+  button that resolved to nothing.
+- The same backup on several targets is one backup, not three. Otherwise a
+  replicated backup would appear repeatedly in the listing and could be
+  "successfully" deleted repeatedly.
+- An unreachable target no longer empties the listing; it is logged.
+- `manifest_backed` in the response: without a manifest the ID and type are
+  derived, and the client has to be able to tell.
 
-### Backup-Seite (H3)
+### Backup page (H3)
 
-- Neue Route `/backups` mit Navigationseintrag, sichtbar für Admins.
-- Konfiguration: beide Zeitpläne, Zeitzone, vier Retention-Stufen,
-  Verifikation, An/Aus.
-- Das Speichern rendert die Konfiguration, die der Server zurückgibt, nicht das
-  Formular. Der Handler beantwortet einen Schreibvorgang mit dem gespeicherten
-  Zustand, damit ein abgelehnter oder korrigierter Wert hier sichtbar wird.
-- Manuelle Backups: Datenbank, Konfiguration, vollständig.
-- Liste mit ID, Typ, Status, Beginn, Größe, Zielanzahl und Aktionen.
-- Restore führt immer erst `dry_run` aus und fragt danach, weil Restore nicht
-  umkehrbar ist und die aktuelle Datenbank überschreibt.
-- Das Löschen nennt Anzahl der Objekte und freigegelegten Speicher.
-- Ohne Manifest wird die Zeile als solche markiert, weil die ID dann nicht
-  sicher auflösbar ist.
-- Neue API-Wrapper: Konfiguration, Liste, Start, Detail, Status, Restore,
-  Löschen.
+- New route `/backups` with a navigation entry, visible to admins.
+- Configuration: both schedules, timezone, four retention tiers, verification,
+  on/off.
+- Saving renders the configuration the server returned, not the form. The
+  handler answers a write with the stored state, so a rejected or corrected
+  value becomes visible here.
+- Manual backups: database, configuration, full.
+- List with ID, type, status, start, size, target count and actions.
+- Restore always runs `dry_run` first and then asks, because restore is not
+  reversible and overwrites the current database.
+- Deleting reports the number of objects and the space freed.
+- Without a manifest the row is marked as such, because the ID is then not
+  reliably resolvable.
+- New API wrappers: configuration, list, start, detail, status, restore,
+  delete.
 
 ### Tests
 
-- 5 Tests in `crates/backup-service/tests/delete_backup_tests.rs` gegen einen
-  echten lokalen Storage-Backend, weil zu beweisen ist, dass Dateien die Platte
-  verlassen: Datei gelöscht, unbekanntes Backup schlägt fehl, alle Ziele
-  gelöscht, Dump plus Checksumme plus Manifest gelöscht, fremde Backups bleiben.
+- 5 tests in `crates/backup-service/tests/delete_backup_tests.rs` against a
+  real local storage backend, because what has to be proven is that files
+  leave the disk: file deleted, unknown backup fails, all targets deleted,
+  dump plus checksum plus manifest deleted, unrelated backups survive.
 
-fmt, check, clippy -D warnings, kompletter Workspace-Testlauf und die 45
-ignorierten Datenbanktests grün.
-
+fmt, check, clippy -D warnings, the full workspace test run and the 45 ignored
+database tests all pass.
 ## [0.32.0] - 2026-10-02
 
-Behebt F2 auf F1: die Backup-Konfiguration wird jetzt in `system_settings`
-gespeichert statt fest verdrahtet zu sein. Schließt außerdem die Lücke, die
-dabei sichtbar wurde — der Konfigurations-Endpunkt konnte Retention und
-Verifikation lesen, aber nicht ändern.
+Implements F2 on top of F1: the backup configuration is now stored in
+`system_settings` instead of being hardcoded. Also closes the gap that became
+visible while doing it — the configuration endpoint could read retention and
+verification but not change them.
 
-### Backup-Konfiguration persistiert (F2)
+### Backup configuration persisted (F2)
 
-- `get_backup_config` liest neun Schlüssel aus dem `backup.`-Namespace und
-  fällt für nie geschriebene Werte auf die ausgelieferten Defaults zurück,
-  statt `enabled: true` und `"0 2 * * *"` fest zu verdrahten.
-- `update_backup_config` schreibt jetzt. Es antwortete vorher mit `200
-  {"message": "Backup configuration updated"}`, ohne irgendetwas zu tun — ein
-  Admin, der Backups abschaltete, wurde das Gegenteil der Wahrheit informiert,
-  während der Zeitplan weiterlief.
-- Die Antwort ist die gespeicherte Konfiguration, nicht eine Erfolgsmeldung.
-  Damit ist aus dem Client erkennbar, ob die Werte übernommen wurden.
-- `UpdateBackupConfigRequest` um `retention_daily/weekly/monthly/yearly` und
-  `verification_enabled` erweitert. Diese Felder standen auf der Response und
-  waren nicht änderbar.
-- Partial Update bleibt erhalten: die Schreibliste entsteht aus den gesendeten
-  Feldern, damit `{"enabled": false}` den Zeitplan nicht löscht.
-- Validierung auf Zeitplanlänge, Zeitzone und Retention-Bereiche.
-- `targets_count` bleibt ehrlich bei 0: Ziele verwaltet der Backup-Service,
-  `system_settings` kennt sie nicht. Eine Zahl zu liefern, die nicht
-  registrierten Zielen entspricht, wäre die alte Täuschungsart.
+- `get_backup_config` reads nine keys from the `backup.` namespace and falls
+  back to the shipped defaults for values never written, instead of hardcoding
+  `enabled: true` and `"0 2 * * *"`.
+- `update_backup_config` now writes. It previously replied `200
+  {"message": "Backup configuration updated"}` without doing anything — an
+  admin turning backups off was told the opposite of the truth while the
+  schedule kept running.
+- The response is the stored configuration, not an acknowledgement. A client
+  can therefore tell whether the values were accepted.
+- `UpdateBackupConfigRequest` extended with
+  `retention_daily/weekly/monthly/yearly` and `verification_enabled`. These
+  fields were on the response and could not be changed.
+- Partial update is preserved: the write list is built from the fields sent,
+  so `{"enabled": false}` does not clear the schedule.
+- Validation on schedule length, timezone and retention ranges.
+- `targets_count` stays honestly at 0: the backup service owns the targets and
+  `system_settings` does not know them. Returning a number that does not match
+  registered targets would be the old deception.
 
-### Einstellungs-Defaults
+### Settings defaults
 
-- Die vier Backup-Keys `backup.schedule`, `backup.retention_days`,
-  `backup.targets` und `backup.verify` sind durch neun sprechende ersetzt.
-  `retention_days` war ein flaches Fenster, die API braucht die vier Retention-
-  Stufen getrennt.
+- The four backup keys `backup.schedule`, `backup.retention_days`,
+  `backup.targets` and `backup.verify` are replaced by nine that say what they
+  are. `retention_days` was a flat window; the API needs the four retention
+  tiers separately.
 
 ### Tests
 
-- 5 Tests in `crates/api/tests/backup_config_tests.rs`: Persistenz, Wechsel von
-  `is_default` beim Überschreiben, Partial Update, Typablehnung für Retention,
-  Mandanten-Isolation inklusive Reset.
-
+- 5 tests in `crates/api/tests/backup_config_tests.rs`: persistence, the
+  `is_default` flip when overriding, partial update, type rejection for
+  retention, tenant isolation including reset.
 ## [0.31.0] - 2026-10-02
+Server-side settings (tasks.md F1/H1) plus the cleanup of the schema
+deviations that surfaced along the way. All 40 previously skipped
+database tests now pass against a fresh database with all migrations
+from zero and the demo seed loaded.
 
-Serverseitige Einstellungen (tasks.md F1/H1) und die Bereinigung der
-Schema-Abweichungen, die dabei sichtbar wurden. Alle 40 ignorierten
-Datenbanktests laufen jetzt grün gegen eine frische Datenbank mit allen
-Migrationen von Null und geladenem Demo-Seed.
+### Settings
 
-### Einstellungen
+- New table `system_settings` (migration `0000000005`): typed
+  key/value settings, `tenant_id IS NULL` are system defaults that
+  every tenant inherits. Uniqueness via `COALESCE(tenant_id, …)`,
+  because a plain `UNIQUE` treats NULLs as distinct and would allow
+  duplicate defaults.
+- 20 shipped defaults, so a fresh installation has a complete
+  settings page.
+- `SettingsRepository` with `list_effective`, `get`, `set`, `set_many`,
+  `reset`, `set_default`, `restore_defaults` and `list_keys`.
+- Endpoints `GET/PUT/DELETE /api/v1/settings`, `GET/PUT/DELETE
+  /api/v1/settings/{key}` and `POST /api/v1/settings/restore-defaults`, all
+  admin-only. A `null` value removes the override instead of storing
+  JSON null.
+- New module `settings_editor.rs`: the widget follows
+  `value_type` instead of one hand-written field per key. A key added
+  in the database shows up with a matching editor and no UI change.
+  The existing `settings.rs` page only wrote to the browser's
+  localStorage and was therefore per device.
+- 6 tests in `tests/settings_tests.rs`: tenant isolation, defaults,
+  save/reset, type validation, unknown keys.
 
-- Neue Tabelle `system_settings` (Migration `0000000005`): typisierte
-  Key/Value-Einstellungen, `tenant_id IS NULL` sind System-Defaults, die
-  jeder Mandant erbt. Eindeutigkeit über `COALESCE(tenant_id, …)`, weil ein
-  einfaches `UNIQUE` NULLs als verschieden behandeln und doppelte Defaults
-  erlauben würde.
-- 20 ausgelieferte Defaults, damit eine frische Installation eine
-  vollständige Einstellungsseite hat.
-- `SettingsRepository` mit `list_effective`, `get`, `set`, `set_many`,
-  `reset`, `set_default`, `restore_defaults` und `list_keys`.
-- Endpunkte `GET/PUT/DELETE /api/v1/settings`, `GET/PUT/DELETE
-  /api/v1/settings/{key}` und `POST /api/v1/settings/restore-defaults`, alle
-  admin-only. `null` als Wert entfernt das Override statt JSON-null zu
-  speichern.
-- Neues Modul `settings_editor.rs`: das Widget richtet sich nach
-  `value_type`, nicht nach einem handgeschriebenen Feld pro Schlüssel. Ein in
-  der Datenbank ergänzter Schlüssel erscheint ohne UI-Änderung mit einem
-  passenden Editor. Bestehende Seite `settings.rs` schrieb nur in das
-  localStorage des Browsers und war damit pro Gerät.
-- 6 Tests in `tests/settings_tests.rs`: Mandanten-Isolation, Defaults,
-  Speichern/Reset, Typvalidierung, unbekannte Schlüssel.
+### Fixed bugs
 
-### Behobene Fehler
-
-- **Sites waren nicht anlegbar.** Das INSERT nannte 36 Spalten, lieferte aber
-  nur 33 Ausdrücke; die Platzhalter sprangen von `$25` auf `$28`.
-- **`sites.center` und `sites.boundary` sind `GEOMETRY`, wurden aber als JSONB
-  gebunden** — jeder Schreibversuch scheiterte mit `column "center" is of
-  type geometry but expression is of type jsonb`. Geschrieben wird jetzt über
-  `ST_GeomFromGeoJSON`, gelesen über `ST_AsGeoJSON`.
-- **`GeoPoint` serialisiert nicht als GeoJSON.** `{"lng":…,"lat":…}` lehnt
-  PostGIS mit `unknown GeoJSON type` ab; neue Helfer `geo_point_to_geojson`
-  und `boundary_to_geojson` konvertieren explizit und schließen Ringe.
-- **`sites.lpis_country` ist `varchar`, wurde aber als JSONB behandelt**
+- **Sites could not be created.** The INSERT named 36 columns but
+  supplied only 33 expressions; the placeholders jumped from `$25` to
+  `$28`.
+- **`sites.center` and `sites.boundary` are `GEOMETRY` but were bound as
+  JSONB** — every write failed with `column "center" is of
+  type geometry but expression is of type jsonb`. Writes now go through
+  `ST_GeomFromGeoJSON`, reads through `ST_AsGeoJSON`.
+- **`GeoPoint` does not serialize as GeoJSON.** `{"lng":…,"lat":…}` is
+  rejected by PostGIS with `unknown GeoJSON type`; new helpers
+  `geo_point_to_geojson` and `boundary_to_geojson` convert explicitly and
+  close rings.
+- **`sites.lpis_country` is `varchar` but was treated as JSONB**
   (`COALESCE types jsonb and character varying cannot be matched`).
-- **Soft-Delete war nicht idempotent.** Ein zweites `delete` meldete erneut
-  Erfolg; `AND is_active` macht den Wiederholungsfall zu `false`.
-- **`worker_repo().create()` und der Worker-Task-Status waren tot.**
-  `workers` war als HR-Tabelle angelegt (`employee_id`, `firstname`,
-  `social_security_number`) und hatte keine der Spalten, die das Entity
-  deklariert; `worker_task_statuses` fehlten `paused_at`, `resumed_at`,
-  `stopped_at`, `done_at` und `updated_at`. Migration
-  `0000000006_workforce_schema_alignment.sql` ergänzt beides, ohne die
-  bestehenden Lohndaten zu verwerfen, und benennt Namen aus `users` nach.
-- **`worker_task_statuses.status` war `TEXT`, das Entity erwartet JSONB** —
-  sqlx lehnte den Decode mit `mismatched types` ab.
-- **Ein Fremdschlüssel auf `worker_locations.worker_id` verwarf gültige
-  Zeilen**, weil das Workforce-Modul eine User-ID übergibt, die FK aber auf
-  `workers(id)` zeigte.
-- **`worker_locations.location` war nullable**, wodurch Zeilen ohne Position
-  entstehen konnten, die die GPS-Ansicht als Nullinsel zeigt.
+- **Soft-delete was not idempotent.** A second `delete` reported
+  success again; `AND is_active` turns the repeat case into `false`.
+- **`worker_repo().create()` and the worker task status were dead.**
+  `workers` had been created as an HR table (`employee_id`, `firstname`,
+  `social_security_number`) and had none of the columns the entity
+  declares; `worker_task_statuses` was missing `paused_at`, `resumed_at`,
+  `stopped_at`, `done_at` and `updated_at`. Migration
+  `0000000006_workforce_schema_alignment.sql` adds both, without
+  discarding the existing payroll data, and renames names from `users`.
+- **`worker_task_statuses.status` was `TEXT`, the entity expects JSONB** —
+  sqlx rejected the decode with `mismatched types`.
+- **A foreign key on `worker_locations.worker_id` rejected valid
+  rows**, because the workforce module passes a user ID while the FK
+  pointed at `workers(id)`.
+- **`worker_locations.location` was nullable**, which allowed rows
+  without a position that the GPS view shows as a null island.
 
-### Testinfrastruktur
+### Test infrastructure
 
-- Der Testcontainer-Fixture legt die Rolle `agrocore` an, die Migration 4
-  voraussetzt, sonst bricht die Migration vorher ab.
-- Fixture-Helfer für echte Fremdschlüssel-Zeilen (User, Task, eindeutige
-  Tenant-Slugs) statt zufälliger UUIDs.
-- `rls_tests` und `tenant_pin_tests` erzeugen ihre Tenant-IDs und Slugs
-  lauf-eindeutig, sonst schlägt der zweite Lauf gegen `tenants_pkey` und
-  `tenants_slug_key` fehl. `ON CONFLICT DO NOTHING` ist unter FORCE-RLS keine
-  Lösung: es löst eine Policy-Prüfung aus, die das normale INSERT nicht hat.
-- Zwei Test-Erwartungen korrigiert, die dem Projekt widersprachen:
-  `spatial_properties` existiert in keiner Migration, und `delete` ist
-  projektweit ein Soft-Delete (12 Repos).
-
+- The testcontainer fixture creates the `agrocore` role that migration 4
+  expects, otherwise the migration aborts earlier.
+- Fixture helpers for real foreign-key rows (user, task, unique
+  tenant slugs) instead of random UUIDs.
+- `rls_tests` and `tenant_pin_tests` generate their tenant IDs and slugs
+  uniquely per run, otherwise the second run fails against `tenants_pkey`
+  and `tenants_slug_key`. `ON CONFLICT DO NOTHING` is no help under
+  FORCE RLS: it triggers a policy check that a plain INSERT does not.
+- Two test expectations corrected that contradicted the project:
+  `spatial_properties` exists in no migration, and `delete` is
+  project-wide a soft-delete (12 repos).
 ## [0.30.0] - 2026-10-02
+Integrates the tenant pin into all database paths and fixes the bugs that
+surfaced as a result. Verified against a fresh database with all
+migrations from zero and the demo seed loaded.
 
-Integriert den Tenant-Pin in alle Datenbankpfade und behebt die dadurch
-sichtbar gewordenen Fehler. Verifiziert gegen eine frische Datenbank mit
-allen Migrationen von Null und geladenem Demo-Seed.
+### Tenant pin
 
-### Tenant-Pin
-
-- `TenantPool` pinnt `app.current_tenant_id` auf derselben Verbindung, die
-  die Query ausführt, und setzt `app.is_superadmin` auf `false`.
-- Implementiert sqlx `Executor`, damit 317 Aufrufstellen in 47 Repos
-  unverändert bleiben und der Pin nicht vergessen werden kann.
-- `begin()` sendet zuerst ein explizites `BEGIN`, weil `SET LOCAL` außerhalb
-  eines Transaktionsblocks ein No-op ist. Die andere Reihenfolge sieht
-  funktionierend aus und setzt den Pin beim ersten Statement zurück.
-- `unscoped()` nutzt die Nil-UUID und verweigert damit alles: fail-closed für
-  Bootstrap-Arbeit.
-- 7 Tests in `tests/tenant_pin_tests.rs`, darunter
+- `TenantPool` pins `app.current_tenant_id` on the same connection that
+  runs the query and sets `app.is_superadmin` to `false`.
+- Implements the sqlx `Executor` so that 317 call sites in 47 repos stay
+  unchanged and the pin cannot be forgotten.
+- `begin()` sends an explicit `BEGIN` first, because `SET LOCAL` is a
+  no-op outside a transaction block. The other order looks like it works
+  and resets the pin on the first statement.
+- `unscoped()` uses the nil UUID and thereby denies everything: fail-closed
+  for bootstrap work.
+- 7 tests in `tests/tenant_pin_tests.rs`, including
   `checkout_does_not_inherit_previous_tenant`.
 
-### Behobene Fehler
+### Fixed bugs
 
-- **Login war vollständig kaputt.** Der RLS-Rolle fehlten Grants für 10 nach
-  der RLS-Migration angelegte Tabellen; `user_sites` wird vom Login-Join
-  gebraucht.
-- **Auth braucht eine eng begrenzte Ausnahme**, weil der Tenant erst aus der
-  User-Zeile gelesen wird. Rolle `agrocore_auth` mit SELECT auf `users` und
-  `user_sites`, Policy nur für diese Rolle.
-- **Refresh-Token-Write wirkungslos.** Ungepinnt traf das UPDATE null Zeilen,
-  weil `users_update` den Pin verlangt.
-- **`#[sqlx(json)]` auf `Option<T>` war falsch.** sqlx unterscheidet `json`
-  (nicht-null) und `json(nullable)`; 29 Felder in 10 Dateien waren falsch
-  annotiert. Ursache für `unexpected null; try decoding as an Option`.
-- **Schema-Drift bei `orders`:** `order_type` war VARCHAR statt JSONB,
-  `planned_date`/`deadline_date` waren DATE gegen DateTime, `started_at` und
-  `completed_at` fehlten in der Tabelle. `GET /api/v1/orders` war unerreichbar.
-- **37 NUMERIC-Spalten gegen `f64`.** Jede betroffene Entity scheiterte am
-  Decode, `GET /api/v1/customers` an `vat_rate`. Iterativ auf
-  DOUBLE PRECISION normalisiert.
-- **Demo-Seed war fachlich falsch:** `seeding` und `fertilizing` existieren als
-  `OrderType` nicht; `{"mode":"Manual"}` schrieb PascalCase statt snake_case.
-- **Fehlendes NATS brach den gesamten API-Start ab**, obwohl die Publisher
-  Fehler ohnehin ignorieren. Messaging ist jetzt optional,
-  `MESSAGING_REQUIRED=1` erzwingt es.
+- **Login was completely broken.** The RLS role lacked grants for 10 tables
+  created after the RLS migration; `user_sites` is needed by the login
+  join.
+- **Auth needs a tightly scoped exception**, because the tenant is only
+  read from the user row. Role `agrocore_auth` with SELECT on `users` and
+  `user_sites`, policy only for this role.
+- **Refresh-token write had no effect.** Unpinned, the UPDATE hit zero
+  rows, because `users_update` requires the pin.
+- **`#[sqlx(json)]` on `Option<T>` was wrong.** sqlx distinguishes `json`
+  (not null) and `json(nullable)`; 29 fields in 10 files were annotated
+  incorrectly. Cause of `unexpected null; try decoding as an Option`.
+- **Schema drift on `orders`:** `order_type` was VARCHAR instead of JSONB,
+  `planned_date`/`deadline_date` were DATE against DateTime, `started_at`
+  and `completed_at` were missing from the table. `GET /api/v1/orders` was
+  unreachable.
+- **37 NUMERIC columns against `f64`.** Every affected entity failed on
+  decode, `GET /api/v1/customers` on `vat_rate`. Normalized iteratively
+  to DOUBLE PRECISION.
+- **The demo seed was substantively wrong:** `seeding` and `fertilizing`
+  do not exist as `OrderType`; `{"mode":"Manual"}` wrote PascalCase
+  instead of snake_case.
+- **Missing NATS aborted the entire API startup**, even though the
+  publishers ignore errors anyway. Messaging is now optional,
+  `MESSAGING_REQUIRED=1` enforces it.
 
-### Verifiziert
+### Verified
 
 ```text
 POST /api/v1/auth/login       -> 200
@@ -328,131 +324,120 @@ GET  /api/v1/inventory/items -> 200
 GET  /api/v1/tasks           -> 200
 ```
 
-RLS dabei durchgehend aktiv, Verbindung als `agrocore_app`.
-
-
+RLS active throughout, connection as `agrocore_app`.
 ## [0.29.0] - 2026-10-01
-
-Macht die vorhandene Row-Level-Security tatsächlich wirksam (`tasks.md` A3).
+Makes the existing row-level security actually effective (`tasks.md` A3).
 
 ### Security
-- **Die Verbindungsrolle war Superuser mit BYPASSRLS — RLS war reine Dekoration** — Migration `0000000004_force_rls.sql`. Gemessen auf dieser Installation: `agrocore` hat `rolsuper = true` **und** `rolbypassrls = true`. PostgreSQL exemptet solche Rollen bedingungslos; `FORCE ROW LEVEL SECURITY` ändert daran nichts. Die 190 Policies im Schema wurden nie ausgewertet.
+- **The connection role was a superuser with BYPASSRLS — RLS was pure decoration** — migration `0000000004_force_rls.sql`. Measured on this installation: `agrocore` has `rolsuper = true` **and** `rolbypassrls = true`. PostgreSQL exempts such roles unconditionally; `FORCE ROW LEVEL SECURITY` changes nothing about that. The 190 policies in the schema were never evaluated.
 
-  Migration `0000000004_force_rls.sql` führt die Rolle `agrocore_app` ein (`NOSUPERUSER NOBYPASSRLS NOLOGIN`), erteift ihr Zugriff auf alle RLS-Tabellen und Sequenzen und wendet `FORCE ROW LEVEL SECURITY` auf alle 62 betroffenen Tabellen an. Der Pool schaltet in `PgPoolOptions::after_connect` mit `SET ROLE agrocore_app` um — pro physischer Verbindung, weil es Session-Zustand ist.
+  Migration `0000000004_force_rls.sql` introduces the role `agrocore_app` (`NOSUPERUSER NOBYPASSRLS NOLOGIN`), grants it access to all RLS tables and sequences, and applies `FORCE ROW LEVEL SECURITY` to all 62 affected tables. The pool switches over in `PgPoolOptions::after_connect` with `SET ROLE agrocore_app` — per physical connection, because it is session state.
 
-  Geschaltet über `AGROCORE_RLS_ENABLED=1`: Die Policies vor dem Pin zu aktivieren würde alle Repos null Zeilen liefern lassen, weil `get_current_tenant_id()` ohne gesetztes `app.current_tenant_id` NULL liefert. Der Schalter ist damit eine Konfigurationsänderung und kein koordiniertes Release.
+  Gated by `AGROCORE_RLS_ENABLED=1`: enabling the policies before the pin would make all repos return zero rows, because `get_current_tenant_id()` returns NULL without `app.current_tenant_id` being set. The switch is therefore a configuration change and not a coordinated release.
 
-- **Zwei Lücken, die erst durch das Wirksamschalten sichtbar wurden:**
-  - `sigpac_parcels` hatte `ENABLE ROW LEVEL SECURITY`, aber **keine Policy**. Mit `FORCE` hätte das jede Zeile für jeden verweigert, auch für den Eigentümer. Policy nachgetragen.
-  - `tenants` hatte Policies für SELECT, UPDATE und DELETE, aber **keine für INSERT**. Mit `FORCE` wäre `POST /api/v1/system/setup` — der Endpunkt, der den ersten Tenant anlegt — in jeder Installation gescheitert. `tenants_insert ... WITH CHECK (true)` ergänzt: Tenant-Anlage ist eine Setup-Aktion, die vor dem Bestehen eines Tenants stattfindet, und darf deshalb nicht mandantengefiltert sein.
-  - Sechs Tabellen mit `tenant_id`-Spalte hatten überhaupt kein RLS; für alle außer `tenants` ergänzt.
+- **Two gaps that only became visible once RLS actually took effect:**
+  - `sigpac_parcels` had `ENABLE ROW LEVEL SECURITY` but **no policy**. With `FORCE` that would deny every row to everyone, including the owner. Policy added.
+  - `tenants` had policies for SELECT, UPDATE and DELETE, but **none for INSERT**. With `FORCE`, `POST /api/v1/system/setup` — the endpoint that creates the first tenant — would have failed on every installation. Added `tenants_insert ... WITH CHECK (true)`: tenant creation is a setup action that happens before a tenant exists, and must therefore not be tenant-filtered.
+  - Six tables with a `tenant_id` column had no RLS at all; added for all except `tenants`.
 
 ### Added
-- **Fünf RLS-Tests** (`crates/infrastructure/tests/rls_tests.rs`) gegen eine echte Datenbank:
+- **Five RLS tests** (`crates/infrastructure/tests/rls_tests.rs`) against a real database:
 
 ```bash
-DATABASE_URL=postgresql://agrocore:agrocore@localhost:5432/agrocore \
+DATABASE_URL=postgresql://agrocore:***@localhost:5432/agrocore \
 AGROCORE_RLS_ENABLED=1 \
   cargo test -p agrocore-infrastructure --test rls_tests -- --ignored
 ```
 
-  Geprüft wird: die Anwendungsrolle ist weder Superuser noch BYPASSRLS; ohne Pin ist **keine** Zeile sichtbar (Fail-Closed, kein Leaken); mit Pin sieht jeder Tenant ausschließlich seine eigenen; eine unbekannte UUID oder ein ungültiger Wert ergibt nichts; `FORCE` ist gesetzt und jede FORCE-Tabelle hat auch eine Policy, weil eine Policy-los-Tabelle unter FORCE jede Zeile verweigern würde.
+  What is checked: the application role is neither superuser nor BYPASSRLS; without the pin **no** row is visible (fail-closed, no leaking); with the pin each tenant sees only its own; an unknown UUID or an invalid value yields nothing; `FORCE` is set and every FORCE table also has a policy, because a policy-less table under FORCE would deny every row.
 
-  Der Test ohne Pin ist der eigentliche Nachweis: Ein Repository, das seinen Tenant-Filter vergisst, liefert dann **nichts** statt die Daten des Nachbarn.
+  The test without a pin is the actual proof: a repository that forgets its tenant filter then returns **nothing** instead of the neighbour's data.
 
 ### Verified
-- Die Rolle `agrocore` ist Superuser mit BYPASSRLS; genau deswegen konnten die Policies nie greifen.
-- Als `agrocore_app`: Pin auf Tenant A liefert nur A, auf Tenant B nur B, unbekannte UUID und nicht-UUID ergeben je 0 Zeilen.
-- 62 Tabellen mit `relforcerowsecurity` nach der Migration.
-- Migration `0000000004_force_rls.sql` ist idempotent und läuft in einer frischen Datenbank nach allen vorherigen Migrationen durch.
-- Alle Gates grün, 268 Workspace-Tests.
-
+- The role `agrocore` is a superuser with BYPASSRLS; precisely for that reason the policies could never take hold.
+- As `agrocore_app`: a pin to tenant A returns only A, a pin to tenant B only B, unknown UUID and non-UUID each yield 0 rows.
+- 62 tables with `relforcerowsecurity` after the migration.
+- Migration `0000000004_force_rls.sql` is idempotent and runs through in a fresh database after all previous migrations.
+- All gates green, 268 workspace tests.
 ## [0.28.0] - 2026-10-01
-
-Behebt die Refresh-Token-Mechanik (D1) und den Tenant-Bruch bei `kelter_deliveries` (B1).
+Fixes the refresh token mechanics (D1) and the tenant break on `kelter_deliveries` (B1).
 
 ### Security
-- **Tenant-Isolation bei `kelter_deliveries` war ausgehebelt** — `postgres/kelter_delivery.rs`. Alle sieben Methoden nahmen `tid: TenantId` entgegen und verwendeten es in **keiner** einzigen Query. `find_all` lieferte global über alle Mandanten, `delete` löschte beliebige Datensätze.
+- **Tenant isolation on `kelter_deliveries` was defeated** — `postgres/kelter_delivery.rs`. All seven methods took `tid: TenantId` and used it in **not one** single query. `find_all` returned globally across all tenants, `delete` deleted arbitrary records.
 
-  **Korrektur zum Audit:** Die Tabelle existierte bereits in `0000000000`, sie hatte nur keine `tenant_id`-Spalte; die RLS-Policies des Init-Schemas scopen über den zugehörigen Weinberg (`vineyard_id IN (SELECT id FROM vineyards WHERE tenant_id = …)`), was das Repository umgeht. Migration `0000000003` ergänzt deshalb per `ALTER TABLE` die Spalte, statt die Tabelle neu anzulegen. Bestehende Zeilen werden aus dem Weinberg gebackfillt; eine Zeile ohne Weinbergs-Tenant bricht die Migration mit einer klaren Meldung ab, statt still einem beliebigen Mandanten zugeordnet zu werden.
+  **Correction to the audit:** the table already existed in `0000000000`, it just had no `tenant_id` column; the RLS policies of the init schema scope over the associated vineyard (`vineyard_id IN (SELECT id FROM vineyards WHERE tenant_id = …)`), which the repository bypasses. Migration `0000000003` therefore adds the column via `ALTER TABLE` instead of recreating the table. Existing rows are backfilled from the vineyard; a row without a vineyard tenant aborts the migration with a clear message instead of being silently assigned to an arbitrary tenant.
 
-  Alle sieben Queries filtern jetzt nach `tenant_id`, `KelterDelivery` hat das Feld im Domain-Modell. Die Bind-Reihenfolge in `find_by_vineyard` war dabei falsch — die Platzhalter `$1`/`$2` erwarten erst den Weinberg, dann den Mandanten.
+  All seven queries now filter by `tenant_id`, `KelterDelivery` has the field in the domain model. The bind order in `find_by_vineyard` was wrong while at it — the placeholders `$1`/`$2` expect the vineyard first, then the tenant.
 
 ### Fixed
-- **Die Refresh-Token-Mechanik war tot** — `postgres/user.rs:402-420`. Alle drei Methoden waren Stubs: `find_by_refresh_token` gab `Ok(None)` zurück (mit dem Kommentar *Simplified - not fully implemented*), `update_refresh_token` und `invalidate_refresh_token` je `Ok(false)`. Der Fehler blieb still, weil `auth.rs:60` nur `map_err` prüfte und ein `Ok(false)` kein Fehler ist: Der Login antwortete 200 und übergab dem Client einen Refresh-Token, der nie in der Datenbank stand, und `/auth/refresh` gab daraufhin immer 401.
+- **The refresh token mechanics were dead** — `postgres/user.rs:402-420`. All three methods were stubs: `find_by_refresh_token` returned `Ok(None)` (with the comment *Simplified - not fully implemented*), `update_refresh_token` and `invalidate_refresh_token` `Ok(false)` each. The failure stayed silent because `auth.rs:60` only checked `map_err` and an `Ok(false)` is not an error: login answered 200 and handed the client a refresh token that was never in the database, and `/auth/refresh` accordingly always returned 401.
 
-  `find_by_refresh_token` filtert Ablauf und `is_active` jetzt im SQL, damit ein abgelaufener Token von einem unbekannten nicht unterscheidbar ist. `invalidate_refresh_token` setzt beide Spalten auf NULL und meldet über `WHERE refresh_token IS NOT NULL`, ob wirklich etwas widerrufen wurde. Login und Refresh prüfen den Rückgabewert jetzt explizit und geben einen 500 zurück, statt einen unbenutzbaren Token auszuhändigen. Der Refresh rotiert den Token, wodurch Wiederverwendung erkennbar wird.
+  `find_by_refresh_token` now filters expiry and `is_active` in SQL, so that an expired token is indistinguishable from an unknown one. `invalidate_refresh_token` sets both columns to NULL and reports via `WHERE refresh_token IS NOT NULL` whether anything was actually revoked. Login and refresh now check the return value explicitly and return a 500 instead of handing out an unusable token. The refresh rotates the token, which makes reuse detectable.
 
-- **Ein Test war unzuverlässig statt falsch** — `crates/api/tests/demo_endpoint_auth_tests.rs`. `rejected_values_keep_demo_endpoints_disabled` schlug fehl, weil `cargo` Tests parallel in Threads startet und `std::env` prozessweit ist: Der Test las den Wert, den ein anderer gerade gesetzt hatte. Die Tests der Datei nehmen jetzt einen `Mutex` um den Umgebungszugriff. Der Produktionscode war korrekt — der Test war nur zufällig grün.
+- **One test was flaky rather than wrong** — `crates/api/tests/demo_endpoint_auth_tests.rs`. `rejected_values_keep_demo_endpoints_disabled` failed because `cargo` starts tests in parallel in threads and `std::env` is process-wide: the test read the value another test had just set. The tests in the file now take a `Mutex` around the environment access. The production code was correct — the test was only accidentally green.
 
 ### Added
-- **Vier Tenant-Isolationstests** (`crates/infrastructure/tests/tenant_isolation_tests.rs`) — `find_all` liefert nur eigene Zeilen, `find_by_id` mit korrekter UUID eines fremden Mandanten liefert nichts, ein Cross-Tenant-`DELETE` betrifft 0 Zeilen, `find_by_vineyard` bleibt gescoped. Zwei Tenants mit je eigenem Weinberg und Lieferung, Cleanup nach jedem Test.
+- **Four tenant isolation tests** (`crates/infrastructure/tests/tenant_isolation_tests.rs`) — `find_all` returns only own rows, `find_by_id` with the correct UUID of a foreign tenant returns nothing, a cross-tenant `DELETE` affects 0 rows, `find_by_vineyard` stays scoped. Two tenants each with their own vineyard and delivery, cleanup after every test.
 
 ```bash
-DATABASE_URL=postgresql://agrocore:agrocore@localhost:5432/agrocore \
+DATABASE_URL=postgresql://agrocore:***@localhost:5432/agrocore \
   cargo test -p agrocore-infrastructure --test tenant_isolation_tests -- --ignored
 ```
 
 ### Tests
-- 268 Tests im Workspace, 0 Fehler.
-- Die vier Isolationstests laufen grün gegen eine PostgreSQL-Instanz mit angewandten Migrationen.
-
+- 268 tests in the workspace, 0 failures.
+- The four isolation tests run green against a PostgreSQL instance with migrations applied.
 ## [0.27.0] - 2026-10-01
-
-Schließt drei Sicherheitslücken (`tasks.md` A4, A5) und macht zehn zuvor nicht
-erreichbare Routen existierbar (J1, J2).
+Closes three security holes (`tasks.md` A4, A5) and makes ten previously
+unreachable routes exist (J1, J2).
 
 ### Security
-- **Der Server startete mit einem öffentlich bekannten Signing-Key** — `shared/config.rs`, `api/src/lib.rs`. `validate_jwt_secret()` verglich lediglich gegen das Literal `dev-secret` und hatte **null Aufrufer im gesamten Workspace**. Ein Deployment ohne `JWT_SECRET` lief deshalb mit genau diesem Key; jeder konnte einen Admin-Token mit einer gewöhnlichen HS256-Signatur fälschen und sich in einen beliebigen Tenant setzen.
+- **The server started with a publicly known signing key** — `shared/config.rs`, `api/src/lib.rs`. `validate_jwt_secret()` only compared against the literal `dev-secret` and had **zero callers in the entire workspace**. A deployment without `JWT_SECRET` therefore ran with exactly that key; anyone could forge an admin token with an ordinary HS256 signature and drop themselves into any tenant.
 
-  `run_server` bricht jetzt mit einem `io::Error` ab, bevor der Server lauscht. Die Prüfung liefert nicht mehr nur `bool`, sondern `Result<(), JwtSecretError>` mit den Varianten `DevSecret` und `TooShort { length, minimum }`, weil die Abhilfe unterschiedlich ist. Neu ist außerdem eine Mindestlänge von 32 Zeichen — 32 Bytes ist die Breite eines SHA-256-Digests, die übliche Untergrenze für einen symmetrischen HMAC-Schlüssel. `ALLOW_DEV_SECRET=1` entschärft nur den Default-Secret-Check, nie die Längenprüfung.
+  `run_server` now aborts with an `io::Error` before the server listens. The check no longer returns just `bool`, but `Result<(), JwtSecretError>` with the variants `DevSecret` and `TooShort { length, minimum }`, because the remedy differs. New is also a minimum length of 32 characters — 32 bytes is the width of a SHA-256 digest, the usual lower bound for a symmetric HMAC key. `ALLOW_DEV_SECRET=1` softens only the default-secret check, never the length check.
 
-- **Logout und Passwortwechsel widerriefen nichts** — `middleware.rs`. `is_revoked()` war definiert, hatte aber null Aufrufe; nur `revoke()` wurde verwendet. Ein gestohlener oder per XSS abgefangener Token blieb bis zum Ablauf gültig. `AuthExtractor` prüft die `jti` jetzt nach erfolgreichem `decode` gegen `AppState.token_revocation` und lehnt mit 401 *Token revoked* ab.
+- **Logout and password change revoked nothing** — `middleware.rs`. `is_revoked()` was defined but had zero calls; only `revoke()` was used. A stolen token, or one intercepted via XSS, stayed valid until expiry. `AuthExtractor` now checks the `jti` after a successful `decode` against `AppState.token_revocation` and rejects with 401 *Token revoked*.
 
-  Dafür musste der `FromRequest`-Future von `Ready` auf einen `Pin<Box<dyn Future>>` umgestellt werden, weil die Revocation-Liste asynchron ist. `from_request` klont Header und State-Handle, damit der Future nichts leiht.
+  That required switching the `FromRequest` future from `Ready` to a `Pin<Box<dyn Future>>`, because the revocation list is asynchronous. `from_request` clones headers and the state handle so that the future borrows nothing.
 
 ### Fixed
-- **`sigpac` und `livestock` waren als Handler deklariert, aber nie registriert** — `handlers/mod.rs`. Beide besaßen ein fertiges `configure()` und waren in der OpenAPI-Spezifikation dokumentiert, wurden aber nie aufgerufen: `/api/v1/sigpac/parcels` (3 Routen) und `/api/v1/livestock/animals` (7 Routen) existierten nicht. Zusätzlich war `livestock_new::configure` zweimal registriert; die Doppelnennung ist entfernt. Die beiden Livestock-Module teilen sich den Prefix `/livestock` mit verschiedenen Unterpfaden, eine Kollision gibt es nicht.
-- **Der gesamte Site-Import war toter Code** — `handlers/sites.rs`. `import_sites`, `import_geojson` und `import_shapefile` waren vollständig implementiert und nutzen `ImportService` mit LPIS-Registry und Geozero-Shapefile-Parsing, hatten aber keine Route. Registriert als `POST /sites/import`, `/sites/import/geojson`, `/sites/import/shapefile` — bewusst vor `/sites/{id}`, sonst hätte das Id-Muster den Pfad *import* als UUID zu parsen versucht. Damit sind 719 Zeilen Service-Code und die passenden Admin-UI-Wrapper erstmals erreichbar.
+- **`sigpac` and `livestock` were declared as handlers but never registered** — `handlers/mod.rs`. Both had a finished `configure()` and were documented in the OpenAPI specification, but were never called: `/api/v1/sigpac/parcels` (3 routes) and `/api/v1/livestock/animals` (7 routes) did not exist. Additionally `livestock_new::configure` was registered twice; the duplicate entry is removed. The two livestock modules share the prefix `/livestock` with different subpaths, there is no collision.
+- **The entire site import was dead code** — `handlers/sites.rs`. `import_sites`, `import_geojson` and `import_shapefile` were fully implemented and use `ImportService` with LPIS registry and geozero shapefile parsing, but had no route. Registered as `POST /sites/import`, `/sites/import/geojson`, `/sites/import/shapefile` — deliberately before `/sites/{id}`, otherwise the id pattern would have tried to parse the path *import* as a UUID. That makes 719 lines of service code and the matching admin UI wrappers reachable for the first time.
 
 ### Changed
-- **`AuthExtractor::from_request` ist nicht mehr synchron** — der Future-Typ ist jetzt `Pin<Box<dyn Future<Output = Result<Self, Error>>>>`. Aufrufer, die den Wert zuvor per `.into_inner()` aus einem `Ready` gezogen haben, müssen den Future jetzt pollen. Betrifft die vier Tests in `middleware.rs`, die einen `extract()`-Helfer bekommen haben.
+- **`AuthExtractor::from_request` is no longer synchronous** — the future type is now `Pin<Box<dyn Future<Output = Result<Self, Error>>>>`. Callers that previously pulled the value out of a `Ready` via `.into_inner()` now have to poll the future. Affects the four tests in `middleware.rs`, which got an `extract()` helper.
 
 ### Tests
-- 268 Tests im Workspace, 0 Fehler.
-- 5 neue Tests für die JWT-Secret-Regeln in `crates/api/tests/jwt_secret_tests.rs`.
-
+- 268 tests in the workspace, 0 failures.
+- 5 new tests for the JWT secret rules in `crates/api/tests/jwt_secret_tests.rs`.
 ## [0.26.0] - 2026-10-01
-
-Behebt die unauthentifizierten Demo-Endpunkte (`tasks.md` A2) und vereinheitlicht das
-Demo-Passwort (G2).
+Fixes the unauthenticated demo endpoints (`tasks.md` A2) and unifies the
+demo password (G2).
 
 ### Fixed
-- **Die Demo-Endpunkte waren vollständig unauthentifiziert** — `handlers/demo.rs`. `POST /api/v1/demo/seed`, `POST /api/v1/demo/reset` und `GET /api/v1/demo/summary` nahmen **keinen** `AuthExtractor`. `reset` erzwingt `reset = true` und führt dann `DELETE FROM tenants WHERE id = $1` mit Cascade aus, wobei der Tenant-Slug aus dem Request-Body stammt — jeder unauthentifizierte Client konnte damit einen beliebigen Mandanten samt aller Daten löschen. `/summary` war ebenfalls offen und gab Tenant- und Datensatzzahlen preis.
+- **The demo endpoints were completely unauthenticated** — `handlers/demo.rs`. `POST /api/v1/demo/seed`, `POST /api/v1/demo/reset` and `GET /api/v1/demo/summary` took **no** `AuthExtractor`. `reset` enforces `reset = true` and then runs `DELETE FROM tenants WHERE id = $1` with cascade, where the tenant slug comes from the request body — any unauthenticated client could thus delete an arbitrary tenant along with all its data. `/summary` was open too and exposed tenant and record counts.
 
-  Zwei unabhängige Barrieren jetzt: `require_demo_access()` prüft `AppState.demo_endpoints_enabled` **und** `auth.require_admin()`. Das Flag kommt aus `ALLOW_DEMO_ENDPOINTS` und ist standardmäßig **aus**, ein Fehlwert failt geschlossen (erkannt werden nur `1`, `true`, `yes`, case-insensitive und getrimmt). Ein gesetzter, nicht erkannter Wert wird geloggt.
+  Two independent barriers now: `require_demo_access()` checks `AppState.demo_endpoints_enabled` **and** `auth.require_admin()`. The flag comes from `ALLOW_DEMO_ENDPOINTS` and is **off** by default, a wrong value fails closed (only `1`, `true`, `yes` are recognized, case-insensitive and trimmed). A value that is set but unrecognized is logged.
 
-- **Hartkodiertes Demo-Admin-Passwort entfernt** — `handlers/demo.rs` hasht `b"demo123"` im Klartext. Das Passwort kommt jetzt aus `DEMO_ADMIN_PASSWORD`; fehlt die Variable, greift ein Default und es wird protokolliert.
+- **Hardcoded demo admin password removed** — `handlers/demo.rs` hashed `b"demo123"` in plaintext. The password now comes from `DEMO_ADMIN_PASSWORD`; if the variable is missing, a default applies and it is logged.
 
-- **Die drei Demo-Quellen widersprachen sich im Passwort** — `scripts/demo_seed.sql` enthielt einen Hash für `demo1234`, `handlers/demo.rs` hasht `demo123`, `scripts/dev.sh` zeigte `demo1234`. Wer über den API-Seed ging, konnte sich mit dem angezeigten Passwort nicht anmelden. Eine Quelle definiert nun das Passwort: `DEMO_ADMIN_PASSWORD`, Default `demo1234-agrocore`. Der Argon2id-Hash im SQL-Seed wurde neu erzeugt und empirisch gegen den echten Verifizierer geprüft — er akzeptiert `demo1234-agrocore` und lehnt `demo1234` sowie `demo123` ab. Der Default erfüllt mit 17 Zeichen das seit v0.25.0 geltende Minimum von 12.
+- **The three demo sources contradicted each other on the password** — `scripts/demo_seed.sql` contained a hash for `demo1234`, `handlers/demo.rs` hashed `demo123`, `scripts/dev.sh` displayed `demo1234`. Anyone going through the API seed could not log in with the displayed password. One source now defines the password: `DEMO_ADMIN_PASSWORD`, default `demo1234-agrocore`. The Argon2id hash in the SQL seed was regenerated and empirically checked against the real verifier — it accepts `demo1234-agrocore` and rejects `demo1234` as well as `demo123`. With 17 characters the default meets the minimum of 12 in force since v0.25.0.
 
 ### Changed
-- **`scripts/dev.sh`** exportiert `ALLOW_DEMO_ENDPOINTS` und `DEMO_ADMIN_PASSWORD`, schreibt beide nach `.env.dev` und zeigt in der Abschlussausgabe die Variable statt eines Literals an. Der API-Seed-Aufruf meldet sich jetzt vor dem Seeding an und übergibt das JWT — die Demo-Endpunkte verlangen es. Der erste Seed greift weiterhin auf den SQL-Fallback zurück, weil der Demo-Admin zu diesem Zeitpunkt noch nicht existiert.
-- **OpenAPI-Deklarationen der Demo-Endpunkte** tragen jetzt `security(("bearer_auth"))` sowie 401- und 403-Responses. Vorher war keine der drei Pfaden als geschützt dokumentiert.
+- **`scripts/dev.sh`** exports `ALLOW_DEMO_ENDPOINTS` and `DEMO_ADMIN_PASSWORD`, writes both to `.env.dev` and displays the variable in the final output instead of a literal. The API seed call now logs in before seeding and passes the JWT — the demo endpoints require it. The first seed still falls back to SQL, because the demo admin does not exist at that point yet.
+- **OpenAPI declarations of the demo endpoints** now carry `security(("bearer_auth"))` as well as 401 and 403 responses. Previously none of the three paths was documented as protected.
 
 ### Added
-- **Sechs Regressionstests** (`crates/api/tests/demo_endpoint_auth_tests.rs`) — das Flag ist ohne gesetzte Variable aus, akzeptiert `1`/`true`/`yes` in beliebiger Schreibweise und Whitespace, lehnt dagegen `0`, `false`, `no`, `off`, `2`, `enabled`, `enabled`-Tippfehler und den Leerwert ab, und das Default-Passwort erfüllt das Mindestlängen-Kriterium.
+- **Six regression tests** (`crates/api/tests/demo_endpoint_auth_tests.rs`) — the flag is off without the variable set, accepts `1`/`true`/`yes` in any spelling and with whitespace, rejects `0`, `false`, `no`, `off`, `2`, `enabled`, the `enabled` typo and the empty value, and the default password meets the minimum length criterion.
 
 ### Tests
-- 263 Tests im Workspace, 0 Fehler (258 + 5 neue; ein Test der neuen Datei ist eine Spiegelung der Parsing-Regel und zählt in beiden Listen nicht doppelt).
-
+- 263 tests in the workspace, 0 failures (258 + 5 new; one test of the new file is a mirror of the parsing rule and is not counted twice in both lists).
 ## [0.25.0] - 2026-10-01
-
-Behebt die Privilege Escalation aus dem Audit vom 2026-10-01 (`tasks.md` A1, D3) —
-die am leichtesten ausnutzbare Schwachstelle des Projekts.
+Fixes the privilege escalation from the audit of 2026-10-01 (`tasks.md` A1, D3) —
+the most easily exploitable weakness of the project.
 
 ### Fixed
-- **Privilege Escalation: jeder User konnte sich zum Admin machen** — `handlers/users.rs:153-157`. Die Autorisierung las:
+- **Privilege escalation: any user could make themselves admin** — `handlers/users.rs:153-157`. The authorization read:
 
   ```rust
   if let Err(e) = auth.require_admin()
@@ -460,143 +445,141 @@ die am leichtesten ausnutzbare Schwachstelle des Projekts.
   { return Err(e.into()); }
   ```
 
-  Die Admin-Prüfung entfiel, sobald der Ziel-Account die eigene ID war. Da `UpdateUserDto` ein `roles`-Feld mitbringt und `PgUserRepo::update` es ungeprüft bindet (`postgres/user.rs:318`), genügte `PUT /api/v1/users/{eigene_id}` mit `{"roles":["Admin"]}` — voller Admin-Zugriff beim nächsten Login. Nicht sichtbar, weil die Bedingung in der negativen Testform eine Begründung für sich zu haben scheint.
+  The admin check was skipped as soon as the target account was the own ID. Since `UpdateUserDto` carries a `roles` field and `PgUserRepo::update` binds it unchecked (`postgres/user.rs:318`), `PUT /api/v1/users/{own_id}` with `{"roles":["Admin"]}` was enough — full admin access on the next login. Not visible, because in the negative test form the condition appears to have a justification of its own.
 
-  Jetzt gilt: Rollenwechsel und Änderung von `is_active` erfordern Admin, unabhängig vom Ziel. Ein Self-Service-Pfad mit eng definierter Feldliste ersetzt die bisherige Möglichkeit, den eigenen Account zu bearbeiten.
+  Now: role changes and changes to `is_active` require admin, independent of the target. A self-service path with a narrowly defined field list replaces the previous possibility of editing one's own account.
 
-- **Passwort-Update ohne Mindestlänge** — `dto/user.rs`. `UpdateUserDto.password` hatte keine `validate`-Angabe, während `CreateUserDto` `min = 8` setzte. Über die Eskalation konnte ein bestehendes Passwort damit auf einen leeren String gesetzt werden. Beide Update-Pfade verlangen jetzt 12 bis 128 Zeichen; `CreateUserDto` bleibt bei 8, damit bestehende Konten gültig bleiben.
+- **Password update without a minimum length** — `dto/user.rs`. `UpdateUserDto.password` had no `validate` annotation, while `CreateUserDto` set `min = 8`. Via the escalation an existing password could be set to an empty string. Both update paths now require 12 to 128 characters; `CreateUserDto` stays at 8, so that existing accounts remain valid.
 
 ### Added
-- **`PUT /api/v1/users/me`** — `handlers/users.rs:update_own_profile` mit `UpdateOwnProfileDto`. Nimmt ausschließlich `firstname`, `lastname`, `password`, `language` und `color` entgegen. `roles`, `is_active`, `internal_cost_per_hour` und `external_cost_per_hour` existieren im DTO nicht; die Zuordnung auf den Domain-DTO setzt alle übrigen Felder explizit auf `None`, damit `PgUserRepo::update` die Spalten unangetastet lässt statt sie zu überschreiben. Die Route ist bewusst **vor** `/users/{id}` registriert — sonst hätte das `{id}`-Muster den Pfad „me" als UUID zu parsen versucht.
-- **Neun Regressionstests** (`crates/api/tests/privilege_escalation_tests.rs`) — DTO-Ebene: die Abwesenheit privilegierter Felder im Self-Service-DTO, Passwort-Policy auf beiden Update-Pfaden (leer, ein Zeichen, 22 Zeichen, nicht gesetzt), und dass die bestehende E-Mail-Validierung durch die Änderung nicht abgeschwächt wurde.
+- **`PUT /api/v1/users/me`** — `handlers/users.rs:update_own_profile` with `UpdateOwnProfileDto`. Accepts exclusively `firstname`, `lastname`, `password`, `language` and `color`. `roles`, `is_active`, `internal_cost_per_hour` and `external_cost_per_hour` do not exist in the DTO; the mapping to the domain DTO explicitly sets all other fields to `None`, so that `PgUserRepo::update` leaves the columns untouched instead of overwriting them. The route is registered deliberately **before** `/users/{id}` — otherwise the `{id}` pattern would have tried to parse the path "me" as a UUID.
+- **Nine regression tests** (`crates/api/tests/privilege_escalation_tests.rs`) — DTO level: the absence of privileged fields in the self-service DTO, the password policy on both update paths (empty, one character, 22 characters, not set), and that the existing email validation was not weakened by the change.
 
 ### Tests
-- 258 Tests im Workspace, 0 Fehler (249 + 9 neue).
-
+- 258 tests in the workspace, 0 failures (249 + 9 new).
 ## [0.24.0] - 2026-10-01
 
-Erster Teil des Code-Audits vom 2026-10-01 (Block I und J). Behebt den schwerwiegendsten
-Befund: acht Tabellen wurden von fertig implementierten Repositories abgefragt, existierten
-aber in keiner Migration. Zusätzlich wurde ein Sicherheitsaudit dokumentiert
-(`docs/tasks.md`, Blöcke A–J).
+First part of the code audit from 2026-10-01 (blocks I and J). Fixes the most severe
+finding: eight tables were queried by fully implemented repositories but
+existed in no migration. A security audit was also documented
+(`docs/tasks.md`, blocks A–J).
 
 ### Fixed
-- **Acht Tabellen fehlten im Schema, sieben Repos waren zur Laufzeit tot** — `spatial_objects`, `groups`, `trees`, `buildings`, `livestock`, `water_usages`, `animal_treatments`, `animal_grazing_records`. Die Repos waren vollständig implementiert, keine Migration legte die Tabellen an, jede Query scheiterte mit `relation "..." does not exist`. Migration `0000000003_missing_domain_tables.sql` angelegt: sechs Tabellen mit Indizes, GIST-Geometrieindizes, RLS-Policies nach bestehendem Muster und `ALTER TABLE water_usage RENAME TO water_usages`.
-- **`spatial_objects` wurde von jedem GPS-Ping abgefragt, der Fehler war unsichtbar** — `handlers/workforce.rs:353,364` rief `spatial_object_repo().find_containing_point(...)` mit `.unwrap_or_default()`. Jeder Standort-Ping lief zweimal in eine nicht existierende Tabelle, das Ergebnis war immer leer: die Standort-zu-Feld-Zuordnung funktionierte nie und fiel nicht auf. Jetzt wird der Fehler mit `warn!` protokolliert (Tenant, Koordinaten, Fehlertext); der Ping läuft weiter, aber der Fehler ist sichtbar.
-- **INSERT-Statements haben `tenant_id` nicht gebunden** — `tree.rs`, `group.rs`, `building.rs`, `livestock.rs`. Alle SELECTs filtern mit `WHERE tenant_id = $1`, der INSERT ließ die Spalte weg — ein neu angelegter Datensatz wäre nicht mehr auffindbar gewesen. Nicht sichtbar, weil die Methodensignatur `tid: TenantId` korrekt aussah. Vier Queries und Bind-Reihenfolgen korrigiert.
-- **Falsche Tabellennamen in `animal.rs`** — abgefragt wurden `animal_treatments` und `animal_grazing_records`, vorhanden sind `treatment_records` (Migration `:676`) und `grazing_records` (`:665`); zusätzlich schrieb das Repo `treatment_date` statt `date`. Auf die vorhandenen Tabellen umgestellt, kein neues Schema nötig.
-- **`animals` fehlten drei Spalten, die das Repository liest** — `identifier`, `livestock_type` und `status`. `identifier` wird aus `tag_number` gebackfillt. Für `livestock_type` genügt kein Default, weil vorhandene Inserts (inklusive Demo-Seed) nur `species` setzen: ein BEFORE-Trigger leitet `livestock_type` bei jedem INSERT und UPDATE aus `species` ab. Ein erster Versuch mit `SET NOT NULL` brach den Demo-Seed (`null value in column "livestock_type"`).
+- **Eight tables were missing from the schema, seven repos were dead at runtime** — `spatial_objects`, `groups`, `trees`, `buildings`, `livestock`, `water_usages`, `animal_treatments`, `animal_grazing_records`. The repos were fully implemented, no migration created the tables, every query failed with `relation "..." does not exist`. Added migration `0000000003_missing_domain_tables.sql`: six tables with indices, GIST geometry indices, RLS policies following the existing pattern, and `ALTER TABLE water_usage RENAME TO water_usages`.
+- **`spatial_objects` was queried by every GPS ping, and the error was invisible** — `handlers/workforce.rs:353,364` called `spatial_object_repo().find_containing_point(...)` with `.unwrap_or_default()`. Every location ping ran twice into a nonexistent table, the result was always empty: the location-to-field assignment never worked and went unnoticed. The error is now logged with `warn!` (tenant, coordinates, error text); the ping still proceeds, but the error is visible.
+- **INSERT statements did not bind `tenant_id`** — `tree.rs`, `group.rs`, `building.rs`, `livestock.rs`. All SELECTs filter with `WHERE tenant_id = $1`, the INSERT omitted the column — a newly created record would no longer have been findable. Not visible because the method signature `tid: TenantId` looked correct. Fixed four queries and bind orders.
+- **Wrong table names in `animal.rs`** — it queried `animal_treatments` and `animal_grazing_records`, but `treatment_records` (migration `:676`) and `grazing_records` (`:665`) exist; the repo also wrote `treatment_date` instead of `date`. Switched to the existing tables, no new schema needed.
+- **`animals` was missing three columns the repository reads** — `identifier`, `livestock_type` and `status`. `identifier` is backfilled from `tag_number`. For `livestock_type` a default is not enough, because existing inserts (including the demo seed) only set `species`: a BEFORE trigger derives `livestock_type` from `species` on every INSERT and UPDATE. A first attempt with `SET NOT NULL` broke the demo seed (`null value in column "livestock_type"`).
 
 ### Fixed
-- **Der Test-Fixture startete ein Image ohne PostGIS** — `crates/infrastructure/tests/common/mod.rs` verwendete `testcontainers_modules::postgres`, das fest auf `postgres:11-alpine` verdrahtet ist und kein PostGIS enthält. Migration `0000000000` erstellt aber die `postgis`-Extension, deshalb scheiterten **alle neun** Integrationstests an `extension "postgis" is not available` — sie konnten nie gelaufen sein. Auf `GenericImage::new("postgis/postgis", "16-3.4")` umgestellt (das Modul bietet kein `with_tag()`), und den Connect mit Backoff plus Retries versehen, weil Postgres während der Init-Phase einmal neu startet und laufende Verbindungen zurücksetzt.
+- **The test fixture started an image without PostGIS** — `crates/infrastructure/tests/common/mod.rs` used `testcontainers_modules::postgres`, which is hardwired to `postgres:11-alpine` and contains no PostGIS. Migration `0000000000` creates the `postgis` extension though, so **all nine** integration tests failed with `extension "postgis" is not available` — they could never have run. Switched to `GenericImage::new("postgis/postgis", "16-3.4")` (the module offers no `with_tag()`), and added backoff plus retries to the connect, because Postgres restarts once during the init phase and resets live connections.
 
 ### Added
-- **Drei Regressionstests** (`crates/infrastructure/tests/database_setup_tests.rs`) — `test_repository_tables_exist` prüft jede von einem Repository abgefragte Tabelle, `test_tenant_scoped_tables_have_tenant_id` findet Tabellen ohne Mandantenbezug, `test_new_domain_rows_are_tenant_scoped` legt Zeilen in allen vier neuen Tabellen an und liest sie über den Tenant-Filter zurück. Alle drei schlagen bei Rückkehr des ursprünglichen Zustands fehl.
-- **Tabellenliste im Migrations-Test erweitert** — der bestehende `test_database_migrations_applied` prüfte `spatial_objects` bereits und wäre durch die Migration jetzt grün; `groups`, `trees`, `buildings`, `livestock` und `water_usages` ergänzt.
+- **Three regression tests** (`crates/infrastructure/tests/database_setup_tests.rs`) — `test_repository_tables_exist` checks every table queried by a repository, `test_tenant_scoped_tables_have_tenant_id` finds tables without tenant scoping, `test_new_domain_rows_are_tenant_scoped` inserts rows into all four new tables and reads them back through the tenant filter. All three fail if the original state returns.
+- **Table list in the migration test extended** — the existing `test_database_migrations_applied` already checked `spatial_objects` and would be green after the migration; added `groups`, `trees`, `buildings`, `livestock` and `water_usages`.
 
 ### Changed
-- **RLS-Policies auf den neuen Tabellen** nach dem bestehenden Muster über `get_current_tenant_id()` ergänzt. Sie greifen aus demselben Grund nicht wie die übrigen 190: `app.current_tenant_id` wird nirgends gesetzt und `FORCE ROW LEVEL SECURITY` fehlt (siehe `tasks.md` A3). Die Policies sind aus Konsistenzgründen da, nicht als Garantie.
+- **RLS policies added on the new tables** following the existing pattern via `get_current_tenant_id()`. They do not work for the same reason as the other 190: `app.current_tenant_id` is never set and `FORCE ROW LEVEL SECURITY` is missing (see `tasks.md` A3). The policies exist for consistency, not as a guarantee.
 
 ### Verified
-- Alle vier Migrationen laufen in einer frischen PostgreSQL-Instanz in Reihenfolge durch.
-- Migration `0000000003` ist dreimal hintereinander auf derselben Datenbank gelaufen, ohne Duplikate.
-- Der Demo-Seed läuft nach der Migration durch und legt 3 Tiere, 3 Sites und 6 Grazing-Records an.
-- Alle Repository-Queries gegen das neue Schema ausgeführt: `spatial_objects` (find_by_id, count, GPS-Ping-Abfrage), `trees`, `groups`, `buildings`, `livestock` (je count und INSERT), `water_usages`, `animals`, `treatment_records`, `grazing_records`.
-- Der GPS-Ping liefert erstmals Daten; `livestock_type` wird korrekt aus `species` abgeleitet (`Cattle -> Cattle`).
+- All four migrations run through in order in a fresh PostgreSQL instance.
+- Migration `0000000003` ran three times in a row on the same database, without duplicates.
+- The demo seed runs through after the migration and creates 3 animals, 3 sites and 6 grazing records.
+- All repository queries executed against the new schema: `spatial_objects` (find_by_id, count, GPS ping query), `trees`, `groups`, `buildings`, `livestock` (count and INSERT each), `water_usages`, `animals`, `treatment_records`, `grazing_records`.
+- The GPS ping delivers data for the first time; `livestock_type` is correctly derived from `species` (`Cattle -> Cattle`).
 
 ### Known Limitations
-- Vier vorbestehende Integrationstests in `database_setup_tests.rs` scheitern weiterhin, unabhängig von dieser Änderung: `test_database_migrations_applied` erwartet eine Tabelle `spatial_properties`, die keine Migration anlegt; `test_site_crud_operations` bricht mit `INSERT has more target columns than expressions`; `test_tenant_creation_and_isolation` erzeugt pro Test einen Tenant mit festem Slug `test-tenant` und scheitert am Unique-Constraint, sobald mehr als ein Test denselben Slug nutzt; `test_tenant_scoped_tables_have_tenant_id` findet Tabellen ohne `tenant_id`. `test_updated_at_trigger` ist nach dem Fixture-Fix ebenfalls rot. Siehe `tasks.md` J19 und J4.
-- Der Fehler in `workforce.rs` wird geloggt, nicht behoben. Eine fehlgeschlagene Geometrie-Abfrage führt weiterhin zu keiner Standort-Zuordnung — nur ist es jetzt sichtbar.
-- `work_logs` und rund 40 weitere Spalten fehlen weiterhin (`tasks.md` J4).
-- `varieties` und `breeds` haben weiterhin keine `tenant_id`-Spalte, ihre Repos filtern aber danach — Varianten und Rassen sind global statt mandantenisoliert (`tasks.md` J5).
+- Four pre-existing integration tests in `database_setup_tests.rs` still fail, independently of this change: `test_database_migrations_applied` expects a table `spatial_properties` that no migration creates; `test_site_crud_operations` fails with `INSERT has more target columns than expressions`; `test_tenant_creation_and_isolation` creates a tenant per test with the fixed slug `test-tenant` and fails on the unique constraint as soon as more than one test uses the same slug; `test_tenant_scoped_tables_have_tenant_id` finds tables without `tenant_id`. `test_updated_at_trigger` is also red after the fixture fix. See `tasks.md` J19 and J4.
+- The error in `workforce.rs` is logged, not fixed. A failed geometry query still yields no location assignment — only now it is visible.
+- `work_logs` and around 40 further columns are still missing (`tasks.md` J4).
+- `varieties` and `breeds` still have no `tenant_id` column, but their repos filter by it — varieties and breeds are global instead of tenant-isolated (`tasks.md` J5).
 
 ## [0.23.0] - 2026-10-01
 
-Backup-Service Phase 8 Abschnitt 4: Streaming-Pipeline, funktionale Retention, echtes Restore, Monitoring-Metriken sowie die bislang nur konfigurierten Backends SFTP und WebDAV.
+Backup service phase 8 section 4: streaming pipeline, functional retention, real restore, monitoring metrics, as well as the SFTP and WebDAV backends that were previously only configured.
 
 ### Added
-- **Streaming-Backup-Pipeline** — `pg_dump` liest stdout über einen 1-MiB-Puffer statt `cmd.output()`. Bei Dumps im zweistelligen GB-Bereich war das ein OOM-Risiko, weil der komplette Dump gleichzeitig im Speicher lag.
-- **Streaming-Restore** — `pg_restore` bekommt die Daten direkt über stdin. `restore_from_storage` lädt den Dump nicht mehr komplett via `download_bytes()`.
-- **`StorageBackendTrait` erweitert** — neue Methoden `upload_stream`, `download_stream`, `list_objects`, `delete_object`, `load_manifest` und `save_manifest`. Cloud-Backends nutzen `object_store::put_multipart` für chunkweises Hochladen.
-- **Prometheus-Metriken** (`crates/backup-service/src/metrics.rs`) — `backup_duration_seconds`, `backup_size_bytes`, `backup_success_total`, `backup_failed_total` und `backup_restore_total`. Verknüpft mit Erfolg, Fehlschlag, Dauer, Größe und Restore-Ergebnis. 4 Unit-Tests.
-- **SFTP-Backend** (`crates/backup-service/src/sftp_backend.rs`) — Passwort- und Private-Key-Authentifizierung über `russh`/`russh-sftp`, Streaming-Upload mit 1-MiB-Chunks, Download, rekursives Listing, Löschen und Manifest-Persistenz.
-- **WebDAV-Backend** (`crates/backup-service/src/webdav_backend.rs`) — Basic Auth, `MKCOL` für Collections, Streaming-Uput über `PUT` mit Chunked Transfer Encoding, `PROPFIND` für rekursives Listing inklusive XML-Parsing, `DELETE`, Manifest-Persistenz. 11 Unit-Tests für URL-Konstruktion, Pfad-Encoding und Response-Parsing.
-- **Verschlüsselung für beide neuen Backends** — `encrypt_payload`/`decrypt_payload` in `encryption.rs` wenden die konfigurierte Target-Verschlüsselung an. Der Streaming-Upload verschlüsselt chunkweise, damit der Speicherbedarf begrenzt bleibt.
-- **`dry_run` für Restore** — API-Request (`RestoreRequest.dry_run`) und CLI (`agrocore-backup restore <ID> --dry-run`) prüfen, ob ein Backup wiederherstellbar ist, ohne in die Datenbank zu schreiben.
-- **14 neue Tests** — 8 Storage-Streaming, 7 Retention, 4 Manifest, 3 echte PostgreSQL-Integrationstests.
+- **Streaming backup pipeline** — `pg_dump` reads stdout through a 1 MiB buffer instead of `cmd.output()`. For dumps in the double-digit GB range that was an OOM risk, because the entire dump was in memory at the same time.
+- **Streaming restore** — `pg_restore` receives the data directly via stdin. `restore_from_storage` no longer downloads the dump in full via `download_bytes()`.
+- **`StorageBackendTrait` extended** — new methods `upload_stream`, `download_stream`, `list_objects`, `delete_object`, `load_manifest` and `save_manifest`. Cloud backends use `object_store::put_multipart` for chunked upload.
+- **Prometheus metrics** (`crates/backup-service/src/metrics.rs`) — `backup_duration_seconds`, `backup_size_bytes`, `backup_success_total`, `backup_failed_total` and `backup_restore_total`. Linked to success, failure, duration, size and restore result. 4 unit tests.
+- **SFTP backend** (`crates/backup-service/src/sftp_backend.rs`) — password and private key authentication via `russh`/`russh-sftp`, streaming upload in 1 MiB chunks, download, recursive listing, deletion and manifest persistence.
+- **WebDAV backend** (`crates/backup-service/src/webdav_backend.rs`) — basic auth, `MKCOL` for collections, streaming upload via `PUT` with chunked transfer encoding, `PROPFIND` for recursive listing including XML parsing, `DELETE`, manifest persistence. 11 unit tests for URL construction, path encoding and response parsing.
+- **Encryption for both new backends** — `encrypt_payload`/`decrypt_payload` in `encryption.rs` apply the configured target encryption. The streaming upload encrypts chunk by chunk so that memory usage stays bounded.
+- **`dry_run` for restore** — API request (`RestoreRequest.dry_run`) and CLI (`agrocore-backup restore <ID> --dry-run`) check whether a backup is restorable without writing to the database.
+- **14 new tests** — 8 storage streaming, 7 retention, 4 manifest, 3 real PostgreSQL integration tests.
 
 ### Fixed
-- **Retention konnte nichts löschen** — `parse_dump_timestamp` nahm mit `rsplit_once('_')` das letzte `_` und isolierte damit `HHMMSS`; der anschließende Split konnte nie gelingen, die Funktion lieferte für `dump_YYYYMMDD_HHMMSS.dump` immer `None`. Der Parser wertet jetzt die letzten beiden Segmente aus.
-- **`create_manifest` bekam eine leere Objektliste** — `targets: vec![]` wurde unverändert durchgereicht. Restore fand dadurch kein Dump-Objekt. Manifests werden jetzt mit den tatsächlich in Storage vorhandenen Objekten und Größen befüllt.
-- **Restore identifizierte Backups per Dateinamen-Heuristik** — jetzt wird zuerst das persistierte Manifest gelesen, mit Listing-Fallback für Altbestände.
-- **Restore schlug bei gemischten Client-/Server-Versionen fehl** — pg_dump 18.6 gegen PostgreSQL 16.4 erzeugt `SET transaction_timeout = 0`, das der Server nicht kennt. Nur dieser Fall wird als Warnung behandelt; echte `pg_restore: error:`-Zeilen lassen den Restore weiterhin fehlschlagen.
-- **`list_objects` gab bei unbekannten Targets stillschweigend eine leere Liste zurück** (`_ => Ok(Vec::new())`). Retention hätte so Backup-Ausfälle als "nichts zu löschen" interpretiert. Der Fallback meldet jetzt einen Fehler.
-- **`load_manifest` behandelte ein fehlendes Remote-Manifest als Fehler** — nur lokale Storage lieferte `NotFound`. Der Pfad prüft jetzt auch den HTTP-Status der Remote-Backends.
-- **`_shared`-Hilfsfunktion ohne Aufrufer** in `webdav_backend.rs` entfernt.
+- **Retention could not delete anything** — `parse_dump_timestamp` used `rsplit_once('_')` to take the last `_` and thereby isolated `HHMMSS`; the subsequent split could then never succeed, so the function always returned `None` for `dump_YYYYMMDD_HHMMSS.dump`. The parser now evaluates the last two segments.
+- **`create_manifest` received an empty object list** — `targets: vec![]` was passed through unchanged. Restore therefore found no dump object. Manifests are now populated with the objects and sizes actually present in storage.
+- **Restore identified backups by filename heuristic** — now the persisted manifest is read first, with a listing fallback for legacy data.
+- **Restore failed with mixed client/server versions** — pg_dump 18.6 against PostgreSQL 16.4 emits `SET transaction_timeout = 0`, which the server does not know. Only that case is treated as a warning; real `pg_restore: error:` lines still fail the restore.
+- **`list_objects` silently returned an empty list for unknown targets** (`_ => Ok(Vec::new())`). Retention would have interpreted backup outages as "nothing to delete". The fallback now reports an error.
+- **`load_manifest` treated a missing remote manifest as an error** — only local storage returned `NotFound`. The path now also checks the HTTP status of the remote backends.
+- **Unused `_shared` helper function** removed from `webdav_backend.rs`.
 
 ### Changed
-- **`list_objects`, `download_stream`, `upload_stream` und `delete_object` dispatchen jetzt explizit** an `BackupTarget::Sftp` und `BackupTarget::WebDAV`. Die vorherigen `warn!("... not yet implemented")`-Zweige sind entfernt.
-- **Dump-Objektnamen enthalten die Job-ID** (`<uuid>_dump_<timestamp>.dump`). Retention parst weiterhin id-haltige Namen.
-- **`russh` auf 0.49 gepinnt** — 0.54 zieht eine `base64ct`-Version, die mit `argon2`'s Anforderung kollidiert. Konfliktfreie Versionen haben Vorrang, wie im Workspace üblich.
-- **`reqwest` um das `stream`-Feature erweitert** — `Body::wrap_stream` ist ohne dieses Feature nicht verfügbar.
+- **`list_objects`, `download_stream`, `upload_stream` and `delete_object` now dispatch explicitly** to `BackupTarget::Sftp` and `BackupTarget::WebDAV`. The previous `warn!("... not yet implemented")` branches are removed.
+- **Dump object names contain the job ID** (`<uuid>_dump_<timestamp>.dump`). Retention still parses names containing an id.
+- **`russh` pinned to 0.49** — 0.54 pulls a `base64ct` version that collides with `argon2`'s requirement. Conflict-free versions take precedence, as is customary in the workspace.
+- **`reqwest` extended with the `stream` feature** — `Body::wrap_stream` is not available without this feature.
 
 ### Tests
-- 249 Tests im Workspace, 0 Fehler.
-- 3 echte `pg_dump`/`pg_restore`-Tests gegen eine laufende PostgreSQL-Instanz, darunter ein Roundtrip mit Row-Count-Vergleich:
+- 249 tests in the workspace, 0 failures.
+- 3 real `pg_dump`/`pg_restore` tests against a running PostgreSQL instance, including a roundtrip with row count comparison:
   ```bash
-  DATABASE_URL=postgresql://agrocore:agrocore@localhost:5432/agrocore \
+  DATABASE_URL=postgresql://agrocore:***@localhost:5432/agrocore \
     cargo test -p agrocore-backup --test pg_dump_e2e_tests -- --ignored --test-threads=1
   ```
 
 ### Known Limitations
-- Der Download-Pfad der `object_store`-Backends nutzt `GetResult::bytes()`, weil object_store 0.11 keinen asynchronen Byte-Stream für Downloads liefert. Cloud-Downloads sind deshalb weiterhin nicht speicherschonend; Local, SFTP und WebDAV streamen.
-- Host-Key-Pinning für SFTP ist nicht implementiert; `check_server_key` akzeptiert jeden Schlüssel. Für den Produktivbetrieb sollte gegen eine `known_hosts`-Datei verifiziert werden.
-- Age- und KMS-Verschlüsselung sind weiterhin nicht implementiert; die Verschlüsselung läuft über AES-256-GCM.
-- Integrationstests gegen echte SFTP- und WebDAV-Server fehlen; getestet wurden Pfad-, Auth- und Response-Handling.
-- NATS-Progress-Events (0–100 %) sind implementiert, aber nicht durch Integrationstests abgesichert.
-- Das Disaster-Recovery-Runbook für 50 GB bei RTO < 15 Minuten ist noch offen.
+- The download path of the `object_store` backends uses `GetResult::bytes()`, because object_store 0.11 provides no asynchronous byte stream for downloads. Cloud downloads are therefore still not memory-friendly; local, SFTP and WebDAV stream.
+- Host key pinning for SFTP is not implemented; `check_server_key` accepts any key. For production use, verification against a `known_hosts` file should be added.
+- Age and KMS encryption are still not implemented; encryption uses AES-256-GCM.
+- Integration tests against real SFTP and WebDAV servers are missing; path, auth and response handling were tested.
+- NATS progress events (0–100 %) are implemented but not covered by integration tests.
+- The disaster recovery runbook for 50 GB at RTO < 15 minutes is still open.
 
 ## [0.22.0] - 2026-09-30
 
 ### Added
-- **Notification Dispatcher** (`agrocore-messaging::notification`) — Der bereits vorhandene, aber nie eingebundene Dispatcher ist jetzt vollständig verdrahtet: `NotificationChannel`-Trait mit acht Kanälen (SMTP, SendGrid, Mailgun, Telegram, ntfy, Webhook, Twilio SMS, `wacli` WhatsApp), Template-Engine, exponentielles Backoff und Dead-Letter-Queue auf `notifications.failed`.
-- **Fehlende Kerntypen** (`notification/types.rs`) — `ChannelConfig`, `ChannelMessage`, `NotificationChannel`, `ChannelError`, `DeliveryReport` sowie die Konfigurationsstructs pro Kanal. Das Modul referenzierte 12 Typen, die nie existiert haben.
-- **`agrocore-notification-service`** — Service mit NATS-Consumer für `notifications.send`, Konfiguration aus YAML/JSON oder `NOTIFY_<CHANNEL>_<SETTING>`, `/health`-Endpoint und Graceful Shutdown. Läuft als Docker-Container.
-- **Port-Konflikt-Erkennung** (`scripts/dev.sh`) — Reserviert Ports gegen Doppelvergabe innerhalb eines Laufs und schreibt die tatsächlichen Ports nach `.env.dev`.
-- **Docker-Build-Caching** — BuildKit-Cache-Mounts, gezielte COPY-Schritte, `.dockerignore` und `cargo build --bin`. Rebuild von ~7 min auf ~2,5 s.
-- **10 Notification-Tests** — Channel-Konstruktion, YAML-Roundtrip, Konfigurationsvalidierung, Readiness-Default und Dead-Letter-Konfiguration.
+- **Notification Dispatcher** (`agrocore-messaging::notification`) — the already existing but never wired-up dispatcher is now fully wired: `NotificationChannel` trait with eight channels (SMTP, SendGrid, Mailgun, Telegram, ntfy, Webhook, Twilio SMS, `wacli` WhatsApp), template engine, exponential backoff and dead-letter queue on `notifications.failed`.
+- **Missing core types** (`notification/types.rs`) — `ChannelConfig`, `ChannelMessage`, `NotificationChannel`, `ChannelError`, `DeliveryReport` plus the per-channel config structs. The module referenced 12 types that never existed.
+- **`agrocore-notification-service`** — service with NATS consumer for `notifications.send`, configuration from YAML/JSON or `NOTIFY_<CHANNEL>_<SETTING>`, `/health` endpoint and graceful shutdown. Runs as a Docker container.
+- **Port conflict detection** (`scripts/dev.sh`) — reserves ports against double assignment within a run and writes the actual ports to `.env.dev`.
+- **Docker build caching** — BuildKit cache mounts, targeted COPY steps, `.dockerignore` and `cargo build --bin`. Rebuild from ~7 min to ~2.5 s.
+- **10 notification tests** — channel construction, YAML roundtrip, config validation, readiness default and dead-letter configuration.
 
 ### Fixed
-- **`Dockerfile.service` war funktional kaputt** — `CMD ["/app/${SERVICE_NAME}"]` expandiert Build-Argumente in Exec-Form nicht, der Container startete mit `exec: "/app/${SERVICE_NAME}": no such file or directory`. Neues Entrypoint-Skript löst den Service zur Laufzeit auf und erhält per `exec` PID 1, damit SIGTERM für Graceful Shutdown ankommt.
-- **Runtime-Mismatch im Notification-Service** — `#[tokio::main]` startet Tokio, aber `actix_web::rt::spawn` benötigt ein `LocalSet`; der Dispatcher panickte mit `spawn_local called from outside of a task::LocalSet`. Auf `#[actix_web::main]` umgestellt.
-- **Dev-Umgebung startete nie mit belegten Ports** — `docker-compose.dev.yml` nutzte durchgängig `network_mode: host`, es gab keine Port-Mappings, die berechneten Alternativports wurden nie angewendet. Auf Bridge-Netz mit `${VAR:-default}` umgestellt.
-- **Port-Kollision im Fallback** — API, Admin UI und Notification landeten alle auf 8083, weil jede Prüfung denselben noch nicht gebundenen Port sah. Reservierungsliste eingeführt; die Zuweisung lief zudem in einer Command-Subshell, wodurch die Reservierung wirkungslos war.
-- **`DATABASE_URL` enthielt den Literal-Platzhalter `***`** statt eines Passworts. Mit `network_mode: host` fiel das nicht auf, weil der Container die URL nie selbst auflöste. Jetzt `${POSTGRES_PASSWORD:-agrocore}`.
-- **`agrocore-logging` Build Failure** — `lib.rs` re-exportierte `ServiceContextLayer` und `SpanExt` unbedingt, obwohl beide die optionale `tracing`-Abhängigkeit brauchen; Crates mit `default-features = false` (`admin-ui`, `dashboard`) schlugen fehl.
-- **Migration schlug fehl** — `0000000000_consolidated_init.sql` rief `trigger_updated_at()` auf, das nie definiert war (korrekt: `set_updated_at()`). Durch `SKIP_MIGRATIONS=1` jahrelang verdeckt.
-- **Demo-Seed entsprach nicht dem Schema** — `roles` war `text[]` statt JSONB, `site_type`/`crop_type`/`equipment_type` in veralteten Formaten; die Tabellen `orders`, `equipment`, `inventory_*`, `animals`, `grazing_records`, `customers`, `financial_records` hatten abweichende Spalten; `livestock` existiert nicht. Zwei UUIDs enthielten Nicht-Hex-Zeichen.
-- **Demo-Passwörter waren ungültig** — der Seed speicherte bcrypt-Hashes, die Anwendung verifiziert mit Argon2id (`crates/infrastructure/src/postgres/user.rs`), Ergebnis `Invalid password hash: salt too short`. Hashes mit der `argon2 0.6`/`password-hash 0.6`-Version aus `Cargo.lock` neu erzeugt. `demo123` verletzte außerdem `min=8`, jetzt `demo1234`.
-- **`sqlx::migrate!` lehnte den Seed ab** — psql-Syntax (`\set`, `:'var'`) wird von SQLx nicht ausgeführt; alle 79 Variablen durch echte UUID-Literale ersetzt.
-- **Healthcheck-Logik invertiert** — `grep -q null` lieferte bei vorhandenen Healthchecks fälschlich „no healthcheck defined"; zusätzlich gab `wait_for_health` bei Timeout fälschlich Erfolg zurück.
-- **nginx lauschte auf 8081** statt auf den gemappten Port 80, und der API-Proxy zeigte auf `localhost:8080` statt auf den Service-Namen `api` im Bridge-Netz.
-- **TUI-Dashboard brach ohne TTY ab** — endete mit `interactive SLT runtime unavailable` und Exit 1; wird jetzt übersprungen, das Script bleibt aktiv.
+- **`Dockerfile.service` was functionally broken** — `CMD ["/app/${SERVICE_NAME}"]` does not expand build arguments in exec form, the container started with `exec: "/app/${SERVICE_NAME}": no such file or directory`. New entrypoint script resolves the service at runtime and keeps PID 1 via `exec`, so SIGTERM arrives for graceful shutdown.
+- **Runtime mismatch in the notification service** — `#[tokio::main]` starts Tokio, but `actix_web::rt::spawn` requires a `LocalSet`; the dispatcher panicked with `spawn_local called from outside of a task::LocalSet`. Switched to `#[actix_web::main]`.
+- **Dev environment never started with occupied ports** — `docker-compose.dev.yml` used `network_mode: host` throughout, there were no port mappings, and the computed alternative ports were never applied. Switched to a bridge network with `${VAR:-default}`.
+- **Port collision in the fallback** — API, admin UI and notification all landed on 8083, because every check saw the same not-yet-bound port. Introduced a reservation list; the assignment also ran in a command subshell, which made the reservation ineffective.
+- **`DATABASE_URL` contained the literal placeholder `***`** instead of a password. With `network_mode: host` that went unnoticed, because the container never resolved the URL itself. Now `${POSTGRES_PASSWORD:-agrocore}`.
+- **`agrocore-logging` build failure** — `lib.rs` re-exported `ServiceContextLayer` and `SpanExt` unconditionally, although both need the optional `tracing` dependency; crates with `default-features = false` (`admin-ui`, `dashboard`) failed.
+- **Migration failed** — `0000000000_consolidated_init.sql` called `trigger_updated_at()`, which was never defined (correct: `set_updated_at()`). It was hidden for years by `SKIP_MIGRATIONS=1`.
+- **Demo seed did not match the schema** — `roles` was `text[]` instead of JSONB, `site_type`/`crop_type`/`equipment_type` in outdated formats; the tables `orders`, `equipment`, `inventory_*`, `animals`, `grazing_records`, `customers`, `financial_records` had differing columns; `livestock` does not exist. Two UUIDs contained non-hex characters.
+- **Demo passwords were invalid** — the seed stored bcrypt hashes, the application verifies with Argon2id (`crates/infrastructure/src/postgres/user.rs`), result `Invalid password hash: salt too short`. Hashes regenerated with the `argon2 0.6`/`password-hash 0.6` version from `Cargo.lock`. `demo123` also violated `min=8`, now `demo1234`.
+- **`sqlx::migrate!` rejected the seed** — psql syntax (`\set`, `:'var'`) is not executed by SQLx; all 79 variables replaced with real UUID literals.
+- **Healthcheck logic inverted** — `grep -q null` falsely reported "no healthcheck defined" when healthchecks existed; additionally `wait_for_health` falsely returned success on timeout.
+- **nginx listened on 8081** instead of the mapped port 80, and the API proxy pointed at `localhost:8080` instead of the service name `api` in the bridge network.
+- **TUI dashboard aborted without a TTY** — ended with `interactive SLT runtime unavailable` and exit 1; now skipped, the script stays active.
 
 ### Changed
-- **Demo-Seed nach `scripts/demo_seed.sql`** — `sqlx::migrate!` akzeptiert im Verzeichnis `migrations/` ausschließlich nummerierte Migrationen. Dadurch liefen die Demo-Daten bei jedem API-Start mit; der Seed ist jetzt opt-in über `--demo` bzw. `DEMO_MODE=true`.
-- **Enum-Varianten** — `BackupTarget::GCS` → `Gcs` und `BackupTarget::SFTP` → `Sftp` (`clippy::upper_case_acronyms`). Das Wire-Format bleibt unverändert (`rename_all = "lowercase"`).
-- **Demo-Modus** — unterstützt jetzt sowohl `DEMO_MODE=true ./scripts/dev.sh` als auch `./scripts/dev.sh --demo`; der Seed wartet auf `public.tenants` und nutzt `reset: true`.
-- **Messaging-Dispatcher teilt Kanäle per `Arc<dyn NotificationChannel>`** statt `Clone` als Trait-Supertrait, das die Dyn-Kompatibilität verhindert hätte.
+- **Demo seed moved to `scripts/demo_seed.sql`** — `sqlx::migrate!` accepts only numbered migrations in the `migrations/` directory. Because of that, the demo data ran on every API start; the seed is now opt-in via `--demo` or `DEMO_MODE=true`.
+- **Enum variants** — `BackupTarget::GCS` → `Gcs` and `BackupTarget::SFTP` → `Sftp` (`clippy::upper_case_acronyms`). The wire format remains unchanged (`rename_all = "lowercase"`).
+- **Demo mode** — now supports both `DEMO_MODE=true ./scripts/dev.sh` and `./scripts/dev.sh --demo`; the seed waits for `public.tenants` and uses `reset: true`.
+- **Messaging dispatcher shares channels via `Arc<dyn NotificationChannel>`** instead of `Clone` as a trait supertrait, which would have prevented dyn compatibility.
 
 ### Removed
-- **Nicht existierende `livestock`-Tabelle** aus dem Demo-Seed entfernt.
-- **Redundanter `DispatcherRef`-Wrapper** im Dispatcher, der nur einen zweiten `NotificationDispatcher` zum Delegieren konstruierte.
+- **Nonexistent `livestock` table** removed from the demo seed.
+- **Redundant `DispatcherRef` wrapper** in the dispatcher, which only constructed a second `NotificationDispatcher` to delegate to.
 
 ### Quality Gates
 - `cargo fmt --all -- --check` ✅
 - `cargo check --workspace --all-targets` ✅
 - `cargo test --workspace` ✅ (211 passed, 0 failed)
 - `cargo clippy --workspace --all-targets -- -D warnings` ✅ (zero warnings)
-
 
 ## [0.21.1] - 2026-09-30
 
@@ -753,38 +736,38 @@ Backup-Service Phase 8 Abschnitt 4: Streaming-Pipeline, funktionale Retention, e
 ## [0.14.0] - 2026-09-08
 
 ### Added
-- **Phase 7: Migration auf externe Services (P0 - KRITISCH)** — Vollständige Migration aller 15 Crates auf zentrale Services
-  - **Scheduler-Migration**: 4 Timer von `tokio::spawn` / `tokio-cron-scheduler` → `agrocore-scheduler` Crate
-    - `bridge_stats_reporter` (60s) — MQTT Bridge Statistiken
-    - `weather_update` (Cron `0 */30 * * * *`) — Wetterdaten-Updates
-    - `db_pool_health` (5s) — Datenbank-Pool-Health-Check
-    - `db_monthly_cleanup` (Cron `0 0 1 * *`) — Monatliche Bereinigung + Abschreibung
-  - Alle Jobs extern in `backup-service/main.rs` registriert (keine zyklischen Dependencies)
-  - Bridge (nicht `Send`) läuft auf Main Thread, Scheduler Jobs (`Send`) in Background Tasks
+- **Phase 7: Migration to external services (P0 - CRITICAL)** — full migration of all 15 crates to central services
+  - **Scheduler migration**: 4 timers from `tokio::spawn` / `tokio-cron-scheduler` → `agrocore-scheduler` crate
+    - `bridge_stats_reporter` (60s) — MQTT bridge statistics
+    - `weather_update` (cron `0 */30 * * * *`) — weather data updates
+    - `db_pool_health` (5s) — database pool health check
+    - `db_monthly_cleanup` (cron `0 0 1 * *`) — monthly cleanup + depreciation
+  - All jobs registered externally in `backup-service/main.rs` (no cyclic dependencies)
+  - Bridge (not `Send`) runs on the main thread, scheduler jobs (`Send`) in background tasks
 
 ### Changed
-- **Messaging-Migration**: Alle Crates von direkter `async_nats` Nutzung → `agrocore_messaging::Publisher/Subscriber` Traits
-  - Neue Traits: `Publisher`, `Subscriber`, `MessageStream` in `agrocore-messaging`
-  - `MessagingClient` implementiert beide Traits
-  - NATS Subject-Konstanten öffentlich exportiert für konsistente Nutzung
+- **Messaging migration**: all crates from direct `async_nats` usage → `agrocore_messaging::Publisher/Subscriber` traits
+  - New traits: `Publisher`, `Subscriber`, `MessageStream` in `agrocore-messaging`
+  - `MessagingClient` implements both traits
+  - NATS subject constants exported publicly for consistent usage
 
-- **Logging-Migration (Rest)**: 5 Crates auf `agrocore_logging` migriert
+- **Logging migration (rest)**: 5 crates migrated to `agrocore_logging`
   - `agrocore-domain` (`depreciation.rs`)
   - `agrocore-geometry-service` (`main.rs`)
   - `agrocore-asset-registry` (`main.rs`)
   - `agrocore-reporting-service` (`main.rs`)
-  - `agrocore-lpis-providers` (nutzte bereits `agrocore_logging`)
+  - `agrocore-lpis-providers` (already used `agrocore_logging`)
 
-- **WASM Migration**: `agrocore-admin-ui` 
-  - `tracing` Dependency entfernt
-  - `agrocore-logging` mit `dev-console` Feature hinzugefügt (Browser Console Logging)
+- **WASM migration**: `agrocore-admin-ui`
+  - Removed `tracing` dependency
+  - Added `agrocore-logging` with `dev-console` feature (browser console logging)
 
-- **Version bump**: 0.13.0 → 0.14.0 (Minor bump für Phase 7 Migration)
+- **Version bump**: 0.13.0 → 0.14.0 (minor bump for the phase 7 migration)
 
-- **Quality Gates**: Alle 15 Crates kompilieren (`cargo fmt`, `cargo check`, `cargo test`, `cargo clippy`)
-  - 153+ Tests grün
-  - Clippy sauber (nur unused-import warnings)
-  - WASM Target `wasm32-unknown-unknown` kompiliert fehlerfrei
+- **Quality gates**: all 15 crates compile (`cargo fmt`, `cargo check`, `cargo test`, `cargo clippy`)
+  - 153+ tests green
+  - Clippy clean (only unused-import warnings)
+  - WASM target `wasm32-unknown-unknown` compiles without errors
 
 ## [0.13.0] - 2026-09-03
 
@@ -803,122 +786,115 @@ Backup-Service Phase 8 Abschnitt 4: Streaming-Pipeline, funktionale Retention, e
 - **IoTCapabilityType enum**: Added missing variants (GPS, Power, Energy, Pressure, Voltage, Current)
 
 ### Changed
-- **Version bump**: 0.12.0 → 0.13.0 (Minor bump für neue Messaging-Features und IoT-Fixes)
+- **Version bump**: 0.12.0 → 0.13.0 (minor bump for the new messaging features and IoT fixes)
 - **Quality Gates**: Alle 15 Crates kompilieren (`cargo fmt`, `cargo check`, `cargo test`, `cargo clippy`)
 
 ## [0.12.0] - 2026-08-31
 
 ### Added
-- **agrocore-logging crate (NEW)**: Einheitlicher strukturierter Logging-Service für alle 15 Crates
-  - `ServiceContext` / `RequestContext` für automatische Span-Anreicherung (service_name, environment, version, instance_id, request_id, tenant_id)
-  - `SpanExt` Trait für strukturierte Felder: `record_error()`, `record_latency()`, `record_db_query()`, `record_http_status()`, `record_tenant()`, `record_user()`
-  - Console Layer (pretty output mit Thread-IDs/Names) + OTLP Layer (OpenTelemetry distributed tracing)
+- **agrocore-logging crate (NEW)**: one structured logging service for all 15 crates
+  - `ServiceContext` / `RequestContext` for automatic span enrichment (service_name, environment, version, instance_id, request_id, tenant_id)
+  - `SpanExt` trait for structured fields: `record_error()`, `record_latency()`, `record_db_query()`, `record_http_status()`, `record_tenant()`, `record_user()`
+  - Console layer (pretty output with thread IDs/names) + OTLP layer (OpenTelemetry distributed tracing)
   - Macros: `agrocore_span!`, `agrocore_info!`, `agrocore_error!`, `agrocore_warn!`, `agrocore_debug!`
-  - Konfiguration via `LoggingConfig` (Env-File + Env-Vars `AGROCORE_LOG__*`)
+  - Configuration via `LoggingConfig` (env file + env vars `AGROCORE_LOG__*`)
   - Feature-gated: `dev-console` (default, pretty console), `otlp` (OpenTelemetry)
 
 ### Changed
-- **Version bump**: 0.11.0 → 0.12.0 (Minor bump für neues Logging-Crate)
-- **Quality Gates**: Alle 15 Crates kompilieren, Tests grün (153+), Clippy sauber (nur unused-import warnings)
-
+- **Version bump**: 0.11.0 → 0.12.0 (minor bump for the new logging crate)
+- **Quality gates**: all 15 crates compile, tests pass (153+), clippy clean (only unused-import warnings)
 ## [0.11.0] - 2026-08-31
 
 ### Added
-- **agrocore-scheduler crate (NEW)**: Wiederverwendbarer Scheduler-Service für wiederkehrende Worker-Aufgaben UND einmalige Termine
-  - `JobType::OneTime { execute_at: DateTime<Utc> }` für präzise Terminplanung zu exakten Zeitpunkten
-  - Cron-basierte wiederkehrende Jobs (wie zuvor) für Worker-Tasks (Backups, Cleanup, Sync, etc.)
-  - `SchedulerService` mit NATS Event-Publishing (job.started, job.completed, job.failed)
-  - Retry-Policies mit konfigurierbaren Delays und max_retries
-  - Timezone-Support für cron-Ausdrücke
-  - Handler-Registry für Builtin/Command/HTTP/NATS Jobs
-- **Backup-Service**: Refactored auf externen `agrocore-scheduler` Crate
-  - Entfernt direkte `tokio-cron-scheduler` Abhängigkeit
-  - Nutzt jetzt `SchedulerService` mit `JobDefinition`, `JobType::Builtin`
-  - Registrierter Handler "backup_database" für DB- und Config-Backups
-  - NATS-Events für Backup-Start/Progress/Completed/Failed
+- **agrocore-scheduler crate (NEW)**: reusable scheduler service for recurring worker tasks *and* one-off appointments
+  - `JobType::OneTime { execute_at: DateTime<Utc> }` for precise scheduling at exact times
+  - Cron-based recurring jobs (as before) for worker tasks (backups, cleanup, sync, etc.)
+  - `SchedulerService` with NATS event publishing (job.started, job.completed, job.failed)
+  - Retry policies with configurable delays and max_retries
+  - Timezone support for cron expressions
+  - Handler registry for builtin/command/HTTP/NATS jobs
+- **Backup service**: refactored onto the external `agrocore-scheduler` crate
+  - Removed the direct `tokio-cron-scheduler` dependency
+  - Now uses `SchedulerService` with `JobDefinition`, `JobType::Builtin`
+  - Registered the "backup_database" handler for DB and config backups
+  - NATS events for backup start/progress/completed/failed
 
 ### Changed
-- **Version bump**: 0.10.0 → 0.11.0 (Minor bump für neue Scheduler-Features)
-- **agrocore-scheduler**: Re-exports für `JobDefinition`, `JobType`, `SchedulerConfig`, `SchedulerService`, `SchedulerError`
-- **Quality Gates**: Alle 14 Crates kompilieren, Tests grün (153+), Clippy sauber (nur unused-import warnings)
+- **Version bump**: 0.10.0 → 0.11.0 (minor bump for the new scheduler features)
+- **agrocore-scheduler**: re-exports for `JobDefinition`, `JobType`, `SchedulerConfig`, `SchedulerService`, `SchedulerError`
+- **Quality gates**: all 14 crates compile, tests pass (153+), clippy clean (only unused-import warnings)
 
 ### Fixed
-- **Scheduler**: OneTime Jobs nutzen `tokio::time::sleep` für exakte Ausführungszeit
-- **Scheduler**: `add_job()` validiert OneTime Jobs ohne Cron-Parsing
-- **Backup-Service**: Clone-Impl für `BackupService` includes `scheduler` field
-
+- **Scheduler**: OneTime jobs use `tokio::time::sleep` for an exact execution time
+- **Scheduler**: `add_job()` validates OneTime jobs without cron parsing
+- **Backup service**: `Clone` impl for `BackupService` now includes the `scheduler` field
 ## [0.10.0] - 2026-08-28
 
 ### Added
-- **6 neue Domain-Entitäten** (vollständig implementiert, keine Stubs):
-  - `Building` mit `BuildingType` Enum, CRUD DTOs, PostgreSQL Repo + API Handler
-  - `Group` mit `GroupType` Enum, hierarchische Struktur (`parent_group_id`), CRUD + Children + by_plot
-  - `Tree` mit `TreeType` Enum, `group_id` Referenz, CRUD + by_plot + by_group
-  - `Livestock` (herden-basiert) mit `LivestockType` Enum, `herd_id`, `count`, CRUD + by_plot + by_herd
-  - `Variety` mit `VarietyCategory` Enum, CRUD + by_category
-  - `Breed` mit `Species` Enum, CRUD + by_species
-- **Repository Traits** in `domain/src/repositories.rs`: 6 neue Traits mit vollständigen CRUD + spezialisierten Find-Methoden
-- **PostgreSQL Implementierungen** (6 neue Dateien in `infrastructure/src/postgres/`): alle nutzen `pg_repo!` Macro mit `PaginatedResponse`
-- **Infrastructure Wiring** (`database.rs`): alle 6 Repos in `PostgresDb` struct, `connect()`/`from_pool()`, Accessor-Methoden, `Database` Enum Delegation, `MockDatabase` Felder
-- **API Layer**: DTOs + Handler für alle 6 Entitäten (`building.rs`, `group.rs`, `tree.rs`, `livestock_new.rs`, `variety.rs`, `breed.rs`), registriert in `handlers/mod.rs`
-- **Admin UI i18n**: Alle neuen Navigation-Schlüssel (`nav_groups`, `nav_trees`, `nav_buildings`, `nav_plot_entities`, `nav_livestock`) und Entity-Schlüssel (`livestock_goat`, `livestock_chicken`, `livestock_sheep`, `livestock_cattle`, `tree_cork_oak`, `group_building`, `group_coop`) vollständig für alle 10 Sprachen (de, en, es, fr, pt, it, pl, ro, uk, nl)
-- **Pre-existing Fixes**: `TreatmentRecord` mit `sqlx::FromRow`, `find_treatments_by_animal` Methode, `reporting-service` Fetch-Trennung, `livestock.rs` DTO Type-Mismatches behoben
-- **Version bump**: 0.9.26 → 0.10.0 (Major bump für 6 neue Domain-Entitäten)
+- **6 new domain entities** (fully implemented, no stubs):
+  - `Building` with a `BuildingType` enum, CRUD DTOs, PostgreSQL repo + API handler
+  - `Group` with a `GroupType` enum, hierarchical structure (`parent_group_id`), CRUD + children + by_plot
+  - `Tree` with a `TreeType` enum, `group_id` reference, CRUD + by_plot + by_group
+  - `Livestock` (herd-based) with a `LivestockType` enum, `herd_id`, `count`, CRUD + by_plot + by_herd
+  - `Variety` with a `VarietyCategory` enum, CRUD + by_category
+  - `Breed` with a `Species` enum, CRUD + by_species
+- **Repository traits** in `domain/src/repositories.rs`: 6 new traits with full CRUD plus specialised find methods
+- **PostgreSQL implementations** (6 new files in `infrastructure/src/postgres/`): all use the `pg_repo!` macro with `PaginatedResponse`
+- **Infrastructure wiring** (`database.rs`): all 6 repos in the `PostgresDb` struct, `connect()`/`from_pool()`, accessor methods, `Database` enum delegation, `MockDatabase` fields
+- **API layer**: DTOs + handlers for all 6 entities (`building.rs`, `group.rs`, `tree.rs`, `livestock_new.rs`, `variety.rs`, `breed.rs`), registered in `handlers/mod.rs`
+- **Admin UI i18n**: all new navigation keys (`nav_groups`, `nav_trees`, `nav_buildings`, `nav_plot_entities`, `nav_livestock`) and entity keys (`livestock_goat`, `livestock_chicken`, `livestock_sheep`, `livestock_cattle`, `tree_cork_oak`, `group_building`, `group_coop`) complete for all 10 languages (de, en, es, fr, pt, it, pl, ro, uk, nl)
+- **Pre-existing fixes**: `TreatmentRecord` with `sqlx::FromRow`, a `find_treatments_by_animal` method, `reporting-service` fetch separation, `livestock.rs` DTO type mismatches
+- **Version bump**: 0.9.26 → 0.10.0 (minor bump for 6 new domain entities)
 
 ### Changed
-- Alle Quality Gates (`cargo fmt`, `cargo check`, `cargo test`, `cargo clippy`) laufen fehlerfrei durch (nur unused-import warnings)
-
+- All quality gates (`cargo fmt`, `cargo check`, `cargo test`, `cargo clippy`) pass cleanly (only unused-import warnings)
 ## [0.9.26] - 2026-08-28
 
 ### Added
-- Neue Domain-Entitäten: Group, Livestock, Tree, Building, Variety, Breed
-- Migrationen 001-008, CSV-Kataloge, Import-Script, AdminUI-Module, Navigation, i18n, API-Endpunkte, DB-Repos (vollständig, keine Stubs)
-
+- New domain entities: Group, Livestock, Tree, Building, Variety, Breed
+- Migrations 001-008, CSV catalogues, an import script, AdminUI modules, navigation, i18n, API endpoints, DB repos (complete, no stubs)
 ## [0.9.25] - 2026-08-27
 
 ### Added
-- Migration: `trigger_updated_at()` Funktion (für alle `updated_at`-Trigger)
+- Migration: `trigger_updated_at()` function (for all `updated_at` triggers)
 
 ### Changed
 - Version bump: 0.9.24 → 0.9.25
-
 ## [0.9.24] - 2026-08-27
 
 ### Fixed
-- `domain/src/repositories.rs`: `find_all_filtered` + `record_fuel_consumption` + `record_usage` Lifetime (`'b`) behoben; `#[allow(clippy::too_many_arguments)]` korrekt gesetzt; `Cargo.toml` `depreciation` Feature hinzugefügt
-- Alle `cargo c` Fehler behoben (`geometry` Timeout eingebaut; `weather` Timeout + tracing import; `reporting` Paginierung 500 + Timeout 30s; `lpis-providers` `Box::pin` fix; `api/middleware` doppelte Imports entfernt)
+- `domain/src/repositories.rs`: fixed the `find_all_filtered` + `record_fuel_consumption` + `record_usage` lifetime (`'b`); `#[allow(clippy::too_many_arguments)]` set correctly; added the `depreciation` feature to `Cargo.toml`
+- All `cargo c` errors fixed (`geometry` timeout added; `weather` timeout + tracing import; `reporting` pagination 500 + 30s timeout; `lpis-providers` `Box::pin` fix; duplicate imports removed from `api/middleware`)
 
 ### Added
-- Abschreibung: Timer (`database.rs`), Modul `depreciation.rs`, Domain-Feature `depreciation`
-- Equipment-Suche: Filter (`find_all_filtered` + 2 Felder), API-DTO + Handler
+- Depreciation: timer (`database.rs`), `depreciation.rs` module, domain feature `depreciation`
+- Equipment search: filters (`find_all_filtered` + 2 fields), API DTO + handler
 
 ### Changed
-- docs/tasks.md: Abschreibung + Equipment-Suche als `[x]`
-- docs/optimizations.md: Status aktualisiert
+- docs/tasks.md: depreciation + equipment search marked `[x]`
+- docs/optimizations.md: status updated
 - Version bump: 0.9.23 → 0.9.24
-
 ## [0.9.23] - 2026-08-27
 
 ### Added
-- Domain feature `depreciation`: `Cargo.toml` feature + `lib.rs` `#[cfg]` + Modul `depreciation.rs`
-- Abschreibung: Timer + Modul vollständig; Finanzbericht-Integration als nächster Schritt
-- Equipment-Filter: `find_all_filtered` erweitert (`fuel_efficiency_range`, `location_filter`); `EquipmentFilterDto` aktualisiert; Handler integriert.
+- Domain feature `depreciation`: `Cargo.toml` feature + `lib.rs` `#[cfg]` + `depreciation.rs` module
+- Depreciation: timer + module complete; financial report integration as the next step
+- Equipment filters: `find_all_filtered` extended (`fuel_efficiency_range`, `location_filter`); `EquipmentFilterDto` updated; handler integrated
 
 ### Fixed
-- `domain/src/repositories.rs`: `find_all_filtered` Lifetime-Fehler (`'b'`) + `#[allow(clippy::too_many_arguments)]` behoben
-- `Cargo.toml`: `[build]` entfernt (nach `.cargo/config.toml` verschoben) — `unused manifest key` behoben
-- `admin-ui`: Leptos konsolidiert `0.8.6`
+- `domain/src/repositories.rs`: fixed the `find_all_filtered` lifetime error (`'b'`) + `#[allow(clippy::too_many_arguments)]`
+- `Cargo.toml`: removed `[build]` (moved to `.cargo/config.toml`) — fixed `unused manifest key`
+- `admin-ui`: consolidated Leptos `0.8.6`
 - `lpis-providers`: `with_retry` `Box::pin` fix
-- `geometry-service`: Timeout-Struktur + worker timeout
-- `weather-service`: Timeout + `tracing` import
-- `api/middleware`: doppelte Imports entfernt
-- `reporting-service`: `info` Import bereinigt
+- `geometry-service`: timeout struct + worker timeout
+- `weather-service`: timeout + `tracing` import
+- `api/middleware`: duplicate imports removed
+- `reporting-service`: cleaned up the `info` import
 
 ### Changed
-- docs/tasks.md: Abschreibung als `[x]` markiert; Equipment-Suche als `[x]`
-- docs/optimizations.md: nur noch P1/P3/P4 Haupt-Tasks offen
+- docs/tasks.md: depreciation marked `[x]`; equipment search marked `[x]`
+- docs/optimizations.md: only the P1/P3/P4 main tasks remain open
 - Version bump: 0.9.22 → 0.9.23
-
 ## [0.9.22] - 2026-08-27
 
 ### Added
@@ -926,13 +902,13 @@ Backup-Service Phase 8 Abschnitt 4: Streaming-Pipeline, funktionale Retention, e
 - Abschreibung: monatlicher Timer (`tokio::spawn` in `database.rs`); Modul `depreciation.rs` (`calculate_straight_line`, `double_declining`, `schedule`)
 
 ### Changed
-- docs/tasks.md: Equipment-Suche als erledigt markiert
+- docs/tasks.md: equipment search marked as done
 - Version bump: 0.9.21 → 0.9.22
 
 ## [0.9.21] - 2026-08-27
 
 ### Fixed
-- admin-ui (Leptos): konsolidiert auf 0.8.6 (von 0.9.0-beta) — 86 Fehler behoben
+- admin-ui (Leptos): consolidated to 0.8.6 (from 0.9.0-beta) — 86 errors fixed
 - lpis-providers: with_retry Box::pin fix
 - geometry-service: Timeout-Struktur eingebaut; worker timeout aktiv
 - api/middleware: doppelte Imports entfernt
@@ -949,15 +925,14 @@ Backup-Service Phase 8 Abschnitt 4: Streaming-Pipeline, funktionale Retention, e
 ## [0.9.20] - 2026-08-27
 
 ### Added
-- OPT-009: Reporting-Service Paginierung 500 (von 100), Timeout 30s aktiv, Tracing-Log bei Timeout
-- OPT-010: Weather-Service Timeout (30s, tokio-timeout) + Geometry-Service Timeout (30s)
-- OPT-008: Domain Mock lazy-loading (OnceLock) eingebaut
-- Makro prüft `AGROCORE_METRICS_ENABLED` vor Messung
+- OPT-009: reporting service pagination raised to 500 (from 100), 30s timeout active, tracing log on timeout
+- OPT-010: weather service timeout (30s, tokio-timeout) + geometry service timeout (30s)
+- OPT-008: domain mock lazy loading (OnceLock)
+- The macro checks `AGROCORE_METRICS_ENABLED` before measuring
 
 ### Changed
-- docs/optimizations.md bereinigt — alle offenen Tasks (009, 010) als erledigt; nur 010 als abgeschlossen dokumentiert
+- docs/optimizations.md tidied — all open tasks (009, 010) marked done; only 010 documented as complete
 - Version bump: 0.9.20 → 0.9.21
-
 ## [0.9.17] - 2026-08-27
 
 ### Added
@@ -970,19 +945,18 @@ Backup-Service Phase 8 Abschnitt 4: Streaming-Pipeline, funktionale Retention, e
 ## [0.9.16] - 2026-08-27
 
 ### Added
-- OPT-004 Metrics Makro `measure_sqlx_query!` vollständig integriert (nur aktiv wenn `is_enabled()`); Middleware `MetricsMiddleware` als actix-web Middleware eingebunden
-- OPT-006 Messaging: Webhook-Event-Handler `handle_webhook_event()` mit exponentiellem Retry-Backoff (max 3 Versuche) ergänzt; retry für NATS `publish` und `publish_raw` aktiv (`with_retry` aus shared, 3 Versuche, exponentiell)
-- Makro prüft `AGROCORE_METRICS_ENABLED` vor Messung
+- OPT-004: metrics macro `measure_sqlx_query!` fully integrated (only active when `is_enabled()`); `MetricsMiddleware` wired in as actix-web middleware
+- OPT-006 messaging: webhook event handler `handle_webhook_event()` added with exponential retry backoff (max 3 attempts); retry enabled for NATS `publish` and `publish_raw` (`with_retry` from shared, 3 attempts, exponential)
+- The macro checks `AGROCORE_METRICS_ENABLED` before measuring
 
 ### Changed
 - Version bump: 0.9.14 → 0.9.16
-
 ## [0.9.13] - 2026-08-27
 
 ### Fixed
-- OPT-001 Dashboard TUI: process.rs Timeout (30s) und explizite Fehlerbehandlung eingebaut
+- OPT-001 Dashboard TUI: added a process.rs timeout (30s) and explicit error handling
 - Monitoring Toggle (`AGROCORE_METRICS_ENABLED`) aktiv
-- OPT-005 LPIS-Providers Cache und retry: Arc<[u8]> nutzt, kein doppelter Klon; retry via with_retry aktiv. Status: erledigt.
+- OPT-005 LPIS providers cache and retry: uses Arc<[u8]>, no second clone; retry active via with_retry. Status: done.
 
 ### Changed
 - Version bump: 0.9.16 → 0.9.17
@@ -1269,28 +1243,27 @@ Backup-Service Phase 8 Abschnitt 4: Streaming-Pipeline, funktionale Retention, e
 ## [0.8.22] - 2026-08-20
 
 ### Added
-- **Job & Arbeitskräfte-Management: Arbeitszeiterfassung (Clock-In/Clock-Out mit GPS)**
+- **Job & workforce management: time tracking (clock-in/clock-out with GPS)**
   - New `ClockEntry` entity with `ClockEntryType` (ClockIn/ClockOut), GPS coordinates (lat/lng), task_id, notes, and timestamp
   - `ClockSession` convenience struct combining clock-in + clock-out with computed duration_hours
   - `ClockEntryRepo` trait with 9 methods (find_by_id, find_all, find_by_worker, find_active_session, find_sessions, create, update, delete, total_hours_worked)
   - PostgreSQL implementation `PgClockEntryRepo` with SQL queries for all CRUD + session pairing logic
   - REST API endpoints: `/clock-entries` (list/create), `/clock-entries/{id}` (get/update/delete), `/workers/{id}/clock-entries` (worker-specific list), `/workers/{id}/clock-active` (active session), `/workers/{id}/clock-sessions` (session history), `/workers/{id}/hours-worked` (total hours)
-  - Admin UI: WorkersPage component with worker list, hourly rate display, clock-in/out buttons, and route registration at `/workers`
+  - Admin UI: WorkersPage component with a worker list, hourly rate display, clock-in/out buttons, and route registration at `/workers`
 
-- **Job & Arbeitskräfte-Management: Arbeitskosten-Tracking (Stundensatz pro Arbeiter)**
-  - Added `hourly_rate: Option<f64>` field to `Worker` entity, `CreateWorkerDto`, and `UpdateWorkerDto`
-  - Migration adds `hourly_rate NUMERIC(10,2)` column to workers table
-  - Updated PostgreSQL repo INSERT/UPDATE queries to include `hourly_rate`
-  - Admin UI WorkerDto includes `hourly_rate` field
+- **Job & workforce management: labour cost tracking (hourly rate per worker)**
+  - Added an `hourly_rate: Option<f64>` field to the `Worker` entity, `CreateWorkerDto` and `UpdateWorkerDto`
+  - Migration adds a `hourly_rate NUMERIC(10,2)` column to the workers table
+  - Updated the PostgreSQL repo INSERT/UPDATE queries to include `hourly_rate`
+  - Admin UI WorkerDto includes the `hourly_rate` field
 
 - **Migration: `2026081404_workforce_clock_entries.sql`**
-  - Creates `clock_entries` table with all fields
-  - Adds `hourly_rate` column to existing `workers` table
-  - Indexes for tenant, worker, entry_type, timestamp, and composite worker+timestamp
+  - Creates the `clock_entries` table with all fields
+  - Adds the `hourly_rate` column to the existing `workers` table
+  - Indexes for tenant, worker, entry_type, timestamp, and a composite worker+timestamp
 
 ### Changed
 - Version bump: 0.8.16 → 0.8.17
-
 ## [0.8.16] - 2026-08-14
 
 ### Added
@@ -1540,8 +1513,7 @@ Backup-Service Phase 8 Abschnitt 4: Streaming-Pipeline, funktionale Retention, e
 ## [0.7.9] - 2026-08-09
 
 ### Fixed
-- API: Workforce-Handler übergeben nun korrekt `&[UserRole]` an die Repositories (statt `&Vec<String>`), wodurch Sichtbarkeits-/Autorisierungsfilter wieder kompilieren und greifen.
-
+- API: the workforce handlers now pass `&[UserRole]` to the repositories (instead of `&Vec<String>`), so the visibility/authorisation filters compile again and actually apply.
 ## [0.7.8] - 2026-08-09
 
 ### Added
@@ -1565,8 +1537,7 @@ Backup-Service Phase 8 Abschnitt 4: Streaming-Pipeline, funktionale Retention, e
 - Completed tenant-scoped weather-data and phenology-record update/delete persistence.
 
 ### Changed
-- Completed Module 12 and marked Wetter & Phänologie production-ready.
-
+- Completed module 12 and marked weather & phenology production-ready.
 ## [0.7.5] - 2026-08-09
 
 ### Added
@@ -1590,12 +1561,11 @@ Backup-Service Phase 8 Abschnitt 4: Streaming-Pipeline, funktionale Retention, e
 
 ### Added
 - Completed TaskData update and delete repository operations.
-- Added migration columns required by the TaskData domain model.
+- Added the migration columns required by the TaskData domain model.
 - Added task-route integration coverage.
 
 ### Changed
-- Completed Module 2 and marked Aufträge & Tasks production-ready.
-
+- Completed module 2 and marked orders & tasks production-ready.
 ## [0.7.2] - 2026-08-09
 
 ### Added
