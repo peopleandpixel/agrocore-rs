@@ -44,3 +44,7 @@ tokio = { version = "1", default-features = false, features = ["sync", "time", "
 load-path = "locales"
 default-locale = "en"
 available-locales = ["en", "de", "es", "fr", "pt", "it", "pl", "ro", "uk", "nl"]
+
+[[test]]
+name = "order_list_load_state_test"
+path = "tests/order_list_load_state_tests.rs"

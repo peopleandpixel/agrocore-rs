@@ -572,6 +572,60 @@ RUSTFLAGS='-D warnings' cargo build --target wasm32-unknown-unknown \
 
 139 API tests with mocks pass.
 
+## M6 — a failed fetch rendered as an empty list (first page converted, open)
+
+### The survey that prompted it
+
+The Admin UI has no offline path, and the reason is not a missing cache but a
+pattern: **43 `LocalResource` fetches across 21 page components call
+`fetch_x().await.ok()`**. That turns a failed fetch into `None`, and `None` is
+indistinguishable from "this tenant has nothing". A manager with a failing network
+sees an empty table.
+
+The writes are in better shape than the reads: 72 of 84 `spawn_local` blocks handle
+their `Err` and show a toast, and no write result is discarded with `let _ =`. So the
+problem is specifically on the read path.
+
+Two further findings from the same survey, neither caused by this work:
+
+- `error_boundary.rs` exists and is never mounted. Zero `<ErrorBoundary>` in the
+  application, so a route that fails renders nothing at all.
+- 45 hardcoded German strings in six files, 20 of them in `backup.rs`, in a UI with
+  ten translated languages. `api.rs:46` is one: `"Sitzung abgelaufen. Bitte neu
+  anmelden."`
+
+### Why the order list was the right first page
+
+`worker_tasks.rs` already separates loading, error and empty into three states and is
+the model for the rest. `orders.rs` backs `/tasks` — the manager's order list — and
+had `set_load_error` nowhere: its `error` signal existed but was only used for form
+validation, so a failed load produced no error state at all.
+
+It now has:
+
+- `orders: Option<Vec<OrderDto>>`, `None` until a fetch succeeds and `None` again on
+  failure, so the empty branch is only reachable with data that actually came from
+  the server;
+- a separate `load_error`, checked **before** the empty branch;
+- a retry button that bumps a reload counter, because a worker in the field cannot
+  navigate away to retry;
+- three i18n keys in all ten languages.
+
+The ordering is the whole fix and it is asserted as such. Checking emptiness first
+defeats separate error storage, because the error never gets shown. Swapping the two
+branches makes `error_before_empty` fail — verified by doing it.
+
+Sites are fetched separately and a failure there does not blank the list, which is
+the page's purpose.
+
+### What remains
+
+- [ ] **M6 — 42 fetches in 20 files still discard their error** — the pattern is
+      mechanical and each conversion is ~40 lines. `orders.rs` is the template.
+- [ ] **M7 — `ErrorBoundary` is never mounted** — mount it around the routed content
+      so a failed route shows something.
+- [ ] **M8 — 45 German strings bypass i18n** — start with `backup.rs`.
+
 ## M3 — the WASM build failed on feature-gated imports (fixed 2026-10-03)
 
 The admin UI depends on `agrocore-logging` with `default-features = false`, so the

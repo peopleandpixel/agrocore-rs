@@ -1,4 +1,40 @@
 _version: 2
+orders_load_failed:
+  en: The order list could not be loaded
+  de: Die Aufgabenliste konnte nicht geladen werden
+  es: No se pudo cargar la lista de tareas
+  fr: La liste des tâches n'a pas pu être chargée
+  pt: Não foi possível carregar a lista de tarefas
+  it: Impossibile caricare l'elenco delle attività
+  pl: Nie udało się wczytać listy zadań
+  ro: Lista de sarcini nu a putut fi încărcată
+  uk: Не вдалося завантажити список завдань
+  nl: De takenlijst kon niet worden geladen
+
+retry:
+  en: Retry
+  de: Erneut versuchen
+  es: Reintentar
+  fr: Réessayer
+  pt: Tentar novamente
+  it: Riprova
+  pl: Spróbuj ponownie
+  ro: Reîncearcă
+  uk: Повторити
+  nl: Opnieuw proberen
+
+no_orders_yet:
+  en: No orders yet
+  de: Noch keine Aufgaben
+  es: Aún no hay tareas
+  fr: Aucune tâche pour le moment
+  pt: Ainda não há tarefas
+  it: Nessuna attività
+  pl: Brak zadań
+  ro: Încă nicio sarcină
+  uk: Ще немає завдань
+  nl: Nog geen taken
+
 setup_title:
   en: Initial Setup
   de: Erstkonfiguration

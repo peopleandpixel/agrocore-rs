@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.47.0] - 2026-10-03
+
+M6, first page — a failed fetch rendered as an empty list.
+
+The survey that prompted it: **43 `LocalResource` fetches across 21 page components
+call `fetch_x().await.ok()`**. That turns a failure into `None`, and `None` is
+indistinguishable from "this tenant has nothing".
+
+The writes are better than the reads — 72 of 84 `spawn_local` blocks handle their
+`Err`, and no write result is discarded — so the defect is on the read path.
+
+`worker_tasks.rs` already separated the three states and became the model.
+`orders.rs`, which backs `/tasks`, had `set_load_error` nowhere: its `error` signal
+existed but was used only for form validation, so a failed load produced no error
+state at all. It now has separate `orders` / `loading` / `load_error` signals, a
+retry that bumps a reload counter, and three i18n keys in all ten languages.
+
+The ordering is the fix and it is asserted as such — checking emptiness first
+defeats separate error storage, because the error never gets shown. Verified by
+swapping the two branches: `error_before_empty` fails.
+
+Two further findings from the same survey, unrelated to this fix and recorded rather
+than dropped: `error_boundary.rs` exists and is never mounted (zero `<ErrorBoundary>`
+in the application), and 45 hardcoded German strings bypass the ten-language i18n,
+20 of them in `backup.rs`.
+
+Gates: fmt, clippy -D warnings, the WASM build, and
+`cargo test --workspace --features=mocks --no-fail-fast` under `RUSTFLAGS='-D warnings'`.
+
 ## [0.46.0] - 2026-10-03
 
 M5 — the `mocks` test build failed on unused imports. A consequence of the M1 fix
