@@ -1,14 +1,10 @@
 mod common;
 
 use actix_web::{App, http::StatusCode, http::header, test, web};
-use agrocore_api::{AppState, handlers::configure};
-use agrocore_domain::TenantId;
-use agrocore_domain::entities::livestock::{Animal, AnimalSpecies, AnimalStatus, TreatmentRecord};
+use agrocore_api::handlers::configure;
+use agrocore_domain::entities::livestock::{Animal, TreatmentRecord};
 use agrocore_domain::repositories::{MockAnimalRepository, PaginatedResponse};
-use agrocore_infrastructure::{Database, MockDatabase};
 use chrono::Utc;
-use jsonwebtoken::{EncodingKey, Header, encode};
-use serde::Serialize;
 use std::future::ready;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -52,8 +48,7 @@ async fn test_list_animals() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.animal_repo = Some(Arc::new(animal_repo));
+    let mock_db = crate::common::db_with(|db| db.animal_repo = Some(Arc::new(animal_repo)));
 
     let state = crate::common::state_with(mock_db);
 
@@ -99,8 +94,7 @@ async fn test_add_treatment() {
         .expect_add_treatment()
         .returning(move |_, _, _| Box::pin(ready(Ok(true))));
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.animal_repo = Some(Arc::new(animal_repo));
+    let mock_db = crate::common::db_with(|db| db.animal_repo = Some(Arc::new(animal_repo)));
 
     let state = crate::common::state_with(mock_db);
 

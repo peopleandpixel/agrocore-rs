@@ -10,13 +10,15 @@
 //! These tests drive the real handler through a mocked user repository, so they
 //! assert the authorisation and the side effects, not a copy of the rule.
 
+mod common;
+
 use actix_web::{App, http::StatusCode, http::header, test, web};
 use agrocore_api::{AppState, handlers::configure};
 use agrocore_domain::TenantId;
 use agrocore_domain::entities::compliance::CreateAuditLogDto;
 use agrocore_domain::entities::compliance::{AuditAction, AuditLog};
 use agrocore_domain::entities::user::{User, UserRole};
-use agrocore_infrastructure::{Database, MockDatabase};
+use agrocore_infrastructure::Database;
 use chrono::Utc;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::Serialize;
@@ -37,8 +39,6 @@ struct TestClaims {
 struct DecodedClaims {
     sub: String,
     tenant_id: String,
-    roles: Vec<String>,
-    jti: String,
 }
 
 fn sign(sub: &str, tenant_id: &str, roles: Vec<&str>, jti: &str) -> String {
@@ -118,9 +118,10 @@ fn state_for_target(
         .expect_create()
         .returning(|_tid, dto| Box::pin(ready(Ok(audit_log_from(dto)))));
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.user_repo = Some(Arc::new(repo));
-    mock_db.audit_log_repo = Some(Arc::new(audit_repo));
+    let mock_db = crate::common::db_with(|db| {
+        db.user_repo = Some(Arc::new(repo));
+        db.audit_log_repo = Some(Arc::new(audit_repo));
+    });
 
     let revocation = Arc::new(agrocore_api::middleware::TokenRevocationList::new());
     let metrics_registry = prometheus::Registry::new();
@@ -368,9 +369,10 @@ async fn impersonating_is_recorded_in_the_audit_log() {
         .expect_find_by_id()
         .returning(move |_t, _i| Box::pin(ready(Ok(Some(found.clone())))));
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.user_repo = Some(Arc::new(user_repo));
-    mock_db.audit_log_repo = Some(Arc::new(audit_repo));
+    let mock_db = crate::common::db_with(|db| {
+        db.user_repo = Some(Arc::new(user_repo));
+        db.audit_log_repo = Some(Arc::new(audit_repo));
+    });
 
     let metrics_registry = prometheus::Registry::new();
     let state = AppState {

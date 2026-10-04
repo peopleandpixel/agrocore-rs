@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.46.0] - 2026-10-03
+
+M5 — the `mocks` test build failed on unused imports. A consequence of the M1 fix
+and a mistake rather than a pre-existing defect: replacing thirty `AppState`
+literals with `state_with(mock_db)` calls left behind the imports those literals had
+needed — `AppState`, `Database`, `EncodingKey`, `Header`, `encode`, `Serialize` —
+four or five per file across ten files.
+
+**The gate was wrong, not just the code.** Local runs used
+`cargo clippy --workspace --all-targets` without `--features mocks`. Every one of
+the eleven targets has `required-features = ["mocks"]`, so Clippy never compiled
+them; ten files and 139 tests sat outside the gate I had been reporting as clean.
+GitHub sets `RUSTFLAGS: "-D warnings"` workflow-wide, so its test job rejects what
+`cargo test` would otherwise have accepted.
+
+Two more lints, both mine: an `if` with identical branches in
+`weather_fetch_tests.rs`, and a runtime assertion between two `const`s in
+`payload_limit_tests.rs` — which can never fail, so it moved into a `const _: ()`
+block checked at compile time.
+
+`field_reassign_with_default` appeared thirty-one times, including in two files
+written this week. `crate::common::db_with(|db| db.repo = Some(...))` replaces the
+pattern; the builder lives in the shared module because that is where the
+reasoning belongs.
+
+Verified with the exact CI commands: `cargo test --workspace --features=mocks
+--no-fail-fast` exits 0 with zero failed results under `RUSTFLAGS='-D warnings'`,
+as do `cargo clippy --workspace -- -D warnings` and the WASM build. 139 API tests
+with mocks pass.
+
 ## [0.45.0] - 2026-10-03
 
 M3 — the admin UI's WASM build failed. The UI depends on `agrocore-logging` with

@@ -1,16 +1,13 @@
 mod common;
 
 use actix_web::{App, http::StatusCode, http::header, test, web};
-use agrocore_api::{AppState, handlers::configure};
+use agrocore_api::handlers::configure;
 use agrocore_domain::TenantId;
 use agrocore_domain::entities::olive::{OilGrade, OliveGrove, OliveOilRecord};
 use agrocore_domain::repositories::{
     MockOliveGroveRepo, MockOliveOilRecordRepo, PaginatedResponse,
 };
-use agrocore_infrastructure::{Database, MockDatabase};
 use chrono::Utc;
-use jsonwebtoken::{EncodingKey, Header, encode};
-use serde::Serialize;
 use std::future::ready;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -50,8 +47,7 @@ async fn test_list_olive_groves() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.olive_grove_repo = Some(Arc::new(grove_repo));
+    let mock_db = crate::common::db_with(|db| db.olive_grove_repo = Some(Arc::new(grove_repo)));
 
     let state = crate::common::state_with(mock_db);
 
@@ -112,8 +108,8 @@ async fn test_list_olive_oil_records() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.olive_oil_record_repo = Some(Arc::new(record_repo));
+    let mock_db =
+        crate::common::db_with(|db| db.olive_oil_record_repo = Some(Arc::new(record_repo)));
 
     let state = crate::common::state_with(mock_db);
 

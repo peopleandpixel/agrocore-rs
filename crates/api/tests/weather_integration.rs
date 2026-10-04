@@ -1,7 +1,7 @@
 mod common;
 
 use actix_web::{App, http::StatusCode, http::header, test, web};
-use agrocore_api::{AppState, handlers::configure};
+use agrocore_api::handlers::configure;
 use agrocore_domain::TenantId;
 use agrocore_domain::entities::BbchStage;
 use agrocore_domain::entities::weather::{
@@ -10,10 +10,7 @@ use agrocore_domain::entities::weather::{
 use agrocore_domain::repositories::{
     MockPhenologyRecordRepo, MockWeatherDataRepo, MockWeatherStationRepo, PaginatedResponse,
 };
-use agrocore_infrastructure::{Database, MockDatabase};
 use chrono::Utc;
-use jsonwebtoken::{EncodingKey, Header, encode};
-use serde::Serialize;
 use std::future::ready;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -51,8 +48,8 @@ async fn test_list_weather_stations() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.weather_station_repo = Some(Arc::new(station_repo));
+    let mock_db =
+        crate::common::db_with(|db| db.weather_station_repo = Some(Arc::new(station_repo)));
 
     let state = crate::common::state_with(mock_db);
 
@@ -108,8 +105,7 @@ async fn test_list_weather_data() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.weather_data_repo = Some(Arc::new(data_repo));
+    let mock_db = crate::common::db_with(|db| db.weather_data_repo = Some(Arc::new(data_repo)));
 
     let state = crate::common::state_with(mock_db);
 
@@ -160,8 +156,8 @@ async fn test_list_phenology() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.phenology_record_repo = Some(Arc::new(pheno_repo));
+    let mock_db =
+        crate::common::db_with(|db| db.phenology_record_repo = Some(Arc::new(pheno_repo)));
 
     let state = crate::common::state_with(mock_db);
 

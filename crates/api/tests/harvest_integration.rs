@@ -1,7 +1,7 @@
 mod common;
 
 use actix_web::{App, http::StatusCode, http::header, test, web};
-use agrocore_api::{AppState, handlers::configure};
+use agrocore_api::handlers::configure;
 use agrocore_domain::TenantId;
 use agrocore_domain::entities::harvest::{
     ColdChainLog, HarvestDelivery, HarvestLot, HarvestSeason, LotStatus,
@@ -10,10 +10,7 @@ use agrocore_domain::repositories::{
     MockColdChainLogRepo, MockHarvestDeliveryRepo, MockHarvestLotRepo, MockHarvestSeasonRepo,
     PaginatedResponse,
 };
-use agrocore_infrastructure::{Database, MockDatabase};
 use chrono::Utc;
-use jsonwebtoken::{EncodingKey, Header, encode};
-use serde::Serialize;
 use std::future::ready;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -46,8 +43,7 @@ async fn test_list_harvest_seasons() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.harvest_season_repo = Some(Arc::new(season_repo));
+    let mock_db = crate::common::db_with(|db| db.harvest_season_repo = Some(Arc::new(season_repo)));
 
     let state = crate::common::state_with(mock_db);
 
@@ -100,8 +96,7 @@ async fn test_list_harvest_lots() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.harvest_lot_repo = Some(Arc::new(lot_repo));
+    let mock_db = crate::common::db_with(|db| db.harvest_lot_repo = Some(Arc::new(lot_repo)));
 
     let state = crate::common::state_with(mock_db);
 
@@ -155,8 +150,7 @@ async fn test_list_harvest_deliveries() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.harvest_delivery_repo = Some(Arc::new(del_repo));
+    let mock_db = crate::common::db_with(|db| db.harvest_delivery_repo = Some(Arc::new(del_repo)));
 
     let state = crate::common::state_with(mock_db);
 
@@ -206,8 +200,7 @@ async fn test_list_cold_chain_logs() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.cold_chain_log_repo = Some(Arc::new(cold_repo));
+    let mock_db = crate::common::db_with(|db| db.cold_chain_log_repo = Some(Arc::new(cold_repo)));
 
     let state = crate::common::state_with(mock_db);
 

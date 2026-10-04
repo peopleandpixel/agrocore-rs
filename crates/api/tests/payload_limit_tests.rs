@@ -21,7 +21,7 @@
 
 use actix_web::{App, http::StatusCode, http::header, test as awtest, web};
 use agrocore_api::{AppState, MAX_IMPORT_PAYLOAD, MAX_JSON_PAYLOAD, handlers::configure};
-use agrocore_infrastructure::{Database, MockDatabase};
+use agrocore_infrastructure::Database;
 use jsonwebtoken::{EncodingKey, Header, encode};
 use serde::Serialize;
 use std::sync::Arc;
@@ -54,7 +54,7 @@ fn signed_token() -> String {
 fn state() -> AppState {
     let metrics_registry = prometheus::Registry::new();
     AppState {
-        db: Arc::new(Database::Mock(Box::new(MockDatabase::default()))),
+        db: Arc::new(Database::Mock(Box::default())),
         messaging: None,
         lpis_registry: Arc::new(agrocore_lpis_providers::create_default_registry()),
         token_revocation: Arc::new(agrocore_api::middleware::TokenRevocationList::new()),
@@ -233,16 +233,31 @@ async fn a_small_body_is_not_rejected_for_size() {
     );
 }
 
-/// The two constants are ordered. If `MAX_IMPORT_PAYLOAD` were ever set below the
-/// global limit, the imports would be *more* restricted than the rest of the API,
-/// which is the opposite of the intent.
+/// The two constants are what the surrounding comment says they are, and the import
+/// ceiling is above the global one.
+///
+/// The ordering is checked in a `const` block, so it is verified when the crate is
+/// compiled rather than when the test runs: a relationship between two constants
+/// cannot fail at runtime, and clippy's `assertions_on_constants` is right that a
+/// plain assertion over them is a test that can never fail. If either value is
+/// changed without the reasoning being revisited, this stops compiling.
+const _: () = {
+    assert!(MAX_IMPORT_PAYLOAD > MAX_JSON_PAYLOAD);
+};
+
+/// The values themselves are pinned here because the boundary tests above generate
+/// bodies at them — they are the values that matter, and a change to a constant
+/// would otherwise silently change what those tests exercise.
 #[test]
-fn the_import_limit_is_larger_than_the_global_one() {
-    assert!(
-        MAX_IMPORT_PAYLOAD > MAX_JSON_PAYLOAD,
-        "the import ceiling ({MAX_IMPORT_PAYLOAD}) must be above the global one \\
-         ({MAX_JSON_PAYLOAD})"
+fn the_limits_are_the_documented_ones() {
+    assert_eq!(
+        MAX_JSON_PAYLOAD,
+        2 * 1024 * 1024,
+        "the global limit changed"
     );
-    assert_eq!(MAX_JSON_PAYLOAD, 2 * 1024 * 1024);
-    assert_eq!(MAX_IMPORT_PAYLOAD, 64 * 1024 * 1024);
+    assert_eq!(
+        MAX_IMPORT_PAYLOAD,
+        64 * 1024 * 1024,
+        "the import limit changed"
+    );
 }

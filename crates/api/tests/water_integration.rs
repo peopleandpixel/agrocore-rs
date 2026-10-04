@@ -1,7 +1,7 @@
 mod common;
 
 use actix_web::{App, http::StatusCode, http::header, test, web};
-use agrocore_api::{AppState, handlers::configure};
+use agrocore_api::handlers::configure;
 use agrocore_domain::TenantId;
 use agrocore_domain::entities::water::{
     IrrigationMethod, WaterQuota, WaterSource, WaterSourceType, WaterUsage,
@@ -9,10 +9,7 @@ use agrocore_domain::entities::water::{
 use agrocore_domain::repositories::{
     MockWaterQuotaRepo, MockWaterSourceRepo, MockWaterUsageRepo, PaginatedResponse,
 };
-use agrocore_infrastructure::{Database, MockDatabase};
 use chrono::Utc;
-use jsonwebtoken::{EncodingKey, Header, encode};
-use serde::Serialize;
 use std::future::ready;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -48,8 +45,7 @@ async fn test_list_water_sources() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.water_source_repo = Some(Arc::new(source_repo));
+    let mock_db = crate::common::db_with(|db| db.water_source_repo = Some(Arc::new(source_repo)));
 
     let state = crate::common::state_with(mock_db);
 
@@ -99,8 +95,7 @@ async fn test_list_water_usage() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.water_usage_repo = Some(Arc::new(usage_repo));
+    let mock_db = crate::common::db_with(|db| db.water_usage_repo = Some(Arc::new(usage_repo)));
 
     let state = crate::common::state_with(mock_db);
 
@@ -152,8 +147,7 @@ async fn test_list_water_quotas() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.water_quota_repo = Some(Arc::new(quota_repo));
+    let mock_db = crate::common::db_with(|db| db.water_quota_repo = Some(Arc::new(quota_repo)));
 
     let state = crate::common::state_with(mock_db);
 

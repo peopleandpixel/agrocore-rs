@@ -28,7 +28,6 @@ mod common;
 
 use actix_web::{App, http::StatusCode, http::header, test, web};
 use agrocore_api::handlers::configure;
-use agrocore_infrastructure::MockDatabase;
 use uuid::Uuid;
 
 fn app() -> App<
@@ -42,7 +41,7 @@ fn app() -> App<
 > {
     App::new()
         .app_data(web::Data::new(crate::common::state_with(
-            MockDatabase::default(),
+            crate::common::db_with(|_| {}),
         )))
         .configure(configure)
 }

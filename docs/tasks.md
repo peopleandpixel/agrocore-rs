@@ -520,6 +520,58 @@ payload is read and the test would have passed for the wrong reason. Worth recor
 because it is the shape of a false pass — a test that looks like it covers the size
 limit and actually covers the routing table.
 
+## M5 — the `mocks` test build failed on unused imports (fixed 2026-10-03)
+
+A direct consequence of M1, and a mistake rather than a pre-existing defect.
+
+The M1 fix replaced thirty `AppState { ... }` literals with
+`crate::common::state_with(mock_db)` calls, but left the imports each literal had
+needed: `AppState`, `Database`, `EncodingKey`, `Header`, `encode`, `serde::Serialize`.
+Ten files each had four or five of them.
+
+This was invisible locally because I ran `cargo clippy --workspace --all-targets`
+without `--features mocks`. Every one of the eleven targets has
+`required-features = ["mocks"]`, so without the flag Clippy never compiled them.
+GitHub sets `RUSTFLAGS: "-D warnings"` workflow-wide, so its test job rejects the
+unused imports even though `cargo test` would otherwise have run.
+
+**The gate was wrong, not just the code.** Every local report of "clippy clean"
+should have included `--features mocks`; ten test files and 139 tests were outside
+it.
+
+Two more lints, both of them mine rather than inherited:
+
+- `weather_fetch_tests.rs` had an `if status == OK { read_body } else { read_body }`
+  with identical branches — a leftover from restructuring.
+- `payload_limit_tests.rs` asserted a relationship between two `const`s at runtime.
+  That can never fail, so it was moved into a `const _: () = { assert!(..) }` block
+  where it is checked at compile time, and the values themselves are pinned in a
+  separate test with a message, because the boundary tests generate bodies at them.
+
+### `field_reassign_with_default` at thirty-one sites
+
+`let mut mock_db = MockDatabase::default(); mock_db.repo = Some(...)` trips Clippy's
+`field_reassign_with_default`, and the pattern appeared thirty-one times across ten
+files — including two I had written that week.
+
+`crate::common::db_with(|db| db.repo = Some(...))` replaces it. The builder exists in
+`tests/common/mod.rs` rather than at each site because that is where the reasoning
+belongs: the value is known before the binding exists, so the binding never should
+have been mutable.
+
+### Verified with the exact CI commands
+
+```
+RUSTFLAGS='-D warnings' cargo test --workspace --features=mocks --no-fail-fast
+    → exit 0, 0 errors, 0 failed test results
+
+RUSTFLAGS='-D warnings' cargo clippy --workspace -- -D warnings   → 0 errors
+RUSTFLAGS='-D warnings' cargo build --target wasm32-unknown-unknown \
+    --release --lib -p admin-ui                                   → exit 0
+```
+
+139 API tests with mocks pass.
+
 ## M3 — the WASM build failed on feature-gated imports (fixed 2026-10-03)
 
 The admin UI depends on `agrocore-logging` with `default-features = false`, so the

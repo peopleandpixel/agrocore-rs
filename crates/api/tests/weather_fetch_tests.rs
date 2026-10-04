@@ -16,7 +16,7 @@
 
 use actix_web::{App, http::StatusCode, http::header, test as awtest, web};
 use agrocore_api::{AppState, handlers::configure};
-use agrocore_infrastructure::{Database, MockDatabase};
+use agrocore_infrastructure::Database;
 use jsonwebtoken::{EncodingKey, Header, encode};
 use serde::Serialize;
 use std::sync::Arc;
@@ -49,7 +49,7 @@ fn signed_token(roles: Vec<&str>) -> String {
 fn state() -> AppState {
     let metrics_registry = prometheus::Registry::new();
     AppState {
-        db: Arc::new(Database::Mock(Box::new(MockDatabase::default()))),
+        db: Arc::new(Database::Mock(Box::default())),
         messaging: None,
         lpis_registry: Arc::new(agrocore_lpis_providers::create_default_registry()),
         token_revocation: Arc::new(agrocore_api::middleware::TokenRevocationList::new()),
@@ -122,11 +122,7 @@ async fn the_three_real_providers_are_accepted() {
         .await;
 
         let status = resp.status();
-        let body: serde_json::Value = if status == StatusCode::OK {
-            awtest::read_body_json(resp).await
-        } else {
-            awtest::read_body_json(resp).await
-        };
+        let body: serde_json::Value = awtest::read_body_json(resp).await;
         let message = body["message"].as_str().unwrap_or_default();
 
         assert!(

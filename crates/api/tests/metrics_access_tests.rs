@@ -19,7 +19,7 @@
 
 use actix_web::{App, http::StatusCode, http::header, test, web};
 use agrocore_api::{AppState, metrics_routes};
-use agrocore_infrastructure::{Database, MockDatabase};
+use agrocore_infrastructure::Database;
 use jsonwebtoken::{EncodingKey, Header, encode};
 use prometheus::Registry;
 use serde::Serialize;
@@ -62,7 +62,7 @@ fn peer_addr() -> SocketAddr {
 fn state() -> AppState {
     let metrics_registry = Registry::new();
     AppState {
-        db: Arc::new(Database::Mock(Box::new(MockDatabase::default()))),
+        db: Arc::new(Database::Mock(Box::default())),
         // `None` rather than `new_mock()`: that helper panics by design — it is a
         // placeholder for a mock that was never written, and every caller that
         // constructs `AppState` has to work around it. The metrics handlers do not

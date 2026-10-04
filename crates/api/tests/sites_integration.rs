@@ -1,15 +1,11 @@
 mod common;
 
 use actix_web::{App, http::StatusCode, http::header, test, web};
-use agrocore_api::{AppState, handlers::configure};
-use agrocore_domain::TenantId;
+use agrocore_api::handlers::configure;
 use agrocore_domain::entities::site::Site;
 use agrocore_domain::entities::{CropType, SiteType};
 use agrocore_domain::repositories::{MockSiteRepository, PaginatedResponse};
-use agrocore_infrastructure::{Database, MockDatabase};
 use chrono::Utc;
-use jsonwebtoken::{EncodingKey, Header, encode};
-use serde::Serialize;
 use std::future::ready;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -72,8 +68,7 @@ async fn test_list_sites() {
             })))
         });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.site_repo = Some(Arc::new(site_repo));
+    let mock_db = crate::common::db_with(|db| db.site_repo = Some(Arc::new(site_repo)));
 
     let state = crate::common::state_with(mock_db);
 

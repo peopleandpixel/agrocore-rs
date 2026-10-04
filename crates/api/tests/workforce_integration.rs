@@ -1,7 +1,7 @@
 mod common;
 
 use actix_web::{App, http::StatusCode, http::header, test, web};
-use agrocore_api::{AppState, handlers::configure};
+use agrocore_api::handlers::configure;
 use agrocore_domain::TenantId;
 use agrocore_domain::entities::worker_task_status::{WorkerTaskStatus, WorkerTaskStatusType};
 use agrocore_domain::entities::workforce::{
@@ -11,10 +11,7 @@ use agrocore_domain::repositories::{
     MockOrderRepository, MockSpatialObjectRepository, MockWorkerLocationRepo, MockWorkerRepo,
     MockWorkerTaskStatusRepository, PaginatedResponse,
 };
-use agrocore_infrastructure::{Database, MockDatabase};
 use chrono::Utc;
-use jsonwebtoken::{EncodingKey, Header, encode};
-use serde::Serialize;
 use std::future::ready;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -55,8 +52,7 @@ async fn test_list_workers_with_pagination_and_tenant_filtering() {
             })))
         });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.worker_repo = Some(Arc::new(worker_repo));
+    let mock_db = crate::common::db_with(|db| db.worker_repo = Some(Arc::new(worker_repo)));
 
     let state = crate::common::state_with(mock_db);
 
@@ -118,8 +114,7 @@ async fn test_create_worker_authorization() {
         .expect_create()
         .returning(move |_, _, _| Box::pin(ready(Ok(worker.clone()))));
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.worker_repo = Some(Arc::new(worker_repo));
+    let mock_db = crate::common::db_with(|db| db.worker_repo = Some(Arc::new(worker_repo)));
 
     let state = crate::common::state_with(mock_db);
 
@@ -180,8 +175,8 @@ async fn test_report_location() {
         .expect_find_assigned_to_worker()
         .returning(|_, _| Box::pin(ready(Ok(vec![]))));
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.worker_location_repo = Some(Arc::new(location_repo));
+    let mut mock_db =
+        crate::common::db_with(|db| db.worker_location_repo = Some(Arc::new(location_repo)));
     mock_db.spatial_object_repo = Some(Arc::new(spatial_repo));
     mock_db.order_repo = Some(Arc::new(order_repo));
 
@@ -269,8 +264,8 @@ async fn test_worker_task_status_lifecycle() {
             }))))
         });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.worker_task_status_repo = Some(Arc::new(status_repo));
+    let mock_db =
+        crate::common::db_with(|db| db.worker_task_status_repo = Some(Arc::new(status_repo)));
 
     let state = crate::common::state_with(mock_db);
 
@@ -288,7 +283,7 @@ async fn test_worker_task_status_lifecycle() {
     let req = test::TestRequest::post()
         .uri(&format!("/api/v1/workforce/tasks/{}/status", task_id))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
-        .set_json(&serde_json::json!({
+        .set_json(serde_json::json!({
             "task_id": task_id,
             "worker_id": worker_id,
             "tenant_id": tenant_id,
@@ -305,7 +300,7 @@ async fn test_worker_task_status_lifecycle() {
             task_id, worker_id
         ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
-        .set_json(&serde_json::json!({
+        .set_json(serde_json::json!({
             "status": "started"
         }))
         .to_request();

@@ -74,3 +74,55 @@ pub fn signed_token(sub: &str, tenant_id: &str, roles: &[&str]) -> String {
     )
     .expect("token")
 }
+
+/// Wraps a mock database so its repository slots can be filled in the initializer.
+///
+/// Every integration test in this suite needs exactly this: build a
+/// `MockDatabase`, give it one repository, hand it to the app. Written as
+///
+/// ```ignore
+/// let mut mock_db = MockDatabase::default();
+/// mock_db.water_source_repo = Some(Arc::new(repo));
+/// ```
+///
+/// that trips clippy's `field_reassign_with_default` forty-one times across ten
+/// files — the lint is right, since the value is known before the binding exists.
+///
+/// The setter is deliberately private to this module's callers: a test that adds a
+/// second repository uses the setter again, and the struct-update form
+/// (`MockDatabase { a: .., ..Default::default() }`) stays available for the rare
+/// test that needs two at once.
+pub struct MockDbBuilder(MockDatabase);
+
+impl MockDbBuilder {
+    /// Starts a builder with no repositories set.
+    pub fn new() -> Self {
+        Self(MockDatabase::default())
+    }
+
+    /// Sets one repository slot.
+    pub fn with(mut self, set: impl FnOnce(&mut MockDatabase)) -> Self {
+        set(&mut self.0);
+        self
+    }
+
+    /// Consumes the builder, producing the database the app state is built around.
+    pub fn build(self) -> MockDatabase {
+        self.0
+    }
+}
+
+impl Default for MockDbBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Builds a mock database with a single repository configured.
+///
+/// ```ignore
+/// let mock_db = crate::common::db_with(|db| db.water_source_repo = Some(Arc::new(repo)));
+/// ```
+pub fn db_with(set: impl FnOnce(&mut MockDatabase)) -> MockDatabase {
+    MockDbBuilder::new().with(set).build()
+}

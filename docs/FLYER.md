@@ -3,7 +3,7 @@
 
 ---
 
-### Version 0.45.0 | Built in Rust | GPL-3.0 License
+### Version 0.46.0 | Built in Rust | GPL-3.0 License
 
 **AgroCore-RS** is a unified farm operations platform that consolidates field management, task planning, workforce coordination, IoT sensor integration, compliance tracking, harvest logistics, livestock management, and financial reporting into a single, local-first system.
 
@@ -193,7 +193,7 @@ Systemd unit files included in `systemd_units/` for production service managemen
 
 ---
 
-## CURRENT VERSION: 0.45.0
+## CURRENT VERSION: 0.46.0
 
 ### Recent Highlights
 - **Server-Side Settings** — typed key/value configuration in PostgreSQL with

@@ -1,7 +1,7 @@
 mod common;
 
 use actix_web::{App, http::StatusCode, http::header, test, web};
-use agrocore_api::{AppState, handlers::configure};
+use agrocore_api::handlers::configure;
 use agrocore_domain::TenantId;
 use agrocore_domain::entities::finance::{
     CostCenter, CostCenterType, FinancialRecord, FinancialRecordType, PACApplication, PACStatus,
@@ -9,10 +9,7 @@ use agrocore_domain::entities::finance::{
 use agrocore_domain::repositories::{
     MockCostCenterRepo, MockFinancialRecordRepo, MockPACApplicationRepo, PaginatedResponse,
 };
-use agrocore_infrastructure::{Database, MockDatabase};
 use chrono::Utc;
-use jsonwebtoken::{EncodingKey, Header, encode};
-use serde::Serialize;
 use std::future::ready;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -47,8 +44,7 @@ async fn test_list_pac_applications() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.pac_application_repo = Some(Arc::new(pac_repo));
+    let mock_db = crate::common::db_with(|db| db.pac_application_repo = Some(Arc::new(pac_repo)));
 
     let state = crate::common::state_with(mock_db);
 
@@ -98,8 +94,7 @@ async fn test_list_cost_centers() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.cost_center_repo = Some(Arc::new(cc_repo));
+    let mock_db = crate::common::db_with(|db| db.cost_center_repo = Some(Arc::new(cc_repo)));
 
     let state = crate::common::state_with(mock_db);
 
@@ -151,8 +146,7 @@ async fn test_list_financial_records() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.financial_record_repo = Some(Arc::new(fr_repo));
+    let mock_db = crate::common::db_with(|db| db.financial_record_repo = Some(Arc::new(fr_repo)));
 
     let state = crate::common::state_with(mock_db);
 

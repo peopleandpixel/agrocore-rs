@@ -1,7 +1,7 @@
 mod common;
 
 use actix_web::{App, http::StatusCode, http::header, test, web};
-use agrocore_api::{AppState, handlers::configure};
+use agrocore_api::handlers::configure;
 use agrocore_domain::TenantId;
 use agrocore_domain::entities::compliance::{
     AuditAction, AuditLog, ChecklistType, ComplianceChecklist, ComplianceStatus,
@@ -14,10 +14,7 @@ use agrocore_domain::repositories::{
     MockAuditLogRepo, MockComplianceChecklistRepo, MockFertilizerRecordRepo,
     MockPlantProtectionRecordRepo, PaginatedResponse,
 };
-use agrocore_infrastructure::{Database, MockDatabase};
 use chrono::Utc;
-use jsonwebtoken::{EncodingKey, Header, encode};
-use serde::Serialize;
 use std::future::ready;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -51,10 +48,10 @@ async fn test_list_compliance_checklists() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.compliance_checklist_repo = Some(Arc::new(checklist_repo));
+    let mock_db =
+        crate::common::db_with(|db| db.compliance_checklist_repo = Some(Arc::new(checklist_repo)));
 
-    let metrics_registry = prometheus::Registry::new();
+    let _metrics_registry = prometheus::Registry::new();
     let state = crate::common::state_with(mock_db);
 
     let app = test::init_service(
@@ -104,10 +101,9 @@ async fn test_list_audit_logs() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.audit_log_repo = Some(Arc::new(audit_repo));
+    let mock_db = crate::common::db_with(|db| db.audit_log_repo = Some(Arc::new(audit_repo)));
 
-    let metrics_registry = prometheus::Registry::new();
+    let _metrics_registry = prometheus::Registry::new();
     let state = crate::common::state_with(mock_db);
 
     let app = test::init_service(
@@ -151,10 +147,10 @@ async fn test_applicator_license_crud() {
         .expect_find_all_applicator_licenses()
         .returning(move |_| Box::pin(ready(Ok(vec![license.clone()]))));
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.plant_protection_record_repo = Some(Arc::new(plant_repo));
+    let mock_db =
+        crate::common::db_with(|db| db.plant_protection_record_repo = Some(Arc::new(plant_repo)));
 
-    let metrics_registry = prometheus::Registry::new();
+    let _metrics_registry = prometheus::Registry::new();
     let state = crate::common::state_with(mock_db);
 
     let app = test::init_service(
@@ -210,10 +206,10 @@ async fn test_plant_protection_record_list() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.plant_protection_record_repo = Some(Arc::new(plant_repo));
+    let mock_db =
+        crate::common::db_with(|db| db.plant_protection_record_repo = Some(Arc::new(plant_repo)));
 
-    let metrics_registry = prometheus::Registry::new();
+    let _metrics_registry = prometheus::Registry::new();
     let state = crate::common::state_with(mock_db);
 
     let app = test::init_service(
@@ -266,10 +262,10 @@ async fn test_fertilizer_record_list() {
         })))
     });
 
-    let mut mock_db = MockDatabase::default();
-    mock_db.fertilizer_record_repo = Some(Arc::new(fert_repo));
+    let mock_db =
+        crate::common::db_with(|db| db.fertilizer_record_repo = Some(Arc::new(fert_repo)));
 
-    let metrics_registry = prometheus::Registry::new();
+    let _metrics_registry = prometheus::Registry::new();
     let state = crate::common::state_with(mock_db);
 
     let app = test::init_service(
