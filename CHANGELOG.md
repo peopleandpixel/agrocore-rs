@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.45.0] - 2026-10-03
+
+M3 — the admin UI's WASM build failed. The UI depends on `agrocore-logging` with
+`default-features = false`, so the crate compiles with neither `dev-console` nor
+`otlp`, and three constructs in `layers.rs` were only valid with a tracing feature
+on.
+
+- `use crate::config::RotationType` and `use crate::error::LoggingError` were
+  unconditional while every use of both sits behind a `cfg`.
+- `init_logging`'s no-features branch ended in `return Ok(...)`, which is only
+  needed while the other `cfg` branches are compiled; clippy's `needless_return`
+  fires when it is the only block.
+
+`cargo check` passed in that configuration before the fix. Only `clippy` and the CI
+build caught it.
+
+Verified: `RUSTFLAGS='-D warnings' cargo build --target wasm32-unknown-unknown
+--release --lib -p admin-ui` exits 0, 1,235,592 byte artefact.
+
+### M4 — a second feature gap, not on the WASM path (open)
+
+`agrocore-domain` does not build without its `sqlx` feature: `entities/site.rs` and
+`entities/spatial/types.rs` import `sqlx::postgres` unconditionally. The crate
+declares `sqlx` as optional for consumers that do not talk to a database, so the
+imports should be gated. Unreachable from the admin UI — it does not depend on
+`domain` — but recorded rather than left to be found again.
+
+Gates: fmt, clippy -D warnings, 308 workspace tests, 0 failures.
+
 ## [0.44.0] - 2026-10-03
 
 M1 — the `mocks` test feature had no coverage at all. `cargo test -p agrocore-api

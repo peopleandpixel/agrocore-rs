@@ -520,6 +520,42 @@ payload is read and the test would have passed for the wrong reason. Worth recor
 because it is the shape of a false pass — a test that looks like it covers the size
 limit and actually covers the routing table.
 
+## M3 — the WASM build failed on feature-gated imports (fixed 2026-10-03)
+
+The admin UI depends on `agrocore-logging` with `default-features = false`, so the
+WASM build compiles that crate with neither `dev-console` nor `otlp`. Three
+constructs in `crates/logging/src/layers.rs` were only valid with a tracing feature
+enabled, and all three fail under `-D warnings` in that configuration:
+
+- `use crate::config::RotationType` and `use crate::error::LoggingError` were
+  unconditional, but every use of both sits behind `#[cfg(feature = "dev-console")]`
+  or `#[cfg(feature = "otlp")]`.
+- `init_logging`'s no-features branch ended in `return Ok(...)`, which is only
+  necessary while the other `cfg` branches are also compiled. With neither feature
+  on it is the sole block, and clippy's `needless_return` fires.
+
+The imports are now gated to match their uses, and the branch returns directly.
+
+`cargo check` passed in this configuration before the fix — only `clippy` and the
+CI build caught it, which is the argument for keeping `-D warnings` in the WASM job
+even though it duplicates the workspace gate.
+
+Verified: `RUSTFLAGS='-D warnings' cargo build --target wasm32-unknown-unknown
+--release --lib -p admin-ui` exits 0 and produces a 1,235,592 byte artefact.
+
+### M4 — `agrocore-domain` does not build without its `sqlx` feature (open)
+
+Found while checking whether M3 was the only feature-gated gap. It is not reachable
+from the admin UI — `admin-ui` pulls `agrocore-shared` with `features = []` and does
+not depend on `agrocore-domain` at all — but `cargo clippy -p agrocore-domain
+--no-default-features` fails with `cannot find module or crate sqlx` in
+`entities/site.rs` and `entities/spatial/types.rs`.
+
+- [ ] Either gate the `sqlx::postgres` imports in `domain` on the feature that
+      actually provides them, or make `sqlx` non-optional. The crate documents an
+      optional `sqlx` feature for consumers that do not talk to a database, so the
+      first is what the design asks for.
+
 ## M1 — eleven API test targets did not compile (fixed 2026-10-03)
 
 `cargo test -p agrocore-api --features mocks` did not build. Eleven targets, six of

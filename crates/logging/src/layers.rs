@@ -1,5 +1,13 @@
-use crate::config::{LoggingConfig, RotationType};
-use crate::error::{LoggingError, LoggingResult};
+// `LoggingConfig` and `LoggingResult` are used by every configuration; the rest are
+// only reached when a tracing feature is on. The admin UI depends on this crate
+// with `default-features = false` for its WASM build, and an unconditional import
+// fails `-D warnings` there even though the file is never executed.
+use crate::config::LoggingConfig;
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
+use crate::config::RotationType;
+#[cfg(any(feature = "dev-console", feature = "otlp"))]
+use crate::error::LoggingError;
+use crate::error::LoggingResult;
 
 #[cfg(any(feature = "dev-console", feature = "otlp"))]
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt as SubscriberExt;
@@ -132,11 +140,15 @@ impl LoggingHandle {
 
 /// Initialize logging based on config
 pub fn init_logging(config: LoggingConfig) -> LoggingResult<LoggingHandle> {
+    // No tracing features enabled - just set up basic log crate.
+    //
+    // The explicit `return` was needed while every other branch was also compiled;
+    // with neither feature on this is the only block left, and clippy's
+    // `needless_return` fires under `-D warnings` in the WASM build.
     #[cfg(not(any(feature = "dev-console", feature = "otlp")))]
     {
-        // No tracing features enabled - just set up basic log crate
         log::set_max_level(config.level.parse().unwrap_or(log::LevelFilter::Info));
-        return Ok(LoggingHandle::new(None));
+        Ok(LoggingHandle::new(None))
     }
 
     #[cfg(all(feature = "dev-console", not(feature = "otlp")))]
