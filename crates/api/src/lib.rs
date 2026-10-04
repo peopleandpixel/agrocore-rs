@@ -215,11 +215,7 @@ pub async fn run_server(
                 openapi::ApiDoc::openapi_with_security(),
             ))
             .configure(handlers::configure)
-            .route("/metrics/db", actix_web::web::get().to(db_metrics_handler))
-            .route(
-                "/metrics/business",
-                actix_web::web::get().to(business_metrics_handler),
-            )
+            .configure(metrics_routes)
             .service(
                 fs::Files::new("/admin", "/var/lib/agrocore/admin-ui")
                     .index_file("index.html")
@@ -233,27 +229,71 @@ pub async fn run_server(
     .await
 }
 
-/// HTTP handler that exposes DB metrics in Prometheus text format at /metrics/db.
-async fn db_metrics_handler(state: web::Data<AppState>) -> actix_web::HttpResponse {
-    let encoder = prometheus::TextEncoder::new();
-    let mf = state.metrics_registry.gather();
-    match encoder.encode_to_string(&mf) {
-        Ok(output) => actix_web::HttpResponse::Ok().body(output),
-        Err(e) => {
-            logging_error!("Failed to encode DB metrics: {}", e);
-            actix_web::HttpResponse::InternalServerError().body("metrics encode error")
-        }
-    }
+/// Mounts the metrics endpoints.
+///
+/// Public and called from `main`, rather than wired inline, so a test can build the
+/// same scope the server builds. The metrics routes used to be registered directly
+/// on the `App`, outside `handlers::configure`, which meant the route inventory
+/// test could not see them — an unauthenticated endpoint that no test was able to
+/// reach is an endpoint no test could catch.
+pub fn metrics_routes(cfg: &mut web::ServiceConfig) {
+    // Built per call because `Governor` holds per-instance state.
+    let metrics_gov_conf = GovernorConfigBuilder::default()
+        .seconds_per_request(5)
+        .burst_size(12)
+        .finish()
+        .expect("static governor config for the metrics scope");
+
+    cfg.service(
+        web::scope("/metrics")
+            .wrap(Governor::new(&metrics_gov_conf))
+            .route("/db", web::get().to(db_metrics_handler))
+            .route("/business", web::get().to(business_metrics_handler)),
+    );
 }
 
-/// HTTP handler that exposes ALL metrics (DB + business) at /metrics/business.
-async fn business_metrics_handler(state: web::Data<AppState>) -> actix_web::HttpResponse {
+/// Serves the DB metrics in Prometheus text format at `/metrics/db`.
+///
+/// Admin only, and on purpose so: the registry carries per-table query counts and
+/// durations, pool saturation and record counts. It carries no tenant label — the
+/// metric vectors are keyed by query type and table name only — so this is not a
+/// cross-tenant leak, but it is still an operational map of the deployment that has
+/// no business being public. It was registered globally with no extractor at all,
+/// which meant anyone who could reach the port could read it.
+///
+/// The two handlers are identical in output. They are kept separate because
+/// `/metrics/business` is the one a dashboard scrapes and `/metrics/db` the one a
+/// DBA reads during an incident, and the split exists so the expensive gather can
+/// be moved to a cheaper registry later without a routing change.
+pub async fn db_metrics_handler(
+    state: web::Data<AppState>,
+    auth: crate::middleware::AuthExtractor,
+) -> Result<actix_web::HttpResponse, crate::error::ApiError> {
+    auth.require_admin()?;
+
+    Ok(encode_metrics(&state))
+}
+
+/// Serves all metrics — DB and business — at `/metrics/business`.
+pub async fn business_metrics_handler(
+    state: web::Data<AppState>,
+    auth: crate::middleware::AuthExtractor,
+) -> Result<actix_web::HttpResponse, crate::error::ApiError> {
+    auth.require_admin()?;
+
+    Ok(encode_metrics(&state))
+}
+
+/// Gathers the registry and renders it, turning an encoding failure into a 500
+/// that says nothing about the registry's contents.
+fn encode_metrics(state: &AppState) -> actix_web::HttpResponse {
     let encoder = prometheus::TextEncoder::new();
-    let mf = state.metrics_registry.gather();
-    match encoder.encode_to_string(&mf) {
-        Ok(output) => actix_web::HttpResponse::Ok().body(output),
+    match encoder.encode_to_string(&state.metrics_registry.gather()) {
+        Ok(output) => actix_web::HttpResponse::Ok()
+            .insert_header(("Content-Type", "text/plain; version=0.0.4"))
+            .body(output),
         Err(e) => {
-            logging_error!("Failed to encode business metrics: {}", e);
+            logging_error!("Failed to encode metrics: {}", e);
             actix_web::HttpResponse::InternalServerError().body("metrics encode error")
         }
     }

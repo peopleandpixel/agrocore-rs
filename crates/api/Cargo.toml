@@ -25,6 +25,21 @@ name = "reporting_test"
 path = "tests/reporting/mod.rs"
 
 [[test]]
+name = "weather_fetch_test"
+path = "tests/weather_fetch_tests.rs"
+required-features = ["mocks"]
+
+[[test]]
+name = "impersonation_test"
+path = "tests/impersonation_tests.rs"
+required-features = ["mocks"]
+
+[[test]]
+name = "metrics_access_test"
+path = "tests/metrics_access_tests.rs"
+required-features = ["mocks"]
+
+[[test]]
 name = "workforce_test"
 path = "tests/workforce_integration.rs"
 required-features = ["mocks"]
@@ -37,6 +52,7 @@ agrocore-shared = { path = "../shared", features = ["sqlx"] }
 agrocore-lpis-providers = { path = "../lpis-providers" }
 agrocore-messaging = { path = "../messaging" }
 agrocore-backup = { path = "../backup-service" }
+agrocore-weather-service = { path = "../weather-service" }
 actix-web = { workspace = true }
 
 actix-files = { workspace = true }

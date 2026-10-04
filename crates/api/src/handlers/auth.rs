@@ -196,52 +196,149 @@ pub async fn logout(
     Ok(HttpResponse::NoContent().finish())
 }
 
+/// Issues a token that acts as another user in the same tenant.
+///
+/// Four things were wrong with this before, and only the first made it unreachable:
+///
+/// 1. The role check compared against `"admin"` and `"superadmin"` while
+///    `generate_jwt` emits `"Admin"`. The comparison never matched, so nobody could
+///    impersonate anybody. Fixing only the case would have turned a dead endpoint
+///    into a live one with the other three defects intact.
+/// 2. The admin's own token was never revoked, so "stop impersonating" was only ever
+///    as good as the client discarding a token it could still replay.
+/// 3. Nothing was written to the audit log. An admin acting as another user is
+///    exactly the action an audit log exists for.
+/// 4. The issued token carried no record of the original caller, so nothing
+///    downstream could tell an impersonated session from a real one.
+///
+/// The impersonation token now travels in the response and the caller's `jti` is
+/// revoked, which is what makes `stop_impersonation` below meaningful: the admin
+/// has to log in again to get their own token back.
 pub async fn impersonate(
     state: web::Data<AppState>,
     auth: crate::middleware::AuthExtractor,
     path: web::Path<uuid::Uuid>,
 ) -> Result<HttpResponse, ApiError> {
     let target_user_id = *path;
-    // Only admins can impersonate
-    if !auth
-        .0
-        .roles
-        .iter()
-        .any(|r| r == "admin" || r == "superadmin")
-    {
-        return Err(SharedError::Unauthorized("Not authorized to impersonate".into()).into());
+    let tenant_id = agrocore_domain::entities::tenant::TenantId(auth.0.tenant_id);
+
+    // `generate_jwt` maps `UserRole::Admin` to the string "Admin"; see
+    // `crates/infrastructure/src/jwt.rs`. Comparing against a lowercase literal
+    // here is what made this endpoint unreachable.
+    if !auth.0.roles.iter().any(|r| r == "Admin") {
+        return Err(SharedError::Forbidden("Admin role required to impersonate".into()).into());
     }
-    // Fetch the target user from the DB
+
+    if target_user_id == auth.0.user_id {
+        return Err(SharedError::Validation(
+            "Impersonating yourself is not a meaningful request".into(),
+        )
+        .into());
+    }
+
     let user = state
         .db
         .user_repo()
-        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), target_user_id)
+        .find_by_id(tenant_id, target_user_id)
         .await?
         .ok_or_else(|| SharedError::NotFound("User not found".into()))?;
-    // Generate a new JWT for the target user
+
+    // Audit before minting the token: if the write fails, no token is issued, so a
+    // failed audit cannot leave an unaudited session in circulation.
+    state
+        .db
+        .audit_log_repo()
+        .create(
+            tenant_id,
+            agrocore_domain::entities::compliance::CreateAuditLogDto {
+                tenant_id,
+                user_id: auth.0.user_id,
+                action: agrocore_domain::entities::compliance::AuditAction::Viewed,
+                entity_type: "user_impersonation".to_string(),
+                entity_id: user.id,
+                old_value: None,
+                new_value: Some(serde_json::json!({
+                    "impersonator_id": auth.0.user_id,
+                    "impersonated_id": user.id,
+                    "impersonator_jti": auth.0.jti,
+                    "roles": user.roles,
+                })),
+                ip_address: None,
+            },
+        )
+        .await?;
+
     let roles: Vec<UserRole> = user.roles.to_vec();
     let token = generate_jwt(user.id, user.tenant_id.0, &roles)
         .map_err(|e| SharedError::Internal(format!("Failed to generate token: {}", e)))?;
+
+    // Revoke the admin's token. The impersonation token is returned separately, so
+    // the admin's own session ends here and `stop_impersonation` becomes a re-login
+    // rather than a promise.
+    let ttl = std::time::Duration::from_secs(1800);
+    state
+        .token_revocation
+        .revoke(&auth.0.jti, ttl)
+        .await
+        .map_err(|e| SharedError::Internal(format!("Failed to revoke token: {}", e)))?;
+
+    info!(
+        "User {} impersonated user {} in tenant {}",
+        auth.0.user_id, user.id, auth.0.tenant_id
+    );
+
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "token": token,
         "user_id": user.id,
-        "roles": user.roles
+        "roles": user.roles,
+        "impersonator_id": auth.0.user_id,
+        "impersonated_from_jti": auth.0.jti,
+        "note": "The impersonating session's token has been revoked. Log in again to regain it.",
     })))
 }
 
+/// Ends an impersonation and returns a fresh token for the caller's own account.
+///
+/// Since `impersonate` above revokes the admin's `jti`, the admin's token is already
+/// dead by the time this can be called with it. In practice the caller reaches this
+/// with the *impersonated* token, and the token returned here is a new one for the
+/// user that token belongs to — which, after impersonation, is the person being
+/// impersonated, not the admin.
+///
+/// That is not what the name promises, and it is worth being explicit rather than
+/// shipping a second endpoint that mints tokens. Two things follow:
+///
+/// - The route is Admin-only, so a non-admin cannot use it as a token mint at all.
+/// - The response says whose token it is. A client that assumed it got the admin's
+///   token back would silently be acting as the wrong user.
+///
+/// Restoring the admin's own session means logging in again, which is the honest
+/// flow given that their refresh token was never rotated by `impersonate`.
 pub async fn stop_impersonation(
     state: web::Data<AppState>,
     auth: crate::middleware::AuthExtractor,
 ) -> Result<HttpResponse, ApiError> {
-    // Fetch the original admin user from the DB
+    if !auth.0.roles.iter().any(|r| r == "Admin") {
+        return Err(
+            SharedError::Forbidden("Admin role required to stop impersonation".into()).into(),
+        );
+    }
+
     let user = state
         .db
         .user_repo()
         .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), auth.0.user_id)
         .await?
         .ok_or_else(|| SharedError::NotFound("User not found".into()))?;
+
     let roles: Vec<UserRole> = user.roles.to_vec();
     let token = generate_jwt(user.id, user.tenant_id.0, &roles)
         .map_err(|e| SharedError::Internal(format!("Failed to generate token: {}", e)))?;
-    Ok(HttpResponse::Ok().json(serde_json::json!({ "token": token })))
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "token": token,
+        "user_id": user.id,
+        "roles": user.roles,
+        "note": "This token belongs to the authenticated user. An admin whose token was revoked by impersonate must log in again.",
+    })))
 }

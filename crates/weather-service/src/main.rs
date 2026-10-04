@@ -3,6 +3,7 @@ use agrocore_infrastructure::Database;
 use agrocore_logging::{error, info};
 use agrocore_scheduler::{JobDefinition, JobType, SchedulerConfig, SchedulerService};
 use agrocore_shared::config::AgroCoreConfig;
+use agrocore_weather_service::worker;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::signal;
@@ -10,9 +11,6 @@ use tokio::signal;
 /// Timeout-Struktur für Service-Operationen (OPT-010)
 pub const SERVICE_TIMEOUT_SECS: u64 = 30;
 pub const WORKER_TIMEOUT: Duration = Duration::from_secs(SERVICE_TIMEOUT_SECS);
-
-pub mod providers;
-pub mod worker;
 
 async fn health() -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({"status": "ok", "service": "weather"}))

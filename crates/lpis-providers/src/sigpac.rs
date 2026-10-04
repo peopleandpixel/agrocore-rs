@@ -105,6 +105,19 @@ impl SigpacProvider {
         Self { base }
     }
 
+    /// Attaches a response cache to this provider.
+    ///
+    /// `BaseClient::new` sets `cache: None`, and `create_default_registry` used to
+    /// call only `new` — so `get_cached_or_fetch` always took the network branch and
+    /// `with_cache` on `BaseClient` had no caller. Every SIGPAC import therefore
+    /// issued a fresh WFS request to `sigpac.mapa.gob.es`, which is a public service
+    /// with a rate limit.
+    pub fn with_cache(self, cache: std::sync::Arc<crate::cache::LpisCache>) -> Self {
+        Self {
+            base: self.base.with_cache(cache),
+        }
+    }
+
     fn build_query_url(&self, query: &agrocore_shared::lpis::LpisQuery) -> String {
         let mut url = format!(
             "{}?service=WFS&version=2.0.0&request=GetFeature&typeNames=SIGPAC&outputFormat=application/json",

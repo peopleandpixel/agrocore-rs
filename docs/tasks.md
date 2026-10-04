@@ -479,6 +479,105 @@ Three findings worth keeping:
   carry `strum` snake_case but no serde rename and so serialise as the variant
   name, and `LotStatus` is lower-case. Each select was checked against its enum.
 
+## C1/D2/C2/J9/I5 — security and correctness batch (completed 2026-10-03)
+
+### C2 — metrics endpoints had no authentication
+
+`/metrics/db` and `/metrics/business` were registered directly on the `App` in
+`main`, outside `handlers::configure`, with no extractor in the signature. Anyone
+who could reach the port got the whole registry: per-table query counts and
+durations, pool saturation, record counts.
+
+Both now require an Admin. They also had their own Governor scope — 5 s per
+request, burst 12 — because a scrape is a full `gather()` over every metric family,
+and a dashboard polling at the API rate would spend the tenant-facing budget and do
+real work on every request.
+
+The registry carries no tenant label, so this was never a cross-tenant leak. It was
+an unauthenticated operational map of the deployment, and the fix does not
+oversell it.
+
+The routes were moved into a public `metrics_routes` scope so the test can build
+the same scope the server builds. They were previously invisible to the route
+inventory test, which builds its app from `handlers::configure`.
+
+### C1 — 5xx bodies carried database internals
+
+`ApiError::error_response` rendered `self.0.to_string()` for every status. For a
+500 that string is the `Display` of `sqlx::Error`, which names the table, the
+column, the violated constraint and — for a failed decode — the Rust type expected.
+It also changes whenever the schema does, so it was not reliably parseable.
+
+A 5xx body now says only that an internal error occurred and points at the log.
+4xx messages are unchanged, because they are authored and clients read them.
+`NotImplemented` keeps a specific 501 message — and now actually returns 501; it
+returned 500, which the audit had not flagged.
+
+### D2 — impersonation was unreachable, and three defects sat behind it
+
+`impersonate` compared roles against `"admin"` and `"superadmin"` while
+`generate_jwt` emits `"Admin"`. No token the system produces matched, so nobody
+could impersonate anyone. Fixing only the case would have made a dead endpoint live
+with the rest intact:
+
+- the admin's token was never revoked, so "stop impersonating" was a client promise;
+- nothing was written to the audit log;
+- the issued token carried no record of the original caller.
+
+Now: `require_admin()`, self-impersonation refused, audit entry written before the
+token is minted (a failed write means no token), the caller's `jti` revoked, and
+`impersonator_id` in the response.
+
+`stop_impersonation` was open to any authenticated caller, which made it a
+token-minting endpoint with no audit trail. It is Admin-only now, and its response
+says whose token it is — because after impersonation the caller's token is the
+impersonated user's, and a client assuming otherwise would act as the wrong person.
+
+`superadmin` is not a role the system has. `UserRole` is `Admin`, `Manager`,
+`Worker`, `Viewer`, `Custom(String)`.
+
+### J9 — the weather endpoint returned constants
+
+`GET /api/v1/calculate/weather/fetch` parsed the requested provider into
+`_service_type`, discarded it, and answered with a fixed 20.5 °C, 65 %, 0.0 mm,
+12 km/h, 800 W/m², 1013.25 hPa, 18 °C, 45 %. The three providers in
+`crates/weather-service` had no caller anywhere in the workspace, and a client
+could not tell a real reading from a constant.
+
+Now the provider is selected and called, an unknown name is a 400 rather than a
+silent fallback, and a provider failure is reported as a failure rather than
+papered over with plausible numbers.
+
+This needed `crates/weather-service` to become a library: it was a binary crate
+with no `lib.rs`, so the providers could not be called from the API at all. It is
+now a `[lib]` plus `[[bin]]`.
+
+### I5 — the LPIS cache existed and was never enabled
+
+`LpisCache`, `LpisCache::new`, `CacheConfig` and `BaseClient::with_cache` all
+existed and were correct. `BaseClient::new` and `BrpProvider::new` set
+`cache: None`, and `create_default_registry` called only the constructors — so
+nothing ever passed a cache and the `if let Some(cache)` branch in
+`get_cached_or_fetch` was unreachable in every deployment. Every SIGPAC and BRP
+listing went to the national WFS service on every call, on public rate-limited
+endpoints, for data that does not change within the hour.
+
+A synchronous `LpisCache::memory_if_enabled` was added because
+`create_default_registry` is called from `AppState::new` and `LpisCache::new` is
+async. It returns `None` for a disabled configuration and for a Redis backend,
+rather than a cache that is written to but never read.
+
+The fix was then widened: six further providers — RPG, iLPIS, SIAN, the German and
+Polish LPIS services and INVEKOS — held a bare `reqwest::Client` and had no cache
+field at all. They now share `cache::cached_get`, a narrow cached GET used at their
+two fetch sites each. All eight registered providers receive the shared cache.
+
+They were not routed through `BaseClient` on purpose: each carries its own error
+type and status handling, and that would have meant rewriting six providers to
+change one cache lookup. Cache keys are namespaced per provider, because a French
+RPG parcel and a German LPIS parcel for the same bounding box would otherwise
+collide on an identical key with different responses.
+
 ### G2i — a page can be unreachable without any test noticing (fixed)
 
 The check for this was removed in 0.40.0 because it could not fail: it passed with

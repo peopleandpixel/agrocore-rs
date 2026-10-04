@@ -18,9 +18,11 @@ use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
 use agrocore_domain::services::calculation::CalculationService;
 use agrocore_domain::services::nutrition::{Fertilizer, NutrientValues, NutritionService};
-use agrocore_domain::services::weather::{WeatherFetchResult, WeatherServiceType};
 use agrocore_domain::services::workflow::WorkflowService;
 use agrocore_shared::SharedError;
+use agrocore_weather_service::providers::{
+    OpenMeteoProvider, OpenWeatherProvider, WeatherUndergroundProvider,
+};
 use chrono::Utc;
 use uuid::Uuid;
 use validator::Validate;
@@ -506,27 +508,39 @@ pub async fn fetch_weather(
     dto.validate()
         .map_err(|e| ApiError::validation(e.to_string()))?;
 
-    let provider = dto.provider.as_deref().unwrap_or("openmeteo");
-    let _service_type = match provider.to_lowercase().as_str() {
-        "openweather" => WeatherServiceType::OpenWeather,
-        "wunderground" | "weatherunderground" => WeatherServiceType::WeatherUnderground,
-        _ => WeatherServiceType::OpenMeteo,
+    let provider_name = dto
+        .provider
+        .as_deref()
+        .unwrap_or("openmeteo")
+        .to_lowercase();
+
+    // The provider is chosen here and actually called. It used to be parsed into
+    // `_service_type` and discarded, and the response was a fixed 20.5 C / 65 % /
+    // 1013.25 hPa — so a client had no way to tell a real reading from a constant,
+    // and the three providers in `crates/weather-service` had no caller at all.
+    let provider: Box<dyn agrocore_domain::WeatherDataProvider> = match provider_name.as_str() {
+        "openweather" => Box::new(OpenWeatherProvider),
+        "wunderground" | "weatherunderground" => Box::new(WeatherUndergroundProvider),
+        "openmeteo" => Box::new(OpenMeteoProvider),
+        other => {
+            return Err(ApiError::validation(format!(
+                "Unknown weather provider `{other}`. Use openmeteo, openweather or \
+                     wunderground."
+            )));
+        }
     };
 
-    // For now, return mock data - in production this would call the actual provider
-    let result = WeatherFetchResult {
-        temperature_c: Some(20.5),
-        humidity_percent: Some(65.0),
-        precipitation_mm: Some(0.0),
-        wind_speed_kmh: Some(12.0),
-        wind_direction_deg: Some(270),
-        solar_radiation_wm2: Some(800.0),
-        pressure_hpa: Some(1013.25),
-        soil_temperature_c: Some(18.0),
-        soil_moisture_percent: Some(45.0),
-        leaf_wetness: Some(false),
-        timestamp: Utc::now(),
-    };
+    // A provider failure is reported as such. Returning plausible numbers on a
+    // failed fetch is the exact failure this replaces.
+    let result = provider
+        .fetch_current(dto.latitude, dto.longitude, dto.api_key.as_deref())
+        .await
+        .map_err(|e| {
+            SharedError::Internal(format!(
+                "Weather provider `{}` could not be reached: {e}",
+                provider.service_type()
+            ))
+        })?;
 
     Ok(HttpResponse::Ok().json(WeatherFetchResultDto {
         temperature_c: result.temperature_c,
@@ -540,7 +554,7 @@ pub async fn fetch_weather(
         soil_moisture_percent: result.soil_moisture_percent,
         leaf_wetness: result.leaf_wetness,
         timestamp: result.timestamp,
-        provider: provider.to_string(),
+        provider: provider.service_type().to_string(),
     }))
 }
 

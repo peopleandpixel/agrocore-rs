@@ -7,6 +7,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.42.0] - 2026-10-03
+
+Security and correctness batch: C2, C1, D2, J9, I5.
+
+### Metrics endpoints had no authentication (C2)
+
+`/metrics/db` and `/metrics/business` were registered on the `App` in `main`,
+outside `handlers::configure`, with no extractor. Anyone who could reach the port
+got the whole registry: per-table query counts and durations, pool saturation,
+record counts.
+
+Both now require an Admin, and have their own Governor scope — 5 s per request,
+burst 12 — because a scrape is a full `gather()` over every metric family and a
+dashboard polling at the API rate would spend the tenant-facing budget doing real
+work on every request.
+
+The registry carries no tenant label, so this was never a cross-tenant leak. It was
+an unauthenticated operational map of the deployment.
+
+### 5xx bodies carried database internals (C1)
+
+`ApiError::error_response` rendered `self.0.to_string()` for every status. For a
+500 that is the `Display` of `sqlx::Error`: table, column, violated constraint, and
+for a failed decode the Rust type expected. It also changes whenever the schema
+does, so clients could not parse it reliably either.
+
+A 5xx body now points at the log. 4xx messages are unchanged — they are authored
+and clients read them. `NotImplemented` keeps a specific 501 message, and now
+actually returns 501; it returned 500.
+
+### Impersonation was unreachable, and three defects sat behind it (D2)
+
+`impersonate` compared roles against `"admin"` while `generate_jwt` emits
+`"Admin"`, so nothing matched and nobody could impersonate anyone. Fixing only the
+case would have made a dead endpoint live with the rest intact:
+
+- the admin's token was never revoked;
+- nothing was written to the audit log;
+- the issued token carried no record of the original caller.
+
+Now Admin-only, self-impersonation refused, audit entry written before the token is
+minted, the caller's `jti` revoked, `impersonator_id` in the response.
+
+`stop_impersonation` was open to any authenticated caller — a token-minting
+endpoint with no audit trail. Now Admin-only, and it says whose token it returns,
+because after impersonation the caller's token belongs to the impersonated user.
+
+### The weather endpoint returned constants (J9)
+
+`GET /api/v1/calculate/weather/fetch` parsed the provider, discarded it, and
+answered with a fixed 20.5 °C / 65 % / 1013.25 hPa. The three providers had no
+caller in the workspace. Now the provider is selected and called, an unknown name
+is a 400 rather than a silent fallback, and a provider failure is reported as a
+failure instead of papered over.
+
+`crates/weather-service` was a binary crate with no `lib.rs`, so its providers
+could not be called from the API at all. It is now a `[lib]` plus `[[bin]]`.
+
+### The LPIS cache existed and was never enabled (I5)
+
+`BaseClient::new` and `BrpProvider::new` set `cache: None`, and
+`create_default_registry` called only the constructors — so the `if let
+Some(cache)` branch in `get_cached_or_fetch` was unreachable in every deployment.
+Every SIGPAC and BRP listing went to the national WFS service on every call, on
+public rate-limited endpoints, for data that does not change within the hour.
+
+Widened beyond the original finding: six more providers — RPG, iLPIS, SIAN, the
+German and Polish LPIS services and INVEKOS — held a bare `reqwest::Client` with no
+cache field at all. All eight registered providers now share one cache.
+
+A synchronous `LpisCache::memory_if_enabled` was added because
+`create_default_registry` runs in `AppState::new` and `LpisCache::new` is async. It
+returns `None` for a disabled config or a Redis backend rather than a cache that is
+written to but never read.
+
+The six were not routed through `BaseClient` on purpose — each has its own error
+type and status handling, and that would have meant rewriting six providers to
+change one cache lookup. Cache keys are namespaced per provider, because a French
+RPG parcel and a German LPIS parcel for the same bounding box would otherwise
+collide on an identical key with different responses.
+
+### Tests
+
+Nine new test files, 36 tests. Every one was checked against a deliberately broken
+input: removing `require_admin` fails the C2 role test; restoring the lowercase
+role comparison fails four D2 tests; removing the cache from the registry fails
+exactly the wiring test and leaves the six mechanics tests green.
+
+Gates: fmt, check, clippy -D warnings, 308 workspace tests, 44 infrastructure
+database tests with RLS enabled.
+
 ## [0.41.0] - 2026-10-03
 
 G2i fixed: a page can no longer be implemented, wired into `api.rs`, and left

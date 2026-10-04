@@ -96,6 +96,7 @@ struct GmlCoordinates {
 pub struct SianProvider {
     client: Client,
     base_url: String,
+    cache: Option<std::sync::Arc<crate::cache::LpisCache>>,
 }
 
 impl SianProvider {
@@ -108,7 +109,14 @@ impl SianProvider {
         Self {
             client,
             base_url: config.base_url.clone(),
+            cache: None,
         }
+    }
+
+    /// Attaches the shared LPIS response cache. See `crate::cache::cached_get`.
+    pub fn with_cache(mut self, cache: std::sync::Arc<crate::cache::LpisCache>) -> Self {
+        self.cache = Some(cache);
+        self
     }
 
     fn build_query_url(&self, query: &agrocore_shared::lpis::LpisQuery) -> String {
@@ -227,18 +235,9 @@ impl LpisProvider for SianProvider {
     ) -> Result<agrocore_shared::lpis::PaginatedLpisResponse, String> {
         let url = self.build_query_url(&query);
 
-        let response = self
-            .client
-            .get(&url)
-            .send()
+        let text = crate::cache::cached_get(&self.client, self.cache.as_ref(), "sian", &url)
             .await
             .map_err(|e| format!("SIAN request failed: {}", e))?;
-
-        if !response.status().is_success() {
-            return Err(format!("SIAN API error: {}", response.status()));
-        }
-
-        let text = response.text().await.map_err(|e| e.to_string())?;
 
         let wfs_fc: WfsFeatureCollection =
             quick_xml::de::from_str(&text).map_err(|e| format!("XML parsing failed: {}", e))?;
@@ -306,18 +305,9 @@ impl LpisProvider for SianProvider {
             urlencoding::encode(&bbox)
         );
 
-        let response = self
-            .client
-            .get(&url)
-            .send()
+        let text = crate::cache::cached_get(&self.client, self.cache.as_ref(), "sian", &url)
             .await
-            .map_err(|e| format!("SIAN spatial search failed: {}", e))?;
-
-        if !response.status().is_success() {
-            return Err(format!("SIAN API error: {}", response.status()));
-        }
-
-        let text = response.text().await.map_err(|e| e.to_string())?;
+            .map_err(|e| format!("SIAN request failed: {}", e))?;
 
         let wfs_fc: WfsFeatureCollection =
             quick_xml::de::from_str(&text).map_err(|e| format!("XML parsing failed: {}", e))?;

@@ -88,21 +88,45 @@ impl ResponseError for ApiError {
             SharedError::Conflict(_) => StatusCode::CONFLICT,
             SharedError::AlreadyExists(_) => StatusCode::CONFLICT,
             SharedError::ReferenceError(_) => StatusCode::BAD_REQUEST,
-            SharedError::Database(_)
-            | SharedError::Internal(_)
-            | SharedError::NotImplemented(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            SharedError::NotImplemented(_) => StatusCode::NOT_IMPLEMENTED,
+            SharedError::Database(_) | SharedError::Internal(_) => {
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
         }
     }
 
     fn error_response(&self) -> HttpResponse {
         let status = self.status_code();
-        // Server-Fehler werden protokolliert; Client-Fehler (4xx) sind erwartbar.
-        if status.is_server_error() {
+        let server_error = status.is_server_error();
+
+        // Server errors are logged in full. Client errors (4xx) are expected, so
+        // they are not logged here.
+        if server_error {
             error!("Request failed: {}", self.0);
         }
+
+        // A 5xx body must not carry the underlying message. `sqlx::Error`'s
+        // `Display` names the table, the column, the constraint and — for a failed
+        // decode — the Rust type it expected, which is a free map of the schema for
+        // anyone who can reach the port. It also changes whenever the schema does,
+        // so a client cannot parse it reliably anyway.
+        //
+        // 4xx messages are authored: they describe what the caller did wrong and are
+        // safe and useful to return.
+        let message = if server_error {
+            match &self.0 {
+                SharedError::NotImplemented(_) => {
+                    "This endpoint is not implemented in this build.".to_string()
+                }
+                _ => "An internal error occurred. The details are in the server log.".to_string(),
+            }
+        } else {
+            self.0.to_string()
+        };
+
         HttpResponse::build(status).json(ErrorResponse {
             error: self.slug().into(),
-            message: self.0.to_string(),
+            message,
         })
     }
 }

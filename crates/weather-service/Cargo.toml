@@ -24,3 +24,10 @@ uuid = { workspace = true }
 futures = { workspace = true }
 async-nats = { workspace = true }
 agrocore-logging = { path = "../logging", features = ["dev-console"] }
+[lib]
+name = "agrocore_weather_service"
+path = "src/lib.rs"
+
+[[bin]]
+name = "agrocore-weather-service"
+path = "src/main.rs"

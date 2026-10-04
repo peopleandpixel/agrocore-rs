@@ -23,69 +23,117 @@ use std::sync::Arc;
 pub fn create_default_registry() -> LpisRegistry {
     let mut registry = LpisRegistry::new();
 
+    // The response cache, built once and shared by every provider that has a cache
+    // lookup. `BaseClient::new` and `BrpProvider::new` both set `cache: None`, and
+    // this function used to call only the constructors — so `get_cached_or_fetch`
+    // always took the network branch and neither `with_cache` had a caller. Every
+    // SIGPAC and BRP parcel listing hit the national WFS service directly, on a
+    // public endpoint with a rate limit, for data that does not change within the
+    // hour.
+    //
+    // `CacheConfig::default()` is enabled with the memory backend and a one-hour
+    // TTL, which is what `memory_if_enabled` builds from. It returns `None` when the
+    // configuration disables caching, and the providers are then registered exactly
+    // as before — a disabled cache must not become a cache that is written to but
+    // never read.
+    let cache_config = crate::config::CacheConfig::default();
+    let cache = crate::cache::LpisCache::memory_if_enabled(&cache_config).map(Arc::new);
+
     // Netherlands - BRP (Basisregistratie Percelen) - Best open data access
-    registry.register(Arc::new(brp::BrpProvider::new(
-        crate::config::ProviderConfig {
+    {
+        let provider = brp::BrpProvider::new(crate::config::ProviderConfig {
             base_url: "https://geodata.nationaalgeoregister.nl/brppercelen/wfs".to_string(),
             ..Default::default()
-        },
-    )));
+        });
+        registry.register(Arc::new(match &cache {
+            Some(c) => provider.with_cache(c.clone()),
+            None => provider,
+        }));
+    }
 
     // Spain - SIGPAC
-    registry.register(Arc::new(sigpac::SigpacProvider::new(
-        crate::config::ProviderConfig {
+    {
+        let provider = sigpac::SigpacProvider::new(crate::config::ProviderConfig {
             base_url: "https://sigpac.mapa.gob.es/wfs".to_string(),
             ..Default::default()
-        },
-    )));
+        });
+        registry.register(Arc::new(match &cache {
+            Some(c) => provider.with_cache(c.clone()),
+            None => provider,
+        }));
+    }
 
     // France - RPG
-    registry.register(Arc::new(rpg::RpgProvider::new(
-        crate::config::ProviderConfig {
+    {
+        let provider = rpg::RpgProvider::new(crate::config::ProviderConfig {
             base_url: "https://geoservices.ign.fr/rpg/wfs".to_string(),
             ..Default::default()
-        },
-    )));
+        });
+        registry.register(Arc::new(match &cache {
+            Some(c) => provider.with_cache(c.clone()),
+            None => provider,
+        }));
+    }
 
     // Portugal - iLPIS
-    registry.register(Arc::new(ilpis::IlpisProvider::new(
-        crate::config::ProviderConfig {
+    {
+        let provider = ilpis::IlpisProvider::new(crate::config::ProviderConfig {
             base_url: "https://ide.ifap.pt/wfs".to_string(),
             ..Default::default()
-        },
-    )));
+        });
+        registry.register(Arc::new(match &cache {
+            Some(c) => provider.with_cache(c.clone()),
+            None => provider,
+        }));
+    }
 
     // Italy - SIAN
-    registry.register(Arc::new(sian::SianProvider::new(
-        crate::config::ProviderConfig {
+    {
+        let provider = sian::SianProvider::new(crate::config::ProviderConfig {
             base_url: "https://www.sian.it/wfs".to_string(),
             ..Default::default()
-        },
-    )));
+        });
+        registry.register(Arc::new(match &cache {
+            Some(c) => provider.with_cache(c.clone()),
+            None => provider,
+        }));
+    }
 
     // Germany - LPIS
-    registry.register(Arc::new(lpis_de::GermanLpisProvider::new(
-        crate::config::ProviderConfig {
+    {
+        let provider = lpis_de::GermanLpisProvider::new(crate::config::ProviderConfig {
             base_url: "https://geodienste.bfn.de/lpis/wfs".to_string(),
             ..Default::default()
-        },
-    )));
+        });
+        registry.register(Arc::new(match &cache {
+            Some(c) => provider.with_cache(c.clone()),
+            None => provider,
+        }));
+    }
 
     // Poland - LPIS
-    registry.register(Arc::new(lpis_pl::PolishLpisProvider::new(
-        crate::config::ProviderConfig {
+    {
+        let provider = lpis_pl::PolishLpisProvider::new(crate::config::ProviderConfig {
             base_url: "https://geoportal.arrim.gov.pl/wfs".to_string(),
             ..Default::default()
-        },
-    )));
+        });
+        registry.register(Arc::new(match &cache {
+            Some(c) => provider.with_cache(c.clone()),
+            None => provider,
+        }));
+    }
 
     // Austria - INVEKOS
-    registry.register(Arc::new(invkos::InvekosProvider::new(
-        crate::config::ProviderConfig {
+    {
+        let provider = invkos::InvekosProvider::new(crate::config::ProviderConfig {
             base_url: "https://data.gv.at/wfs".to_string(),
             ..Default::default()
-        },
-    )));
+        });
+        registry.register(Arc::new(match &cache {
+            Some(c) => provider.with_cache(c.clone()),
+            None => provider,
+        }));
+    }
 
     registry
 }

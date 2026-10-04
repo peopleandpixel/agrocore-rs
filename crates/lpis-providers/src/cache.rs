@@ -18,6 +18,33 @@ pub struct LpisCache {
 }
 
 impl LpisCache {
+    /// Builds an in-memory cache without touching the network.
+    ///
+    /// `new` is async because it may open a Redis connection. `create_default_registry`
+    /// is a synchronous constructor called from `AppState::new`, so the memory backend
+    /// — which is the default and needs no connection — gets its own constructor. A
+    /// Redis-backed cache cannot be built here and is wired where an async context
+    /// exists.
+    ///
+    /// Returns `None` when the configuration disables the cache, rather than a cache
+    /// that silently never hits.
+    pub fn memory_if_enabled(config: &crate::config::CacheConfig) -> Option<Self> {
+        if !config.enabled || !matches!(config.backend, crate::config::CacheBackend::Memory) {
+            return None;
+        }
+        Some(Self {
+            memory: Some(
+                Cache::builder()
+                    .max_capacity(config.max_entries as u64)
+                    .time_to_live(Duration::from_secs(config.default_ttl_seconds))
+                    .build(),
+            ),
+            redis: None,
+            default_ttl: Duration::from_secs(config.default_ttl_seconds),
+            enabled: true,
+        })
+    }
+
     /// Create a new cache instance from configuration
     pub async fn new(
         config: &crate::config::CacheConfig,
@@ -201,4 +228,55 @@ pub enum CacheError {
 
     #[error("Configuration error: {0}")]
     Configuration(String),
+}
+
+/// A cached GET for the WFS providers that do not use `BaseClient`.
+///
+/// Six providers — RPG, iLPIS, SIAN, the German and Polish LPIS services and
+/// INVEKOS — each held a bare `reqwest::Client` and issued `.get(url).send()` per
+/// request. `LpisCache` existed and `BaseClient` and `BrpProvider` used it, but
+/// those six had no cache field at all, so every call went to the national WFS
+/// service. They are read-only reference datasets that change on the order of days,
+/// so the hourly default TTL is appropriate.
+///
+/// Deliberately not on `BaseClient`: those six carry their own error type and their
+/// own status handling, and routing them through `BaseClient` would have meant
+/// rewriting six providers to change one cache lookup. This is the narrow change.
+///
+/// `key_prefix` keeps the namespaces apart — a French RPG parcel and a German LPIS
+/// parcel for the same bounding box must not collide, since the cache key would
+/// otherwise be identical while the responses are not.
+pub(crate) async fn cached_get(
+    client: &reqwest::Client,
+    cache: Option<&Arc<LpisCache>>,
+    key_prefix: &str,
+    url: &str,
+) -> Result<String, String> {
+    if let Some(cache) = cache {
+        let key = format!("{key_prefix}:{}", urlencoding::encode(url));
+        if let Some(hit) = cache.get(&key).await {
+            debug!("LPIS cache hit: {}", key);
+            return Ok(String::from_utf8_lossy(&hit).to_string());
+        }
+    }
+
+    let response = client.get(url).send().await.map_err(|e| e.to_string())?;
+
+    if !response.status().is_success() {
+        return Err(format!("provider returned {}", response.status()));
+    }
+
+    let text = response.text().await.map_err(|e| e.to_string())?;
+
+    if let Some(cache) = cache {
+        let key = format!("{key_prefix}:{}", urlencoding::encode(url));
+        // A cache write that fails must not fail the request: the data was fetched
+        // successfully, and the caller has no way to act on a cache failure. The
+        // next request simply misses and fetches again.
+        if let Err(e) = cache.set(key, text.as_bytes().to_vec()).await {
+            warn!("LPIS cache write failed: {}", e);
+        }
+    }
+
+    Ok(text)
 }
