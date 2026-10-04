@@ -520,24 +520,62 @@ payload is read and the test would have passed for the wrong reason. Worth recor
 because it is the shape of a false pass — a test that looks like it covers the size
 limit and actually covers the routing table.
 
-## M1 — eleven API test targets do not compile (found 2026-10-03, open)
+## M1 — eleven API test targets did not compile (fixed 2026-10-03)
 
-`cargo test -p agrocore-api --features mocks` does not build. Six of these were
-already broken at 0.41.0; the count is now eleven. Three independent causes:
+`cargo test -p agrocore-api --features mocks` did not build. Eleven targets, six of
+them already broken at 0.41.0. The cause was mechanical: thirty `AppState { ... }`
+literals across ten files, each listing only the fields that file happened to need,
+and a local copy of the `signed_token` helper in each of the eleven.
 
-- `AppState` gained `db_metrics`, `business_metrics`, `backup_service` and
-  `demo_endpoints_enabled`, and eleven test files still construct it without them.
-- `messaging` became `Option<Arc<MessagingClient>>`, and those same files pass a
-  bare `Arc`.
-- `Equipment` gained `fuel_capacity_liters` and `fuel_type`, and at least one test
-  still builds it without them.
+So the feature had no coverage at all, and every suite added in 0.40–0.43 that uses
+a repository mock — metrics, error disclosure, impersonation, weather, payload
+limits, LPIS cache — was invisible to a plain `cargo test --workspace`. CI runs
+`cargo test --workspace --features=mocks`, and had it been pushed, this would have
+been a red build for weeks.
 
-- [ ] Update the eleven test targets to the current `AppState` and `Equipment`
-      shapes, then re-enable them in CI. Until then the `mocks` feature has no
-      coverage at all, and every test added in 0.40–0.43 that uses a repository mock
-      — the metrics, error-disclosure, impersonation, weather, payload-limit and
-      LPIS-cache suites — is invisible to a plain `cargo test --workspace`.
+### The fix
 
+`tests/common/mod.rs` now holds `state_with(MockDatabase)` and `signed_token`. Thirty
+literals became thirty one-line calls, and eleven token helpers became one.
+
+The measure of the change: deleting `backup_service` from the helper now breaks
+exactly one site. Before, it would have broken eleven. That is the whole argument
+for the helper, and it is asserted rather than asserted-about.
+
+Four fixtures had drifted from their entities and were corrected against the current
+shapes, not papered over:
+
+- `Animal` lost `weight_kg`, `last_weight_date`, `group_id`, `treatments` and
+  `grazing_history`; `species` and `status` became strings, `tenant_id` a bare
+  `Uuid`, `birth_date` a `NaiveDate`.
+- `Site.plots` became a `serde_json::Value`; `tenant_id` a bare `Uuid`.
+- `TreatmentRecord.medication` became `String`; `created_at` an `Option`.
+- `Equipment` gained `fuel_capacity_liters` and `fuel_type`.
+
+### Two things this fixed that were not on the list
+
+`reporting_integration.rs` called `MessagingClient::new_mock()` and then
+`set_mock_response`, which does not exist and never did — the test was building a
+queue message the handler never reads. `new_mock()` itself is a placeholder that
+panics on every call, so every one of the eleven files would have failed had it
+compiled far enough to reach it. `state_with` sets `messaging: None`, which is what
+the field became when the broker was made optional.
+
+### M2 — the reporting exports cannot be tested end to end (open)
+
+- [ ] `export_orders_excel`, `export_sites_geojson`, `export_pac_sip` and
+      `export_veterinary` are NATS request-reply calls. `MessagingClient::request` is
+      a real round trip with no seam, so with no broker connected they answer 500 —
+      correctly. The two tests now assert that, plus that the endpoints require
+      authentication, which is the behaviour that is reachable.
+      The happy path needs either a NATS server in CI or a trait seam in
+      `MessagingClient`. Worth doing, and it is a design change rather than a bug.
+
+### Why this was not caught
+
+`origin/main` was at 0.39.0 while the local branch was four commits ahead. The
+broken targets were committed locally and CI never saw them. Whatever else changes,
+the next step after this is a push.
 
 ## C1/D2/C2/J9/I5 — security and correctness batch (completed 2026-10-03)
 

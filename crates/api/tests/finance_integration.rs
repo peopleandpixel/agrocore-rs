@@ -1,3 +1,5 @@
+mod common;
+
 use actix_web::{App, http::StatusCode, http::header, test, web};
 use agrocore_api::{AppState, handlers::configure};
 use agrocore_domain::TenantId;
@@ -14,30 +16,6 @@ use serde::Serialize;
 use std::future::ready;
 use std::sync::Arc;
 use uuid::Uuid;
-
-#[derive(Serialize)]
-struct TestClaims {
-    sub: String,
-    tenant_id: String,
-    roles: Vec<String>,
-    exp: usize,
-    jti: String,
-}
-
-fn signed_token(sub: &str, tenant_id: &str, roles: Vec<&str>) -> String {
-    encode(
-        &Header::default(),
-        &TestClaims {
-            sub: sub.to_string(),
-            tenant_id: tenant_id.to_string(),
-            roles: roles.into_iter().map(String::from).collect(),
-            exp: usize::MAX / 2,
-            jti: uuid::Uuid::new_v4().to_string(),
-        },
-        &EncodingKey::from_secret(agrocore_shared::config::jwt_secret().as_bytes()),
-    )
-    .expect("token")
-}
 
 #[actix_web::test]
 async fn test_list_pac_applications() {
@@ -72,12 +50,7 @@ async fn test_list_pac_applications() {
     let mut mock_db = MockDatabase::default();
     mock_db.pac_application_repo = Some(Arc::new(pac_repo));
 
-    let state = AppState {
-        db: Arc::new(Database::Mock(Box::new(mock_db))),
-        messaging: Arc::new(agrocore_messaging::MessagingClient::new_mock()),
-        lpis_registry: Arc::new(agrocore_lpis_providers::create_default_registry()),
-        token_revocation: Arc::new(agrocore_api::middleware::TokenRevocationList::new()),
-    };
+    let state = crate::common::state_with(mock_db);
 
     let app = test::init_service(
         App::new()
@@ -86,11 +59,8 @@ async fn test_list_pac_applications() {
     )
     .await;
 
-    let token = signed_token(
-        &user_id.to_string(),
-        &tenant_id.to_string(),
-        vec!["Manager"],
-    );
+    let token =
+        crate::common::signed_token(&user_id.to_string(), &tenant_id.to_string(), &["Manager"]);
     let req = test::TestRequest::get()
         .uri("/api/v1/finance/pac-applications")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
@@ -131,12 +101,7 @@ async fn test_list_cost_centers() {
     let mut mock_db = MockDatabase::default();
     mock_db.cost_center_repo = Some(Arc::new(cc_repo));
 
-    let state = AppState {
-        db: Arc::new(Database::Mock(Box::new(mock_db))),
-        messaging: Arc::new(agrocore_messaging::MessagingClient::new_mock()),
-        lpis_registry: Arc::new(agrocore_lpis_providers::create_default_registry()),
-        token_revocation: Arc::new(agrocore_api::middleware::TokenRevocationList::new()),
-    };
+    let state = crate::common::state_with(mock_db);
 
     let app = test::init_service(
         App::new()
@@ -145,11 +110,8 @@ async fn test_list_cost_centers() {
     )
     .await;
 
-    let token = signed_token(
-        &user_id.to_string(),
-        &tenant_id.to_string(),
-        vec!["Manager"],
-    );
+    let token =
+        crate::common::signed_token(&user_id.to_string(), &tenant_id.to_string(), &["Manager"]);
     let req = test::TestRequest::get()
         .uri("/api/v1/finance/cost-centers")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
@@ -192,12 +154,7 @@ async fn test_list_financial_records() {
     let mut mock_db = MockDatabase::default();
     mock_db.financial_record_repo = Some(Arc::new(fr_repo));
 
-    let state = AppState {
-        db: Arc::new(Database::Mock(Box::new(mock_db))),
-        messaging: Arc::new(agrocore_messaging::MessagingClient::new_mock()),
-        lpis_registry: Arc::new(agrocore_lpis_providers::create_default_registry()),
-        token_revocation: Arc::new(agrocore_api::middleware::TokenRevocationList::new()),
-    };
+    let state = crate::common::state_with(mock_db);
 
     let app = test::init_service(
         App::new()
@@ -206,11 +163,8 @@ async fn test_list_financial_records() {
     )
     .await;
 
-    let token = signed_token(
-        &user_id.to_string(),
-        &tenant_id.to_string(),
-        vec!["Manager"],
-    );
+    let token =
+        crate::common::signed_token(&user_id.to_string(), &tenant_id.to_string(), &["Manager"]);
     let req = test::TestRequest::get()
         .uri("/api/v1/finance/financial-records")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))

@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.44.0] - 2026-10-03
+
+M1 — the `mocks` test feature had no coverage at all. `cargo test -p agrocore-api
+--features mocks` did not build: eleven targets, six already broken at 0.41.0.
+
+The cause was mechanical. Thirty `AppState { ... }` literals across ten files, each
+listing only the fields that file happened to need, plus a local copy of
+`signed_token` in each of the eleven. Every time `AppState` gained a field — metrics
+and the backup service most recently — each one stopped compiling and had to be
+patched individually. Nobody patched them.
+
+`tests/common/mod.rs` now holds `state_with(MockDatabase)` and `signed_token`.
+Thirty literals became thirty one-line calls; eleven token helpers became one. The
+measure: deleting `backup_service` from the helper now breaks one site, where before
+it broke eleven. That is asserted, not asserted about.
+
+### Four fixtures had drifted from their entities
+
+- `Animal` lost `weight_kg`, `last_weight_date`, `group_id`, `treatments` and
+  `grazing_history`; `species` and `status` became strings, `tenant_id` a bare
+  `Uuid`, `birth_date` a `NaiveDate`.
+- `Site.plots` became a `serde_json::Value`; `tenant_id` a bare `Uuid`.
+- `TreatmentRecord.medication` became `String`; `created_at` an `Option`.
+- `Equipment` gained `fuel_capacity_liters` and `fuel_type`.
+
+All corrected against the current entity shapes rather than worked around.
+
+### Two things found on the way
+
+`reporting_integration.rs` called `MessagingClient::new_mock()` and then
+`set_mock_response`, which does not exist and never did — it was building a queue
+message the handler never reads. `new_mock()` itself is a placeholder that panics on
+every call, so all eleven files would have failed had they compiled far enough to
+reach it. `state_with` sets `messaging: None`, which is what the field became when
+the broker was made optional.
+
+The two reporting tests could not be made to pass as written: `export_*` are NATS
+request-reply calls and `MessagingClient::request` is a real round trip with no
+seam, so with no broker they correctly answer 500. They now assert that, and that
+the endpoints require authentication. The happy path needs a NATS server in CI or a
+trait seam — recorded as M2, a design change rather than a bug.
+
+### Why this was never caught
+
+CI runs `cargo test --workspace --features=mocks`, and would have been red for
+weeks. `origin/main` was at 0.39.0 while the local branch was four commits ahead:
+the broken targets were committed locally and CI never saw them.
+
+Gates: fmt, clippy -D warnings, 308 workspace tests, 139 API tests with mocks, 44
+infrastructure database tests with RLS enabled.
+
 ## [0.43.0] - 2026-10-03
 
 C3 — the import path had no body limit. The audit finding was half right, and the

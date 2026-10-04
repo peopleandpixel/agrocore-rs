@@ -1,3 +1,5 @@
+mod common;
+
 use actix_web::{App, http::StatusCode, http::header, test, web};
 use agrocore_api::{AppState, handlers::configure};
 use agrocore_domain::TenantId;
@@ -15,30 +17,6 @@ use serde::Serialize;
 use std::future::ready;
 use std::sync::Arc;
 use uuid::Uuid;
-
-#[derive(Serialize)]
-struct TestClaims {
-    sub: String,
-    tenant_id: String,
-    roles: Vec<String>,
-    exp: usize,
-    jti: String,
-}
-
-fn signed_token(sub: &str, tenant_id: &str, roles: Vec<&str>) -> String {
-    encode(
-        &Header::default(),
-        &TestClaims {
-            sub: sub.to_string(),
-            tenant_id: tenant_id.to_string(),
-            roles: roles.into_iter().map(String::from).collect(),
-            exp: usize::MAX / 2,
-            jti: uuid::Uuid::new_v4().to_string(),
-        },
-        &EncodingKey::from_secret(agrocore_shared::config::jwt_secret().as_bytes()),
-    )
-    .expect("token")
-}
 
 #[actix_web::test]
 async fn test_list_harvest_seasons() {
@@ -71,12 +49,7 @@ async fn test_list_harvest_seasons() {
     let mut mock_db = MockDatabase::default();
     mock_db.harvest_season_repo = Some(Arc::new(season_repo));
 
-    let state = AppState {
-        db: Arc::new(Database::Mock(Box::new(mock_db))),
-        messaging: Arc::new(agrocore_messaging::MessagingClient::new_mock()),
-        lpis_registry: Arc::new(agrocore_lpis_providers::create_default_registry()),
-        token_revocation: Arc::new(agrocore_api::middleware::TokenRevocationList::new()),
-    };
+    let state = crate::common::state_with(mock_db);
 
     let app = test::init_service(
         App::new()
@@ -85,11 +58,8 @@ async fn test_list_harvest_seasons() {
     )
     .await;
 
-    let token = signed_token(
-        &user_id.to_string(),
-        &tenant_id.to_string(),
-        vec!["Manager"],
-    );
+    let token =
+        crate::common::signed_token(&user_id.to_string(), &tenant_id.to_string(), &["Manager"]);
     let req = test::TestRequest::get()
         .uri("/api/v1/harvest/seasons")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
@@ -133,12 +103,7 @@ async fn test_list_harvest_lots() {
     let mut mock_db = MockDatabase::default();
     mock_db.harvest_lot_repo = Some(Arc::new(lot_repo));
 
-    let state = AppState {
-        db: Arc::new(Database::Mock(Box::new(mock_db))),
-        messaging: Arc::new(agrocore_messaging::MessagingClient::new_mock()),
-        lpis_registry: Arc::new(agrocore_lpis_providers::create_default_registry()),
-        token_revocation: Arc::new(agrocore_api::middleware::TokenRevocationList::new()),
-    };
+    let state = crate::common::state_with(mock_db);
 
     let app = test::init_service(
         App::new()
@@ -147,11 +112,8 @@ async fn test_list_harvest_lots() {
     )
     .await;
 
-    let token = signed_token(
-        &user_id.to_string(),
-        &tenant_id.to_string(),
-        vec!["Manager"],
-    );
+    let token =
+        crate::common::signed_token(&user_id.to_string(), &tenant_id.to_string(), &["Manager"]);
     let req = test::TestRequest::get()
         .uri("/api/v1/harvest/lots")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
@@ -196,12 +158,7 @@ async fn test_list_harvest_deliveries() {
     let mut mock_db = MockDatabase::default();
     mock_db.harvest_delivery_repo = Some(Arc::new(del_repo));
 
-    let state = AppState {
-        db: Arc::new(Database::Mock(Box::new(mock_db))),
-        messaging: Arc::new(agrocore_messaging::MessagingClient::new_mock()),
-        lpis_registry: Arc::new(agrocore_lpis_providers::create_default_registry()),
-        token_revocation: Arc::new(agrocore_api::middleware::TokenRevocationList::new()),
-    };
+    let state = crate::common::state_with(mock_db);
 
     let app = test::init_service(
         App::new()
@@ -210,11 +167,8 @@ async fn test_list_harvest_deliveries() {
     )
     .await;
 
-    let token = signed_token(
-        &user_id.to_string(),
-        &tenant_id.to_string(),
-        vec!["Manager"],
-    );
+    let token =
+        crate::common::signed_token(&user_id.to_string(), &tenant_id.to_string(), &["Manager"]);
     let req = test::TestRequest::get()
         .uri("/api/v1/harvest/deliveries")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
@@ -255,12 +209,7 @@ async fn test_list_cold_chain_logs() {
     let mut mock_db = MockDatabase::default();
     mock_db.cold_chain_log_repo = Some(Arc::new(cold_repo));
 
-    let state = AppState {
-        db: Arc::new(Database::Mock(Box::new(mock_db))),
-        messaging: Arc::new(agrocore_messaging::MessagingClient::new_mock()),
-        lpis_registry: Arc::new(agrocore_lpis_providers::create_default_registry()),
-        token_revocation: Arc::new(agrocore_api::middleware::TokenRevocationList::new()),
-    };
+    let state = crate::common::state_with(mock_db);
 
     let app = test::init_service(
         App::new()
@@ -269,11 +218,8 @@ async fn test_list_cold_chain_logs() {
     )
     .await;
 
-    let token = signed_token(
-        &user_id.to_string(),
-        &tenant_id.to_string(),
-        vec!["Manager"],
-    );
+    let token =
+        crate::common::signed_token(&user_id.to_string(), &tenant_id.to_string(), &["Manager"]);
     let req = test::TestRequest::get()
         .uri("/api/v1/harvest/cold-chain")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
