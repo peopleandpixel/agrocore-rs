@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.43.0] - 2026-10-03
+
+C3 — the import path had no body limit. The audit finding was half right, and the
+wrong half is the one that mattered.
+
+`actix_web::web::Json` has always defaulted to 2 MiB (`JsonConfig::DEFAULT_LIMIT`),
+so an ordinary endpoint was never unbounded. My first negative test confirmed it:
+removing the explicit `JsonConfig` left all five tests green.
+
+What was unbounded is `/sites/import/shapefile`. It carries a file as Base64 — a
+third more than the binary — and a municipality's parcel shapefile is genuinely
+10–30 MB, so the default rejects legitimate work. A handler in that position cannot
+raise the global limit, and re-registering the routes in a scope with a second
+`JsonConfig` does not work: they are already mounted by `handlers::configure`, and a
+second registration of the same path is shadowed by the first.
+
+So the limit is per-extractor now. `LargeJson<T>` reads the body itself with a 64 MiB
+ceiling and is used by exactly the three import handlers; everything else keeps
+2 MiB, written out explicitly rather than inherited so a future Actix upgrade cannot
+silently change it. The oversize check runs on every chunk, so an oversized body is
+rejected without ever being fully buffered.
+
+Two non-obvious details: `Payload::take` in actix-http 3 takes no argument and
+applies no limit, so the running total is compared by hand; and the payload stream is
+moved into the future rather than borrowed, because `FromRequest::Future` is
+`'static`.
+
+### A finding the audit missed: eleven test targets do not compile
+
+`cargo test -p agrocore-api --features mocks` does not build. Six were already broken
+at 0.41.0; it is now eleven. Three causes: `AppState` gained four fields and eleven
+files still construct it without them, `messaging` became an `Option` and those files
+pass a bare `Arc`, and `Equipment` gained two fuel fields.
+
+This means the `mocks` feature has no coverage at all, and every suite added in
+0.40–0.43 that uses a repository mock is invisible to a plain `cargo test
+--workspace`. Recorded as M1.
+
+### A false pass worth recording
+
+`the_global_limit_applies_to_ordinary_endpoints` first failed with 405, not 413: the
+settings group resource registers only GET and PUT, so a POST is rejected before the
+payload is read and the test would have passed for the wrong reason. It is the shape
+of a test that looks like it covers the size limit and actually covers the routing
+table.
+
+Gates: fmt, clippy -D warnings, 308 workspace tests. Five new payload-limit tests,
+verified against an unbounded `LargeJson`.
+
 ## [0.42.0] - 2026-10-03
 
 Security and correctness batch: C2, C1, D2, J9, I5.

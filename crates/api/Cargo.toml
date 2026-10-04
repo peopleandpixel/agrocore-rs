@@ -25,6 +25,11 @@ name = "reporting_test"
 path = "tests/reporting/mod.rs"
 
 [[test]]
+name = "payload_limit_test"
+path = "tests/payload_limit_tests.rs"
+required-features = ["mocks"]
+
+[[test]]
 name = "weather_fetch_test"
 path = "tests/weather_fetch_tests.rs"
 required-features = ["mocks"]
@@ -71,6 +76,7 @@ actix-governor = "0.10"
 dashmap = "6"
 redis = { workspace = true }
 validator = { workspace = true }
+futures-util = "0.3"
 rust_xlsxwriter = { workspace = true }
 geojson = { workspace = true }
 geozero = { workspace = true, features = ["with-shp"] }

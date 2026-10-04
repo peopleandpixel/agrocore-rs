@@ -229,7 +229,7 @@ pub async fn delete_site(
 pub async fn import_sites(
     state: web::Data<AppState>,
     auth: AuthUser,
-    dto: web::Json<ImportSitesRequest>,
+    dto: crate::LargeJson<ImportSitesRequest>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
     info!(
@@ -264,7 +264,7 @@ pub async fn import_sites(
 pub async fn import_geojson(
     state: web::Data<AppState>,
     auth: AuthUser,
-    dto: web::Json<GeoJsonImportRequest>,
+    dto: crate::LargeJson<GeoJsonImportRequest>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
     info!(
@@ -296,7 +296,7 @@ pub async fn import_geojson(
 pub async fn import_shapefile(
     state: web::Data<AppState>,
     auth: AuthUser,
-    dto: web::Json<ShapefileImportRequest>,
+    dto: crate::LargeJson<ShapefileImportRequest>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
     info!(

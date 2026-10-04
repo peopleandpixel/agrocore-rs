@@ -1,7 +1,7 @@
 use actix_cors::Cors;
 use actix_files as fs;
 use actix_governor::{Governor, GovernorConfigBuilder};
-use actix_web::{App, HttpServer, web};
+use actix_web::{App, FromRequest, HttpRequest, HttpServer, dev::Payload, web};
 use actix_web_prometheus::PrometheusMetricsBuilder;
 use prometheus::Registry;
 use utoipa_swagger_ui::SwaggerUi;
@@ -25,6 +25,7 @@ use agrocore_infrastructure::Database;
 use agrocore_lpis_providers::create_default_registry;
 use agrocore_messaging::MessagingClient;
 use agrocore_shared::lpis::LpisRegistry;
+use futures_util::{StreamExt, future::LocalBoxFuture};
 use std::sync::Arc;
 
 // Re-export for admin-ui
@@ -205,6 +206,16 @@ pub async fn run_server(
 
         App::new()
             .app_data(state.clone())
+            // The payload limit, stated explicitly.
+            //
+            // `web::Json` already defaults to 2 MiB, so ordinary endpoints were
+            // bounded before this line existed. What was not bounded was the import
+            // path: `/sites/import/shapefile` carries a file as Base64 and cannot
+            // use the default without rejecting a real municipality, so it takes
+            // `LargeJson` with a ceiling of its own. Writing the global value out
+            // rather than inheriting it makes the number greppable and testable.
+            .app_data(web::JsonConfig::default().limit(MAX_JSON_PAYLOAD))
+            .app_data(web::PayloadConfig::default().limit(MAX_JSON_PAYLOAD))
             .wrap(prometheus.clone())
             .wrap(security_headers)
             .wrap(Governor::new(&gov_conf))
@@ -227,6 +238,91 @@ pub async fn run_server(
     .bind(bind_addr)?
     .run()
     .await
+}
+
+/// The request body limit for the API, in bytes.
+///
+/// This is `actix_web`'s own default, `JsonConfig::DEFAULT_LIMIT`, set explicitly so
+/// the value is visible and testable rather than implicit. It was worth writing down
+/// because the audit recorded C3 as "no payload limit" — that was half right.
+///
+/// `web::Json` has always defaulted to 2 MiB, so an ordinary endpoint was never
+/// truly unbounded. What was unbounded was `/sites/import/shapefile`, which could not
+/// take that limit (see `LargeJson`) and so had no ceiling of its own until now.
+/// Setting the value here rather than relying on the default means a future Actix
+/// change cannot silently alter it, and `payload_limit_tests` pins it.
+pub const MAX_JSON_PAYLOAD: usize = 2 * 1024 * 1024;
+
+/// The request body limit for the three import handlers, in bytes.
+///
+/// 64 MiB. A European municipality's parcel shapefile is typically 10–30 MB of
+/// ZIP data, which is 13–40 MB once Base64-encoded for transport (Base64 inflates
+/// by 4/3) and grows again if the caller sends it uncompressed. 64 MiB leaves
+/// headroom for a large district without being a licence to send arbitrary data.
+///
+/// This is a limit on one request, not a quota: it does not cap what a tenant may
+/// import in total over time.
+pub const MAX_IMPORT_PAYLOAD: usize = 64 * 1024 * 1024;
+
+/// A `web::Json` body read with a limit that is set per-extractor rather than
+/// per-application.
+///
+/// `web::JsonConfig` is app data, so it is global: one value for the whole
+/// application. The three import endpoints need more headroom than the rest, and
+/// registering them in a scope with a second config does not work — the routes are
+/// already mounted by `handlers::configure`, and a second registration of the same
+/// path is shadowed by the first rather than overriding it.
+///
+/// So this extractor reads the body itself, with its own limit. It mirrors
+/// `web::Json`'s behaviour — same content-type check, same error type, same
+/// `Deserialize` requirement — and differs only in the ceiling.
+///
+/// An over-limit body still produces a 413, so the response a client sees is the
+/// same one it would get from `web::Json` with a smaller limit.
+///
+/// ```ignore
+/// pub async fn import_shapefile(
+///     state: web::Data<AppState>,
+///     auth: AuthUser,
+///     body: LargeJson<ShapefileImportRequest>,
+/// ) -> Result<HttpResponse, ApiError> { /* ... */ }
+/// ```
+#[derive(Debug, Clone, Copy)]
+pub struct LargeJson<T>(pub T);
+
+impl<T: serde::de::DeserializeOwned> FromRequest for LargeJson<T> {
+    type Error = actix_web::Error;
+    type Future = LocalBoxFuture<'static, Result<Self, Self::Error>>;
+
+    fn from_request(_req: &HttpRequest, payload: &mut Payload) -> Self::Future {
+        let limit = MAX_IMPORT_PAYLOAD;
+        // The payload stream is moved into the future rather than borrowed: the
+        // returned future is `'static`, so it cannot hold a borrow of `payload`.
+        let stream = payload.take();
+
+        Box::pin(async move {
+            // Read the body with an explicit ceiling. `Payload::take` in
+            // actix-http 3 takes no argument and applies no limit, so the running
+            // total is compared here instead — checked on every chunk rather than
+            // once at the end, so an oversized body is rejected without ever being
+            // fully buffered.
+            let mut body = web::BytesMut::new();
+            let mut stream = stream;
+            while let Some(chunk) = stream.next().await {
+                let chunk = chunk?;
+                let len = body.len() + chunk.len();
+                if len > limit {
+                    return Err(actix_web::error::PayloadError::Overflow.into());
+                }
+                body.extend_from_slice(&chunk);
+            }
+
+            let value = serde_json::from_slice::<T>(&body).map_err(|err| {
+                actix_web::error::ErrorBadRequest(format!("Json deserialize error: {err}"))
+            })?;
+            Ok(LargeJson(value))
+        })
+    }
 }
 
 /// Mounts the metrics endpoints.

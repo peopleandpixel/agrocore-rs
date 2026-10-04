@@ -479,6 +479,66 @@ Three findings worth keeping:
   carry `strum` snake_case but no serde rename and so serialise as the variant
   name, and `LotStatus` is lower-case. Each select was checked against its enum.
 
+### C3 — the import path had no body limit (fixed, with a correction to the finding)
+
+The audit recorded C3 as "no payload limit, DoS via the import". That was half
+right, and the half that was wrong is the half that matters.
+
+`actix_web::web::Json` has always defaulted to 2 MiB — `JsonConfig::DEFAULT_LIMIT`,
+declared in `actix-web-4.15.0/src/types/json.rs`. So an ordinary endpoint was never
+unbounded, and my first negative test confirmed it: removing the explicit
+`JsonConfig` left all five tests green.
+
+What *was* unbounded is the import path. `/sites/import/shapefile` carries a file as
+Base64 — a third more than the binary — and a municipality's parcel shapefile is
+genuinely 10–30 MB, so the default rejects legitimate work. A handler in that
+position cannot simply raise the global limit, and re-registering the routes in a
+scope with a second `JsonConfig` does not work: they are already mounted by
+`handlers::configure`, and a second registration of the same path is shadowed by the
+first rather than overriding it.
+
+So the limit is now per-extractor. `LargeJson<T>` reads the body itself with
+`MAX_IMPORT_PAYLOAD` (64 MiB) and is used by exactly the three import handlers;
+everything else keeps 2 MiB, now written out explicitly rather than inherited, so
+the value is greppable and pinned by a test rather than at the mercy of an Actix
+upgrade.
+
+The oversize check runs on every chunk, not once at the end, so an oversized body is
+rejected without ever being fully buffered.
+
+Two things about `LargeJson` that are worth stating because they are not obvious:
+`Payload::take` in actix-http 3 takes no argument and applies no limit, so the
+running total is compared by hand; and the payload stream is *moved* into the future
+rather than borrowed, because `FromRequest::Future` is `'static` and cannot hold a
+borrow of `&mut Payload`.
+
+#### A finding the audit missed
+
+`the_global_limit_applies_to_ordinary_endpoints` first failed with 405, not 413: the
+settings group resource registers only GET and PUT, so a POST is rejected before the
+payload is read and the test would have passed for the wrong reason. Worth recording
+because it is the shape of a false pass — a test that looks like it covers the size
+limit and actually covers the routing table.
+
+## M1 — eleven API test targets do not compile (found 2026-10-03, open)
+
+`cargo test -p agrocore-api --features mocks` does not build. Six of these were
+already broken at 0.41.0; the count is now eleven. Three independent causes:
+
+- `AppState` gained `db_metrics`, `business_metrics`, `backup_service` and
+  `demo_endpoints_enabled`, and eleven test files still construct it without them.
+- `messaging` became `Option<Arc<MessagingClient>>`, and those same files pass a
+  bare `Arc`.
+- `Equipment` gained `fuel_capacity_liters` and `fuel_type`, and at least one test
+  still builds it without them.
+
+- [ ] Update the eleven test targets to the current `AppState` and `Equipment`
+      shapes, then re-enable them in CI. Until then the `mocks` feature has no
+      coverage at all, and every test added in 0.40–0.43 that uses a repository mock
+      — the metrics, error-disclosure, impersonation, weather, payload-limit and
+      LPIS-cache suites — is invisible to a plain `cargo test --workspace`.
+
+
 ## C1/D2/C2/J9/I5 — security and correctness batch (completed 2026-10-03)
 
 ### C2 — metrics endpoints had no authentication
