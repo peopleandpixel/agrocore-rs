@@ -496,7 +496,8 @@ impl SpatialObjectRepository for PgSiteRepo {
             sqlx::query_as::<_, agrocore_domain::entities::spatial::SpatialObject>(
                 r#"SELECT id, tenant_id, site_id, parent_id, label, object_type, geometry,
                    area, buffer_meters, properties, custom_fields, note, is_active,
-                   is_temporary, created_at, updated_at, created_by, updated_by
+                   is_temporary, planted_at, variety_id,
+                   created_at, updated_at, created_by, updated_by
                    FROM spatial_objects WHERE id = $1 AND tenant_id = $2"#,
             )
             .bind(id)
@@ -529,7 +530,8 @@ impl SpatialObjectRepository for PgSiteRepo {
             let data: Vec<agrocore_domain::entities::spatial::SpatialObject> = sqlx::query_as(
                 r#"SELECT id, tenant_id, site_id, parent_id, label, object_type, geometry,
                    area, buffer_meters, properties, custom_fields, note, is_active,
-                   is_temporary, created_at, updated_at, created_by, updated_by
+                   is_temporary, planted_at, variety_id,
+                   created_at, updated_at, created_by, updated_by
                    FROM spatial_objects WHERE tenant_id = $1 LIMIT $2 OFFSET $3"#,
             )
             .bind(tid)
@@ -573,7 +575,8 @@ impl SpatialObjectRepository for PgSiteRepo {
             let mut query =
                 r#"SELECT id, tenant_id, site_id, parent_id, label, object_type, geometry,
                    area, buffer_meters, properties, custom_fields, note, is_active,
-                   is_temporary, created_at, updated_at, created_by, updated_by
+                   is_temporary, planted_at, variety_id,
+                   created_at, updated_at, created_by, updated_by
                    FROM spatial_objects WHERE tenant_id = $1 AND is_active = true"#
                     .to_string();
 
@@ -599,6 +602,126 @@ impl SpatialObjectRepository for PgSiteRepo {
                 .into_iter()
                 .filter(|obj| obj.contains_point(&point))
                 .collect())
+        })
+
+
+
+    }
+
+    /// The map's read path: a viewport or plot query, not a page of everything.
+    ///
+    /// The bounding-box filter is applied in Rust rather than in SQL on purpose.
+    /// `SpatialObject::contains_point` buffers points and lines by `buffer_meters` and
+    /// leaves polygons alone, so a buffer is part of the object's meaning. Filtering with
+    /// `ST_Intersects(envelope, geometry)` would drop an object that is inside the
+    /// viewport only because of its buffer, and `ST_Contains` is not indexable. Measuring
+    /// the envelope first and then applying the same semantics keeps the result identical
+    /// to the domain definition.
+    fn find_by_filter(
+        &self,
+        tid: TenantId,
+        filter: agrocore_domain::repositories::SpatialObjectFilter,
+    ) -> RepositoryFuture<Vec<agrocore_domain::entities::spatial::SpatialObject>> {
+        let pool = TenantPool::new(&self.pool, tid.0);
+
+        Box::pin(async move {
+            use agrocore_domain::repositories::PlantedAtFilter;
+
+            // `Option<Any>` binds as NULL, and a `$n IS NULL` test cannot be planned, so
+            // each optional predicate is built as a fragment that is either included or
+            // left out. This keeps one prepared statement instead of the 2^n variants.
+            let mut sql = String::from(
+                r#"SELECT id, tenant_id, site_id, parent_id, label, object_type, geometry,
+                     area, buffer_meters, properties, custom_fields, note, is_active,
+                     is_temporary, planted_at, variety_id,
+                   created_at, updated_at, created_by, updated_by
+                   FROM spatial_objects WHERE tenant_id = $1"#,
+            );
+            let mut n = 1;
+
+            if filter.include_inactive {
+                sql.push_str(" AND (is_active OR is_active IS NULL)");
+            } else {
+                sql.push_str(" AND is_active");
+            }
+            if filter.site_id.is_some() {
+                n += 1;
+                sql.push_str(&format!(" AND site_id = ${n}"));
+            }
+            if filter.object_type.is_some() {
+                n += 1;
+                sql.push_str(&format!(" AND object_type::text = ${n}"));
+            }
+            if filter.parent_id.is_some() {
+                n += 1;
+                sql.push_str(&format!(" AND parent_id = ${n}"));
+            }
+            match filter.planted_at {
+                Some(PlantedAtFilter::IsNull) => sql.push_str(" AND planted_at IS NULL"),
+                Some(PlantedAtFilter::IsSet) => sql.push_str(" AND planted_at IS NOT NULL"),
+                Some(PlantedAtFilter::Before(d)) => {
+                    n += 1;
+                    sql.push_str(&format!(" AND planted_at < ${n}"));
+                }
+                Some(PlantedAtFilter::After(d)) => {
+                    n += 1;
+                    sql.push_str(&format!(" AND planted_at > ${n}"));
+                }
+                None => {}
+            }
+            // Ordering by id keeps the result stable across pages, which matters because
+            // the map requests a limit and a shifting order would make objects appear and
+            // disappear between calls.
+            sql.push_str(" ORDER BY id");
+            if let Some(limit) = filter.limit {
+                n += 1;
+                sql.push_str(&format!(" LIMIT ${n}"));
+            }
+
+            let mut q = sqlx::query_as::<_, agrocore_domain::entities::spatial::SpatialObject>(
+                &sql,
+            )
+            .bind(tid);
+            if let Some(site) = filter.site_id {
+                q = q.bind(site);
+            }
+            if let Some(t) = &filter.object_type {
+                q = q.bind(t);
+            }
+            if let Some(parent) = filter.parent_id {
+                q = q.bind(parent);
+            }
+            match filter.planted_at {
+                Some(PlantedAtFilter::Before(d))
+                | Some(PlantedAtFilter::After(d)) => {
+                    q = q.bind(d);
+                }
+                _ => {}
+            }
+            if let Some(limit) = filter.limit {
+                q = q.bind(limit);
+            }
+
+            let mut rows = q
+                .fetch_all(&pool)
+                .await
+                .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            // The viewport test last, in Rust, against the domain's own containment rule.
+            if let Some((min_lng, min_lat, max_lng, max_lat)) = filter.bbox {
+                // The envelope's corners are the containment test: an object whose
+                // (possibly buffered) shape covers no corner is not in the viewport.
+                let corners = [
+                    agrocore_domain::entities::spatial::types::GeoPoint::new(min_lng, min_lat),
+                    agrocore_domain::entities::spatial::types::GeoPoint::new(max_lng, min_lat),
+                    agrocore_domain::entities::spatial::types::GeoPoint::new(max_lng, max_lat),
+                    agrocore_domain::entities::spatial::types::GeoPoint::new(min_lng, max_lat),
+                    agrocore_domain::entities::spatial::types::GeoPoint::new(min_lng, min_lat),
+                ];
+                rows.retain(|obj| corners.iter().any(|c| obj.contains_point(c)));
+            }
+
+            Ok(rows)
         })
     }
 }

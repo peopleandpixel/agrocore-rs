@@ -27,6 +27,7 @@ pub mod livestock_new;
 pub mod order;
 pub mod plant_protection;
 pub mod settings;
+pub mod spatial;
 pub mod site;
 pub mod specialized;
 pub mod tree;

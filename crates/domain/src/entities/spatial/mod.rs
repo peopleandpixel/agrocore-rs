@@ -239,6 +239,12 @@ pub struct SpatialObject {
     pub note: Option<String>,
     pub is_active: bool,
     pub is_temporary: bool,
+    /// Planting date of this individual object, not of the cultivar. Null for objects
+    /// imported from SIGPAC and other external sources, which carry no planting year.
+    pub planted_at: Option<chrono::NaiveDate>,
+    /// The cultivar, when one is recorded. Nullable on purpose: a real tree need not be
+    /// identified to a cultivar for the map to draw it.
+    pub variety_id: Option<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub created_by: Option<Uuid>,
@@ -252,6 +258,58 @@ impl SpatialObject {
 }
 
 impl SpatialGeometry {
+    /// GeoJSON `{"type": ..., "coordinates": ...}`, which is what a web map consumes.
+    ///
+    /// GeoJSON coordinate order is **longitude, latitude** — the reverse of how these
+    /// types are read in Rust (`GeoPoint { lng, lat }`) and of how PostGIS stores them.
+    /// Getting it backwards puts every object in the Atlantic off West Africa, which is a
+    /// confusing failure because the shapes still look like coordinates.
+    ///
+    /// The ring of a polygon is closed by the caller; GeoJSON requires the first and last
+    /// position to be identical, and the stored geometry may not be.
+    pub fn to_geojson(&self) -> serde_json::Value {
+        use serde_json::json;
+        let ring = |pts: &[GeoPoint]| -> Vec<[f64; 2]> {
+            let mut out: Vec<[f64; 2]> = pts.iter().map(|p| [p.lng, p.lat]).collect();
+            if let (Some(first), Some(last)) = (out.first().copied(), out.last().copied()) {
+                if first != last {
+                    out.push(first);
+                }
+            }
+            out
+        };
+
+        match self {
+            SpatialGeometry::Point { point } => json!({
+                "type": "Point",
+                "coordinates": [point.lng, point.lat],
+            }),
+            SpatialGeometry::LineString { points } => json!({
+                "type": "LineString",
+                "coordinates": points
+                    .iter()
+                    .map(|p| json!([p.lng, p.lat]))
+                    .collect::<Vec<_>>(),
+            }),
+            SpatialGeometry::Polygon { exterior, holes } => {
+                let mut rings = vec![ring(exterior)];
+                rings.extend(holes.iter().map(|h| ring(h)));
+                json!({ "type": "Polygon", "coordinates": rings })
+            }
+            SpatialGeometry::MultiPolygon { polygons } => {
+                let all: Vec<Vec<Vec<[f64; 2]>>> = polygons
+                    .iter()
+                    .map(|poly| {
+                        let mut rings = vec![ring(&poly.exterior)];
+                        rings.extend(poly.holes.iter().map(|h| ring(h)));
+                        rings
+                    })
+                    .collect();
+                json!({ "type": "MultiPolygon", "coordinates": all })
+            }
+        }
+    }
+
     pub fn contains_point(&self, point: &GeoPoint, buffer_meters: Option<f64>) -> bool {
         match self {
             SpatialGeometry::Point { point: target } => {
@@ -409,6 +467,8 @@ mod tests {
             note: None,
             is_active: true,
             is_temporary: false,
+            planted_at: None,
+            variety_id: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
             created_by: None,

@@ -217,6 +217,76 @@ pub trait SpatialObjectRepository: Send + Sync {
         point: crate::entities::spatial::types::GeoPoint,
         site_id: Option<Uuid>,
     ) -> RepositoryFuture<Vec<SpatialObject>>;
+
+    /// Objects on a plot, optionally narrowed to one object type.
+    ///
+    /// This is the map's read path. `find_all` pages the whole tenant, which is the wrong
+    /// query for a viewport: a farm with 40,000 trees needs "the olives on plot 3", not
+    /// page 1 of everything ordered by insertion.
+    ///
+    /// `bbox` is PostGIS `ST_MakeEnvelope(min_lng, min_lat, max_lng, max_lat)` order, as
+    /// WGS84. The map supplies it from the viewport; `None` means no spatial filter.
+    ///
+    /// `include_inactive` defaults to false, because an object retired last season should
+    /// not be drawn on the map by default -- but it is offered, because "show me the old
+    /// orchard as well" is a real question when reconciling a planting plan.
+    fn find_by_filter(
+        &self,
+        tid: TenantId,
+        filter: SpatialObjectFilter,
+    ) -> RepositoryFuture<Vec<SpatialObject>>;
+}
+
+/// Query for [`SpatialObjectRepository::find_by_filter`].
+///
+/// Every field is optional and they combine with AND. An empty filter is valid and means
+/// "everything in the tenant", which is deliberately still a tenant-scoped query rather
+/// than an unscoped one.
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct SpatialObjectFilter {
+    pub site_id: Option<Uuid>,
+    /// The `SpatialObjectType` stored in the column, e.g. `olive_tree`. Matched exactly:
+    /// the map asks for a type, not for a family of types.
+    pub object_type: Option<String>,
+    pub parent_id: Option<Uuid>,
+    /// Viewport as (min_lng, min_lat, max_lng, max_lat) in WGS84.
+    pub bbox: Option<(f64, f64, f64, f64)>,
+    /// Only objects with a planting date, or only those without. The map cannot tell a
+    /// mature tree from a newly planted one without this.
+    pub planted_at: Option<PlantedAtFilter>,
+    pub include_inactive: bool,
+    /// Hard cap on returned rows. The map viewport query is the one place where a
+    /// generous limit is right, so this is explicit rather than paginated.
+    pub limit: Option<i64>,
+}
+
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub enum PlantedAtFilter {
+    Before(chrono::NaiveDate),
+    After(chrono::NaiveDate),
+    IsNull,
+    IsSet,
+}
+
+impl SpatialObjectFilter {
+    pub fn on_plot(site_id: Uuid) -> Self {
+        Self {
+            site_id: Some(site_id),
+            ..Default::default()
+        }
+    }
+
+    pub fn of_type(object_type: impl Into<String>) -> Self {
+        Self {
+            object_type: Some(object_type.into()),
+            ..Default::default()
+        }
+    }
+
+    pub fn with_limit(mut self, limit: i64) -> Self {
+        self.limit = Some(limit);
+        self
+    }
 }
 
 use crate::entities::livestock::{Animal, CreateAnimalDto, UpdateAnimalDto};

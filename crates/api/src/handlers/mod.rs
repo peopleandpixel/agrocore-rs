@@ -24,6 +24,7 @@ pub mod settings;
 pub mod settings_groups;
 pub mod sigpac;
 pub mod sites;
+pub mod spatial;
 pub mod specialized;
 pub mod system;
 pub mod tasks;
@@ -71,9 +72,28 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route(web::post().to(auth::impersonate)),
             )
             .service(
+                // Spatial objects for the map. Registered ahead of the /{id} patterns
+                // because actix matches in order and a "{id}" segment would swallow
+                // "objects" -- the same trap /sites/import fell into.
                 web::resource("/sites")
                     .route(web::get().to(sites::list_sites))
                     .route(web::post().to(sites::create_site)),
+            )
+            // Spatial objects for the map.
+            //
+            // Separate `service` calls rather than three resources inside one: a single
+            // `.service()` takes exactly one resource, and passing it three made the whole
+            // chain fail to compile at a line that pointed at the wrong place. They are
+            // registered ahead of the `/sites/{{id}}` pattern because actix matches in
+            // order and an `{id}` segment would otherwise swallow "objects" -- the trap
+            // `/sites/import` already fell into.
+            .service(
+                web::resource("/spatial/objects")
+                    .route(web::get().to(spatial::list_spatial_objects)),
+            )
+            .service(
+                web::resource("/spatial/objects/{id}")
+                    .route(web::get().to(spatial::get_spatial_object)),
             )
             // Static paths must be registered before /sites/{id}: the {id}
             // pattern would otherwise match "import" and fail to parse it as a

@@ -37,6 +37,7 @@ pub mod user;
 pub mod variety;
 pub mod vineyard;
 pub mod water;
+pub mod task_state;
 pub mod weather;
 pub mod worker_task_status;
 pub mod workforce;
