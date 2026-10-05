@@ -226,6 +226,20 @@ Eleven migrations apply cleanly on a fresh PostGIS instance. The seed is idempot
 732 varieties, 110 breeds, 41 species on first and second run. As `agrocore_app`,
 tenant A reads the whole catalogue and is blocked from shadowing a species key.
 
+### The seed generator read its inputs from /tmp
+
+`build_catalogue_seed.py` loaded its three datasets from `/tmp`, which is not in the
+repository. A fresh checkout therefore produced a seed with **zero** varieties and still
+applied it cleanly — no error, no warning, just an empty catalogue. It only surfaced
+because the intermediate files were cleaned up while the generator was rerun in the same
+session.
+
+The datasets now live in `scripts/reference_data/` with a README naming the source and
+licence of each, and the generator resolves paths relative to its own location and exits
+with a message if a file is missing or empty. Verified by removing the `/tmp` inputs
+(identical output) and by removing a checked-in dataset (hard failure, exit before any
+SQL is written).
+
 ## [0.47.0] - 2026-10-03
 
 M6, first page — a failed fetch rendered as an empty list.

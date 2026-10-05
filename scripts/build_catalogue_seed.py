@@ -329,9 +329,35 @@ def num(v):
     return "NULL" if v is None else str(v)
 
 
-def load_json(p):
-    p = pathlib.Path(p)
-    return json.loads(p.read_text()) if p.exists() else []
+# Input data lives in the repository. The first version read from /tmp, which meant a
+# fresh checkout produced an EMPTY seed with no error -- the generator silently
+# succeeded with zero rows because every input file was missing.
+REF = pathlib.Path(__file__).resolve().parent / "reference_data"
+SOURCES = {
+    "grapes": REF / "eu_grapes_annex1a.json",
+    "olives": REF / "olive_cultivars.json",
+    "breeds": REF / "breeds_wikipedia.json",
+}
+
+
+def load_json(key):
+    """Load a reference dataset, failing loudly if it is absent.
+
+    An empty result is never acceptable here: a missing input file produced a seed with
+    zero varieties that still applied cleanly to the database.
+    """
+    path = SOURCES[key]
+    if not path.exists():
+        raise SystemExit(
+            f"FATAL: reference data missing: {path}\n"
+            "The catalogue seed cannot be generated without it.\n"
+            "See scripts/reference_data/README.md for how the datasets are produced."
+        )
+    rows = json.loads(path.read_text())
+    if not rows:
+        raise SystemExit(f"FATAL: reference data is empty: {path}")
+    print(f"  loaded {len(rows):4} rows from {path.name}")
+    return rows
 
 
 def build_species():
@@ -347,7 +373,7 @@ def build_species():
 
 
 def build_grapes():
-    rows = load_json("/tmp/eu_grapes.json")
+    rows = load_json("grapes")
     out = []
     for r in rows:
         if r["species_key"] != "vitis_vinifera":
@@ -368,7 +394,7 @@ def build_grapes():
 
 
 def build_olives():
-    rows = load_json("/tmp/olive.json")
+    rows = load_json("olives")
     out = []
     for r in rows:
         name = r["name"].strip().strip('"')
@@ -383,7 +409,7 @@ def build_olives():
 
 
 def build_breeds():
-    rows = load_json("/tmp/breeds.json")
+    rows = load_json("breeds")
     seen = set()
     out = []
     for r in rows:
