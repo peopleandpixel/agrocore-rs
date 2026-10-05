@@ -1,0 +1,848 @@
+[
+ {
+  "name": "Malbec",
+  "prime_name": "Malbec",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Merlot",
+  "prime_name": "Merlot",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Cabernet Sauvignon",
+  "prime_name": "Cabernet Sauvignon",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Syrah",
+  "prime_name": "Syrah",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Pinot Noir",
+  "prime_name": "Pinot Noir",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Pinot Meunier",
+  "prime_name": "Pinot Meunier",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Tannat",
+  "prime_name": "Tannat",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Lambrusco Maestri",
+  "prime_name": "Lambrusco Maestri",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Barbera",
+  "prime_name": "Barbera",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Sangiovese",
+  "prime_name": "Sangiovese",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Bonarda",
+  "prime_name": "Bonarda",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Tempranillo",
+  "prime_name": "Tempranillo",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Cinsaut",
+  "prime_name": "Cinsaut",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Carignan",
+  "prime_name": "Carignan",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Petit Verdot",
+  "prime_name": "Petit Verdot",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Cabernet Franc",
+  "prime_name": "Cabernet Franc",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Carmenere",
+  "prime_name": "Carmenere",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Corvina Veronesse",
+  "prime_name": "Corvina Veronesse",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Rondinella",
+  "prime_name": "Rondinella",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Ancellota",
+  "prime_name": "Ancellota",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Croatina",
+  "prime_name": "Croatina",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Lambrusco Grasparossa",
+  "prime_name": "Lambrusco Grasparossa",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Casavecchia",
+  "prime_name": "Casavecchia",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Garnacha",
+  "prime_name": "Garnacha",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Tinta Cao",
+  "prime_name": "Tinta Cao",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Touriga Nacional",
+  "prime_name": "Touriga Nacional",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "red",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Gewurztraminer",
+  "prime_name": "Gewurztraminer",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "rose",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Pinot Gris",
+  "prime_name": "Pinot Gris",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "rose",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Chardonnay",
+  "prime_name": "Chardonnay",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Chenin Blanc",
+  "prime_name": "Chenin Blanc",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Sauvignon Blanc",
+  "prime_name": "Sauvignon Blanc",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Semillon",
+  "prime_name": "Semillon",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Sauvignonasse",
+  "prime_name": "Sauvignonasse",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Riesling",
+  "prime_name": "Riesling",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Torrontes Riojano",
+  "prime_name": "Torrontes Riojano",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Ugni Blanc",
+  "prime_name": "Ugni Blanc",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Moscato Bianco",
+  "prime_name": "Moscato Bianco",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Pinot Blanco",
+  "prime_name": "Pinot Blanco",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Prosecco",
+  "prime_name": "Prosecco",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Viognier",
+  "prime_name": "Viognier",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Pedro Gimenez",
+  "prime_name": "Pedro Gimenez",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Petit Manseng",
+  "prime_name": "Petit Manseng",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Muscat of Alexandria",
+  "prime_name": "Muscat of Alexandria",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Albarino",
+  "prime_name": "Albarino",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Gruner Veltliner",
+  "prime_name": "Gruner Veltliner",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Fiano",
+  "prime_name": "Fiano",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ },
+ {
+  "name": "Verdelho",
+  "prime_name": "Verdelho",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Argentina"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "use_kind": "white",
+  "synonyms": [],
+  "source": "inv-resolution-18-2022-20-2024",
+  "source_ref": "https://www.boletinoficial.gob.ar/detalleAviso/primera/266291/20220712"
+ }
+]

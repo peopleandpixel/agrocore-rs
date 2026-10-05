@@ -1,0 +1,1527 @@
+[
+ {
+  "name": "Cabernet Sauvignon",
+  "prime_name": "Cabernet Sauvignon",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 95638,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Chardonnay",
+  "prime_name": "Chardonnay",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 88063,
+  "synonyms": [
+   "Pinot Chardonnay"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Pinot Noir",
+  "prime_name": "Pinot Noir",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 46899,
+  "synonyms": [
+   "Pinot Pom 4",
+   "Pinot Dijon"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Zinfandel",
+  "prime_name": "Zinfandel",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 37947,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Merlot",
+  "prime_name": "Merlot",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 33443,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Sauvignon Blanc",
+  "prime_name": "Sauvignon Blanc",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 17663,
+  "synonyms": [
+   "Sauvignon Musque"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Pinot Gris",
+  "prime_name": "Pinot Gris",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 16061,
+  "synonyms": [
+   "Pinot Grigio"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "French Colombard",
+  "prime_name": "French Colombard",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 15960,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Syrah",
+  "prime_name": "Syrah",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 14293,
+  "synonyms": [
+   "French Syrah",
+   "Shiraz",
+   "Syrah Noir"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Petite Sirah",
+  "prime_name": "Petite Sirah",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 11757,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Rubired",
+  "prime_name": "Rubired",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 9978,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Autumn Crisp",
+  "prime_name": "Autumn Crisp",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "table"
+  ],
+  "acres_2024": 6414,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Autumn King",
+  "prime_name": "Autumn King",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "table"
+  ],
+  "acres_2024": 6275,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Grenache",
+  "prime_name": "Grenache",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 4716,
+  "synonyms": [
+   "Grenache Noir"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Barbera",
+  "prime_name": "Barbera",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 4365,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Muscat of Alexandria",
+  "prime_name": "Muscat of Alexandria",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 4220,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Malbec",
+  "prime_name": "Malbec",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 4162,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Chenin Blanc",
+  "prime_name": "Chenin Blanc",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 4154,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Cabernet Franc",
+  "prime_name": "Cabernet Franc",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 3536,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Petit Verdot",
+  "prime_name": "Petit Verdot",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 3519,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Ruby Cabernet",
+  "prime_name": "Ruby Cabernet",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 3356,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Allison",
+  "prime_name": "Allison",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "table"
+  ],
+  "acres_2024": 2864,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "White Riesling",
+  "prime_name": "White Riesling",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 2856,
+  "synonyms": [
+   "Riesling"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Muscat Blanc",
+  "prime_name": "Muscat Blanc",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 2799,
+  "synonyms": [
+   "Muscat Canelli"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Autumn Royal",
+  "prime_name": "Autumn Royal",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "table"
+  ],
+  "acres_2024": 2696,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Viognier",
+  "prime_name": "Viognier",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 2555,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Carignane",
+  "prime_name": "Carignane",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 2084,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Primitivo",
+  "prime_name": "Primitivo",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 1563,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Symphony",
+  "prime_name": "Symphony",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 1390,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Sangiovese",
+  "prime_name": "Sangiovese",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 1374,
+  "synonyms": [
+   "Sangioveto"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Gewurztraminer",
+  "prime_name": "Gewurztraminer",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 1145,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Burger",
+  "prime_name": "Burger",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 1075,
+  "synonyms": [
+   "Monbadon"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Montepulciano",
+  "prime_name": "Montepulciano",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 1040,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Malvasia Bianca",
+  "prime_name": "Malvasia Bianca",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 985,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Torregalo",
+  "prime_name": "Torregalo",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 956,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Tempranillo",
+  "prime_name": "Tempranillo",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 952,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Alicante Bouschet",
+  "prime_name": "Alicante Bouschet",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 824,
+  "synonyms": [
+   "Alicante"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Adaor Seedless",
+  "prime_name": "Adaor Seedless",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "table"
+  ],
+  "acres_2024": 725,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Albarino",
+  "prime_name": "Albarino",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 693,
+  "synonyms": [
+   "Alvarinho"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Tannat",
+  "prime_name": "Tannat",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 626,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Grenache Blanc",
+  "prime_name": "Grenache Blanc",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 620,
+  "synonyms": [
+   "Garnacha Blanca"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Semillon",
+  "prime_name": "Semillon",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 594,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Arra Passion Fire",
+  "prime_name": "Arra Passion Fire",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "table"
+  ],
+  "acres_2024": 411,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Touriga Nacional",
+  "prime_name": "Touriga Nacional",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 330,
+  "synonyms": [
+   "Touriga"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Roussanne",
+  "prime_name": "Roussanne",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 325,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Muscat Orange",
+  "prime_name": "Muscat Orange",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 298,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Mission",
+  "prime_name": "Mission",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 296,
+  "synonyms": [
+   "Rose of Peru"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Pinot Blanc",
+  "prime_name": "Pinot Blanc",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 259,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Carnelian",
+  "prime_name": "Carnelian",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 259,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Valdiguei",
+  "prime_name": "Valdiguei",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 241,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Triplett Blanco",
+  "prime_name": "Triplett Blanco",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 234,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Arra Sugar Drop",
+  "prime_name": "Arra Sugar Drop",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "table"
+  ],
+  "acres_2024": 221,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Royalty",
+  "prime_name": "Royalty",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 172,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Arra Swetties",
+  "prime_name": "Arra Swetties",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "table"
+  ],
+  "acres_2024": 169,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Muscat Hamburg",
+  "prime_name": "Muscat Hamburg",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 169,
+  "synonyms": [
+   "Black Muscat"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Gruner Veltliner",
+  "prime_name": "Gruner Veltliner",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 159,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Vermentino",
+  "prime_name": "Vermentino",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 158,
+  "synonyms": [
+   "Vennentino"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Meunier",
+  "prime_name": "Meunier",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 155,
+  "synonyms": [
+   "Pinot Meunier"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Moscato Gaillo",
+  "prime_name": "Moscato Gaillo",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 153,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Verdelho",
+  "prime_name": "Verdelho",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 149,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Cinsaut",
+  "prime_name": "Cinsaut",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 141,
+  "synonyms": [
+   "Black Malvoisie",
+   "Black Malvasia"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Nebbiolo",
+  "prime_name": "Nebbiolo",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 140,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Marsanne",
+  "prime_name": "Marsanne",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 117,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "St. Emilion",
+  "prime_name": "St. Emilion",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 108,
+  "synonyms": [
+   "Ugni Blanc",
+   "Trebbiano"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Centurian",
+  "prime_name": "Centurian",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 92,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Souzao",
+  "prime_name": "Souzao",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 86,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Graciano",
+  "prime_name": "Graciano",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 85,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Dolcetto",
+  "prime_name": "Dolcetto",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 84,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Carmenere",
+  "prime_name": "Carmenere",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 83,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Picpoul Blanc",
+  "prime_name": "Picpoul Blanc",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 82,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Aglianico",
+  "prime_name": "Aglianico",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 81,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Charbono",
+  "prime_name": "Charbono",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 80,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Cattarratto",
+  "prime_name": "Cattarratto",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 79,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Lagrein",
+  "prime_name": "Lagrein",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 74,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Montpeliano",
+  "prime_name": "Montpeliano",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 74,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Palomino",
+  "prime_name": "Palomino",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 68,
+  "synonyms": [
+   "Golden Chasselas"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Domfelder",
+  "prime_name": "Domfelder",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 67,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Counoise",
+  "prime_name": "Counoise",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 65,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Nero D&#x27;Avola",
+  "prime_name": "Nero D&#x27;Avola",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 63,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Sauvignon Vert",
+  "prime_name": "Sauvignon Vert",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 55,
+  "synonyms": [
+   "Muscadelle"
+  ],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Durif",
+  "prime_name": "Durif",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "blue-black",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 54,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ },
+ {
+  "name": "Tocai Friulano",
+  "prime_name": "Tocai Friulano",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": "yellow-green",
+  "countries": [
+   "United States"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "acres_2024": 53,
+  "synonyms": [],
+  "source": "usda-nass-california-acreage-2024",
+  "source_ref": "https://www.nass.usda.gov/Statistics_by_State/California/Publications/Specialty_and_Other_Releases/Grapes/Acreage/2025/grpacSUMMARY2024Crop.pdf"
+ }
+]

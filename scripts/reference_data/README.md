@@ -22,6 +22,40 @@ can be traced back to the document it came from.
 | `eu_grapes_annex1a.json` | GrapeGen06 "Grapevine European Catalogue", Annex 1A — the grape varieties registered in EU Member States, with VIVC accession number, species, sex, berry colour and allowed use per country. Published by the INRA GrapeGen06 project, distributed via VIVC (Julius Kühn-Institut). | Public research data |
 | `olive_cultivars.json` | Wikipedia, "List of olive cultivars" — name, synonyms and country of origin for 87 cultivars. | CC BY-SA 4.0 |
 | `breeds_wikipedia.json` | Wikipedia breed articles — country of origin and reference weights, harvested from the structured breed infoboxes only. Disambiguation pages and articles without an infobox are excluded. | CC BY-SA 4.0 |
+| `us_grapes_nass.json` | USDA National Agricultural Statistics Service, *California Grape Acreage Report 2024 Summary* — every variety with bearing and non-bearing acres, plus the report's own synonym table. | US public domain |
+| `ar_grapes_inv.json` | Argentina, Instituto Nacional de Vitivinicultura, Resolución 18/2022 (Boletín Oficial 12 July 2022) and Resolución 20/2024 — the varieties recognised as suitable for quality wine, grouped as the resolution groups them. | Public regulation |
+| `cl_grapes_sag.json` | Chile, Servicio Agrícola y Ganadero, Catastro Vitícola Nacional — planted area per variety. Only the varieties the catastro names are included; Chile has no full public varietal list in English. | CL public data |
+
+## National lists outside the EU
+
+`eu_grapes_annex1a.json` now carries 882 cultivars across 27 countries. The EU catalogue
+(Annex 1A) supplied the original 699; the rest were merged in from:
+
+| Country | Source | Cultivars |
+|---------|--------|----------|
+| Australia | Wikipedia "List of Australian wine grape varieties" | 179 |
+| United States | USDA NASS California Grape Acreage Report 2024 | 80 |
+| New Zealand | Wikipedia "New Zealand wine" | 43 |
+| Argentina | INV Resoluciones 18/2022 and 20/2024 | 19 |
+| Chile | SAG Catastro Vitícola Nacional | 8 |
+| South Africa | Wikipedia "South African wine" | 5 |
+
+Countries are stored on the cultivar row rather than as separate rows, because a cultivar
+grown in Portugal, California and Australia is one cultivar with three registrations, and
+splitting it would make "which varieties may I grow in my market" unanswerable by
+counting.
+
+### Matching is by VIVC number, then name, then synonym
+
+The GrapeGen06 catalogue uses the VIVC prime name, which is frequently not the everyday
+name: Chardonnay is listed as *Chardonnay Blanc* with *Chardonnay* among its synonyms, Syrah
+as *Syrah* with *Shiraz*. Matching on name alone produced two rows for one cultivar and
+left plain "Chardonnay" carrying only its South African registration. All three levels are
+needed.
+
+The document also prints a bare section sign `¤` where a variety has no synonym. 666 of the
+699 rows carried it; the parser now drops it, since a placeholder in a name field will be
+read as a variety name by whatever queries it.
 
 ## Regenerating
 

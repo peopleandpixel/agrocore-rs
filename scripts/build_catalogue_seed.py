@@ -564,9 +564,25 @@ def emit():
         L.append(",\n".join(out) + "")
         # Target the scope+name index explicitly. `ON CONFLICT DO NOTHING` with no
         # target cannot use an expression index, so a re-run duplicated every row.
+        # DO UPDATE, not DO NOTHING. The legacy grape and olive rows from the initial
+        # migration exist with the same names, so DO NOTHING left them in place with
+        # registration_countries NULL -- Cabernet Sauvignon and Merlot showed a row with
+        # no markets at all while the researched data had six.
+        #
+        # COALESCE order matters: EXCLUDED wins where the research has a value, because
+        # the researched row is the better one; the existing column is the fallback for
+        # anything the sources did not state.
         L.append("ON CONFLICT (COALESCE(tenant_id, '00000000-0000-0000-0000-000000000000'::uuid),")
         L.append("               COALESCE(global_species_key, '~'), name)")
-        L.append("    DO NOTHING;")
+        L.append("    DO UPDATE SET")
+        L.append("        source                  = EXCLUDED.source,")
+        L.append("        source_ref              = COALESCE(EXCLUDED.source_ref, varieties.source_ref),")
+        L.append("        vivc_no                 = COALESCE(EXCLUDED.vivc_no, varieties.vivc_no),")
+        L.append("        berry_colour            = COALESCE(EXCLUDED.berry_colour, varieties.berry_colour),")
+        L.append("        use_kind                = COALESCE(EXCLUDED.use_kind, varieties.use_kind),")
+        L.append("        registration_countries  = COALESCE(EXCLUDED.registration_countries,")
+        L.append("                                                 varieties.registration_countries),")
+        L.append("        synonym_names           = COALESCE(EXCLUDED.synonym_names, varieties.synonym_names);")
         L.append("")
 
     # The legacy rows from the initial migration carry no species. That has to be fixed

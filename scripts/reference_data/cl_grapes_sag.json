@@ -1,0 +1,290 @@
+[
+ {
+  "name": "Cabernet Sauvignon",
+  "prime_name": "Cabernet Sauvignon",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Chile"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "hectares": 40204,
+  "synonyms": [],
+  "source": "sag-catastro-viticola-nacional",
+  "source_ref": "https://www.sag.gob.cl/noticias/sag-presenta-catastro-viticola-nacional-2019"
+ },
+ {
+  "name": "Sauvignon Blanc",
+  "prime_name": "Sauvignon Blanc",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Chile"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "hectares": 15222,
+  "synonyms": [],
+  "source": "sag-catastro-viticola-nacional",
+  "source_ref": "https://www.sag.gob.cl/noticias/sag-presenta-catastro-viticola-nacional-2019"
+ },
+ {
+  "name": "Merlot",
+  "prime_name": "Merlot",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Chile"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "hectares": 11757,
+  "synonyms": [],
+  "source": "sag-catastro-viticola-nacional",
+  "source_ref": "https://www.sag.gob.cl/noticias/sag-presenta-catastro-viticola-nacional-2019"
+ },
+ {
+  "name": "Chardonnay",
+  "prime_name": "Chardonnay",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Chile"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "hectares": 11124,
+  "synonyms": [],
+  "source": "sag-catastro-viticola-nacional",
+  "source_ref": "https://www.sag.gob.cl/noticias/sag-presenta-catastro-viticola-nacional-2019"
+ },
+ {
+  "name": "Carmenere",
+  "prime_name": "Carmenere",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Chile"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "hectares": 10732,
+  "synonyms": [],
+  "source": "sag-catastro-viticola-nacional",
+  "source_ref": "https://www.sag.gob.cl/noticias/sag-presenta-catastro-viticola-nacional-2019"
+ },
+ {
+  "name": "Syrah",
+  "prime_name": "Syrah",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Chile"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "hectares": 2039,
+  "synonyms": [],
+  "source": "sag-catastro-viticola-nacional",
+  "source_ref": "https://www.sag.gob.cl/noticias/sag-presenta-catastro-viticola-nacional-2019"
+ },
+ {
+  "name": "Cabernet Franc",
+  "prime_name": "Cabernet Franc",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Chile"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "hectares": null,
+  "synonyms": [],
+  "source": "sag-catastro-viticola-nacional",
+  "source_ref": "https://www.sag.gob.cl/noticias/sag-presenta-catastro-viticola-nacional-2019"
+ },
+ {
+  "name": "Pinot Noir",
+  "prime_name": "Pinot Noir",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Chile"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "hectares": null,
+  "synonyms": [],
+  "source": "sag-catastro-viticola-nacional",
+  "source_ref": "https://www.sag.gob.cl/noticias/sag-presenta-catastro-viticola-nacional-2019"
+ },
+ {
+  "name": "Malbec",
+  "prime_name": "Malbec",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Chile"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "hectares": null,
+  "synonyms": [],
+  "source": "sag-catastro-viticola-nacional",
+  "source_ref": "https://www.sag.gob.cl/noticias/sag-presenta-catastro-viticola-nacional-2019"
+ },
+ {
+  "name": "Carignan",
+  "prime_name": "Carignan",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Chile"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "hectares": null,
+  "synonyms": [],
+  "source": "sag-catastro-viticola-nacional",
+  "source_ref": "https://www.sag.gob.cl/noticias/sag-presenta-catastro-viticola-nacional-2019"
+ },
+ {
+  "name": "Cabernet Sauvignon Malbec",
+  "prime_name": "Cabernet Sauvignon Malbec",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Chile"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "hectares": null,
+  "synonyms": [],
+  "source": "sag-catastro-viticola-nacional",
+  "source_ref": "https://www.sag.gob.cl/noticias/sag-presenta-catastro-viticola-nacional-2019"
+ },
+ {
+  "name": "Sauvignon Gris",
+  "prime_name": "Sauvignon Gris",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Chile"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "hectares": null,
+  "synonyms": [],
+  "source": "sag-catastro-viticola-nacional",
+  "source_ref": "https://www.sag.gob.cl/noticias/sag-presenta-catastro-viticola-nacional-2019"
+ },
+ {
+  "name": "Cocha Cola",
+  "prime_name": "Cocha Cola",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Chile"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "hectares": null,
+  "synonyms": [],
+  "source": "sag-catastro-viticola-nacional",
+  "source_ref": "https://www.sag.gob.cl/noticias/sag-presenta-catastro-viticola-nacional-2019"
+ },
+ {
+  "name": "Pais",
+  "prime_name": "Pais",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Chile"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "hectares": null,
+  "synonyms": [],
+  "source": "sag-catastro-viticola-nacional",
+  "source_ref": "https://www.sag.gob.cl/noticias/sag-presenta-catastro-viticola-nacional-2019"
+ },
+ {
+  "name": "Muscat",
+  "prime_name": "Muscat",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Chile"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "hectares": null,
+  "synonyms": [],
+  "source": "sag-catastro-viticola-nacional",
+  "source_ref": "https://www.sag.gob.cl/noticias/sag-presenta-catastro-viticola-nacional-2019"
+ },
+ {
+  "name": "Pedro Ximenez",
+  "prime_name": "Pedro Ximenez",
+  "species_key": "vitis_vinifera",
+  "vivc_no": null,
+  "sex": null,
+  "berry_colour": null,
+  "countries": [
+   "Chile"
+  ],
+  "uses": [
+   "wine"
+  ],
+  "hectares": null,
+  "synonyms": [],
+  "source": "sag-catastro-viticola-nacional",
+  "source_ref": "https://www.sag.gob.cl/noticias/sag-presenta-catastro-viticola-nacional-2019"
+ }
+]

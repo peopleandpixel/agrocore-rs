@@ -240,6 +240,53 @@ with a message if a file is missing or empty. Verified by removing the `/tmp` in
 (identical output) and by removing a checked-in dataset (hard failure, exit before any
 SQL is written).
 
+### Non-EU national grape lists
+
+Germany being a target market is why the national catalogues matter more than a cultivar's
+birthplace, so the EU list was extended with the non-EU countries where the software is also
+sold. 882 grapevine cultivars across 27 countries, up from 699 in 21.
+
+| Country | Source | Cultivars |
+|---------|--------|----------|
+| Australia | Wikipedia, VIVC number per cultivar | 179 |
+| United States | USDA NASS California Grape Acreage Report 2024 | 80 |
+| New Zealand | Wikipedia, planted area per cultivar | 43 |
+| Argentina | INV Resoluciones 18/2022 and 20/2024 | 19 |
+| Chile | SAG Catastro Vitícola Nacional | 8 |
+| South Africa | Wikipedia, share of national crush | 5 |
+
+The USDA report is the strongest source of the lot: it states every variety with bearing and
+non-bearing acres, and prints its own synonym table — which is how the dataset confirms that
+Syrah is Shiraz and Touriga Nacional is Touriga, and that Tempranillo is Tinta Roriz.
+Cabernet Sauvignon is planted on 95,638 acres in California, Chardonnay on 88,063.
+
+Argentina's list is taken from the INV resolutions rather than a secondary summary, grouped as
+the regulation groups them (red / rosé / white). Berry colour is left NULL there: the
+regulation groups by wine colour, and a rosé wine from a red-skinned variety is normal, so
+inferring berry colour from the group would be wrong.
+
+### Three defects found by checking what landed in the database
+
+Matching by name produced two rows for one cultivar. The GrapeGen06 catalogue uses the VIVC
+prime name, so Chardonnay is listed as *Chardonnay Blanc* with *Chardonnay* among its
+synonyms — and plain "Chardonnay" ended up carrying only its South African registration while
+the EU registrations sat on the other row. Matching is now by VIVC number, then name, then
+synonym; Chardonnay Blanc resolves to 22 markets, Cabernet Sauvignon to 18, Syrah to 14.
+
+The section sign the source document prints as a placeholder for "no synonym" reached the
+catalogue on 666 of 699 rows. A placeholder in a name field will be read as a variety name by
+whatever queries it.
+
+The seed used `ON CONFLICT DO NOTHING` for grapes and olives, so the legacy rows from the
+initial migration survived with `registration_countries` NULL — Cabernet Sauvignon and Merlot
+showed a row with no markets at all while the researched data had six. The conflict handler now
+updates.
+
+88 olive cultivars have no `registration_countries`, because no country publishes an olive
+national catalogue; their origin is recorded instead. Four legacy grape rows have no
+registration either, because they are in none of the harvested lists — left as found rather
+than guessed.
+
 ## [0.47.0] - 2026-10-03
 
 M6, first page — a failed fetch rendered as an empty list.

@@ -369,11 +369,31 @@ shadow it: it is the join target of every grouping query, so a tenant-local dupl
 would split one species into two in every aggregate. This is the only closed reference
 value in the system.
 
-`varieties` holds cultivars. For grapevines, `registration_countries` is the set of EU
-member states whose national catalogue lists the cultivar — 434 of 638 are registered in
-more than one country, which is what answers "may I plant this where I operate". Origin
-alone is not a usable proxy. `vivc_no`, `berry_colour` and `use_kind` come from the
-GrapeGen06 European Catalogue / VIVC.
+`varieties` holds cultivars. `registration_countries` is the set of countries whose
+national catalogue or official statistics list the cultivar — 825 grapevine cultivars
+across 27 countries, most registered in more than one. That is what answers "may I plant
+this where I operate"; origin alone is not a usable proxy. `vivc_no`, `berry_colour` and
+`use_kind` come from the GrapeGen06 European Catalogue / VIVC, with the national lists
+below merged in:
+
+| Country | Source | Cultivars |
+|---------|--------|----------|
+| EU (21 states) | GrapeGen06 European Catalogue, Annex 1A (INRA/VIVC) | 699 |
+| Australia | Wikipedia, VIVC number per cultivar | 179 |
+| United States | USDA NASS California Grape Acreage Report 2024 | 80 |
+| New Zealand | Wikipedia, planted area per cultivar | 43 |
+| Argentina | INV Resoluciones 18/2022 and 20/2024 | 19 |
+| Chile | SAG Catastro Vitícola Nacional | 8 |
+| South Africa | Wikipedia, share of national crush | 5 |
+
+A cultivar is stored once with every market it is registered in, so "which of these can I
+grow in Germany, California or Australia" is one row and one predicate. Records are matched
+by VIVC accession number, then by name, then by synonym — the VIVC prime name is often not
+the everyday name (Chardonnay is listed as *Chardonnay Blanc*, Syrah carries *Shiraz*), and
+name-only matching produced two rows for one cultivar.
+
+88 olive cultivars have no `registration_countries`: no country publishes an olive national
+catalogue, so their origin is recorded instead.
 
 `breeds` holds breeds with reference performance values. Two conventions matter:
 
