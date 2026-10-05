@@ -45,7 +45,7 @@ test:
   image: rust:latest
   needs: [quality-gates]
   services:
-    - name: postgis/postgis:16-3.4
+    - name: postgis/postgis:18-3.6
       alias: postgres
   variables:
     POSTGRES_DB: agrocore_test

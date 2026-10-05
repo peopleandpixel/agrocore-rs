@@ -2,7 +2,7 @@
 # Usage: docker compose -f .dev/docker-compose.yml up -d
 services:
   postgres:
-    image: postgis/postgis:latest
+    image: postgis/postgis:18-3.6
     container_name: agrocore-dev-postgres
     volumes:
       - agrocore_pg_data:/var/lib/postgresql/data

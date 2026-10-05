@@ -287,6 +287,42 @@ national catalogue; their origin is recorded instead. Four legacy grape rows hav
 registration either, because they are in none of the harvested lists — left as found rather
 than guessed.
 
+### PostgreSQL 16 → 18
+
+The database moves to PostgreSQL 18 with PostGIS 3.6, pinned as `postgis/postgis:18-3.6` in
+every compose file, both CI pipelines and the test fixture. `18-3.6` is the only 18.x
+PostGIS tag that exists — `18-3.4` and `18-3.5` do not, so a guessed tag would have failed
+only when the suite ran.
+
+### An unrelated defect found on the way
+
+`docker-compose.yml` ran `postgres:16-alpine`, which does not ship PostGIS, while migration
+`0000000000` runs `CREATE EXTENSION IF NOT EXISTS postgis`. That compose file could never
+have migrated; the other two use a PostGIS image, which is why the defect went unnoticed.
+All of them now use the same image on the same version.
+
+### What upgrading an existing cluster means
+
+PostgreSQL supports skipping intermediate major versions, so 16 → 18 goes directly.
+
+- **A dump taken on 18 cannot be restored into 16** — verified:
+  `pg_restore: error: unsupported version (1.16) in file header`. After the upgrade,
+  rolling back to 16 is not possible.
+- `pg_dump` 18 against a 16 server works, and the backup service already tolerates the
+  unknown-parameter warnings a newer client emits on an older server.
+- `pg_upgrade` cannot move a Docker volume between images, so the container upgrade is a
+  logical dump and restore and needs a maintenance window.
+
+The backup service shells out to `pg_dump` and `pg_restore`, and **no Dockerfile installs
+`postgresql-client`** — a container built from this repository cannot run a backup today.
+Recorded rather than fixed here, because the fix belongs with the image build.
+
+### Verified on PostgreSQL 18.6 / PostGIS 3.6.4
+
+Eleven migrations apply cleanly, the catalogue seed applies, and the same tests pass on
+both versions: 5/5 `order_schema_tests` on 16 and on 18, plus 26 further tests against a
+seeded 18 cluster and 12 through the testcontainers fixture on 18.
+
 ## [0.47.0] - 2026-10-03
 
 M6, first page — a failed fetch rendered as an empty list.

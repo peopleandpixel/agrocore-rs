@@ -17,7 +17,11 @@ impl PostgresTestFixture {
         // postgis extension, which the plain postgres image does not ship.
         // testcontainers_modules::postgres is hardwired to postgres:11-alpine
         // and has no with_tag(), hence GenericImage.
-        let container = GenericImage::new("postgis/postgis", "16-3.4")
+        //
+        // The tag must stay in step with every compose file and both CI pipelines.
+        // 18-3.6 exists; 18-3.4 and 18-3.5 do not, so a guessed tag fails only when
+        // the suite runs.
+        let container = GenericImage::new("postgis/postgis", "18-3.6")
             .with_exposed_port(5432_u16.into())
             .with_wait_for(WaitFor::message_on_either_std(
                 "database system is ready to accept connections",

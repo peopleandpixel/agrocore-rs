@@ -3,7 +3,10 @@ version: '3.8'
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:16-alpine
+    # The plain postgres image does not ship PostGIS, and migration 0000000000 runs
+    # `CREATE EXTENSION IF NOT EXISTS postgis` -- so this service could never have
+    # migrated. Same image as the other compose files, on the same version.
+    image: postgis/postgis:18-3.6
     container_name: agrocore-postgres
     environment:
       POSTGRES_DB: agrocore

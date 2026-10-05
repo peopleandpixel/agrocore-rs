@@ -415,6 +415,36 @@ from the sources named per row. Idempotent — re-running changes nothing. 41 sp
 732 cultivars, 110 breeds.
 
 
+### 4.3 PostgreSQL version and upgrading an existing database
+
+The project targets **PostgreSQL 18** with **PostGIS 3.6**, pinned as `postgis/postgis:18-3.6`
+in every compose file, both CI pipelines and the test fixture. Tags `18-3.4` and `18-3.5`
+do not exist, so a guessed tag fails only when the suite runs.
+
+`18-3.6` is the only 18.x PostGIS tag that exists; `16-3.4` was the previous pin.
+
+### Upgrading an existing cluster
+
+PostgreSQL supports skipping intermediate major versions, so 16 → 18 goes directly — read
+the 17 and 18 release notes regardless, in particular the Migration sections.
+
+Two things to know before starting:
+
+- **A dump taken on 18 cannot be restored into 16.** Verified:
+  `pg_restore: error: unsupported version (1.16) in file header`. Once the database is
+  upgraded, rolling back to 16 is no longer an option. Take a `pg_dumpall` in the custom
+  format *before* the upgrade if a fallback matters.
+- **`pg_dump` 18 against a 16 server works**, and the backup service already tolerates the
+  unknown-parameter warnings a newer client produces on an older server.
+
+`pg_upgrade` cannot move a Docker volume between two images, so upgrading the container
+means a logical dump and restore (`pg_dumpall`, or `pg_dump` per database plus
+`pg_upgrade`-style role restoration). Plan for a maintenance window.
+
+The backup service shells out to `pg_dump` and `pg_restore`. Those binaries are **not
+installed by any Dockerfile**, so a container built from this repository cannot run a
+backup; it needs `postgresql-client` matching the server version.
+
 ## 5. Authentication & Authorization
 
 ### 5.1 JWT Auth
@@ -584,7 +614,7 @@ cd crates/admin-ui && trunk serve
 
 ```yaml
 services:
-  postgres:    # postgis/postgis:16-3.4
+  postgres:    # postgis/postgis:18-3.6  (PostgreSQL 18.6, PostGIS 3.6.4)
   nats:        # nats:2.10-alpine (with JetStream)
   mosquitto:   # eclipse-mosquitto:2.0 (MQTT + WebSockets + TLS)
   api:         # Actix Web API (port 8080)
