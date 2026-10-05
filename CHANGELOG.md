@@ -158,6 +158,74 @@ Known data errors left in place rather than silently corrected: `('Sheep','Merin
 A catalogue table is only as good as its sources, so these belong in a seeded
 reference dataset with a `source` column, not patched in a migration.
 
+### Reference catalogue, seeded and verified
+
+`crop_species` splits species from cultivars. The initial migration seeded `varieties`
+with 46 rows across eight categories, and most were not cultivars at all -- `('Apple',
+'Apple')`, `('Wheat', 'Wheat')`, `('Tomato', 'Tomato')`. A species stated twice is not a
+variety, and mixing the two made "every cultivar of Vitis vinifera" and "every species we
+grow" the same question. 22 such rows moved to `crop_species` with a stable
+`species_key`; `varieties` and `breeds` now reference it.
+
+`crop_species` is the one reference value in the system that stays closed. A tenant may
+add a cultivar or a breed, but `species_key` is globally unique and cannot be shadowed,
+because a tenant-local duplicate would split one species into two in every aggregate
+built on it.
+
+Grapevine cultivars come from the GrapeGen06 European Catalogue (Annex 1A, INRA/VIVC):
+638 cultivars registered in EU member states, with VIVC accession number, sex, berry
+colour and allowed use. 434 are registered in more than one country, which is the column
+that answers "may I plant this where I operate" -- origin alone is not a usable proxy.
+Portugal 280, Italy 286, France 244, Spain 167, Germany 127.
+
+Olive cultivars: 87 with origin, from the Wikipedia cultivar list.
+
+Breeds: 110 across nine species, origin for every row, harvested from Wikipedia breed
+infoboxes and verified rather than guessed.
+
+Wool micron ranges come from the USDA grade tables in the American Sheep Industry
+Association's "Wool Grades and the Sheep that Grow the Wool": Merino 17.70-19.14,
+Suffolk 36.20-38.09, Lincoln 38.10-40.20. Fibre diameter rather than fleece weight,
+because diameter decides the market value while kilograms decide the quantity, and
+conflating them produced one misleading number. All 18 breeds in that table are present.
+
+Egg figures carry the strain. Published values for one breed disagree by up to 100
+eggs/year -- Rhode Island Red is quoted at 180-220 by the Livestock Conservancy, 250-300
+commercially, 150-200 by Oklahoma State. `egg_production_strain` records which
+population a figure describes, so a number is never read as universal.
+
+Two origins in the original data were wrong and are corrected: `('Sheep','Merino',
+'Spain')` -- Merino was developed in Australia from Spanish stock -- and `('Goat',
+'Nubian','UK')` -- the Anglo-Nubian was bred in England, the Nubian breed is Egyptian.
+
+### Four defects found by opening the artefact, not the log
+
+Every one of these produced a green run and wrong data.
+
+`registration_countries` was entirely NULL. The builder wrote `countries` and `synonyms`
+while the generator read `registration_countries` and `synonym_names`. A dict lookup that
+misses returns None, so every extra column silently became NULL -- and the seed still
+applied cleanly.
+
+Breeds were classified by filename substring with a default of `chicken`, so Lusitano,
+Appaloosa and Holstein Friesian landed under poultry, and Merino and Suffolk carried the
+micron values of breeds they are not. Replaced by derivation from what the article
+declares, with anything unclassifiable dropped rather than defaulted.
+
+`ON CONFLICT DO NOTHING` duplicated every row on a second run (749 -> 836 varieties)
+because it had no unique index to match on. The fix was an explicit conflict target --
+and then a further error, since the index had to include `global_species_key`: Hampshire
+is a sheep breed and a pig breed, and Bronze a turkey and a goose.
+
+The breed parser accepted disambiguation pages. "Angus may refer to:" is not a breed,
+and the fallback silently classified it as poultry.
+
+### Verified
+
+Eleven migrations apply cleanly on a fresh PostGIS instance. The seed is idempotent --
+732 varieties, 110 breeds, 41 species on first and second run. As `agrocore_app`,
+tenant A reads the whole catalogue and is blocked from shadowing a species key.
+
 ## [0.47.0] - 2026-10-03
 
 M6, first page — a failed fetch rendered as an empty list.
