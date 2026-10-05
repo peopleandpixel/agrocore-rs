@@ -445,6 +445,46 @@ The backup service shells out to `pg_dump` and `pg_restore`. Those binaries are 
 installed by any Dockerfile**, so a container built from this repository cannot run a
 backup; it needs `postgresql-client` matching the server version.
 
+### 4.4 Worker movement profiles and position retention
+
+Raw positions live in `worker_locations`, one row per report. There is no retention by
+default, so `enforce_worker_location_retention()` has to be scheduled; it aggregates expired
+days into `worker_daily_profiles` and then deletes the raw points, aggregating first so a
+crash between the two cannot lose a track.
+
+Three settings in `system_settings` control it, with the NULL-tenant row as the global default
+and a tenant row overriding:
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `tracking.raw_retention_days` | 30 | Days raw points are kept |
+| `tracking.simplify_tolerance_m` | 5.0 | Douglas-Peucker tolerance for the daily path |
+| `tracking.retention_interval_minutes` | 360 | How often retention runs |
+
+`worker_daily_profiles` holds one row per worker per calendar day: start and end position, the
+simplified path, distance in metres, span, worst reported accuracy, and `areas_covered`.
+
+Two things to know when reading it:
+
+- **`span_seconds` is not time in motion.** It is the gap between the first and last fix, so a
+  worker standing still for eight hours has the same span as one who walked. Deriving moving
+  time would need distance per segment, not just the total.
+- **Distance is measured on the spheroid** via a cast to `::geography`. `ST_Length` on SRID
+  4326 returns degrees.
+
+`areas_covered` is filled by `refresh_worker_profile_areas()` from the tenant's parcel
+boundaries, and uses the raw path rather than the simplified one: containment is a question a
+simplified line can answer wrongly by clipping a corner. It stays NULL when the tenant has no
+parcels registered, rather than becoming an empty geometry.
+
+`task_data.gps_track JSONB` stores a second copy of the same fact in a shape that cannot answer
+any spatial question. It is left in place -- convertible later with `ST_GeomFromGeoJSON`
+without an application change -- but `worker_daily_profiles` is the queryable one.
+
+The aggregation and retention functions are not granted to `agrocore_app`: they write profiles
+for every tenant they scan, and a SECURITY DEFINER variant would bypass RLS entirely and be
+able to read across tenants. Scheduled retention is a maintenance task and runs privileged.
+
 ## 5. Authentication & Authorization
 
 ### 5.1 JWT Auth

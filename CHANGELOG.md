@@ -323,6 +323,82 @@ Eleven migrations apply cleanly, the catalogue seed applies, and the same tests 
 both versions: 5/5 `order_schema_tests` on 16 and on 18, plus 26 further tests against a
 seeded 18 cluster and 12 through the testcontainers fixture on 18.
 
+### Worker movement profiles, and retention for the position stream
+
+`worker_locations` stored one row per reported position with no retention and no index on
+(worker_id, timestamp). At a 30-second interval that is 2,880 rows per worker per day -- about
+3 GB a year for 50 workers -- and reading a day's history was a sort over the whole table.
+
+The row count was not the real objection though. A point every 30 seconds does not describe
+movement: a worker standing between two trees emits identical points, and GPS noise emits
+outliers a map draws as teleports. `accuracy_meters` was stored but never used, so a fix with
+50 m of uncertainty was treated like an exact one and asked which parcel it falls in would
+answer wrongly.
+
+`worker_daily_profiles` is one row per worker per calendar day: first and last position, the
+day's path simplified with Douglas-Peucker, distance, span, worst reported accuracy, and the
+parcels the path touched. `planted_at`-style derivation applies here too: the profile is
+derived, so it can be rebuilt while the raw points still exist.
+
+`task_data.gps_track JSONB` already stored a track in a second shape -- not queryable for any
+spatial question. A worker position history and a task track are the same fact in two places,
+which is how two contradictory truths form. The JSONB column is left in place because it can
+be converted with `ST_GeomFromGeoJSON` later without an application change, but
+`worker_daily_profiles` is now the queryable one.
+
+### Configurable, not implicit
+
+| Setting | Default | Meaning |
+|---------|---------|---------|
+| `tracking.raw_retention_days` | 30 | Days raw points are kept before aggregation and deletion |
+| `tracking.simplify_tolerance_m` | 5.0 | Douglas-Peucker tolerance; 2 m where worked area is measured, 20 m for a route overview |
+| `tracking.retention_interval_minutes` | 360 | How often the retention job runs |
+
+In `system_settings`, with the NULL-tenant row as the global default and a tenant row
+overriding it. Thirty days is a policy decision rather than a technical limit: a worker
+position history is a personnel record, not an inventory record, so it is deliberately
+bounded.
+
+`enforce_worker_location_retention()` aggregates before it deletes, and skips a day whose
+profile could not be built -- a crash between the two would otherwise lose the track with no
+profile to show for it.
+
+### Four defects, each found by running the function rather than reading it
+
+**Distance was stored in degrees.** `ST_Length` on SRID 4326 returns degrees, so a measured
+1.3 km walk stored 0.013 and rounded to zero in any report. The cast to `::geography` is what
+makes PostGIS measure on the spheroid.
+
+**The retention loop did nothing at all.** The function returns a table with columns named
+`worker_id` and `profile_date`, and PL/pgSQL resolves an unqualified name against those output
+variables first, so `worker_id` in the query raised `column reference "worker_id" is
+ambiguous` and the whole run silently processed zero worker-days. Every column reference is
+now table-qualified.
+
+**`refresh_worker_profile_areas` matched rows and updated none.** The parameter and a column
+were both `tenant_id`, and the alias `p` was used for the profile in the CTE and again in the
+UPDATE. It returned 0 while looking correct.
+
+**`ST_Union(ST_Collect(...))` is rejected outright** -- `aggregate function calls cannot be
+nested`. The outer `ST_Union` was never needed; `ST_Collect` already dissolves shared edges.
+
+Seeding the global settings also failed initially: the audit trigger writes `tenant_id` from
+`app.current_tenant_id` and `audit_logs` declares it NOT NULL, so a global row (tenant_id
+NULL, which is how a tenant overrides it) cannot be audited. Migration 8 added
+`app.audit_suppressed` for exactly this class of problem; the same escape applies, scoped to
+this statement only, so tenant edits to these settings are still audited.
+
+### Verified
+
+Twelve migrations apply cleanly on PostgreSQL 18.6 / PostGIS 3.6.4. A seeded walk of 40 fixes
+aggregates to 1,635.9 m over a 7,020 s span with the path simplified to 2 points, valid
+LineString. Retention turns 44 raw points into 3 (today's) plus 2 profiles. Raising the
+retention to 120 days keeps the 40-day-old points; lowering it back deletes them. Re-running
+is idempotent. A single-fix day yields a profile with a position and no path rather than
+erroring. `areas_covered` fills from parcel boundaries as a valid MultiPolygon, and stays NULL
+when the tenant has none. RLS: tenant B reads 0 of tenant A's profiles, tenant A reads both,
+and a cross-tenant insert is rejected.
+
 ## [0.47.0] - 2026-10-03
 
 M6, first page — a failed fetch rendered as an empty list.
