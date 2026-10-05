@@ -3,14 +3,73 @@
     <head>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
-        <link href="https://cdn.jsdelivr.net/npm/daisyui@latest/dist/full.min.css" rel="stylesheet" type="text/css" />
-        <script src="https://cdn.tailwindcss.com"></script>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-        <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+        <!--
+            Vendored, not fetched from a CDN.
+
+            Every one of these was loaded from a public CDN, which meant the Admin UI
+            could not start without a network: the document arrived, the styles and
+            the map library did not, and Chrome showed ERR_INTERNET_DISCONNECTED for
+            the page itself. For an application whose workers use it in a field that
+            is the whole feature failing.
+
+            DaisyUI is a prebuilt stylesheet and Leaflet is a script, so both are
+            files that can simply be served. Tailwind is different — the CDN serves
+            the JIT *runtime*, which compiles CSS in the browser by scanning the DOM.
+            Vendoring that copy keeps the current behaviour offline, including any
+            class combination a view produces at runtime, at the cost of about 400 KB
+            of script and the browser doing the work. Building Tailwind ahead of time
+            would drop that cost and shrink the bundle, but it needs a content scan of
+            the Leptos views and is a separate piece of work — recorded rather than
+            done here, because getting a static build wrong produces an application
+            that silently loses every style a dynamic class name would have supplied.
+
+            `public/vendor/` is copied into `dist/` by Trunk, so these paths are
+            relative to the served root and carry no host of their own.
+        -->
+        <link href="/vendor/daisyui.css" rel="stylesheet" type="text/css" />
+        <script src="/vendor/tailwind.js"></script>
+        <link rel="stylesheet" href="/vendor/leaflet.css" />
+        <link rel="stylesheet" href="/vendor/leaflet-draw.css" />
+        <script src="/vendor/leaflet.js"></script>
+        <script src="/vendor/leaflet-draw.js"></script>
         <link data-trunk rel="css" href="styles/overrides.css" />
-        <link data-trunk rel="rust" data-target-name="admin-ui" />
+        <!--
+            `data-wasm-opt="0"` is the real control for the optimisation step, and it
+            is an HTML attribute rather than a Trunk.toml setting — Trunk has no
+            `build.wasm_opt` key at all. The level is parsed by `WasmOptLevel`, where
+            `"0"` means `Off`, i.e. skip the step.
+
+            It is set because Binaryen `version_116` — the version Trunk 0.21 pins —
+            exits with status 1 on the module the Rust 1.97 toolchain produces. wasm-opt
+            is a size optimisation, not a correctness one: wasm-bindgen and the linker
+            have already emitted a valid module before this point. Recorded as O3 in
+            docs/tasks.md; the real fix is a newer pinned Binaryen or a newer Trunk,
+            which is a dependency decision rather than a code change.
+
+            Without this attribute a release build runs the optimisation by default and
+            the Docker build fails.
+        -->
+        <link data-trunk rel="rust" data-target-name="admin-ui" data-wasm-opt="0" />
+
+        <!--
+            Trunk copies nothing from `public/` on its own. A directory only reaches
+            `dist/` when an element asks for it with `rel="copy-dir"`, which is why a
+            Docker build of this image contained the WASM bundle and none of the
+            offline files: `sw.js`, `manifest.json`, the icons and the whole `vendor/`
+            tree were all in the repository and all absent from the artefact.
+
+            Each entry keeps its directory name, so `/vendor/leaflet.js` and
+            `/icons/icon-192x192.png` resolve exactly as the pages and the service
+            worker reference them. `sw.js`, `manifest.json` and `offline.html` are
+            copied individually because they live at the root of `public/`, and
+            `copy-dir` on `public/` itself would also have copied `vendor/` twice.
+        -->
+        <link data-trunk rel="copy-dir" href="public/vendor" />
+        <link data-trunk rel="copy-dir" href="public/icons" />
+        <link data-trunk rel="copy-file" href="public/sw.js" />
+        <link data-trunk rel="copy-file" href="public/manifest.json" />
+        <link data-trunk rel="copy-file" href="public/offline.html" />
+        <link data-trunk rel="copy-file" href="public/worker-tasks-offline.html" />
         <title>AgroCore Admin</title>
     </head>
     <body></body>

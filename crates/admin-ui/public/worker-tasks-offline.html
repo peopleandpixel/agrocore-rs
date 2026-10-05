@@ -4,8 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meine Aufgaben - Offline</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <!-- Vendored, not fetched from a CDN: this page is only ever shown when there is no
+       network, so a CDN reference here would leave it unstyled in exactly the
+       situation it exists for. See the note in index.html. -->
+  <script src="/vendor/tailwind.js"></script>
+  <link href="/vendor/daisyui.css" rel="stylesheet" type="text/css" />
 </head>
 <body class="min-h-screen bg-base-200">
   <div class="max-w-2xl mx-auto p-4">

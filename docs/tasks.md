@@ -572,6 +572,172 @@ RUSTFLAGS='-D warnings' cargo build --target wasm32-unknown-unknown \
 
 139 API tests with mocks pass.
 
+## O1 — the Admin UI could not start without a network (fixed 2026-10-04)
+
+Discovered by switching the network off and watching the page fail with
+`net::ERR_INTERNET_DISCONNECTED` for the document itself.
+
+### A correction
+
+The 0.47.0 survey said the UI has no offline path: "the only localStorage use is
+auth tokens, there is no `PendingChange` store, no offline state". That was wrong.
+`public/sw.js` existed — 6,924 bytes with a full strategy: cache-first for static
+files, network-first fallback for API calls, IndexedDB for queued task updates,
+background sync, push handling. It was not dead in the sense of being unfinished; it
+was dead in the sense that **nothing registered it**. `serviceWorker.register`
+appeared nowhere in the repository.
+
+The claim came from a partial search — I checked localStorage and did not check for a
+service worker. That is the same error as the SIGPAC index measurement I inherited and
+the Clippy gate I reported clean at 0.44.0: a statement about absence made without
+looking.
+
+### Why it would have failed anyway
+
+Five defects, each of which alone prevents a working offline start:
+
+1. `STATIC_ASSETS` named `/styles/tailwind.css` and `/styles/daisyui.css`. Neither
+   exists. `cache.addAll` rejects the whole install if any URL fails, so one wrong
+   path means no service worker at all.
+2. It cached two API endpoints during install. An unauthenticated `GET /api/...`
+   answers 401, `addAll` rejects non-2xx, install fails.
+3. `manifest.json` declared `/icons/icon-*.png` and `/icons/task-icon.png`. That
+   directory did not exist.
+4. `cacheFirst` for every non-API request served the shell from cache forever — a
+   deployed fix would not reach a client that has the application open.
+5. Both offline pages loaded Tailwind from the CDN, so the pages that exist only for
+   the no-network case could not render in it.
+
+### What was done
+
+**CDN references removed.** Twelve files under `public/vendor/`: DaisyUI, Leaflet,
+Leaflet-Draw, Tailwind's JIT runtime, and Leaflet's six icon files. `index.html` now
+has no external reference at all — verified, zero `src`/`href` pointing off-host.
+
+Two of those were not in `index.html` and would have been missed by reading only
+that file: `src/leaflet.js` fetched the red location marker from
+`raw.githubusercontent.com` and its shadow from `cdnjs.cloudflare.com`.
+
+Tailwind's CDN entry is the JIT *runtime* — 407 KB of JavaScript that compiles CSS in
+the browser from the DOM. Vendoring it keeps the current behaviour offline, including
+classes a view produces at runtime. Building Tailwind ahead of time would be smaller
+and faster but needs a content scan of the Leptos views, and a wrong static build
+silently drops every dynamically-named class. Recorded as O2 rather than done.
+
+**The worker rewritten and registered.** `src/main.rs` now calls
+`register_service_worker()` after `mount_to_body` — after, so a registration failure
+cannot stop the application from starting, and the rejection is logged rather than
+surfaced. The precache list names only servable paths, `precacheAll` skips what is
+missing instead of failing the install, API responses are cached only when they
+succeeded, navigations are network-first with the shell as fallback so a deep link
+resolves and a deploy is picked up, and cache names are versioned so activation
+deletes the previous build.
+
+**Icons generated** from `logo_trans.png` with the maskable safe zone, since
+`logo.png` has an opaque cream background and would render as a coloured square.
+The two manifest shortcuts referenced icons that do not exist; they were removed
+rather than pointed at fabricated images, because a shortcut with a missing icon is
+unusable and a wrong one is worse.
+
+**nginx** serves `sw.js` with `no-cache` — a worker cached forever can never be
+updated, and the update is what applies a new cache version — and `/vendor/` with a
+week, since those paths are unversioned.
+
+### The finding that only the artefact showed
+
+The first successful image build — 105 MB, exit 0 — contained the WASM bundle and
+**none of the offline files**. `sw.js`, `manifest.json`, the icons and all twelve
+vendored files were in the repository and absent from the image.
+
+Trunk copies nothing from `public/` on its own. A file or directory only reaches
+`dist/` when the HTML declares it with `rel="copy-dir"` or `rel="copy-file"`. Nine
+tests were green, every reference resolved, every precache entry was servable — and
+the offline capability was not in the thing you run. Every one of those tests reads
+the repository, so every one of them would have passed with the capability completely
+missing from the output.
+
+This is the fourth time in this work that a check read the repository and reported
+"fine" while the thing that mattered was somewhere else: the SIGPAC measurement
+inherited at the start, the Clippy gate at 0.44.0, the "no offline path" claim at
+0.47.0, and now this. The pattern is consistent enough to name: **a test that reads
+the source cannot tell you whether the artefact is correct.**
+
+So the assertions were extended in two directions. `public_assets_are_declared_for_
+copying` checks the declaration exists, and the image itself was inspected with
+`docker run … ls`. That second step is the one that matters and the one I would not
+have done without looking inside.
+
+### A second, unrelated defect the image run exposed
+
+nginx refused to start in the standalone container:
+
+```
+[emerg] host not found in upstream "api" in /etc/nginx/conf.d/default.conf:58
+```
+
+nginx resolves an upstream host at startup and aborts if it cannot. `api` is a Docker
+Compose service name that only resolves on a Compose network, so the image could be
+built but never run on its own — which is exactly what is needed to check offline
+behaviour against a real server.
+
+`proxy_pass` now uses `${AGROCORE_API_UPSTREAM:api:8080}`. Compose behaviour is
+unchanged; standalone the variable can point anywhere reachable.
+
+This is worth recording separately because the symptom pointed at the offline work
+and the cause had nothing to do with it. A container that will not start is a bad
+place to discover an unrelated configuration problem.
+
+### Verified
+
+- `index.html`, `offline.html`, `worker-tasks-offline.html`: 0 external references,
+  0 missing files.
+- `SHELL_ASSETS`: every entry servable, no API endpoint among them.
+- Docker build exits 0; the built image was inspected and `vendor/`, `icons/`,
+  `sw.js`, `manifest.json` and the offline pages are present in `/usr/share/nginx/html`.
+- 11 tests in `crates/admin-ui/tests/offline_capability_tests.rs`, each checked against
+  a deliberately broken input: removing the registration, putting a CDN reference
+  back, deleting a vendored file, removing the `data-wasm-opt` attribute and removing
+  the copy declarations each fail exactly the corresponding test.
+
+The test that matters is still yours: open the built image, switch the network off,
+reload. It should start.
+
+## O2 — Tailwind is compiled in the browser (open)
+
+- [ ] Build Tailwind ahead of time from a content scan of the Leptos views, so the
+      407 KB JIT runtime leaves the bundle. The obstacle is that `view!` macros
+      construct class strings at runtime; the scan has to see through
+      `format!("order_type_{}", value)` and every other dynamic class name, or a
+      static build silently drops exactly the classes that vary.
+
+## O3 — wasm-opt in the Docker build (worked around, root cause open)
+
+`wasm-opt` exits 1 on the module Trunk produces. Three wrong turns before the actual
+control was found, each of them a plausible reading of the same key:
+
+1. `[tools].wasm_opt = "0"` read as "switch wasm-opt off". It is a *version* string, so
+   it became Binaryen version `0` and Trunk fetched
+   `binaryen-0-x86_64-linux.tar.gz` — a 404. Omitting the key lets Trunk use its pinned
+   `version_123`, which fixed the download and exposed the real failure one stage later.
+2. `[build].wasm_opt = false` read as the boolean form of the same thing. Trunk has no
+   `build.wasm_opt` key at all — `grep` over `trunk/src/config/` finds `wasm_opt` only
+   in `models/tools.rs`. The TOML was accepted and silently ignored, which is why the
+   error message did not change.
+3. The real control is the HTML attribute `data-wasm-opt` on the
+   `<link data-trunk rel="rust">` element. `WasmOptLevel::from_str` maps `"0"` to
+   `Off`, and without the attribute a release build uses `Default`.
+
+`data-wasm-opt="0"` is now set in `crates/admin-ui/index.html`.
+
+The step is a size optimisation, not a correctness one — wasm-bindgen and the linker
+have already emitted a valid module before it runs — so an unoptimised build is
+preferable to none. The root cause of the exit-1 is not investigated: plausibly
+Binaryen 116 against Rust 1.97 output, but it could also be something in the module.
+
+- [ ] Establish whether Binaryen `version_116` can process the module at all. If not,
+        either pin a newer Binaryen through `[tools].wasm_opt` or move to a Trunk
+        release that pins one which can. Both are dependency decisions, not code.
+
 ## M6 — a failed fetch rendered as an empty list (first page converted, open)
 
 ### The survey that prompted it

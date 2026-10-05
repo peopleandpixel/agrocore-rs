@@ -7,6 +7,157 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.49.0] - 2026-10-04
+
+O1 — the Admin UI could not start without a network. Found by switching the network
+off and watching the page fail with `net::ERR_INTERNET_DISCONNECTED` for the document
+itself.
+
+### A correction to 0.47.0
+
+That release's survey said the UI has no offline path: no pending-change store, no
+offline state. That was wrong. `public/sw.js` existed — 6,924 bytes with a complete
+strategy, cache-first for static files, a network-first fallback for API calls,
+IndexedDB for queued task updates, background sync, push handling. It was not
+unfinished; it was unregistered. `serviceWorker.register` appeared nowhere in the
+repository.
+
+The claim came from checking localStorage and not checking for a service worker —
+the same error as the SIGPAC measurement inherited at the start of this work and the
+Clippy gate reported clean at 0.44.0: a statement about absence made without looking.
+
+### Why it would have failed anyway
+
+Five defects, each sufficient on its own:
+
+- `STATIC_ASSETS` named `/styles/tailwind.css` and `/styles/daisyui.css`; neither
+  exists, and `cache.addAll` rejects the whole install if any URL fails.
+- It cached two API endpoints during install, where an unauthenticated request answers
+  401 and `addAll` rejects non-2xx.
+- `manifest.json` declared `/icons/icon-*.png`; the directory did not exist.
+- `cacheFirst` for every non-API request served the shell from cache forever, so a
+  deployed fix never reached a client with the application open.
+- Both offline pages loaded Tailwind from the CDN — the pages that exist only for the
+  no-network case could not render in it.
+
+### What was done
+
+Twelve files vendored under `public/vendor/`, and `index.html` now has no external
+reference at all. Two of them were not in `index.html` and would have been missed by
+reading only that file: `src/leaflet.js` fetched the red location marker from
+`raw.githubusercontent.com` and its shadow from `cdnjs.cloudflare.com`.
+
+The worker was rewritten and is now registered from `src/main.rs`, after
+`mount_to_body` so a registration failure cannot stop the application from starting.
+The precache list names only servable paths, `precacheAll` skips rather than fails,
+API responses are cached only when they succeeded, navigations are network-first with
+the shell as fallback, and cache names are versioned so activation removes the previous
+build. nginx serves `sw.js` with `no-cache`, because a worker cached forever can never
+be updated.
+
+Icons were generated from `logo_trans.png` with the maskable safe zone — `logo.png`
+has an opaque cream background. Two manifest shortcuts referenced icons that do not
+exist and were removed rather than pointed at fabricated images.
+
+### O3 — wasm-opt, three wrong turns
+
+`[tools].wasm_opt = "0"` read as "switch it off" is a version string, so it fetched
+Binaryen version `0` and 404'd. `[build].wasm_opt = false` read as the boolean form:
+Trunk has no such key, and the TOML was silently ignored — the error did not change.
+The real control is the HTML attribute `data-wasm-opt="0"` on the
+`<link data-trunk rel="rust">` element, where `WasmOptLevel::from_str` maps `"0"` to
+`Off`. Set in `index.html`.
+
+wasm-opt is a size optimisation, not a correctness one. Root cause not investigated;
+recorded as O3.
+
+### Verified
+
+Zero external references and zero missing files across the three served documents.
+Nine tests in `crates/admin-ui/tests/offline_capability_tests.rs`, each checked against
+a deliberately broken input: removing the registration, restoring a CDN reference and
+deleting a vendored file each fail exactly the corresponding test.
+
+Gates: fmt, clippy -D warnings, the WASM build, and
+`cargo test --workspace --features=mocks --no-fail-fast` under `RUSTFLAGS='-D warnings'`.
+### The image built, and the artefact contained none of it
+
+The build went green and the image was 105 MB. Opening it showed `sw.js`,
+`manifest.json`, the icons and all twelve vendored files absent. Trunk copies nothing
+from `public/` on its own -- a file or directory lands in `dist/` only when the HTML
+asks for it with `rel="copy-dir"` or `rel="copy-file"`. Nine tests were green, every
+reference resolved, every precache URL was servable, and the offline capability was
+not in the thing you start.
+
+Fourth time in this work that a check read the source and reported "fine" while the
+decisive thing was somewhere else. The image should have been opened before the
+claim, not after.
+
+`index.html` now declares the copy for `sw.js`, `manifest.json`, `offline.html`,
+`worker-tasks-offline.html`, `icons/` and `vendor/`, and an eleventh test asserts that
+every file under `public/` is either copied or the shell document -- it fails when a
+`copy-dir` line is removed.
+
+### nginx: three startup failures in one line
+
+Running the image exposed an unrelated defect that pointed straight at the offline
+work:
+
+```
+[emerg] host not found in upstream "api" in /etc/nginx/conf.d/default.conf:58
+```
+
+nginx resolves a literal upstream host at startup and aborts when it cannot. `api` is
+a Docker Compose service name, so the image could be built but never run standalone --
+which is exactly what is needed to check offline behaviour against a real server.
+
+Two wrong fixes followed before the third was right. `${AGROCORE_API_UPSTREAM:api:8080}`
+is envsubst syntax, not nginx, and nginx rejected it with `the closing bracket in
+"..." variable is missing`. `env AGROCORE_API_UPSTREAM;` inside `conf.d/*.conf` is
+main-context only and that file is included from `http{}`, so it is never legal there.
+The working fix is a variable in `proxy_pass`, which is resolved per request instead
+of at startup, so an unresolvable API host no longer prevents nginx from starting.
+Compose behaviour is unchanged. Verified with `nginx -t` and a started container.
+
+### Cultivar and breed catalogue with tenant scope (migration 0000000009)
+
+`varieties` and `breeds` existed but were unusable. No `tenant_id`, so no tenant could
+add its own cultivar and no row-level security could ever apply -- a global reference
+table that cannot be extended is only correct while nobody needs something missing.
+No `active` flag, so removing an entry would orphan every object referencing it. No
+performance reference values, so "Merino for wool" could not be turned into a number.
+
+Global rows must be readable by every tenant while only a platform operator may create
+them. RLS cannot express that combination, because every policy is evaluated against a
+tenant id. The all-zero UUID is the global scope, which keeps
+`tenant_id = $tenant OR tenant_id = $GLOBAL` an ordinary indexed predicate and needs no
+special case in any policy. A tenant cannot shadow a global entry; it adds its own row
+under its own name, which keeps name resolution unambiguous.
+
+`spatial_objects` gains `planted_at` and `variety_id`, both nullable on purpose:
+objects imported from SIGPAC carry no cultivar and no planting date, and forcing one
+would either reject the import or invent data. `planted_at` belongs to the individual
+object rather than to the cultivar, so a block planted in two different years stays
+distinguishable and age is derived rather than stored twice.
+
+The grouping this enables is "objects of this cultivar on this plot" and "every plot
+carrying this cultivar". Both are tenant-scoped, so the tenant id leads the index.
+
+`breeds` gains reference performance values: birth and mature weight, productive
+lifespan, eggs per year, wool per year, daily gain, litter size, gestation. These are
+breed references, not measurements of an individual; actual output belongs in a
+measurement series per animal.
+
+Verified against a clean PostGIS instance. All ten migrations apply without error. As
+`agrocore_app`: tenant A reads 46 global rows, inserts its own cultivar, is blocked
+from inserting a global row (RLS filters it silently rather than raising), and updates
+0 rows of tenant B. Tenant B reads the same 46 globals, none of A's, and adds its own.
+
+Known data errors left in place rather than silently corrected: `('Sheep','Merino',
+'Spain')` is wrong -- Merino is Australian -- and `('Goat','Nubian','UK')` is doubtful.
+A catalogue table is only as good as its sources, so these belong in a seeded
+reference dataset with a `source` column, not patched in a migration.
+
 ## [0.47.0] - 2026-10-03
 
 M6, first page — a failed fetch rendered as an empty list.

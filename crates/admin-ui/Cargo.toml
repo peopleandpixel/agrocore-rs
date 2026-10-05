@@ -29,7 +29,7 @@ icondata_lu = "0.1"
 icondata_im = "0.1"
 wasm-bindgen = "0.2"
 js-sys = "0.3"
-web-sys = { version = "0.3", features = ["Blob", "Document", "HtmlAnchorElement", "HtmlDivElement", "HtmlElement", "HtmlInputElement", "File", "FileList", "Storage", "Url", "Window", "EventTarget"] }
+web-sys = { version = "0.3", features = ["Blob", "Document", "HtmlAnchorElement", "HtmlDivElement", "HtmlElement", "HtmlInputElement", "File", "Navigator", "ServiceWorker", "ServiceWorkerContainer", "FileList", "Storage", "Url", "Window", "EventTarget"] }
 uuid = { workspace = true, features = ["v4", "serde", "js"] }
 getrandom = { version = "0.2", features = ["js"] }
 chrono = { workspace = true, features = ["serde"] }
@@ -44,6 +44,10 @@ tokio = { version = "1", default-features = false, features = ["sync", "time", "
 load-path = "locales"
 default-locale = "en"
 available-locales = ["en", "de", "es", "fr", "pt", "it", "pl", "ro", "uk", "nl"]
+
+[[test]]
+name = "offline_capability_test"
+path = "tests/offline_capability_tests.rs"
 
 [[test]]
 name = "order_list_load_state_test"

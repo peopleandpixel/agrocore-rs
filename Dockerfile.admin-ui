@@ -28,9 +28,6 @@ COPY .sqlx ./.sqlx
 # Build the Admin UI with Trunk (this produces proper WASM + JS + HTML + CSS)
 WORKDIR /app/crates/admin-ui
 
-# Create Trunk.toml with correct config format to disable wasm-opt
-RUN echo '[tools]' > Trunk.toml && echo 'wasm_opt = "0"' >> Trunk.toml
-RUN cat Trunk.toml
 RUN trunk build --release
 
 # Runtime stage - Nginx to serve static files
