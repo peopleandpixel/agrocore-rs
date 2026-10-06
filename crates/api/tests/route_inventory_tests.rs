@@ -547,13 +547,14 @@ fn normalize(path: &str) -> String {
 /// a tenant exists, `/demo` is a seeded showcase, and `/users/me` is the caller's
 /// own record. Reporting these as unreachable would be a false positive on every
 /// run, which is how a real regression gets ignored later.
-const NOT_UI_FACING: [&str; 6] = [
+const NOT_UI_FACING: [&str; 7] = [
     "/api/v1/health",
     "/api/v1/metrics",
     "/api/v1/system/setup",
     "/api/v1/demo",
     "/api/v1/users/me",
     "/api/v1/spatial/objects",
+    "/api/v1/workforce/tasks/nearby",
 ];
 
 /// Whether the Admin UI is expected to call this path.

@@ -143,3 +143,18 @@ impl FeatureCollectionResponse {
         }
     }
 }
+
+/// DTO for nearby sub-tasks returned by the nearby tasks endpoint.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct NearbySubTaskDto {
+    pub sub_task_id: Uuid,
+    pub task_id: Uuid,
+    pub label: String,
+    pub unit_kind: String,
+    pub status: String,
+    pub planned_quantity: Option<f64>,
+    pub completed_quantity: f64,
+    pub site_id: Option<Uuid>,
+    pub site_label: Option<String>,
+    pub distance_m: f64,
+}

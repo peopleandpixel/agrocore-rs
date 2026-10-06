@@ -1,0 +1,80 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT\n                    st.id AS sub_task_id,\n                    st.task_id,\n                    st.label,\n                    st.unit_kind,\n                    st.status,\n                    st.planned_quantity,\n                    st.completed_quantity,\n                    st.site_id,\n                    s.label AS \"site_label: Option<String>\",\n                    (COALESCE(ST_Distance(s.boundary::geography, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography)::double precision, 0.0))::double precision AS distance_m\n                FROM task_sub_tasks st\n                LEFT JOIN sites s ON s.id = st.site_id AND s.tenant_id = st.tenant_id\n                WHERE st.tenant_id = $1\n                  AND st.status NOT IN ('done', 'stopped')\n                  AND (s.boundary IS NOT NULL OR st.site_id IS NULL)\n                  AND (st.site_id IS NULL OR ST_DWithin(s.boundary::geography, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography, $4))\n                ORDER BY distance_m\n                LIMIT $5\n                ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "sub_task_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "task_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "label",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "unit_kind",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "planned_quantity",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "completed_quantity",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 7,
+        "name": "site_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 8,
+        "name": "site_label: Option<String>",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "distance_m",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      null
+    ]
+  },
+  "hash": "318307aa7de1f38ef836655ad948aba4997d2b9613df05320c53ed5edf0aa755"
+}

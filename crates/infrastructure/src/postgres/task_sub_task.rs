@@ -2,7 +2,7 @@ use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::task_state::{OverallTaskStatus, SubTaskStatus};
 use agrocore_domain::repositories::{
     RepositoryFuture, TaskSubTaskRepository,
-    TaskSubTask, TaskProgressAggregate,
+    TaskSubTask, TaskProgressAggregate, NearbySubTask,
 };
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_shared::SharedError;
@@ -116,6 +116,69 @@ impl TaskSubTaskRepository for PgTaskSubTaskRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
             Ok(())
+        })
+    }
+
+    fn find_nearby(
+        &self,
+        tid: TenantId,
+        lat: f64,
+        lng: f64,
+        radius_m: f64,
+        limit: i64,
+    ) -> RepositoryFuture<Vec<NearbySubTask>> {
+        let pool = TenantPool::new(&self.pool, tid.0);
+        let tid_uuid = tid.0;
+        Box::pin(async move {
+            let rows = sqlx::query!(
+                r#"
+                SELECT
+                    st.id AS sub_task_id,
+                    st.task_id,
+                    st.label,
+                    st.unit_kind,
+                    st.status,
+                    st.planned_quantity,
+                    st.completed_quantity,
+                    st.site_id,
+                    s.label AS "site_label: Option<String>",
+                    (COALESCE(ST_Distance(s.boundary::geography, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography)::double precision, 0.0))::double precision AS distance_m
+                FROM task_sub_tasks st
+                LEFT JOIN sites s ON s.id = st.site_id AND s.tenant_id = st.tenant_id
+                WHERE st.tenant_id = $1
+                  AND st.status NOT IN ('done', 'stopped')
+                  AND (s.boundary IS NOT NULL OR st.site_id IS NULL)
+                  AND (st.site_id IS NULL OR ST_DWithin(s.boundary::geography, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography, $4))
+                ORDER BY distance_m
+                LIMIT $5
+                "#,
+                tid_uuid,
+                lng,
+                lat,
+                radius_m,
+                limit
+            )
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            let results = rows
+                .into_iter()
+                .map(|row| NearbySubTask {
+                    sub_task_id: row.sub_task_id,
+                    task_id: row.task_id,
+                    label: row.label,
+                    unit_kind: row.unit_kind,
+                    status: row.status,
+                    planned_quantity: row.planned_quantity,
+                    completed_quantity: row.completed_quantity,
+                    site_id: row.site_id,
+                    site_label: row.site_label,
+                    distance_m: row.distance_m,
+                })
+                .collect();
+
+            Ok(results)
         })
     }
 }

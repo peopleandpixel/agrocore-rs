@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.55.0] - 2026-10-06
+
+### Added
+- **Nearby Tasks Endpoint**: `GET /api/v1/workforce/tasks/nearby?lat=...&lng=...&radius_m=...&limit=...` returns open sub-tasks near a given position, sorted by distance
+- **Repository method**: `TaskSubTaskRepository::find_nearby()` with `NearbySubTask` DTO (sub_task_id, task_id, label, unit_kind, status, planned_quantity, completed_quantity, site_id, site_label, distance_m)
+
 ## [0.54.0] - 2026-10-06
 
 ### Added

@@ -1869,4 +1869,4 @@ pub trait SettingsRepository: Send + Sync {
 }
 
 pub mod task_sub_task;
-pub use task_sub_task::{TaskSubTaskRepository, TaskSubTask, TaskProgressAggregate};
+pub use task_sub_task::{TaskSubTaskRepository, TaskSubTask, TaskProgressAggregate, NearbySubTask};

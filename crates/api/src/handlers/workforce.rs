@@ -4,6 +4,7 @@ use crate::dto::{
     PaginatedWorkerTaskStatusResponse, UpdateWorkerTaskStatusDto, WorkerTaskStatusAggregateDto,
     WorkerTaskStatusDto,
 };
+use crate::dto::spatial::NearbySubTaskDto;
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
@@ -101,6 +102,10 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             )
             .service(
                 web::resource("/workers/{id}/hours-worked").route(web::get().to(get_total_hours)),
+            )
+            .service(
+                web::resource("/tasks/nearby")
+                    .route(web::get().to(get_nearby_tasks)),
             ),
     );
 }
@@ -1070,4 +1075,73 @@ pub async fn get_total_hours(
         HttpResponse::Ok()
             .json(serde_json::json!({ "worker_id": worker_id, "total_hours": hours })),
     )
+}
+
+// ===========================================================================
+// Nearby Tasks endpoint
+// ===========================================================================
+
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct NearbyTasksQuery {
+    /// Latitude of the reference position (WGS84)
+    pub lat: f64,
+    /// Longitude of the reference position (WGS84)
+    pub lng: f64,
+    /// Search radius in meters (default: 100)
+    #[serde(default = "default_radius")]
+    pub radius_m: f64,
+    /// Maximum number of results (default: 50, max: 200)
+    #[serde(default = "default_limit")]
+    pub limit: i64,
+}
+
+fn default_radius() -> f64 { 100.0 }
+fn default_limit() -> i64 { 50 }
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/workforce/tasks/nearby",
+    params(NearbyTasksQuery),
+    responses(
+        (status = 200, description = "Nearby open sub-tasks", body = Vec<crate::dto::spatial::NearbySubTaskDto>),
+        (status = 400, description = "Invalid parameters", body = ErrorResponse),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "workforce",
+    security(("bearer_auth" = []))
+)]
+pub async fn get_nearby_tasks(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    query: web::Query<NearbyTasksQuery>,
+) -> Result<HttpResponse, ApiError> {
+    let q = query.into_inner();
+    let limit = q.limit.clamp(1, 200);
+
+    let tenant_id = agrocore_domain::TenantId(auth.0.tenant_id);
+    let nearby = state
+        .db
+        .task_sub_task_repo()
+        .find_nearby(tenant_id, q.lat, q.lng, q.radius_m, limit)
+        .await?;
+
+    // Map to DTO
+    let dto: Vec<crate::dto::spatial::NearbySubTaskDto> = nearby
+        .into_iter()
+        .map(|nt| crate::dto::spatial::NearbySubTaskDto {
+            sub_task_id: nt.sub_task_id,
+            task_id: nt.task_id,
+            label: nt.label,
+            unit_kind: nt.unit_kind,
+            status: nt.status,
+            planned_quantity: nt.planned_quantity,
+            completed_quantity: nt.completed_quantity,
+            site_id: nt.site_id,
+            site_label: nt.site_label,
+            distance_m: nt.distance_m.unwrap_or(0.0),
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(dto))
 }
