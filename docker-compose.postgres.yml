@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: agrocore
       POSTGRES_PASSWORD: agrocore-secret
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
       - ./migrations:/docker-entrypoint-initdb.d:ro
     ports:
       - "5432:5432"

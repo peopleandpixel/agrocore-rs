@@ -1867,3 +1867,6 @@ pub trait SettingsRepository: Send + Sync {
     /// to render a field for a setting that has never been set.
     fn list_keys(&self) -> RepositoryFuture<Vec<SettingKeyDescriptor>>;
 }
+
+pub mod task_sub_task;
+pub use task_sub_task::{TaskSubTaskRepository, TaskSubTask, TaskProgressAggregate};

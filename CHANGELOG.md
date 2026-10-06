@@ -7,7 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.49.0] - 2026-10-04
+## [0.54.0] - 2026-10-06
+
+### Added
+- **GPS Automation Config** (Migration 0015): Extended `order_auto_automation_settings` with per-order GPS-triggered auto-start/end configuration:
+  - `auto_start_enabled` / `auto_end_enabled` — enable GPS-based automation
+  - `auto_start_trigger_radius_meters` / `auto_end_trigger_radius_meters` — separate trigger radii
+  - `auto_start_min_dwell_seconds` / `auto_end_min_absence_seconds` — second-precision dwell/absence thresholds
+  - `auto_end_grace_seconds` — additional grace period for stops (stop timestamp remains last position inside radius)
+- New index `idx_order_auto_automation_gps_enabled` for efficient lookup of orders with GPS automation enabled
+
+### Fixed
+- **Audit trigger for system-wide settings**: `audit_trigger_function` now correctly handles `system_settings` rows with `tenant_id = NULL` (system-wide defaults) by mapping them to the system tenant (`00000000-0000-0000-0000-000000000000`), allowing INSERT/UPDATE of default settings without foreign key violations
+- **Migration 0004**: Dropped `task_work_interval_summary` view before NUMERIC→DOUBLE PRECISION type conversion to avoid "cannot be performed on relation" error
+
+### Changed
+- Migration 0015 adds GPS automation columns to `order_auto_automation_settings`; config is per-order and applies to all its subtasks
+
+## [0.53.0] - 2026-10-04
 
 O1 — the Admin UI could not start without a network. Found by switching the network
 off and watching the page fail with `net::ERR_INTERNET_DISCONNECTED` for the document

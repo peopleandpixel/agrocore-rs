@@ -31,9 +31,9 @@ pub use repositories::{
     InventoryTransactionRepo, KelterDeliveryRepo, OliveGroveRepo, OliveOilRecordRepo,
     OrderRepository, PACApplicationRepo, PhenologyRecordRepo, PlantProtectionRecordRepo,
     RepositoryFuture, SiteRepository, SpatialObjectRepository, TaskDataRepository,
-    TenantRepository, UserRepository, VineyardRepo, WaterQuotaRepo, WaterSourceRepo,
-    WaterUsageRepo, WeatherDataRepo, WeatherStationRepo, WorkLogRepo, WorkerLocationRepo,
-    WorkerRepo, WorkerTaskStatusRepository,
+    TaskSubTaskRepository, TenantRepository, UserRepository, VineyardRepo, WaterQuotaRepo,
+    WaterSourceRepo, WaterUsageRepo, WeatherDataRepo, WeatherStationRepo, WorkLogRepo,
+    WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
 };
 
 // Re-export mock types when mocks feature is enabled

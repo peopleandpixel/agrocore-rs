@@ -148,6 +148,13 @@ fn parse_bbox(raw: &str) -> Result<(f64, f64, f64, f64), ApiError> {
 
 /// Parse `before:YYYY-MM-DD`, `after:YYYY-MM-DD`, `set` or `null`.
 fn parse_planted_at(raw: &str) -> Result<PlantedAtFilter, ApiError> {
+    // Handle `set` and `null` without a colon
+    match raw.trim() {
+        "set" | "notnull" | "not_null" => return Ok(PlantedAtFilter::IsSet),
+        "null" | "none" => return Ok(PlantedAtFilter::IsNull),
+        _ => {}
+    }
+
     let (prefix, rest) = raw.split_once(':').ok_or_else(|| {
         ApiError::validation(
             "planted_at must be before:YYYY-MM-DD, after:YYYY-MM-DD, set or null".to_string(),

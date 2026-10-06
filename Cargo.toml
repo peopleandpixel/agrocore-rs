@@ -21,7 +21,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.53.0"
+version = "0.54.0"
 authors = ["Jens Reinemuth <jens@reinemuth.pt>"]
 license = "GPL-3.0-or-later"
 edition = "2024"
@@ -39,6 +39,7 @@ debug = false
 
 [workspace.dependencies]
 tokio = { version = "1", default-features = false, features = ["rt", "macros", "sync", "time", "io-util"] }
+async-trait = "0.1"
 actix-web = "4.15.0"
 actix-cors = "0.7.2"
 reqwest = { version = "0.13.5", features = ["json", "rustls", "stream"], default-features = false }

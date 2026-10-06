@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                UPDATE task_sub_tasks\n                SET status = 'done',\n                    completed_quantity = $1,\n                    completed_by = $2,\n                    completed_at = NOW(),\n                    updated_at = NOW()\n                WHERE id = $3 AND tenant_id = $4\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Float8",
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "467ee76f68d0394a35816523230c5fbfa3c18f877c5bbbf6d12371cdd0e6f000"
+}

@@ -1,0 +1,47 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT\n                    overall_status as \"overall_status: String\",\n                    sub_task_count,\n                    sub_tasks_done,\n                    progress_percent,\n                    is_overdue\n                FROM task_progress\n                WHERE task_id = $1 AND tenant_id = $2\n                ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "overall_status: String",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "sub_task_count",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "sub_tasks_done",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "progress_percent",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "is_overdue",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "273e55ae475c1fc4ea99f16ba35a2fb9294054cd40d351bb4de680e5f5b3ac95"
+}

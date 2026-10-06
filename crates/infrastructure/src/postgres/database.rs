@@ -13,10 +13,11 @@ use crate::postgres::{
     pac_application::PgPACApplicationRepo, pest_risk::PgPestRiskRepo,
     phenology_record::PgPhenologyRecordRepo, plant_protection_record::PgPlantProtectionRecordRepo,
     setting::PgSettingsRepo, site::PgSiteRepo, soil_moisture_config::PgSoilMoistureConfigRepo,
-    task_data::PgTaskDataRepo, tenant::PgTenantRepo, tree::PgTreeRepo, user::PgUserRepo,
-    variety::PgVarietyRepo, vineyard::PgVineyardRepo, weather_data::PgWeatherDataRepo,
-    weather_station::PgWeatherStationRepo, work_log::PgWorkLogRepo, worker::PgWorkerRepo,
-    worker_location::PgWorkerLocationRepo, worker_task_status::PgWorkerTaskStatusRepo,
+    task_data::PgTaskDataRepo, task_sub_task::PgTaskSubTaskRepo, tenant::PgTenantRepo,
+    tree::PgTreeRepo, user::PgUserRepo, variety::PgVarietyRepo, vineyard::PgVineyardRepo,
+    weather_data::PgWeatherDataRepo, weather_station::PgWeatherStationRepo,
+    work_log::PgWorkLogRepo, worker::PgWorkerRepo, worker_location::PgWorkerLocationRepo,
+    worker_task_status::PgWorkerTaskStatusRepo,
 };
 use agrocore_domain::repositories::{
     AnimalRepository, AuditLogRepo, BreedRepository, BuildingRepository, ClockEntryRepo,
@@ -27,7 +28,8 @@ use agrocore_domain::repositories::{
     LivestockRepository, OliveGroveRepo, OliveOilRecordRepo, OrderRepository, PACApplicationRepo,
     PestRiskRepo, PhenologyRecordRepo, PlantProtectionRecordRepo, SettingsRepository,
     SiteRepository, SoilMoistureConfigRepo, SpatialObjectRepository, TaskDataRepository,
-    TenantRepository, TreeRepository, UserRepository, VarietyRepository, VineyardRepo,
+    TaskSubTaskRepository, TenantRepository, TreeRepository, UserRepository, VarietyRepository,
+    VineyardRepo,
     WaterQuotaRepo, WaterSourceRepo, WaterUsageRepo, WeatherDataRepo, WeatherStationRepo,
     WorkLogRepo, WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
 };
@@ -59,6 +61,7 @@ pub struct MockDatabase {
     pub worker_task_status_repo:
         Option<Arc<agrocore_domain::repositories::MockWorkerTaskStatusRepository>>,
     pub task_data_repo: Option<Arc<agrocore_domain::repositories::MockTaskDataRepository>>,
+    pub task_sub_task_repo: Option<Arc<agrocore_domain::repositories::task_sub_task::MockTaskSubTaskRepository>>,
     pub weather_station_repo: Option<Arc<agrocore_domain::repositories::MockWeatherStationRepo>>,
     pub weather_data_repo: Option<Arc<agrocore_domain::repositories::MockWeatherDataRepo>>,
     pub fertilizer_record_repo:
@@ -417,6 +420,18 @@ impl Database {
         }
     }
 
+    pub fn task_sub_task_repo(&self) -> Arc<dyn TaskSubTaskRepository> {
+        match self {
+            Self::Postgres(db) => db.task_sub_task_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => m
+                .task_sub_task_repo
+                .clone()
+                .expect("task_sub_task_repo mock not set")
+                as Arc<dyn TaskSubTaskRepository>,
+        }
+    }
+
     pub fn spatial_object_repo(&self) -> Arc<dyn SpatialObjectRepository> {
         match self {
             Self::Postgres(db) => db.spatial_object_repo(),
@@ -727,6 +742,7 @@ pub struct PostgresDb {
     pub work_log_repo: Arc<dyn WorkLogRepo>,
     pub worker_task_status_repo: Arc<dyn WorkerTaskStatusRepository>,
     pub task_data_repo: Arc<dyn TaskDataRepository>,
+    pub task_sub_task_repo: Arc<dyn TaskSubTaskRepository>,
     pub spatial_object_repo: Arc<dyn SpatialObjectRepository>,
     pub phenology_record_repo: Arc<dyn PhenologyRecordRepo>,
     pub pac_application_repo: Arc<dyn PACApplicationRepo>,
@@ -854,6 +870,7 @@ impl PostgresDb {
             work_log_repo: Arc::new(PgWorkLogRepo::new(pool.clone())),
             worker_task_status_repo: Arc::new(PgWorkerTaskStatusRepo::new(pool.clone())),
             task_data_repo: Arc::new(PgTaskDataRepo::new(pool.clone())),
+            task_sub_task_repo: Arc::new(PgTaskSubTaskRepo::new(pool.clone())),
             spatial_object_repo: Arc::new(PgSiteRepo::new(pool.clone())),
             phenology_record_repo: Arc::new(PgPhenologyRecordRepo::new(pool.clone())),
             pac_application_repo: Arc::new(
@@ -927,6 +944,7 @@ impl PostgresDb {
             work_log_repo: Arc::new(PgWorkLogRepo::new(pool.clone())),
             worker_task_status_repo: Arc::new(PgWorkerTaskStatusRepo::new(pool.clone())),
             task_data_repo: Arc::new(PgTaskDataRepo::new(pool.clone())),
+            task_sub_task_repo: Arc::new(PgTaskSubTaskRepo::new(pool.clone())),
             spatial_object_repo: Arc::new(PgSiteRepo::new(pool.clone())),
             phenology_record_repo: Arc::new(PgPhenologyRecordRepo::new(pool.clone())),
             pac_application_repo: Arc::new(
@@ -1091,6 +1109,10 @@ impl PostgresDb {
 
     pub fn task_data_repo(&self) -> Arc<dyn TaskDataRepository> {
         self.task_data_repo.clone()
+    }
+
+    pub fn task_sub_task_repo(&self) -> Arc<dyn TaskSubTaskRepository> {
+        self.task_sub_task_repo.clone()
     }
 
     pub fn spatial_object_repo(&self) -> Arc<dyn SpatialObjectRepository> {
