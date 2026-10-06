@@ -181,4 +181,35 @@ impl TaskSubTaskRepository for PgTaskSubTaskRepo {
             Ok(results)
         })
     }
+
+    fn complete_all_sub_tasks(
+        &self,
+        task_id: Uuid,
+        worker_id: Uuid,
+        tid: TenantId,
+    ) -> RepositoryFuture<usize> {
+        let pool = TenantPool::new(&self.pool, tid.0);
+        let tid_uuid = tid.0;
+        Box::pin(async move {
+            let rows_affected = sqlx::query!(
+                r#"
+                UPDATE task_sub_tasks
+                SET status = 'done',
+                    completed_quantity = planned_quantity,
+                    completed_by = $1,
+                    completed_at = NOW(),
+                    updated_at = NOW()
+                WHERE task_id = $2 AND tenant_id = $3 AND status NOT IN ('done', 'stopped')
+                "#,
+                worker_id,
+                task_id,
+                tid_uuid
+            )
+            .execute(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?
+            .rows_affected() as usize;
+            Ok(rows_affected)
+        })
+    }
 }

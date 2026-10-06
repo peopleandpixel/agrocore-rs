@@ -165,6 +165,10 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route(web::delete().to(tasks::delete_task)),
             )
             .service(
+                web::resource("/tasks/{id}/complete-all")
+                    .route(web::post().to(tasks::complete_all_sub_tasks)),
+            )
+            .service(
                 web::scope("/system")
                     .route("/status", web::get().to(system::get_status))
                     .route("/setup", web::post().to(system::initial_setup))

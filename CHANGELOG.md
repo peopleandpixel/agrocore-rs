@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.56.0] - 2026-10-06
+
+### Added
+- **Admin Complete-All Endpoint**: `POST /api/v1/tasks/{id}/complete-all` allows admins to complete all open sub-tasks for a task in one call, setting `completed_quantity = planned_quantity`, `completed_by`, `completed_at`, `updated_at`
+- Repository method: `TaskSubTaskRepository::complete_all_sub_tasks()` returns count of completed sub-tasks
+
 ## [0.55.0] - 2026-10-06
 
 ### Added

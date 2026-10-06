@@ -20,6 +20,8 @@ pub trait TaskSubTaskRepository: Send + Sync {
         radius_m: f64,
         limit: i64,
     ) -> RepositoryFuture<Vec<NearbySubTask>>;
+    /// Complete all open sub-tasks for a task (admin override).
+    fn complete_all_sub_tasks(&self, task_id: Uuid, worker_id: Uuid, tenant_id: TenantId) -> RepositoryFuture<usize>;
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]

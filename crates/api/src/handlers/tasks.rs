@@ -199,3 +199,47 @@ pub async fn delete_task(
         Err(SharedError::NotFound("Task not found".into()).into())
     }
 }
+
+// ===========================================================================
+// Admin: Complete all sub-tasks for a task
+// ===========================================================================
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/tasks/{id}/complete-all",
+    responses(
+        (status = 200, description = "All sub-tasks completed", body = serde_json::Value),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Task not found")
+    ),
+    tag = "tasks",
+    security(("bearer_auth" = []))
+)]
+pub async fn complete_all_sub_tasks(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    path: web::Path<uuid::Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    auth.require_manager()?;
+    let task_id = *path;
+    info!(
+        "Admin completing all sub-tasks for task {} for tenant: {}",
+        task_id,
+        agrocore_domain::TenantId(auth.0.tenant_id)
+    );
+
+    let count = state
+        .db
+        .task_sub_task_repo()
+        .complete_all_sub_tasks(
+            task_id,
+            auth.0.user_id,
+            agrocore_domain::TenantId(auth.0.tenant_id),
+        )
+        .await?;
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "completed_sub_tasks": count,
+        "task_id": task_id,
+    })))
+}
