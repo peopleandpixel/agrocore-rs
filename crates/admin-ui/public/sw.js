@@ -61,6 +61,8 @@ const SHELL_ASSETS = [
   '/vendor/leaflet-draw.css',
   '/vendor/leaflet.js',
   '/vendor/leaflet-draw.js',
+  '/vendor/maplibre-gl.js',
+  '/vendor/maplibre-gl.css',
 ];
 
 self.addEventListener('install', (event) => {

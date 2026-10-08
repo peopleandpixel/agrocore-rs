@@ -17,6 +17,7 @@ pub mod inventory;
 pub mod iot;
 pub mod livestock;
 pub mod livestock_new;
+pub mod map;
 pub mod nutrition;
 pub mod orders;
 pub mod reporting;
@@ -293,6 +294,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .configure(backup::configure)
             .configure(calculation::configure)
             .configure(demo::configure)
+            // Map endpoints for MapLibre GL view
+            .configure(map::configure)
             // These two modules were declared and fully implemented but never
             // registered, so /api/v1/sigpac/parcels and
             // /api/v1/livestock/animals did not exist despite being documented

@@ -3,7 +3,6 @@ use crate::dto::user::CreateUserDto;
 use crate::error::ApiError;
 use actix_web::{HttpResponse, web};
 use agrocore_domain::entities::tenant::CreateTenantDto;
-use agrocore_domain::entities::user::UserRole;
 use agrocore_logging::{error, info, warn};
 use agrocore_shared::SharedError;
 use serde::{Deserialize, Serialize};
@@ -72,15 +71,36 @@ pub async fn initial_setup(
     // while `tenants_insert` still allows this one setup INSERT. That is the
     // intent - setup may create the first tenant, but must not read or write
     // tenant data.
-    let pool = state.db.unscoped_pool();
-    let mut tx = pool.begin().await.map_err(|e| {
-        error!("Failed to begin transaction: {}", e);
+    // Use raw connection to SET ROLE before transaction (SET ROLE not allowed in transaction block)
+    let mut conn = state.db.pool().acquire().await.map_err(|e| {
+        error!("Failed to acquire connection: {}", e);
+        SharedError::Database(e.to_string())
+    })?;
+    // SET ROLE must be outside transaction block
+    sqlx::query("SET ROLE agrocore_app")
+        .execute(&mut *conn)
+        .await
+        .map_err(|e| {
+            error!("Failed to SET ROLE: {}", e);
+            SharedError::Database(e.to_string())
+        })?;
+    // SET LOCAL configs before transaction
+    sqlx::query(
+        "SELECT set_config('app.current_tenant_id', $1, true), \
+                set_config('app.is_superadmin', $2, true)",
+    )
+    .bind(Uuid::nil().to_string())
+    .bind("true")
+    .execute(&mut *conn)
+    .await
+    .map_err(|e| {
+        error!("Failed to set tenant config: {}", e);
         SharedError::Database(e.to_string())
     })?;
 
-    // 1. Check if already initialized (within transaction for safety)
+    // 1. Check if already initialized (outside transaction, on raw connection)
     let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users")
-        .fetch_one(&mut *tx)
+        .fetch_one(&mut *conn)
         .await
         .map_err(|e| {
             error!("Failed to check initialization status: {}", e);
@@ -92,31 +112,7 @@ pub async fn initial_setup(
         return Err(SharedError::Validation("System is already initialized".into()).into());
     }
 
-    // 2. Create Tenant
-    let tenant_id = Uuid::new_v4();
-    info!("Creating tenant with id: {}", tenant_id);
-    let tenant = sqlx::query_as::<_, agrocore_domain::entities::tenant::Tenant>(
-        r#"INSERT INTO tenants (id, name, slug, config, is_active, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, true, NOW(), NOW())
-           RETURNING *"#,
-    )
-    .bind(tenant_id)
-    .bind(&dto.tenant.name)
-    .bind(&dto.tenant.slug)
-    .bind(serde_json::to_value(dto.tenant.config.clone().unwrap_or_default()).unwrap())
-    .fetch_one(&mut *tx)
-    .await
-    .map_err(|e| {
-        error!("Failed to create tenant: {}", e);
-        agrocore_infrastructure::PostgresDb::map_db_error(e)
-    })?;
-
-    // 3. Create Admin User
-    let admin_id = Uuid::new_v4();
-    info!("Creating admin user with id: {}", admin_id);
-    // Argon2 costs 50-100 ms of CPU and would occupy the async worker inline,
-    // stalling every other request on it. `crate::password::hash_password` moves
-    // the work to the blocking pool.
+    // 2. Hash password
     let password_hash =
         agrocore_infrastructure::password::hash_password(dto.admin.password.clone())
             .await
@@ -125,31 +121,41 @@ pub async fn initial_setup(
                 SharedError::Internal("Hashing error".to_string())
             })?;
 
-    let roles = vec![UserRole::Admin];
+    // 3. Call SECURITY DEFINER function OUTSIDE transaction
+    // The function runs as table owner (agrocore) and handles FORCE RLS internally.
+    // It must be called outside any transaction block for ALTER TABLE to work.
+    let tenant_id: Uuid =
+        sqlx::query_scalar("SELECT public.initial_system_setup($1, $2, $3, $4, $5, $6, $7)")
+            .bind(&dto.tenant.name)
+            .bind(&dto.tenant.slug)
+            .bind(serde_json::to_value(dto.tenant.config.clone().unwrap_or_default()).unwrap())
+            .bind(&dto.admin.firstname)
+            .bind(&dto.admin.lastname)
+            .bind(&dto.admin.email)
+            .bind(&password_hash)
+            .fetch_one(&mut *conn)
+            .await
+            .map_err(|e| {
+                error!("Failed to create tenant via setup function: {}", e);
+                agrocore_infrastructure::PostgresDb::map_db_error(e)
+            })?;
 
-    sqlx::query(
-        r#"INSERT INTO users (id, tenant_id, firstname, lastname, email, password_hash, roles, is_active, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, true, NOW(), NOW())"#)
-    .bind(admin_id)
-    .bind(tenant.id)
-    .bind(&dto.admin.firstname)
-    .bind(&dto.admin.lastname)
-    .bind(&dto.admin.email)
-    .bind(password_hash)
-    .bind(serde_json::to_value(&roles).unwrap())
-    .execute(&mut *tx)
+    // 4. Fetch the created tenant (still outside transaction)
+    let tenant = sqlx::query_as::<_, agrocore_domain::entities::tenant::Tenant>(
+        r#"SELECT * FROM tenants WHERE id = $1"#,
+    )
+    .bind(tenant_id)
+    .fetch_one(&mut *conn)
     .await
     .map_err(|e| {
-        error!("Failed to create admin user: {}", e);
+        error!("Failed to fetch created tenant: {}", e);
         agrocore_infrastructure::PostgresDb::map_db_error(e)
     })?;
 
-    tx.commit().await.map_err(|e| {
-        error!("Failed to commit transaction: {}", e);
-        SharedError::Database(e.to_string())
-    })?;
+    // Release connection back to pool
+    drop(conn);
 
-    // 4 Publish TenantCreated event after successful commit
+    // 5. Publish TenantCreated event after successful setup
     info!("Publishing TenantCreated event for tenant: {}", tenant.id);
     let tenant_event = agrocore_messaging::Event::new(
         tenant.id.to_string(),

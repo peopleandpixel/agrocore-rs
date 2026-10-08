@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.58.0] - 2026-10-08
+
+### Added
+- **Map API Endpoints for MapLibre GL**: New REST endpoints in `crates/api/src/handlers/map.rs`:
+  - `GET /api/v1/map/sites` — Returns site boundaries as GeoJSON features for map overlay (filters: site_id, object_type, bbox, limit)
+  - `GET /api/v1/map/tasks` — Returns nearby sub-tasks with site boundaries as GeoJSON (filters: lat, lng, radius_m, limit)
+- **Map DTOs**: Added `MapSiteData` and `MapTaskData` in `crates/api/src/dto/spatial.rs` for typed map responses
+
+### Fixed
+- **TenantConfig company_profile**: Added missing `company_profile` field initialization in `CreateTenantDto` test and `Tenant` entity tests
+- **Password validation test**: Updated test password to meet strength requirements (uppercase, lowercase, digit, special char)
+- **MapLibreView reachability**: Added to `EMBEDDED_NOT_ROUTED` list (alternative MapLibre GL implementation; `/map` route uses Leaflet-based `MapView`)
+- **Clippy collapsible_if**: Fixed nested `if` in `SpatialGeometry::to_geojson()` ring closure logic
+
+### Changed
+- Admin UI MapLibre component (`MapLibreView`) now has working API endpoints for sites and tasks data
+
+## [0.57.0] - 2026-10-06
+
+### Added
+- **MapLibre GL Frontend**: Replaced Leaflet with MapLibre GL JS v4 in the Admin UI (`crates/admin-ui/public/vendor/maplibre-gl.js`, `maplibre-gl.css`, `maplibre-wrapper.js`). New `MapLibreView` component in `crates/admin-ui/src/components/maplibre_map.rs` shows:
+  - Worker live positions via WebSocket-ready architecture (periodic polling with auto-refresh)
+  - Sub-tasks colored by status (new/pending/started/paused/completed/stopped/done)
+  - Site/parcel boundaries as overlay layers
+  - Legend and worker list panel
+- Vendored MapLibre assets for offline capability (tests in `offline_capability_tests.rs` verify presence)
+
+### Changed
+- Admin UI now uses MapLibre instead of Leaflet for the map component
+- Added maplibre-gl.js and maplibre-gl.css to vendored assets
+- Updated index.html to include MapLibre resources
+
 ## [0.56.0] - 2026-10-06
 
 ### Added

@@ -29,9 +29,8 @@ use agrocore_domain::repositories::{
     PestRiskRepo, PhenologyRecordRepo, PlantProtectionRecordRepo, SettingsRepository,
     SiteRepository, SoilMoistureConfigRepo, SpatialObjectRepository, TaskDataRepository,
     TaskSubTaskRepository, TenantRepository, TreeRepository, UserRepository, VarietyRepository,
-    VineyardRepo,
-    WaterQuotaRepo, WaterSourceRepo, WaterUsageRepo, WeatherDataRepo, WeatherStationRepo,
-    WorkLogRepo, WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
+    VineyardRepo, WaterQuotaRepo, WaterSourceRepo, WaterUsageRepo, WeatherDataRepo,
+    WeatherStationRepo, WorkLogRepo, WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
 };
 use agrocore_logging::{debug, info};
 use sqlx::PgPool;
@@ -61,7 +60,8 @@ pub struct MockDatabase {
     pub worker_task_status_repo:
         Option<Arc<agrocore_domain::repositories::MockWorkerTaskStatusRepository>>,
     pub task_data_repo: Option<Arc<agrocore_domain::repositories::MockTaskDataRepository>>,
-    pub task_sub_task_repo: Option<Arc<agrocore_domain::repositories::task_sub_task::MockTaskSubTaskRepository>>,
+    pub task_sub_task_repo:
+        Option<Arc<agrocore_domain::repositories::task_sub_task::MockTaskSubTaskRepository>>,
     pub weather_station_repo: Option<Arc<agrocore_domain::repositories::MockWeatherStationRepo>>,
     pub weather_data_repo: Option<Arc<agrocore_domain::repositories::MockWeatherDataRepo>>,
     pub fertilizer_record_repo:

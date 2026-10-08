@@ -11,8 +11,8 @@
 
 use actix_web::{App, http::StatusCode, test, web};
 use agrocore_api::{AppState, handlers::configure};
-use agrocore_infrastructure::{Database, MockDatabase};
 use agrocore_domain::repositories::MockSpatialObjectRepository;
+use agrocore_infrastructure::{Database, MockDatabase};
 use futures::future::ready;
 use jsonwebtoken::{EncodingKey, Header, encode};
 use prometheus::Registry;
@@ -68,7 +68,7 @@ fn state_with_spatial_mock() -> AppState {
         .expect_find_by_filter()
         .returning(|_, _| Box::pin(ready(Ok(vec![]))));
     mock_db.spatial_object_repo = Some(Arc::new(spatial_repo));
-    
+
     let metrics_registry = Registry::new();
     AppState {
         db: Arc::new(Database::Mock(Box::new(mock_db))),
@@ -90,7 +90,12 @@ fn auth() -> String {
 /// An authenticated GET reaches the handler and comes back with a FeatureCollection.
 #[actix_web::test]
 async fn spatial_objects_endpoint_answers() {
-    let app = test::init_service(App::new().app_data(web::Data::new(state_with_spatial_mock())).configure(configure)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(web::Data::new(state_with_spatial_mock()))
+            .configure(configure),
+    )
+    .await;
 
     let req = test::TestRequest::get()
         .uri("/api/v1/spatial/objects")
@@ -107,7 +112,12 @@ async fn spatial_objects_endpoint_answers() {
 /// An anonymous caller is rejected — the map is not public.
 #[actix_web::test]
 async fn spatial_objects_requires_authentication() {
-    let app = test::init_service(App::new().app_data(web::Data::new(state())).configure(configure)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(web::Data::new(state()))
+            .configure(configure),
+    )
+    .await;
     let req = test::TestRequest::get()
         .uri("/api/v1/spatial/objects")
         .to_request();
@@ -121,7 +131,12 @@ async fn spatial_objects_requires_authentication() {
 /// matches nothing, so the map would draw an empty farm and report no error at all.
 #[actix_web::test]
 async fn bbox_is_rejected_when_malformed() {
-    let app = test::init_service(App::new().app_data(web::Data::new(state_with_spatial_mock())).configure(configure)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(web::Data::new(state_with_spatial_mock()))
+            .configure(configure),
+    )
+    .await;
     for bad in [
         "1,2,3",               // three components
         "1,2,3,4,5",           // five
@@ -147,7 +162,12 @@ async fn bbox_is_rejected_when_malformed() {
 /// A well-formed bbox in the Alentejo is accepted, as is every documented filter value.
 #[actix_web::test]
 async fn valid_filters_are_accepted() {
-    let app = test::init_service(App::new().app_data(web::Data::new(state_with_spatial_mock())).configure(configure)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(web::Data::new(state_with_spatial_mock()))
+            .configure(configure),
+    )
+    .await;
     for uri in [
         "/api/v1/spatial/objects?bbox=-7.95,37.0,-7.85,37.05",
         "/api/v1/spatial/objects?object_type=olive_tree",
@@ -163,7 +183,11 @@ async fn valid_filters_are_accepted() {
             .insert_header(("Authorization", auth()))
             .to_request();
         let resp = test::call_service(&app, req).await;
-        assert!(resp.status().is_success(), "'{uri}' should be accepted, got {}", resp.status());
+        assert!(
+            resp.status().is_success(),
+            "'{uri}' should be accepted, got {}",
+            resp.status()
+        );
     }
 }
 
@@ -173,7 +197,12 @@ async fn valid_filters_are_accepted() {
 /// had filtered by planting date and would draw every object it received.
 #[actix_web::test]
 async fn unknown_planted_at_prefix_is_rejected() {
-    let app = test::init_service(App::new().app_data(web::Data::new(state_with_spatial_mock())).configure(configure)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(web::Data::new(state_with_spatial_mock()))
+            .configure(configure),
+    )
+    .await;
     for bad in ["during:2015-01-01", "before:not-a-date", "2015-01-01"] {
         let req = test::TestRequest::get()
             .uri(&format!("/api/v1/spatial/objects?planted_at={bad}"))
@@ -195,7 +224,12 @@ async fn unknown_planted_at_prefix_is_rejected() {
 /// from "you asked for none".
 #[actix_web::test]
 async fn zero_limit_is_clamped_not_honoured() {
-    let app = test::init_service(App::new().app_data(web::Data::new(state_with_spatial_mock())).configure(configure)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(web::Data::new(state_with_spatial_mock()))
+            .configure(configure),
+    )
+    .await;
     let req = test::TestRequest::get()
         .uri("/api/v1/spatial/objects?limit=0")
         .insert_header(("Authorization", auth()))
@@ -211,7 +245,12 @@ async fn zero_limit_is_clamped_not_honoured() {
 /// test-local scope.
 #[actix_web::test]
 async fn spatial_route_is_registered_on_the_real_router() {
-    let app = test::init_service(App::new().app_data(web::Data::new(state_with_spatial_mock())).configure(configure)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(web::Data::new(state_with_spatial_mock()))
+            .configure(configure),
+    )
+    .await;
     let req = test::TestRequest::get()
         .uri("/api/v1/spatial/objects")
         .insert_header(("Authorization", auth()))

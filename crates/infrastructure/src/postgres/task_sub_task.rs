@@ -1,10 +1,9 @@
 use crate::postgres::tenant_pool::TenantPool;
 use agrocore_domain::entities::task_state::{OverallTaskStatus, SubTaskStatus};
-use agrocore_domain::repositories::{
-    RepositoryFuture, TaskSubTaskRepository,
-    TaskSubTask, TaskProgressAggregate, NearbySubTask,
-};
 use agrocore_domain::entities::tenant::TenantId;
+use agrocore_domain::repositories::{
+    NearbySubTask, RepositoryFuture, TaskProgressAggregate, TaskSubTask, TaskSubTaskRepository,
+};
 use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -12,11 +11,7 @@ use uuid::Uuid;
 agrocore_shared::pg_repo!(PgTaskSubTaskRepo);
 
 impl TaskSubTaskRepository for PgTaskSubTaskRepo {
-    fn find_by_task(
-        &self,
-        task_id: Uuid,
-        tid: TenantId,
-    ) -> RepositoryFuture<Vec<TaskSubTask>> {
+    fn find_by_task(&self, task_id: Uuid, tid: TenantId) -> RepositoryFuture<Vec<TaskSubTask>> {
         let pool = TenantPool::new(&self.pool, tid.0);
         let tid_uuid = tid.0;
         Box::pin(async move {

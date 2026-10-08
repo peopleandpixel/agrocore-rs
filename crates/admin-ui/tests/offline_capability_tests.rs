@@ -180,6 +180,8 @@ fn the_vendored_assets_are_present() {
         "leaflet-draw.css",
         "leaflet.js",
         "leaflet-draw.js",
+        "maplibre-gl.js",
+        "maplibre-gl.css",
     ] {
         let path = public_dir().join("vendor").join(name);
         assert!(path.exists(), "vendor/{name} is missing");

@@ -603,9 +603,6 @@ impl SpatialObjectRepository for PgSiteRepo {
                 .filter(|obj| obj.contains_point(&point))
                 .collect())
         })
-
-
-
     }
 
     /// The map's read path: a viewport or plot query, not a page of everything.
@@ -678,10 +675,9 @@ impl SpatialObjectRepository for PgSiteRepo {
                 sql.push_str(&format!(" LIMIT ${n}"));
             }
 
-            let mut q = sqlx::query_as::<_, agrocore_domain::entities::spatial::SpatialObject>(
-                &sql,
-            )
-            .bind(tid);
+            let mut q =
+                sqlx::query_as::<_, agrocore_domain::entities::spatial::SpatialObject>(&sql)
+                    .bind(tid);
             if let Some(site) = filter.site_id {
                 q = q.bind(site);
             }
@@ -692,8 +688,7 @@ impl SpatialObjectRepository for PgSiteRepo {
                 q = q.bind(parent);
             }
             match filter.planted_at {
-                Some(PlantedAtFilter::Before(d))
-                | Some(PlantedAtFilter::After(d)) => {
+                Some(PlantedAtFilter::Before(d)) | Some(PlantedAtFilter::After(d)) => {
                     q = q.bind(d);
                 }
                 _ => {}

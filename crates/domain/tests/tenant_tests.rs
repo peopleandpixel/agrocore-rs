@@ -34,6 +34,7 @@ fn tenant_and_create_tenant_validation_cover_required_fields() {
                 lock_completed_orders: false,
                 allow_future_tasks: false,
             }),
+            company_profile: None,
         }),
     };
     assert!(dto.validate().is_ok());

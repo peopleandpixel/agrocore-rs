@@ -271,12 +271,16 @@ impl SpatialGeometry {
         use serde_json::json;
         let ring = |pts: &[GeoPoint]| -> Vec<[f64; 2]> {
             let mut out: Vec<[f64; 2]> = pts.iter().map(|p| [p.lng, p.lat]).collect();
-            if let (Some(first), Some(last)) = (out.first().copied(), out.last().copied()) {
-                if first != last {
+            let first = out.first().copied();
+            let last = out.last().copied();
+            if first == last && first.is_some() {
+                out
+            } else {
+                if let Some(first) = first {
                     out.push(first);
                 }
+                out
             }
-            out
         };
 
         match self {

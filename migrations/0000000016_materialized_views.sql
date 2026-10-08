@@ -186,7 +186,6 @@ FROM tasks t
 JOIN orders o ON o.id = t.order_id AND o.tenant_id = t.tenant_id
 LEFT JOIN task_progress tp ON tp.task_id = t.id AND tp.tenant_id = t.tenant_id
 WHERE o.deadline_date IS NOT NULL
-  AND o.status NOT IN ('completed', 'cancelled')
   AND (o.deadline_date < CURRENT_DATE + 30)  -- look ahead 30 days
 ORDER BY
     CASE WHEN o.deadline_date < CURRENT_DATE THEN 0 ELSE 1 END,
@@ -241,8 +240,8 @@ SELECT
     COUNT(DISTINCT t.id) AS task_count,
     COUNT(DISTINCT t.id) FILTER (WHERE t.status = 'completed') AS completed_task_count,
     COUNT(DISTINCT t.id) FILTER (WHERE t.status = 'in_progress') AS in_progress_task_count,
-    COALESCE(SUM(twi.duration_minutes), 0) AS total_work_minutes,
-    COALESCE(AVG(twi.duration_minutes), 0) AS avg_task_minutes,
+    COALESCE(SUM(twi.dwell_minutes), 0) AS total_work_minutes,
+    COALESCE(AVG(twi.dwell_minutes), 0) AS avg_task_minutes,
     COUNT(DISTINCT twi.worker_id) AS worker_count,
     MIN(twi.started_at) AS first_work_date,
     MAX(twi.stopped_at) AS last_work_date
@@ -262,15 +261,15 @@ SELECT
     e.tenant_id,
     e.label AS equipment_label,
     e.equipment_type,
-    COUNT(twi.id) AS interval_count,
-    COALESCE(SUM(twi.duration_minutes), 0) AS total_work_minutes,
-    COUNT(DISTINCT twi.task_id) AS task_count,
-    COUNT(DISTINCT twi.worker_id) AS operator_count,
-    MIN(twi.started_at) AS first_use,
-    MAX(twi.stopped_at) AS last_use,
-    AVG(twi.duration_minutes)::numeric(10,2) AS avg_interval_minutes
-FROM equipments e
-LEFT JOIN task_work_intervals twi ON twi.machine_id = e.id AND twi.tenant_id = e.tenant_id
+    COUNT(eul.id) AS interval_count,
+    COALESCE(SUM(eul.hours_operated) * 60, 0) AS total_work_minutes,
+    COUNT(DISTINCT eul.task_id) AS task_count,
+    COUNT(DISTINCT eul.worker_id) AS operator_count,
+    MIN(eul.started_at) AS first_use,
+    MAX(eul.ended_at) AS last_use,
+    AVG(eul.hours_operated * 60)::numeric(10,2) AS avg_interval_minutes
+FROM equipment e
+LEFT JOIN equipment_usage_log eul ON eul.equipment_id = e.id AND eul.tenant_id = e.tenant_id
 WHERE e.is_active
 GROUP BY e.id, e.tenant_id, e.label, e.equipment_type;
 

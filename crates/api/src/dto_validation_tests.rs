@@ -76,7 +76,7 @@ fn test_api_user_dto_validation() {
     dto.firstname = "Alice".to_string();
     dto.lastname = "Smith".to_string();
     dto.email = "alice@agrocore.io".to_string();
-    dto.password = "secure-pass-123".to_string();
+    dto.password = "SecurePass123!".to_string();
     assert!(dto.validate().is_ok());
 }
 

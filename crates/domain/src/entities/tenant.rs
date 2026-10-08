@@ -28,6 +28,31 @@ pub struct TenantConfig {
     pub logo_url: Option<String>,
     pub primary_color: Option<String>,
     pub validation_rules: Option<TenantValidationRules>,
+    // Company profile with address validation and geocoding
+    pub company_profile: Option<CompanyProfile>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+pub struct CompanyProfile {
+    #[validate(length(min = 1, max = 200))]
+    pub name: String,
+    #[validate(length(min = 1, max = 300))]
+    pub address: String,
+    #[validate(length(min = 1, max = 100))]
+    pub country: String,
+    #[validate(email)]
+    pub email: String,
+    #[validate(length(min = 5, max = 30))]
+    pub phone: String,
+    // Filled by reverse geocoding after validation
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub coordinates: Option<GeoCoordinates>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct GeoCoordinates {
+    pub lat: f64,
+    pub lng: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, ToSchema)]
@@ -129,6 +154,7 @@ mod tests {
                     lock_completed_orders: false,
                     allow_future_tasks: false,
                 }),
+                company_profile: None,
             }),
         };
         assert!(dto.validate().is_ok());

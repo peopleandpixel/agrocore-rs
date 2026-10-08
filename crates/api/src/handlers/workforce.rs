@@ -4,7 +4,6 @@ use crate::dto::{
     PaginatedWorkerTaskStatusResponse, UpdateWorkerTaskStatusDto, WorkerTaskStatusAggregateDto,
     WorkerTaskStatusDto,
 };
-use crate::dto::spatial::NearbySubTaskDto;
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
@@ -103,10 +102,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(
                 web::resource("/workers/{id}/hours-worked").route(web::get().to(get_total_hours)),
             )
-            .service(
-                web::resource("/tasks/nearby")
-                    .route(web::get().to(get_nearby_tasks)),
-            ),
+            .service(web::resource("/tasks/nearby").route(web::get().to(get_nearby_tasks))),
     );
 }
 
@@ -1096,8 +1092,12 @@ pub struct NearbyTasksQuery {
     pub limit: i64,
 }
 
-fn default_radius() -> f64 { 100.0 }
-fn default_limit() -> i64 { 50 }
+fn default_radius() -> f64 {
+    100.0
+}
+fn default_limit() -> i64 {
+    50
+}
 
 #[utoipa::path(
     get,

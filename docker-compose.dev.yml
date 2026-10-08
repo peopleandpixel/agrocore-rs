@@ -17,7 +17,7 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - dev_postgres_data:/var/lib/postgresql/data
+      - dev_postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U agrocore -d agrocore"]
       interval: 10s
@@ -81,7 +81,7 @@ services:
       MQTT_CLIENT_ID: agrocore-api
       MQTT_TOPIC_PREFIX: agrocore
       REDIS_URL: "redis://redis:6379"
-      JWT_SECRET: dev-secret-change-in-production
+      JWT_SECRET: dev-secret-change-in-productionx
       RUST_LOG: info
       LISTEN_ADDR: "0.0.0.0:8080"
     ports:
@@ -111,7 +111,7 @@ services:
       MQTT_BROKER_HOST: mqtt
       MQTT_BROKER_PORT: "1883"
       REDIS_URL: "redis://redis:6379"
-      JWT_SECRET: dev-secret-change-in-production
+      JWT_SECRET: dev-secret-change-in-productionx
       RUST_LOG: info
       NOTIFICATION_LISTEN_ADDR: "0.0.0.0:8082"
     ports:

@@ -431,6 +431,8 @@ BEGIN
         WHERE c.table_schema = 'public'
           AND c.data_type = 'numeric'
           AND a.attgenerated = ''
+          -- Only apply to tables (relkind = 'r'), not views or materialized views
+          AND cl.relkind = 'r'
           -- A column that a generated column depends on cannot be altered:
           -- equipment_fuel_consumption.total_cost is generated from
           -- liters * cost_per_liter, so changing those types would invalidate

@@ -158,3 +158,22 @@ pub struct NearbySubTaskDto {
     pub site_label: Option<String>,
     pub distance_m: f64,
 }
+
+/// Site data for the MapLibre map view.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct MapSiteData {
+    pub id: Uuid,
+    pub label: String,
+    pub geometry: serde_json::Value,
+    pub color: Option<String>,
+}
+
+/// Task data for the MapLibre map view.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct MapTaskData {
+    pub id: Uuid,
+    pub label: String,
+    pub status: String,
+    pub geometry: serde_json::Value,
+    pub site_id: Option<Uuid>,
+}

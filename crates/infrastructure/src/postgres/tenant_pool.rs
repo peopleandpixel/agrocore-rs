@@ -90,13 +90,26 @@ impl TenantPool {
     /// connection, would appear to work and then reset on the first statement.
     /// That is exactly the kind of silent failure which leaves RLS inert.
     pub async fn begin(&self) -> Result<sqlx::Transaction<'_, sqlx::Postgres>, Error> {
+        self.begin_with_superadmin(false).await
+    }
+
+    /// Begin a transaction with superadmin flag (bypasses RLS for setup/bootstrap).
+    pub async fn begin_superadmin(&self) -> Result<sqlx::Transaction<'_, sqlx::Postgres>, Error> {
+        self.begin_with_superadmin(true).await
+    }
+
+    /// Internal: begin with optional superadmin flag.
+    async fn begin_with_superadmin(
+        &self,
+        is_superadmin: bool,
+    ) -> Result<sqlx::Transaction<'_, sqlx::Postgres>, Error> {
         let mut tx = self.pool.begin().await?;
-        sqlx::query("BEGIN").execute(&mut *tx).await?;
         sqlx::query(
             "SELECT set_config('app.current_tenant_id', $1, true), \
-                    set_config('app.is_superadmin', 'false', true)",
+                    set_config('app.is_superadmin', $2, true)",
         )
         .bind(self.tenant_id.to_string())
+        .bind(is_superadmin.to_string())
         .execute(&mut *tx)
         .await?;
         Ok(tx)

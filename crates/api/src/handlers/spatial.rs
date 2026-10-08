@@ -194,7 +194,10 @@ pub async fn get_spatial_object(
     let obj = state
         .db
         .spatial_object_repo()
-        .find_by_id(agrocore_domain::TenantId(auth.0.tenant_id), path.into_inner())
+        .find_by_id(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            path.into_inner(),
+        )
         .await?;
     match obj {
         Some(obj) => {

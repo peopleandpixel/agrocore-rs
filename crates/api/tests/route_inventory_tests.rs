@@ -958,4 +958,8 @@ const EMBEDDED_NOT_ROUTED: &[(&str, &str)] = &[
         "ToastContainer",
         "mounted once by the shell; every action reports through it",
     ),
+    (
+        "MapLibreView",
+        "alternative MapLibre GL map implementation; not currently routed (the /map route uses Leaflet-based MapView)",
+    ),
 ];

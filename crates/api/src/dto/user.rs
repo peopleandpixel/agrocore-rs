@@ -64,7 +64,8 @@ pub struct CreateUserDto {
     pub lastname: String,
     #[validate(email)]
     pub email: String,
-    #[validate(length(min = 8))]
+    #[validate(length(min = 12, max = 128))]
+    #[validate(custom(function = "validate_password_strength"))]
     pub password: String,
     pub roles: Option<Vec<UserRole>>,
     pub internal_cost_per_hour: Option<f64>,
@@ -164,4 +165,52 @@ pub struct LoginDto {
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct RefreshRequest {
     pub refresh_token: String,
+}
+
+// Password strength validation: min 12 chars, at least one uppercase, one lowercase, one digit, one special char
+fn validate_password_strength(password: &str) -> Result<(), validator::ValidationError> {
+    let mut has_upper = false;
+    let mut has_lower = false;
+    let mut has_digit = false;
+    let mut has_special = false;
+
+    for ch in password.chars() {
+        if ch.is_ascii_uppercase() {
+            has_upper = true;
+        } else if ch.is_ascii_lowercase() {
+            has_lower = true;
+        } else if ch.is_ascii_digit() {
+            has_digit = true;
+        } else if "!@#$%^&*()_+-=[]{}|;:,.<>?/~`".contains(ch) {
+            has_special = true;
+        }
+    }
+
+    if !has_upper {
+        return Err(
+            validator::ValidationError::new("password_missing_uppercase").with_message(
+                std::borrow::Cow::Borrowed("Password must contain at least one uppercase letter"),
+            ),
+        );
+    }
+    if !has_lower {
+        return Err(
+            validator::ValidationError::new("password_missing_lowercase").with_message(
+                std::borrow::Cow::Borrowed("Password must contain at least one lowercase letter"),
+            ),
+        );
+    }
+    if !has_digit {
+        return Err(
+            validator::ValidationError::new("password_missing_digit").with_message(
+                std::borrow::Cow::Borrowed("Password must contain at least one digit"),
+            ),
+        );
+    }
+    if !has_special {
+        return Err(validator::ValidationError::new("password_missing_special")
+            .with_message(std::borrow::Cow::Borrowed("Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?/~`)")));
+    }
+
+    Ok(())
 }
