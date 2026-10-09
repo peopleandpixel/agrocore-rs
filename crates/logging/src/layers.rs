@@ -2,12 +2,16 @@
 // only reached when a tracing feature is on. The admin UI depends on this crate
 // with `default-features = false` for its WASM build, and an unconditional import
 // fails `-D warnings` there even though the file is never executed.
-use crate::config::LoggingConfig;
-#[cfg(any(feature = "dev-console", feature = "otlp"))]
-use crate::config::RotationType;
+use crate::config::{LoggingConfig, RotationType};
 #[cfg(any(feature = "dev-console", feature = "otlp"))]
 use crate::error::LoggingError;
 use crate::error::LoggingResult;
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
+
+/// Type alias for per-crate writer map to reduce type complexity
+#[cfg(feature = "dev-console")]
+type CrateWriterMap = Arc<RwLock<HashMap<String, NonBlocking>>>;
 
 #[cfg(any(feature = "dev-console", feature = "otlp"))]
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt as SubscriberExt;
@@ -96,8 +100,95 @@ impl<'a> tracing_subscriber::fmt::MakeWriter<'a> for ConsoleWriter {
     }
 }
 
+/// Per-crate file writer that routes to the appropriate crate's log file
 #[cfg(feature = "dev-console")]
-pub type FileGuard = Option<WorkerGuard>;
+struct CrateFileWriter {
+    writers: CrateWriterMap,
+}
+
+#[cfg(feature = "dev-console")]
+impl<'a> tracing_subscriber::fmt::MakeWriter<'a> for CrateFileWriter {
+    type Writer = Box<dyn Write + Send + Sync>;
+
+    fn make_writer(&'a self) -> Self::Writer {
+        Box::new(CrateLogWriter {
+            writers: self.writers.clone(),
+        })
+    }
+}
+
+/// Writer that routes log lines to the correct crate's file based on the target
+#[cfg(feature = "dev-console")]
+struct CrateLogWriter {
+    writers: CrateWriterMap,
+}
+
+#[cfg(feature = "dev-console")]
+impl Write for CrateLogWriter {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        // Extract crate name from target (e.g., "agrocore_api::handlers::tasks" -> "agrocore_api")
+        let crate_name = match std::str::from_utf8(buf) {
+            Ok(s) => extract_crate_name(s),
+            Err(_) => None,
+        };
+
+        // Try to find the specific crate writer
+        if let Some(crate_name) = crate_name {
+            let writers = match self.writers.read() {
+                Ok(w) => w,
+                Err(_) => return Ok(buf.len()),
+            };
+            if let Some(writer) = writers.get(&crate_name) {
+                let mut writer = writer.clone();
+                return writer.write(buf);
+            }
+        }
+
+        // Fallback: write to first available writer
+        let writers = match self.writers.read() {
+            Ok(w) => w,
+            Err(_) => return Ok(buf.len()),
+        };
+        if let Some(writer) = writers.values().next() {
+            let mut writer = writer.clone();
+            return writer.write(buf);
+        }
+
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        let writers = match self.writers.read() {
+            Ok(w) => w,
+            Err(_) => return Ok(()),
+        };
+        if let Some(writer) = writers.values().next() {
+            let mut writer = writer.clone();
+            writer.flush()?;
+        }
+        Ok(())
+    }
+}
+
+#[cfg(feature = "dev-console")]
+fn extract_crate_name(line: &str) -> Option<String> {
+    // Try to extract crate name from log line
+    // Format typically: "TIMESTAMP LEVEL crate_name::module::function message"
+    let start = line.find(' ')?;
+    let level_end = line[start + 1..].find(' ')?;
+    let target_start = start + 1 + level_end + 1;
+    if target_start < line.len() {
+        let target = &line[target_start..];
+        target
+            .find("::")
+            .map(|crate_end| target[..crate_end].to_string())
+    } else {
+        None
+    }
+}
+
+#[cfg(feature = "dev-console")]
+pub type FileGuard = Option<Vec<WorkerGuard>>;
 
 #[cfg(not(feature = "dev-console"))]
 pub type FileGuard = Option<()>;
@@ -141,7 +232,6 @@ impl LoggingHandle {
 /// Initialize logging based on config
 pub fn init_logging(config: LoggingConfig) -> LoggingResult<LoggingHandle> {
     // No tracing features enabled - just set up basic log crate.
-    //
     // The explicit `return` was needed while every other branch was also compiled;
     // with neither feature on this is the only block left, and clippy's
     // `needless_return` fires under `-D warnings` in the WASM build.
@@ -159,7 +249,10 @@ pub fn init_logging(config: LoggingConfig) -> LoggingResult<LoggingHandle> {
 
         tracing_log::LogTracer::init().ok();
 
-        // Build file layer
+        // Build per-crate file layers
+        let (crate_guards, crate_writers) = build_crate_file_layers(&config)?;
+
+        // Build main file layer (for backwards compatibility / general logs)
         let (file_guard, file_writer) = if config.file_enabled {
             let log_path = if let Some(log_dir) = &config.log_dir {
                 log_dir.join(
@@ -208,6 +301,11 @@ pub fn init_logging(config: LoggingConfig) -> LoggingResult<LoggingHandle> {
             ConsoleWriter::Disabled
         };
 
+        // Build per-crate file writer that routes to appropriate file
+        let crate_writer = CrateFileWriter {
+            writers: crate_writers,
+        };
+
         // Build subscriber using registry - chain all in single expression
         let subscriber = tracing_subscriber::registry()
             .with(env_filter)
@@ -222,12 +320,25 @@ pub fn init_logging(config: LoggingConfig) -> LoggingResult<LoggingHandle> {
                     .with_writer(console_writer)
                     .with_ansi(false)
                     .pretty(),
+            )
+            .with(
+                tracing_subscriber::fmt::layer()
+                    .with_writer(crate_writer)
+                    .with_ansi(false)
+                    .json(),
             );
 
         tracing::subscriber::set_global_default(subscriber)
             .map_err(|e| LoggingError::InvalidConfig(e.to_string()))?;
 
-        let handle = LoggingHandle::new(file_guard);
+        // Combine guards
+        let mut guards = Vec::new();
+        if let Some(g) = file_guard {
+            guards.push(g);
+        }
+        guards.extend(crate_guards);
+
+        let handle = LoggingHandle::new(Some(guards));
         Ok(handle)
     }
 
@@ -272,7 +383,10 @@ pub fn init_logging(config: LoggingConfig) -> LoggingResult<LoggingHandle> {
 
         tracing_log::LogTracer::init().ok();
 
-        // Build file layer
+        // Build per-crate file layers
+        let (crate_guards, crate_writers) = build_crate_file_layers(&config)?;
+
+        // Build main file layer
         let (file_guard, file_writer) = if config.file_enabled {
             let log_path = if let Some(log_dir) = &config.log_dir {
                 log_dir.join(
@@ -320,6 +434,11 @@ pub fn init_logging(config: LoggingConfig) -> LoggingResult<LoggingHandle> {
             ConsoleWriter::Disabled
         };
 
+        // Build per-crate file writer that routes to appropriate file
+        let crate_writer = CrateFileWriter {
+            writers: crate_writers,
+        };
+
         // Build OTLP layer
         let otlp_layer = if config.otlp_enabled {
             Some(build_otlp_layer(&config)?)
@@ -342,6 +461,12 @@ pub fn init_logging(config: LoggingConfig) -> LoggingResult<LoggingHandle> {
                     .with_ansi(false)
                     .pretty(),
             );
+            let subscriber = subscriber.with(
+                tracing_subscriber::fmt::layer()
+                    .with_writer(crate_writer)
+                    .with_ansi(false)
+                    .json(),
+            );
 
             let subscriber = if let Some(layer) = otlp_layer {
                 subscriber.with(layer)
@@ -355,9 +480,66 @@ pub fn init_logging(config: LoggingConfig) -> LoggingResult<LoggingHandle> {
         tracing::subscriber::set_global_default(subscriber)
             .map_err(|e| LoggingError::InvalidConfig(e.to_string()))?;
 
-        let handle = LoggingHandle::new(file_guard);
+        // Combine guards
+        let mut guards = Vec::new();
+        if let Some(g) = file_guard {
+            guards.push(g);
+        }
+        guards.extend(crate_guards);
+
+        let handle = LoggingHandle::new(Some(guards));
         Ok(handle)
     }
+}
+
+/// Build per-crate file layers from config
+#[cfg(feature = "dev-console")]
+fn build_crate_file_layers(
+    config: &LoggingConfig,
+) -> LoggingResult<(Vec<WorkerGuard>, CrateWriterMap)> {
+    let mut guards = Vec::new();
+    let mut writers = HashMap::new();
+
+    let log_dir = config
+        .log_dir
+        .as_deref()
+        .unwrap_or_else(|| std::path::Path::new("logs"));
+
+    // Ensure log directory exists
+    fs::create_dir_all(log_dir).map_err(LoggingError::Io)?;
+
+    for (crate_name, crate_config) in &config.crate_logs {
+        if !crate_config.enabled {
+            continue;
+        }
+
+        let file_name = crate_config
+            .file_name
+            .clone()
+            .unwrap_or_else(|| format!("{}.jsonl", crate_name));
+        let log_path = log_dir.join(&file_name);
+
+        let rotation = match config.file_rotation.rotation {
+            RotationType::Daily => Rotation::DAILY,
+            RotationType::Hourly => Rotation::HOURLY,
+            RotationType::Never => Rotation::NEVER,
+            RotationType::Size => Rotation::DAILY,
+        };
+
+        let file_appender = RollingFileAppender::new(
+            rotation,
+            log_path
+                .parent()
+                .unwrap_or_else(|| std::path::Path::new(".")),
+            log_path.file_name().unwrap_or_else(|| file_name.as_ref()),
+        );
+
+        let (non_blocking, guard) = non_blocking(file_appender);
+        guards.push(guard);
+        writers.insert(crate_name.clone(), non_blocking);
+    }
+
+    Ok((guards, Arc::new(RwLock::new(writers))))
 }
 
 /// OTLP layer builder - returns concrete layer type
