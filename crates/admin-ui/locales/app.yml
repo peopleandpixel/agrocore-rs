@@ -57,6 +57,17 @@ admin_password:
   ro: Parola de administrator
   uk: Пароль адміністратора
   nl: Beheerderswachtwoord
+password_requirements:
+  en: "At least 12 characters with uppercase, lowercase, number, and special character"
+  de: "Mindestens 12 Zeichen mit Großbuchstaben, Kleinbuchstaben, Zahl und Sonderzeichen"
+  es: "Al menos 12 caracteres con mayúscula, minúscula, número y carácter especial"
+  fr: "Au moins 12 caractères avec majuscule, minuscule, chiffre et caractère spécial"
+  pt: "Pelo menos 12 caracteres com maiúscula, minúscula, número e caractere especial"
+  it: "Almeno 12 caratteri con maiuscola, minuscola, numero e carattere speciale"
+  pl: "Przynajmniej 12 znaków z wielką literą, małą literą, cyfrą i znakiem specjalnym"
+  ro: "Cel puțin 12 caractere cu literă mare, literă mică, cifră și caracter special"
+  uk: "Принаймні 12 символів з великою літерою, малою літерою, цифрою та спеціальним символом"
+  nl: "Minstens 12 tekens met hoofdletter, kleine letter, cijfer en speciaal teken"
 tenant_name:
   en: Organization Name
   de: Name der Organisation
@@ -101,6 +112,17 @@ continue:
   ro: Continuă
   uk: Продовжити
   nl: Ga door
+back:
+  en: Back
+  de: Zurück
+  es: Atrás
+  fr: Retour
+  pt: Voltar
+  it: Indietro
+  pl: Powrót
+  ro: Înapoi
+  uk: Назад
+  nl: Terug
 wizard_language:
   en: Wizard language
   de: Sprache für den Assistenten
@@ -167,6 +189,83 @@ site_deleted:
   ro: Site șters cu succes
   uk: Сайт успішно видалено
   nl: Locatie succesvol verwijderd
+site_updated:
+  en: Site updated successfully
+  de: Fläche erfolgreich aktualisiert
+  es: Sitio actualizado correctamente
+  fr: Site mis à jour avec succès
+  pt: Site atualizado com sucesso
+  it: Sito aggiornato con successo
+  pl: Witryna zaktualizowana pomyślnie
+  ro: Site actualizat cu succes
+  uk: Сайт успішно оновлено
+  nl: Locatie succesvol bijgewerkt
+edit_site:
+  en: Edit site
+  de: Fläche bearbeiten
+  es: Editar sitio
+  fr: Modifier le site
+  pt: Editar site
+  it: Modifica sito
+  pl: Edytuj witrynę
+  ro: Editează site
+  uk: Редагувати сайт
+  nl: Locatie bewerken
+edit_site_title:
+  en: Edit Site
+  de: Fläche bearbeiten
+  es: Editar sitio
+  fr: Modifier le site
+  pt: Editar site
+  it: Modifica sito
+  pl: Edytuj witrynę
+  ro: Editează site
+  uk: Редагувати сайт
+  nl: Locatie bewerken
+delete_site:
+  en: Delete site
+  de: Fläche löschen
+  es: Eliminar sitio
+  fr: Supprimer le site
+  pt: Eliminar site
+  it: Elimina sito
+  pl: Usuń witrynę
+  ro: Șterge site
+  uk: Видалити сайт
+  nl: Locatie verwijderen
+delete_polygon:
+  en: Delete polygon
+  de: Polygon löschen
+  es: Eliminar polígono
+  fr: Supprimer le polygone
+  pt: Eliminar polígono
+  it: Elimina poligono
+  pl: Usuń wielokąt
+  ro: Șterge poligonul
+  uk: Видалити полігон
+  nl: Polygon verwijderen
+redraw_polygon:
+  en: Redraw polygon
+  de: Polygon neu zeichnen
+  es: Redibujar polígono
+  fr: Redessiner le polygone
+  pt: Redesenha polígono
+  it: Ridisegna poligono
+  pl: Przerysuj wielokąt
+  ro: Redesenază poligonul
+  uk: Перемалювати полігон
+  nl: Polygon opnieuw tekenen
+edit_polygon_hint:
+  en: Drag vertices to edit the shape. Double-click a vertex to delete it. Use buttons below to delete or redraw the polygon.
+  de: Ziehen Sie die Eckpunkte, um die Form zu bearbeiten. Doppelklick auf einen Punkt löscht ihn. Nutzen Sie die Buttons unten, um das Polygon zu löschen oder neu zu zeichnen.
+  es: Arrastra los vértices para editar la forma. Doble clic en un vértice para eliminarlo.
+  fr: Glissez les sommets pour modifier la forme. Double-cliquez sur un sommet pour le supprimer.
+  pt: Arraste os vértices para editar a forma. Duplo clique num vértice para eliminá-lo.
+  it: Trascina i vertici per modificare la forma. Doppio clic su un vertice per eliminarlo.
+  pl: Przeciągnij wierzchołki, aby edytować kształt. Podwójne kliknięcie usuwa wierzchołek.
+  ro: Trageți vârfurile pentru a edita forma. Dublu clic pe un vârf pentru a-l șterge.
+  uk: Перетягніть вершини, щоб редагувати форму. Подвійний клік на вершину видаляє її.
+  nl: Sleep hoekpunten om de vorm te bewerken. Dubbelklik op een hoekpunt om het te verwijderen.
 setup_complete:
   en: Setup completed successfully
   de: Konfiguration erfolgreich abgeschlossen
@@ -684,6 +783,83 @@ validation_site_label:
   ro: Please provide a site name.
   uk: Please provide a site name.
   nl: Please provide a site name.
+drawing_mode_on:
+  en: Drawing On
+  de: Zeichnen an
+  es: Dibujo activado
+  fr: Dessin activé
+  pt: Desenho ativado
+  it: Disegno attivo
+  pl: Rysowanie włączone
+  ro: Desen activat
+  uk: Малювання увімкнено
+  nl: Tekenen aan
+drawing_mode_off:
+  en: Drawing Off
+  de: Zeichnen aus
+  es: Dibujo desactivado
+  fr: Dessin désactivé
+  pt: Desenho desativado
+  it: Disegno disattivato
+  pl: Rysowanie wyłączone
+  ro: Desen dezactivat
+  uk: Малювання вимкнено
+  nl: Tekenen uit
+maximize_window:
+  en: Maximize window
+  de: Fenster maximieren
+  es: Maximizar ventana
+  fr: Agrandir la fenêtre
+  pt: Maximizar janela
+  it: Massimizza finestra
+  pl: Maksymalizuj okno
+  ro: Maximizare fereastră
+  uk: Максимізувати вікно
+  nl: Venster maximaliseren
+restore_window:
+  en: Restore window
+  de: Fenster wiederherstellen
+  es: Restaurar ventana
+  fr: Restaurer la fenêtre
+  pt: Restaurar janela
+  it: Ripristina finestra
+  pl: Przywróć okno
+  ro: Restaurare fereastră
+  uk: Відновити вікно
+  nl: Venster herstellen
+drawing_mode_hint:
+  en: Click the pencil button to enable drawing mode, then click on the map to draw your area.
+  de: Klicken Sie auf den Stift-Button, um den Zeichnungsmodus zu aktivieren, dann klicken Sie auf die Karte, um Ihre Fläche zu zeichnen.
+  es: Click the pencil button to enable drawing mode, then click on the map to draw your area.
+  fr: Click the pencil button to enable drawing mode, then click on the map to draw your area.
+  pt: Click the pencil button to enable drawing mode, then click on the map to draw your area.
+  it: Click the pencil button to enable drawing mode, then click on the map to draw your area.
+  pl: Click the pencil button to enable drawing mode, then click on the map to draw your area.
+  ro: Click the pencil button to enable drawing mode, then click on the map to draw your area.
+  uk: Click the pencil button to enable drawing mode, then click on the map to draw your area.
+  nl: Click the pencil button to enable drawing mode, then click on the map to draw your area.
+finish_polygon:
+  en: Finish area
+  de: Fläche fertigstellen
+  es: Finalizar área
+  fr: Terminer la zone
+  pt: Finalizar área
+  it: Completa area
+  pl: Zakończ obszar
+  ro: Finalizare zonă
+  uk: Завершити ділянку
+  nl: Gebied afronden
+cancel_drawing:
+  en: Cancel drawing
+  de: Zeichnen abbrechen
+  es: Cancelar dibujo
+  fr: Annuler le dessin
+  pt: Cancelar desenho
+  it: Annulla disegno
+  pl: Anuluj rysowanie
+  ro: Anulare desen
+  uk: Скасувати малювання
+  nl: Tekenen annuleren
 users_desc:
   en: Manage team members and their access permissions.
   de: Verwalten Sie Teammitglieder und deren Zugriffsberechtigungen.
@@ -707,16 +883,16 @@ role_permissions:
   uk: Role Permissions
   nl: Role Permissions
 invite_user:
-  en: Invite User
-  de: Benutzer einladen
-  es: Invite User
-  fr: Invite User
-  pt: Invite User
-  it: Invite User
-  pl: Invite User
-  ro: Invite User
-  uk: Invite User
-  nl: Invite User
+  en: Create User
+  de: Benutzer anlegen
+  es: Create User
+  fr: Create User
+  pt: Create User
+  it: Create User
+  pl: Create User
+  ro: Create User
+  uk: Create User
+  nl: Create User
 role:
   en: Role
   de: Rolle
@@ -739,6 +915,17 @@ last_login:
   ro: Last Login
   uk: Last Login
   nl: Last Login
+role_superadmin:
+  en: Super Admin
+  de: Super Admin
+  es: Super Admin
+  fr: Super Admin
+  pt: Super Admin
+  it: Super Admin
+  pl: Super Admin
+  ro: Super Admin
+  uk: Super Admin
+  nl: Super Admin
 role_admin:
   en: Admin
   de: Admin
@@ -881,6 +1068,28 @@ impersonate:
   ro: Impersonate
   uk: Impersonate
   nl: Impersonate
+cannot_delete_self:
+  en: Cannot delete your own account
+  de: Eigenes Konto kann nicht gelöscht werden
+  es: Cannot delete your own account
+  fr: Cannot delete your own account
+  pt: Cannot delete your own account
+  it: Cannot delete your own account
+  pl: Cannot delete your own account
+  ro: Cannot delete your own account
+  uk: Cannot delete your own account
+  nl: Cannot delete your own account
+cannot_delete_last_admin:
+  en: Cannot delete the last admin
+  de: Letzter Admin kann nicht gelöscht werden
+  es: Cannot delete the last admin
+  fr: Cannot delete the last admin
+  pt: Cannot delete the last admin
+  it: Cannot delete the last admin
+  pl: Cannot delete the last admin
+  ro: Cannot delete the last admin
+  uk: Cannot delete the last admin
+  nl: Cannot delete the last admin
 impersonating_as:
   en: Impersonating as
   de: Angemeldet als
@@ -892,6 +1101,17 @@ impersonating_as:
   ro: Impersonating as
   uk: Impersonating as
   nl: Impersonating as
+unknown_user:
+  en: Unknown user
+  de: Unbekannter Benutzer
+  es: Usuario desconocido
+  fr: Utilisateur inconnu
+  pt: Usuário desconhecido
+  it: Utente sconosciuto
+  pl: Nieznany użytkownik
+  ro: Utilizator necunoscut
+  uk: Невідомий користувач
+  nl: Onbekende gebruiker
 stop_impersonation:
   en: Stop Impersonation
   de: Identität beenden
@@ -903,6 +1123,149 @@ stop_impersonation:
   ro: Stop Impersonation
   uk: Stop Impersonation
   nl: Stop Impersonation
+just_now:
+  en: Just now
+  de: Gerade eben
+  es: Ahora mismo
+  fr: À l'instant
+  pt: Agora mesmo
+  it: Proprio ora
+  pl: Przed chwilą
+  ro: Acum
+  uk: Щойно
+  nl: Zojuist
+one_minute_ago:
+  en: 1 minute ago
+  de: Vor 1 Minute
+  es: Hace 1 minuto
+  fr: Il y a 1 minute
+  pt: 1 minuto atrás
+  it: 1 minuto fa
+  pl: 1 minutę temu
+  ro: Acum 1 minut
+  uk: 1 хвилину тому
+  nl: 1 minuut geleden
+minutes_ago:
+  en: minutes ago
+  de: Minuten her
+  es: minutos atrás
+  fr: minutes
+  pt: minutos atrás
+  it: minuti fa
+  pl: minut temu
+  ro: minute
+  uk: хвилин тому
+  nl: minuten geleden
+one_hour_ago:
+  en: 1 hour ago
+  de: Vor 1 Stunde
+  es: Hace 1 hora
+  fr: Il y a 1 heure
+  pt: 1 hora atrás
+  it: 1 ora fa
+  pl: 1 godzinę temu
+  ro: Acum 1 oră
+  uk: 1 годину тому
+  nl: 1 uur geleden
+hours_ago:
+  en: hours ago
+  de: Stunden her
+  es: horas atrás
+  fr: heures
+  pt: horas atrás
+  it: ore fa
+  pl: godzin temu
+  ro: ore
+  uk: годин тому
+  nl: uren geleden
+one_day_ago:
+  en: 1 day ago
+  de: Vor 1 Tag
+  es: Hace 1 día
+  fr: Il y a 1 jour
+  pt: 1 dia atrás
+  it: 1 giorno fa
+  pl: 1 dzień temu
+  ro: Acum 1 zi
+  uk: 1 день тому
+  nl: 1 dag geleden
+days_ago:
+  en: days ago
+  de: Tage her
+  es: días atrás
+  fr: jours
+  pt: dias atrás
+  it: giorni fa
+  pl: dni temu
+  ro: zile
+  uk: днів тому
+  nl: dagen geleden
+one_week_ago:
+  en: 1 week ago
+  de: Vor 1 Woche
+  es: Hace 1 semana
+  fr: Il y a 1 semaine
+  pt: 1 semana atrás
+  it: 1 settimana fa
+  pl: 1 tydzień temu
+  ro: Acum 1 săptămână
+  uk: 1 тиждень тому
+  nl: 1 week geleden
+weeks_ago:
+  en: weeks ago
+  de: Wochen her
+  es: semanas atrás
+  fr: semaines
+  pt: semanas atrás
+  it: settimane fa
+  pl: tygodni temu
+  ro: săptămâni
+  uk: тижнів тому
+  nl: weken geleden
+one_month_ago:
+  en: 1 month ago
+  de: Vor 1 Monat
+  es: Hace 1 mes
+  fr: Il y a 1 mois
+  pt: 1 mês atrás
+  it: 1 mese fa
+  pl: 1 miesiąc temu
+  ro: Acum 1 lună
+  uk: 1 місяць тому
+  nl: 1 maand geleden
+months_ago:
+  en: months ago
+  de: Monate her
+  es: meses atrás
+  fr: mois
+  pt: meses atrás
+  it: mesi fa
+  pl: miesięcy temu
+  ro: luni
+  uk: місяців тому
+  nl: maanden geleden
+one_year_ago:
+  en: 1 year ago
+  de: Vor 1 Jahr
+  es: Hace 1 año
+  fr: Il y a 1 an
+  pt: 1 ano atrás
+  it: 1 anno fa
+  pl: 1 rok temu
+  ro: Acum 1 an
+  uk: 1 рік тому
+  nl: 1 jaar geleden
+years_ago:
+  en: years ago
+  de: Jahre her
+  es: años atrás
+  fr: ans
+  pt: anos atrás
+  it: anni fa
+  pl: lat temu
+  ro: ani
+  uk: років тому
+  nl: jaren geleden
 permissions_all:
   en: create, read, update, delete
   de: erstellen, lesen, bearbeiten, löschen
@@ -2377,6 +2740,50 @@ cancel:
   ro: Anulează
   uk: Скасувати
   nl: Annuleer
+delete:
+  en: Delete
+  de: Löschen
+  es: Eliminar
+  fr: Supprimer
+  pt: Excluir
+  it: Elimina
+  pl: Usuń
+  ro: Șterge
+  uk: Видалити
+  nl: Verwijder
+delete_user:
+  en: Delete User
+  de: Benutzer löschen
+  es: Eliminar usuario
+  fr: Supprimer l'utilisateur
+  pt: Excluir usuário
+  it: Elimina utente
+  pl: Usuń użytkownika
+  ro: Ștergeți utilizatorul
+  uk: Видалити користувача
+  nl: Gebruiker verwijderen
+delete_user_confirm:
+  en: Are you sure you want to delete the following user?
+  de: Sind Sie sicher, dass Sie den folgenden Benutzer löschen möchten?
+  es: ¿Está seguro de que desea eliminar el siguiente usuario?
+  fr: Êtes-vous sûr de vouloir supprimer l'utilisateur suivant ?
+  pt: Tem certeza de que deseja excluir o seguinte usuário?
+  it: Sei sicuro di voler eliminare il seguente utente?
+  pl: Czy na pewno chcesz usunąć następującego użytkownika?
+  ro: Sigur doriți să ștergeți următorul utilizator?
+  uk: Ви впевнені, що хочете видалити наступного користувача?
+  nl: Weet u zeker dat u de volgende gebruiker wilt verwijderen?
+delete_user_warning:
+  en: This action cannot be undone.
+  de: Diese Aktion kann nicht rückgängig gemacht werden.
+  es: Esta acción no se puede deshacer.
+  fr: Cette action ne peut pas être annulée.
+  pt: Esta ação não pode ser desfeita.
+  it: Questa azione non può essere annullata.
+  pl: Tej akcji nie można cofnąć.
+  ro: Această acțiune nu poate fi anulată.
+  uk: Цю дію не можна скасувати.
+  nl: Deze actie kan niet ongedaan worden gemaakt.
 save:
   en: Save
   de: Speichern
@@ -2652,6 +3059,83 @@ nav_users:
   ro: Utilizatori și Roluri
   uk: Користувачі та Ролі
   nl: Gebruikers & Rollen
+nav_roles:
+  en: Roles & Permissions
+  de: Rollen & Rechte
+  es: Roles y Permisos
+  fr: Rôles et Permissions
+  pt: Funções e Permissões
+  it: Ruoli e Permessi
+  pl: Role i Uprawnienia
+  ro: Roluri și Permisiuni
+  uk: Ролі та Дозволи
+  nl: Rollen & Rechten
+roles_overview:
+  en: Roles Overview
+  de: Rollenübersicht
+  es: Vista general de roles
+  fr: Aperçu des rôles
+  pt: Visão geral de funções
+  it: Panoramica ruoli
+  pl: Przegląd ról
+  ro: Prezentare generală a rolurilor
+  uk: Огляд ролей
+  nl: Rollenoverzicht
+impersonation:
+  en: Impersonation
+  de: Impersonation
+  es: Suplantación
+  fr: Supplantation
+  pt: Suplantação
+  it: Supplantazione
+  pl: Udawanie
+  ro: Personificare
+  uk: Імперсоналізація
+  nl: Impersonatie
+permissions_all_tenants:
+  en: All tenants
+  de: Alle Tenant
+  es: Todos los tenants
+  fr: Tous les tenants
+  pt: Todos os tenants
+  it: Tutti i tenant
+  pl: Wszyscy tenant
+  ro: Toți tenant
+  uk: Усі tenant
+  nl: Alle tenants
+permissions_tenant_users:
+  en: Tenant users
+  de: Tenant-Benutzer
+  es: Usuarios del tenant
+  fr: Utilisateurs du tenant
+  pt: Usuários do tenant
+  it: Utenti del tenant
+  pl: Użytkownicy tenant
+  ro: Utilizatori tenant
+  uk: Користувачі tenant
+  nl: Tenant-gebruikers
+role_permissions_note:
+  en: "Each role defines a set of permissions. Users can have multiple roles, and individual permissions can be granted or revoked per user."
+  de: "Jede Rolle definiert eine Menge von Rechten. Benutzer können mehrere Rollen haben, und einzelne Rechte können pro Benutzer gewährt oder entzogen werden."
+  es: "Cada rol define un conjunto de permisos. Los usuarios pueden tener múltiples roles, y los permisos individuales se pueden otorgar o revocar por usuario."
+  fr: "Chaque rôle définit un ensemble de permissions. Les utilisateurs peuvent avoir plusieurs rôles, et les permissions individuelles peuvent être accordées ou révoquées par utilisateur."
+  pt: "Cada função define um conjunto de permissões. Os usuários podem ter múltiplas funções, e as permissões individuais podem ser concedidas ou revogadas por usuário."
+  it: "Ogni ruolo definisce un insieme di permessi. Gli utenti possono avere più ruoli, e i permessi individuali possono essere concessi o revocati per utente."
+  pl: "Każda rola definiuje zestaw uprawnień. Użytkownicy mogą mieć wiele ról, a uprawnienia indywidualne można przyznać lub cofnąć dla każdego użytkownika."
+  ro: "Fiecare rol definește un set de permisiuni. Utilizatorii pot avea mai multe roluri, iar permisiunile individuale pot fi acordate sau revocate per utilizator."
+  uk: "Кожна роль визначає набір дозволів. Користувачі можуть мати кілька ролей, і окремі дозволи можна надати або скасувати для кожного користувача."
+  nl: "Elke rol definieert een set van rechten. Gebruikers kunnen meerdere rollen hebben, en individuele rechten kunnen per gebruiker worden toegekend of ingetrokken."
+role_superadmin_desc:
+  en: Full system access, can manage tenants
+  de: Vollzugriff auf das System, kann Tenant verwalten
+  es: Acceso completo al sistema, puede gestionar tenants
+  fr: Accès complet au système, peut gérer les tenants
+  pt: Acesso completo ao sistema, pode gerir tenants
+  it: Accesso completo al sistema, può gestire i tenant
+  pl: Pełny dostęp do systemu, może zarządzać tenant
+  ro: Acces complet la sistem, poate gestiona tenant
+  uk: Повний доступ до системи, може керувати tenant
+  nl: Volledige systeemtoegang, kan tenants beheren
 nav_settings:
   en: Settings
   de: Einstellungen
@@ -2707,6 +3191,39 @@ not_found:
   ro: 404 Nu a fost găsit
   uk: 404 Не знайдено
   nl: 404 Niet gevonden
+access_denied:
+  en: Access Denied
+  de: Zugriff verweigert
+  es: Acceso denegado
+  fr: Accès refusé
+  pt: Acesso negado
+  it: Accesso negato
+  pl: Odmowa dostępu
+  ro: Acces interzis
+  uk: Доступ заборонено
+  nl: Toegang geweigerd
+access_denied_desc:
+  en: You do not have permission to view this page. Please contact your administrator if you believe this is an error.
+  de: Sie haben keine Berechtigung, diese Seite anzusehen. Wenden Sie sich an Ihren Administrator, wenn Sie glauben, dass dies ein Fehler ist.
+  es: No tienes permiso para ver esta página. Contacta a tu administrador si crees que es un error.
+  fr: Vous n'avez pas la permission de voir cette page. Contactez votre administrateur si vous pensez qu'il s'agit d'une erreur.
+  pt: Você não tem permissão para ver esta página. Entre em contato com seu administrador se achar que é um erro.
+  it: Non hai il permesso di visualizzare questa pagina. Contatta il tuo amministratore se ritieni che si tratti di un errore.
+  pl: Nie masz uprawnień do przeglądania tej strony. Skontaktuj się z administratorem, jeśli uważasz, że to błąd.
+  ro: Nu aveți permisiunea de a vizualiza această pagină. Contactați administratorul dacă credeți că este o eroare.
+  uk: У вас немає дозволу переглядати цю сторінку. Зверніться до адміністратора, якщо вважаєте, що це помилка.
+  nl: Je hebt geen toestemming om deze pagina te bekijken. Neem contact op met je beheerder als je denkt dat dit een fout is.
+go_to_dashboard:
+  en: Go to Dashboard
+  de: Zum Dashboard
+  es: Ir al panel
+  fr: Aller au tableau de bord
+  pt: Ir para o painel
+  it: Vai alla dashboard
+  pl: Przejdź do panelu
+  ro: Mergi la panou
+  uk: Перейти на панель
+  nl: Naar dashboard
 dashboard_welcome_prefix:
   en: Welcome to
   de: Willkommen bei
@@ -8772,3 +9289,1347 @@ tool_profitability_specialized:
   ro: Rentabilitate (culturi specializate)
   uk: Рентабельність (спеціальні культури)
   nl: Rentabiliteit (gespecialiseerde gewassen)
+
+add_equipment_btn:
+  en: Add Equipment
+  de: Gerät hinzufügen
+  es: Añadir Equipo
+  fr: Ajouter un Équipement
+  pt: Adicionar Equipamento
+  it: Aggiungi Attrezzatura
+  pl: Dodaj Sprzęt
+  ro: Adaugă Echipament
+  uk: Додати обладнання
+  nl: Apparatuur toevoegen
+
+add_worker:
+  en: Add Worker
+  de: Mitarbeiter hinzufügen
+  es: Añadir Trabajador
+  fr: Ajouter un Travailleur
+  pt: Adicionar Trabalhador
+  it: Aggiungi Lavoratore
+  pl: Dodaj Pracownika
+  ro: Adaugă Lucrător
+  uk: Додати працівника
+  nl: Werknemer toevoegen
+
+all_items:
+  en: All Items
+  de: Alle Artikel
+  es: Todos los Elementos
+  fr: Tous les Éléments
+  pt: Todos os Itens
+  it: Tutti gli Elementi
+  pl: Wszystkie Przedmioty
+  ro: Toate Articolele
+  uk: Усі предмети
+  nl: Alle Items
+
+analytics:
+  en: Analytics
+  de: Analysen
+  es: Análisis
+  fr: Analytique
+  pt: Análise
+  it: Analisi
+  pl: Analityka
+  ro: Analiză
+  uk: Аналітика
+  nl: Analyse
+
+available:
+  en: Available
+  de: Verfügbar
+  es: Disponible
+  fr: Disponible
+  pt: Disponível
+  it: Disponibile
+  pl: Dostępny
+  ro: Disponibil
+  uk: Доступний
+  nl: Beschikbaar
+
+below_minimum:
+  en: Below Minimum
+  de: Unter Mindeststand
+  es: Por Debajo del Mínimo
+  fr: En dessous du Minimum
+  pt: Abaixo do Mínimo
+  it: Sotto il Minimo
+  pl: Poniżej Minimum
+  ro: Sub Minim
+  uk: Нижче мінімуму
+  nl: Onder Minimum
+
+btn_add_item:
+  en: Add Item
+  de: Artikel hinzufügen
+  es: Añadir Elemento
+  fr: Ajouter un Élément
+  pt: Adicionar Item
+  it: Aggiungi Elemento
+  pl: Dodaj Przedmiot
+  ro: Adaugă Articol
+  uk: Додати предмет
+  nl: Item toevoegen
+
+category:
+  en: Category
+  de: Kategorie
+  es: Categoría
+  fr: Catégorie
+  pt: Categoria
+  it: Categoria
+  pl: Kategoria
+  ro: Categorie
+  uk: Категорія
+  nl: Categorie
+
+category_equipment:
+  en: Equipment
+  de: Geräte
+  es: Equipo
+  fr: Équipement
+  pt: Equipamento
+  it: Attrezzatura
+  pl: Sprzęt
+  ro: Echipament
+  uk: Обладнання
+  nl: Apparatuur
+
+category_feed:
+  en: Feed
+  de: Futter
+  es: Alimentación
+  fr: Aliment
+  pt: Ração
+  it: Mangime
+  pl: Pasza
+  ro: Hrană
+  uk: Корм
+  nl: Voeder
+
+category_fertilizer:
+  en: Fertilizer
+  de: Dünger
+  es: Fertilizante
+  fr: Engrais
+  pt: Fertilizante
+  it: Fertilizzante
+  pl: Nawóz
+  ro: Îngrășământ
+  uk: Добриво
+  nl: Meststof
+
+category_fuel:
+  en: Fuel
+  de: Kraftstoff
+  es: Combustible
+  fr: Carburant
+  pt: Combustível
+  it: Combustibile
+  pl: Paliwo
+  ro: Combustibil
+  uk: Паливо
+  nl: Brandstof
+
+category_herbicide:
+  en: Herbicide
+  de: Herbizid
+  es: Herbicida
+  fr: Herbicide
+  pt: Herbicida
+  it: Erbicida
+  pl: Herbicyd
+  ro: Erbucid
+  uk: Гербіцид
+  nl: Onkruidvermoerder
+
+category_medicine:
+  en: Medicine
+  de: Medizin
+  es: Medicamento
+  fr: Médicament
+  pt: Medicamento
+  it: Medicinale
+  pl: Lek
+  ro: Medicament
+  uk: Ліки
+  nl: Geneesmiddel
+
+category_other:
+  en: Other
+  de: Sonstiges
+  es: Otro
+  fr: Autre
+  pt: Outro
+  it: Altro
+  pl: Inne
+  ro: Altele
+  uk: Інше
+  nl: Anders
+
+category_pesticide:
+  en: Pesticide
+  de: Pestizid
+  es: Pesticida
+  fr: Pesticide
+  pt: Pesticida
+  it: Pesticida
+  pl: Pestycyd
+  ro: Pesticid
+  uk: Пестицид
+  nl: Pesticide
+
+category_seed:
+  en: Seed
+  de: Saatgut
+  es: Semilla
+  fr: Graine
+  pt: Semente
+  it: Seme
+  pl: Nasiona
+  ro: Sămânță
+  uk: Насіння
+  nl: Zaad
+
+category_spare_part:
+  en: Spare Part
+  de: Ersatzteil
+  es: Repuesto
+  fr: Pièce de Rechange
+  pt: Peça Sobressalente
+  it: Ricambio
+  pl: Część zamienna
+  ro: Piesă de schimb
+  uk: Запасна частина
+  nl: Onderdeel
+
+clock_actions:
+  en: Clock Actions
+  de: Zeitanmeldungen
+  es: Acciones de Registro
+  fr: Actions d'Horloge
+  pt: Ações de Relógio
+  it: Azioni Orario
+  pl: Akcje Zegarka
+  ro: Acțiuni Ceas
+  uk: Дії годинника
+  nl: Klokacties
+
+clock_in:
+  en: Clock In
+  de: Eintragen
+  es: Registrar Entrada
+  fr: Pointer Entrée
+  pt: Registrar Entrada
+  it: Registra Ingresso
+  pl: Zaznacz Przybycie
+  ro: Înregistrează Intrarea
+  uk: Зареєструвати вхід
+  nl: Inchecken
+
+clock_out:
+  en: Clock Out
+  de: Austragen
+  es: Registrar Salida
+  fr: Pointer Sortie
+  pt: Registrar Saída
+  it: Registra Uscita
+  pl: Zaznacz Odejście
+  ro: Înregistrează Ieșirea
+  uk: Зареєструвати вихід
+  nl: Uitchecken
+
+code:
+  en: Code
+  de: Code
+  es: Código
+  fr: Code
+  pt: Código
+  it: Codice
+  pl: Kod
+  ro: Cod
+  uk: Код
+  nl: Code
+
+common.close_detail:
+  en: Close
+  de: Schließen
+  es: Cerrar
+  fr: Fermer
+  pt: Fechar
+  it: Chiudi
+  pl: Zamknij
+  ro: Închide
+  uk: Закрити
+  nl: Sluiten
+
+common.n_a:
+  en: N/A
+  de: N/V
+  es: N/A
+  fr: N/A
+  pt: N/A
+  it: N/D
+  pl: N/A
+  ro: N/A
+  uk: Н/Д
+  nl: NVT
+
+common.of:
+  en: of
+  de: von
+  es: de
+  fr: de
+  pt: de
+  it: di
+  pl: z
+  ro: din
+  uk: з
+  nl: van
+
+common.page:
+  en: Page
+  de: Seite
+  es: Página
+  fr: Page
+  pt: Página
+  it: Pagina
+  pl: Strona
+  ro: Pagină
+  uk: Сторінка
+  nl: Pagina
+
+common.refresh:
+  en: Refresh
+  de: Aktualisieren
+  es: Actualizar
+  fr: Actualiser
+  pt: Atualizar
+  it: Aggiorna
+  pl: Odśwież
+  ro: Reîmprospătează
+  uk: Оновити
+  nl: Vernieuwen
+
+complete_order:
+  en: Complete Order
+  de: Auftrag abschließen
+  es: Completar Pedido
+  fr: Terminer la Commande
+  pt: Completar Pedido
+  it: Completa Ordine
+  pl: Ukończ Zamówienie
+  ro: Completează Comanda
+  uk: Завершити замовлення
+  nl: Bestelling voltooien
+
+contract_type:
+  en: Contract Type
+  de: Vertragstyp
+  es: Tipo de Contrato
+  fr: Type de Contrat
+  pt: Tipo de Contrato
+  it: Tipo di Contratto
+  pl: Typ Umowy
+  ro: Tip de Contract
+  uk: Тип контракту
+  nl: Contracttype
+
+created_at:
+  en: Created At
+  de: Erstellt am
+  es: Creado en
+  fr: Créé le
+  pt: Criado em
+  it: Creato il
+  pl: Utworzono
+  ro: Creat la
+  uk: Створено
+  nl: Gemaakt op
+
+current_stock:
+  en: Current Stock
+  de: Aktueller Bestand
+  es: Inventario Actual
+  fr: Stock Actuel
+  pt: Estoque Atual
+  it: Scorte Attuali
+  pl: Aktualny Stan
+  ro: Stoc Curent
+  uk: Поточний запас
+  nl: Huidige Voorraad
+
+customer_id:
+  en: Customer ID
+  de: Kunden-ID
+  es: ID de Cliente
+  fr: ID Client
+  pt: ID do Cliente
+  it: ID Cliente
+  pl: ID Klienta
+  ro: ID Client
+  uk: ID клієнта
+  nl: Klant-ID
+
+customer_management:
+  en: Customer Management
+  de: Kundenverwaltung
+  es: Gestión de Clientes
+  fr: Gestion des Clients
+  pt: Gestão de Clientes
+  it: Gestione Clienti
+  pl: Zarządzanie Klientami
+  ro: Gestionare Clienți
+  uk: Управління клієнтами
+  nl: Klantbeheer
+
+customer_number:
+  en: Customer Number
+  de: Kundennummer
+  es: Número de Cliente
+  fr: Numéro de Client
+  pt: Número do Cliente
+  it: Numero Cliente
+  pl: Numer Klienta
+  ro: Număr Client
+  uk: Номер клієнта
+  nl: Klantnummer
+
+customer_orders:
+  en: Customer Orders
+  de: Kundenbestellungen
+  es: Pedidos de Cliente
+  fr: Commandes Client
+  pt: Pedidos do Cliente
+  it: Ordini Cliente
+  pl: Zamówienia Klienta
+  ro: Comenzi Client
+  uk: Замовлення клієнта
+  nl: Klantbestellingen
+
+deadline:
+  en: Deadline
+  de: Frist
+  es: Fecha Límite
+  fr: Date Limite
+  pt: Prazo
+  it: Scadenza
+  pl: Termin
+  ro: Termen limită
+  uk: Термін
+  nl: Deadline
+
+equipment:
+  en: Equipment
+  de: Geräte
+  es: Equipo
+  fr: Équipement
+  pt: Equipamento
+  it: Attrezzatura
+  pl: Sprzęt
+  ro: Echipament
+  uk: Обладнання
+  nl: Apparatuur
+
+equipment_type_harvester:
+  en: Harvester
+  de: Erntemaschine
+  es: Cosechadora
+  fr: Moissonneuse
+  pt: Colhedora
+  it: Mietitrebbiatrice
+  pl: Kombajn
+  ro: Combină
+  uk: Комбайн
+  nl: Oogstmachine
+
+equipment_type_plow:
+  en: Plow
+  de: Pflug
+  es: Arado
+  fr: Charrue
+  pt: Arado
+  it: Aratro
+  pl: Pług
+  ro: Plug
+  uk: Плуг
+  nl: Ploeg
+
+equipment_type_seeder:
+  en: Seeder
+  de: Sämaschine
+  es: Sembradora
+  fr: Semoir
+  pt: Semeadora
+  it: Seminatrice
+  pl: Siewnik
+  ro: Semănător
+  uk: Сівалка
+  nl: Zaaimachine
+
+equipment_type_sprayer:
+  en: Sprayer
+  de: Sprühmaschine
+  es: Pulverizadora
+  fr: Pulvérisateur
+  pt: Pulverizador
+  it: Irrigatore
+  pl: Opryskiwacz
+  ro: Pulbere
+  uk: Оприскувач
+  nl: Spuitmachine
+
+equipment_type_tractor:
+  en: Tractor
+  de: Traktor
+  es: Tractor
+  fr: Tracteur
+  pt: Trator
+  it: Trattore
+  pl: Traktor
+  ro: Tractor
+  uk: Трактор
+  nl: Tractor
+
+equipment_type_trailer:
+  en: Trailer
+  de: Anhänger
+  es: Remolque
+  fr: Remorque
+  pt: Reboque
+  it: Rimorchio
+  pl: Przyczepa
+  ro: Remorcă
+  uk: Причіп
+  nl: Aanhangwagen
+
+finance:
+  en: Finance
+  de: Finanzen
+  es: Finanzas
+  fr: Finance
+  pt: Finanças
+  it: Finanza
+  pl: Finanse
+  ro: Finanțe
+  uk: Фінанси
+  nl: Financiën
+
+harvest_date:
+  en: Harvest Date
+  de: Erntedatum
+  es: Fecha de Cosecha
+  fr: Date de Récolte
+  pt: Data de Colheita
+  it: Data di Raccolta
+  pl: Data Zbiórów
+  ro: Data Recoltării
+  uk: Дата збору
+  nl: Oogstdatum
+
+hourly_rate:
+  en: Hourly Rate
+  de: Stundensatz
+  es: Tarifa Horaria
+  fr: Taux Horaire
+  pt: Taxa Horária
+  it: Tariffa Oraria
+  pl: Stawka Godzinowa
+  ro: Tarif Orar
+  uk: Годинна ставка
+  nl: Uurtarief
+
+humidity_pct:
+  en: Humidity (%)
+  de: Luftfeuchtigkeit (%)
+  es: Humedad (%)
+  fr: Humidité (%)
+  pt: Umidade (%)
+  it: Umidità (%)
+  pl: Wilgotność (%)
+  ro: Umiditate (%)
+  uk: Вологість (%)
+  nl: Luchtvochtigheid (%)
+
+invalid_task_id:
+  en: Invalid task ID
+  de: Ungültige Aufgaben-ID
+  es: ID de tarea inválida
+  fr: ID de tâche invalide
+  pt: ID de tarefa inválido
+  it: ID attività non valido
+  pl: Nieprawidłowe ID zadania
+  ro: ID sarcină nevalid
+  uk: Невірний ID завдання
+  nl: Ongeldige taak-ID
+
+inventory_method:
+  en: Inventory Method
+  de: Inventurmethode
+  es: Método de Inventario
+  fr: Méthode d'Inventaire
+  pt: Método de Inventário
+  it: Metodo di Inventario
+  pl: Metoda Inwentaryzacji
+  ro: Metodă de Inventar
+  uk: Метод інвентаризації
+  nl: Inventarisatiemethode
+
+item_name:
+  en: Item Name
+  de: Artikelname
+  es: Nombre del Elemento
+  fr: Nom de l'Élément
+  pt: Nome do Item
+  it: Nome Elemento
+  pl: Nazwa Przedmiotu
+  ro: Nume Articol
+  uk: Назва предмета
+  nl: Itemnaam
+
+items_below_minimum:
+  en: Items Below Minimum
+  de: Artikel unter Mindeststand
+  es: Elementos Por Debajo del Mínimo
+  fr: Éléments en dessous du Minimum
+  pt: Itens Abaixo do Mínimo
+  it: Elementi Sotto il Minimo
+  pl: Przedmioty Poniżej Minimum
+  ro: Articole Sub Minim
+  uk: Предмети нижче мінімуму
+  nl: Items onder minimum
+
+label:
+  en: Label
+  de: Bezeichnung
+  es: Etiqueta
+  fr: Étiquette
+  pt: Rótulo
+  it: Etichetta
+  pl: Etykieta
+  ro: Etichetă
+  uk: Мітка
+  nl: Label
+
+location_code:
+  en: Location Code
+  de: Standortcode
+  es: Código de Ubicación
+  fr: Code d'Emplacement
+  pt: Código de Localização
+  it: Codice Posizione
+  pl: Kod Lokalizacji
+  ro: Cod Locație
+  uk: Код місця
+  nl: Locatiecode
+
+location_name:
+  en: Location Name
+  de: Standortname
+  es: Nombre de Ubicación
+  fr: Nom de l'Emplacement
+  pt: Nome da Localização
+  it: Nome Posizione
+  pl: Nazwa Lokalizacji
+  ro: Nume Locație
+  uk: Назва місця
+  nl: Locatienaam
+
+map_title:
+  en: Map
+  de: Karte
+  es: Mapa
+  fr: Carte
+  pt: Mapa
+  it: Mappa
+  pl: Mapa
+  ro: Hartă
+  uk: Карта
+  nl: Kaart
+
+min_stock:
+  en: Minimum Stock
+  de: Mindestbestand
+  es: Inventario Mínimo
+  fr: Stock Minimum
+  pt: Estoque Mínimo
+  it: Scorte Minime
+  pl: Minimalny Stan
+  ro: Stoc Minim
+  uk: Мінімальний запас
+  nl: Minimumvoorraad
+
+nav_workers:
+  en: Workers
+  de: Mitarbeiter
+  es: Trabajadores
+  fr: Travailleurs
+  pt: Trabalhadores
+  it: Lavoratori
+  pl: Pracownicy
+  ro: Lucrători
+  uk: Працівники
+  nl: Werknemers
+
+no_customers_found:
+  en: No customers found
+  de: Keine Kunden gefunden
+  es: No se encontraron clientes
+  fr: Aucun client trouvé
+  pt: Nenhum cliente encontrado
+  it: Nessun cliente trovato
+  pl: Nie znaleziono klientów
+  ro: Niciun client găsit
+  uk: Клієнтів не знайдено
+  nl: Geen klanten gevonden
+
+no_rate:
+  en: No Rate
+  de: Kein Satz
+  es: Sin Tarifa
+  fr: Pas de Taux
+  pt: Sem Taxa
+  it: Nessuna Tariffa
+  pl: Brak Stawki
+  ro: Fără Tarif
+  uk: Без ставки
+  nl: Geen tarief
+
+no_tasks_assigned:
+  en: No tasks assigned
+  de: Keine Aufgaben zugewiesen
+  es: No hay tareas asignadas
+  fr: Aucune tâche assignée
+  pt: Nenhuma tarefa atribuída
+  it: Nessuna attività assegnata
+  pl: Brak przypisanych zadań
+  ro: Nicio sarcină asignată
+  uk: Завдань не призначено
+  nl: Geen taken toegewezen
+
+no_tasks_desc:
+  en: No tasks have been created yet.
+  de: Es wurden noch keine Aufgaben erstellt.
+  es: Aún no se han creado tareas.
+  fr: Aucune tâche n'a encore été créée.
+  pt: Nenhuma tarefa foi criada ainda.
+  it: Nessuna attività è stata creata ancora.
+  pl: Nie utworzono jeszcze żadnych zadań.
+  ro: Nicio sarcină nu a fost creată încă.
+  uk: Завдань ще не створено.
+  nl: Er zijn nog geen taken aangemaakt.
+
+order_completed_success:
+  en: Order completed successfully
+  de: Auftrag erfolgreich abgeschlossen
+  es: Pedido completado exitosamente
+  fr: Commande terminée avec succès
+  pt: Pedido concluído com sucesso
+  it: Ordine completato con successo
+  pl: Zamówienie ukończone pomyślnie
+  ro: Comanda completată cu succes
+  uk: Замовлення успішно завершено
+  nl: Bestelling succesvol voltooid
+
+orders:
+  en: Orders
+  de: Aufträge
+  es: Pedidos
+  fr: Commandes
+  pt: Pedidos
+  it: Ordini
+  pl: Zamówienia
+  ro: Comenzi
+  uk: Замовлення
+  nl: Bestellingen
+
+order_started_success:
+  en: Order started successfully
+  de: Auftrag erfolgreich gestartet
+  es: Pedido iniciado exitosamente
+  fr: Commande démarrée avec succès
+  pt: Pedido iniciado com sucesso
+  it: Ordine avviato con successo
+  pl: Zamówienie rozpoczęte pomyślnie
+  ro: Comanda pornită cu succes
+  uk: Замовлення успішно запущено
+  nl: Bestelling succesvol gestart
+
+planned_date:
+  en: Planned Date
+  de: Geplantes Datum
+  es: Fecha Planificada
+  fr: Date Planifiée
+  pt: Data Planejada
+  it: Data Pianificata
+  pl: Zaplanowana Data
+  ro: Data Planificată
+  uk: Запланована дата
+  nl: Geplande datum
+
+search_by_name:
+  en: Search by name
+  de: Nach Name suchen
+  es: Buscar por nombre
+  fr: Rechercher par nom
+  pt: Pesquisar por nome
+  it: Cerca per nome
+  pl: Szukaj po nazwie
+  ro: Caută după nume
+  uk: Шукати за ім'ям
+  nl: Zoeken op naam
+
+search_by_number:
+  en: Search by number
+  de: Nach Nummer suchen
+  es: Buscar por número
+  fr: Rechercher par numéro
+  pt: Pesquisar por número
+  it: Cerca per numero
+  pl: Szukaj po numerze
+  ro: Caută după număr
+  uk: Шукати за номером
+  nl: Zoeken op nummer
+
+search_customers:
+  en: Search Customers
+  de: Kunden suchen
+  es: Buscar Clientes
+  fr: Rechercher des Clients
+  pt: Pesquisar Clientes
+  it: Cerca Clienti
+  pl: Szukaj Klientów
+  ro: Caută Clienți
+  uk: Шукати клієнтів
+  nl: Klanten zoeken
+
+sigpac.aggregate:
+  en: Aggregate
+  de: Aggregieren
+  es: Agrupar
+  fr: Agréger
+  pt: Agrupar
+  it: Aggrega
+  pl: Agreguj
+  ro: Agregare
+  uk: Агрегувати
+  nl: Aggregeren
+
+sigpac.area_hectares:
+  en: Area (hectares)
+  de: Fläche (Hektar)
+  es: Área (hectáreas)
+  fr: Surface (hectares)
+  pt: Área (hectares)
+  it: Area (ettari)
+  pl: Powierzchnia (hektary)
+  ro: Suprafață (hectare)
+  uk: Площа (гектари)
+  nl: Oppervlakte (hectare)
+
+sigpac.enclosure:
+  en: Enclosure
+  de: Umzäunung
+  es: Cierre
+  fr: Clôture
+  pt: Cercamento
+  it: Recinto
+  pl: Ogrodzenie
+  ro: Încintă
+  uk: Огорожа
+  nl: Omheining
+
+sigpac.filters:
+  en: Filters
+  de: Filter
+  es: Filtros
+  fr: Filtres
+  pt: Filtros
+  it: Filtri
+  pl: Filtry
+  ro: Filtre
+  uk: Фільтри
+  nl: Filters
+
+sigpac.latitude:
+  en: Latitude
+  de: Breitengrad
+  es: Latitud
+  fr: Latitude
+  pt: Latitude
+  it: Latitudine
+  pl: Szerokość geograficzna
+  ro: Latitudine
+  uk: Широта
+  nl: Breedtegraad
+
+sigpac.longitude:
+  en: Longitude
+  de: Längengrad
+  es: Longitud
+  fr: Longitude
+  pt: Longitude
+  it: Longitudine
+  pl: Długość geograficzna
+  ro: Longitudine
+  uk: Довгота
+  nl: Lengtegraad
+
+sigpac.municipality:
+  en: Municipality
+  de: Gemeinde
+  es: Municipio
+  fr: Municipalité
+  pt: Município
+  it: Comune
+  pl: Gmina
+  ro: Municipalitate
+  uk: Муніципалітет
+  nl: Gemeente
+
+sigpac.no_results:
+  en: No results found
+  de: Keine Ergebnisse gefunden
+  es: No se encontraron resultados
+  fr: Aucun résultat trouvé
+  pt: Nenhum resultado encontrado
+  it: Nessun risultato trovato
+  pl: Nie znaleziono wyników
+  ro: Niciun rezultat găsit
+  uk: Результатів не знайдено
+  nl: Geen resultaten gevonden
+
+sigpac.official_area_ha:
+  en: Official Area (ha)
+  de: Offizielle Fläche (ha)
+  es: Área Oficial (ha)
+  fr: Surface Officielle (ha)
+  pt: Área Oficial (ha)
+  it: Area Ufficiale (ha)
+  pl: Oficjalna Powierzchnia (ha)
+  ro: Suprafață Oficială (ha)
+  uk: Офіційна площа (га)
+  nl: Officiële Oppervlakte (ha)
+
+sigpac.parcel:
+  en: Parcel
+  de: Parzelle
+  es: Parcela
+  fr: Parcelle
+  pt: Parcela
+  it: Parcello
+  pl: Parcela
+  ro: Parcelă
+  uk: Парцель
+  nl: Perceel
+
+sigpac.parcel_detail:
+  en: Parcel Detail
+  de: Parzellendetails
+  es: Detalle de Parcela
+  fr: Détail de Parcelle
+  pt: Detalhe da Parcela
+  it: Dettaglio Parcello
+  pl: Szczegóły Parceli
+  ro: Detalii Parcelă
+  uk: Деталі парцелі
+  nl: Perceelgegevens
+
+sigpac.per_page:
+  en: Per Page
+  de: Pro Seite
+  es: Por Página
+  fr: Par Page
+  pt: Por Página
+  it: Per Pagina
+  pl: Na Stronę
+  ro: Pe Pagină
+  uk: На сторінку
+  nl: Per Pagina
+
+sigpac.polygon:
+  en: Polygon
+  de: Polygon
+  es: Polígono
+  fr: Polygone
+  pt: Polígono
+  it: Poligono
+  pl: Wielokąt
+  ro: Poligon
+  uk: Багатокутник
+  nl: Polygon
+
+sigpac.province:
+  en: Province
+  de: Provinz
+  es: Provincia
+  fr: Province
+  pt: Província
+  it: Provincia
+  pl: Prowincja
+  ro: Provincie
+  uk: Провінція
+  nl: Provincie
+
+sigpac.radius_meters:
+  en: Radius (meters)
+  de: Radius (Meter)
+  es: Radio (metros)
+  fr: Rayon (mètres)
+  pt: Raio (metros)
+  it: Raggio (metri)
+  pl: Promień (metry)
+  ro: Rază (metri)
+  uk: Радіус (метри)
+  nl: Straal (meters)
+
+sigpac.results:
+  en: Results
+  de: Ergebnisse
+  es: Resultados
+  fr: Résultats
+  pt: Resultados
+  it: Risultati
+  pl: Wyniki
+  ro: Rezultate
+  uk: Результати
+  nl: Resultaten
+
+sigpac.search_near_point:
+  en: Search Near Point
+  de: In der Nähe suchen
+  es: Buscar Cerca de Punto
+  fr: Rechercher Près d'un Point
+  pt: Pesquisar Perto do Ponto
+  it: Cerca Vicino al Punto
+  pl: Szukaj w pobliżu punktu
+  ro: Caută Lângă Punct
+  uk: Шукати біля точки
+  nl: Zoeken nabij punt
+
+sigpac.sigpac_reference:
+  en: SIGPAC Reference
+  de: SIGPAC-Referenz
+  es: Referencia SIGPAC
+  fr: Référence SIGPAC
+  pt: Referência SIGPAC
+  it: Riferimento SIGPAC
+  pl: Referencja SIGPAC
+  ro: Referință SIGPAC
+  uk: Посилання SIGPAC
+  nl: SIGPAC-referentie
+
+sigpac.spatial_search:
+  en: Spatial Search
+  de: Räumliche Suche
+  es: Búsqueda Espacial
+  fr: Recherche Spatiale
+  pt: Pesquisa Espacial
+  it: Ricerca Spaziale
+  pl: Wyszukiwanie Przestrzenne
+  ro: Căutare Spațială
+  uk: Просторовий пошук
+  nl: Ruimtelijke Zoekopdracht
+
+sigpac.subtitle:
+  en: Land parcel registry search
+  de: Flurstückregister-Suche
+  es: Búsqueda de registro de parcelas
+  fr: Recherche de registre de parcelles
+  pt: Pesquisa de registro de parcelas
+  it: Ricerca registro parcelle
+  pl: Wyszukiwanie rejestru parcel
+  ro: Căutare registru parcele
+  uk: Пошук реєстру парцель
+  nl: Grondperceelregister zoeken
+
+sigpac.title:
+  en: Land Parcel Registry
+  de: Flurstückregister
+  es: Registro de Parcelas
+  fr: Registre de Parcelles
+  pt: Registro de Parcelas
+  it: Registro Parcelle
+  pl: Rejestr Parcel
+  ro: Registru Parcele
+  uk: Реєстр парцель
+  nl: Grondperceelregister
+
+sigpac.zone:
+  en: Zone
+  de: Zone
+  es: Zona
+  fr: Zone
+  pt: Zona
+  it: Zona
+  pl: Strefa
+  ro: Zonă
+  uk: Зона
+  nl: Zone
+
+start_order:
+  en: Start Order
+  de: Auftrag starten
+  es: Iniciar Pedido
+  fr: Démarrer la Commande
+  pt: Iniciar Pedido
+  it: Avvia Ordine
+  pl: Rozpocznij Zamówienie
+  ro: Pornește Comanda
+  uk: Запустити замовлення
+  nl: Bestelling starten
+
+start_task:
+  en: Start Task
+  de: Aufgabe starten
+  es: Iniciar Tarea
+  fr: Démarrer la Tâche
+  pt: Iniciar Tarefa
+  it: Avvia Attività
+  pl: Rozpocznij Zadanie
+  ro: Pornește Sarcina
+  uk: Запустити завдання
+  nl: Taak starten
+
+stop_task:
+  en: Stop Task
+  de: Aufgabe stoppen
+  es: Detener Tarea
+  fr: Arrêter la Tâche
+  pt: Parar Tarefa
+  it: Ferma Attività
+  pl: Zatrzymaj Zadanie
+  ro: Oprește Sarcina
+  uk: Зупинити завдання
+  nl: Taak stoppen
+
+storage_locations:
+  en: Storage Locations
+  de: Lagerorte
+  es: Ubicaciones de Almacenamiento
+  fr: Emplacements de Stockage
+  pt: Locais de Armazenamento
+  it: Posizioni di Stoccaggio
+  pl: Lokalizacje Magazynowe
+  ro: Locații de Depozitare
+  uk: Місця зберігання
+  nl: Opslaglocaties
+
+task_detail:
+  en: Task Detail
+  de: Aufgabendetails
+  es: Detalle de Tarea
+  fr: Détail de la Tâche
+  pt: Detalhe da Tarefa
+  it: Dettaglio Attività
+  pl: Szczegóły Zadania
+  ro: Detalii Sarcină
+  uk: Деталі завдання
+  nl: Taakgegevens
+
+task_done:
+  en: Task Done
+  de: Aufgabe erledigt
+  es: Tarea Completada
+  fr: Tâche Terminée
+  pt: Tarefa Concluída
+  it: Attività Completata
+  pl: Zadanie Ukończone
+  ro: Sarcină Finalizată
+  uk: Завдання виконано
+  nl: Taak Afgerond
+
+task_load_failed:
+  en: Tasks could not be loaded
+  de: Aufgaben konnten nicht geladen werden
+  es: Las tareas no se pudieron cargar
+  fr: Les tâches n'ont pas pu être chargées
+  pt: As tarefas não puderam ser carregadas
+  it: Le attività non possono essere caricate
+  pl: Nie udało się załadować zadań
+  ro: Sarcinile nu au putut fi încărcate
+  uk: Завдання не вдалося завантажити
+  nl: Taken konden niet worden geladen
+
+task_pending:
+  en: Pending
+  de: Ausstehend
+  es: Pendiente
+  fr: En attente
+  pt: Pendente
+  it: In Attesa
+  pl: Oczekujące
+  ro: În așteptare
+  uk: Очікує
+  nl: In afwachting
+
+task_started_success:
+  en: Task started successfully
+  de: Aufgabe erfolgreich gestartet
+  es: Tarea iniciada exitosamente
+  fr: Tâche démarrée avec succès
+  pt: Tarefa iniciada com sucesso
+  it: Attività avviata con successo
+  pl: Zadanie rozpoczęte pomyślnie
+  ro: Sarcina pornită cu succes
+  uk: Завдання успішно запущено
+  nl: Taak succesvol gestart
+
+task_stopped:
+  en: Task Stopped
+  de: Aufgabe gestoppt
+  es: Tarea Detenida
+  fr: Tâche Arrêtée
+  pt: Tarefa Parada
+  it: Attività Fermata
+  pl: Zadanie Zatrzymane
+  ro: Sarcină Oprită
+  uk: Завдання зупинено
+  nl: Taak Gestopt
+
+task_stopped_success:
+  en: Task stopped successfully
+  de: Aufgabe erfolgreich gestoppt
+  es: Tarea detenida exitosamente
+  fr: Tâche arrêtée avec succès
+  pt: Tarefa parada com sucesso
+  it: Attività fermata con successo
+  pl: Zadanie zatrzymane pomyślnie
+  ro: Sarcina oprită cu succes
+  uk: Завдання успішно зупинено
+  nl: Taak succesvol gestopt
+
+task_type:
+  en: Task Type
+  de: Aufgabentyp
+  es: Tipo de Tarea
+  fr: Type de Tâche
+  pt: Tipo de Tarefa
+  it: Tipo di Attività
+  pl: Typ Zadania
+  ro: Tip Sarcină
+  uk: Тип завдання
+  nl: Taaktype
+
+tenant:
+  en: Tenant
+  de: Mieter
+  es: Inquilino
+  fr: Locataire
+  pt: Inquilino
+  it: Inquilino
+  pl: Najemca
+  ro: Chiriaș
+  uk: Орендар
+  nl: Huurder
+
+unit:
+  en: Unit
+  de: Einheit
+  es: Unidad
+  fr: Unité
+  pt: Unidade
+  it: Unità
+  pl: Jednostka
+  ro: Unitate
+  uk: Одиниця
+  nl: Eenheid
+
+updated_at:
+  en: Updated At
+  de: Aktualisiert am
+  es: Actualizado en
+  fr: Mis à jour le
+  pt: Atualizado em
+  it: Aggiornato il
+  pl: Zaktualizowano
+  ro: Actualizat la
+  uk: Оновлено
+  nl: Bijgewerkt op
+
+view_details:
+  en: View Details
+  de: Details anzeigen
+  es: Ver Detalles
+  fr: Voir les Détails
+  pt: Ver Detalhes
+  it: Visualizza Dettagli
+  pl: Zobacz Szczegóły
+  ro: Vezi Detalii
+  uk: Переглянути деталі
+  nl: Details weergeven
+
+view_orders:
+  en: View Orders
+  de: Aufträge anzeigen
+  es: Ver Pedidos
+  fr: Voir les Commandes
+  pt: Ver Pedidos
+  it: Visualizza Ordini
+  pl: Zobacz Zamówienia
+  ro: Vezi Comenzi
+  uk: Переглянути замовлення
+  nl: Bestellingen weergeven
+
+view_tasks:
+  en: View Tasks
+  de: Aufgaben anzeigen
+  es: Ver Tareas
+  fr: Voir les Tâches
+  pt: Ver Tarefas
+  it: Visualizza Attività
+  pl: Zobacz Zadania
+  ro: Vezi Sarcini
+  uk: Переглянути завдання
+  nl: Taken weergeven
+
+worker_tasks_desc:
+  en: Manage worker tasks and assignments
+  de: Mitarbeiteraufgaben und -zuweisungen verwalten
+  es: Gestionar tareas y asignaciones de trabajadores
+  fr: Gérer les tâches et affectations des travailleurs
+  pt: Gerenciar tarefas e atribuições de trabalhadores
+  it: Gestire attività e assegnazioni dei lavoratori
+  pl: Zarządzaj zadaniami i przypisaniami pracowników
+  ro: Gestionează sarcinile și atribuțiile lucrătorilor
+  uk: Керувати завданнями та призначеннями працівників
+  nl: Taken en toewijzingen van werknemers beheren
+
+filter_all:
+  en: All
+  de: Alle
+  es: Todos
+  fr: Tous
+  pt: Todos
+  it: Tutti
+  pl: Wszystkie
+  ro: Toate
+  uk: Усі
+  nl: Alle
+
+no_results:
+  en: No results found
+  de: Keine Ergebnisse gefunden
+  es: No se encontraron resultados
+  fr: Aucun résultat trouvé
+  pt: Nenhum resultado encontrado
+  it: Nessun risultato trovato
+  pl: Nie znaleziono wyników
+  ro: Niciun rezultat găsit
+  uk: Результатів не знайдено
+  nl: Geen resultaten gevonden
+
+add:
+  en: Add
+  de: Hinzufügen
+  es: Agregar
+  fr: Ajouter
+  pt: Adicionar
+  it: Aggiungi
+  pl: Dodaj
+  ro: Adaugă
+  uk: Додати
+  nl: Toevoegen

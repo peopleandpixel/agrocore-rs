@@ -1,0 +1,8 @@
+[serve]
+# Port for the local dev server — 8081 avoids conflict with docker-compose API mapping
+port = 8081
+# Open browser on start
+open = false
+
+# API-Anfragen gehen direkt via CORS an die Docker-API (Port 8080).
+# Die API-URL wird zur Laufzeit in api.rs ermittelt (Port 8081 → localhost:8080).

@@ -160,7 +160,7 @@ fn generate_key_arms(variants: &[String]) -> String {
 }
 
 fn to_screaming_snake(key: &str) -> String {
-    key.to_uppercase().replace('-', "_")
+    key.to_uppercase().replace(['-', '.'], "_")
 }
 
 fn lang_code_to_locale(lang_code: &str) -> &'static str {

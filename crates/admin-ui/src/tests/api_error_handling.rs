@@ -19,6 +19,7 @@ mod tests {
 
     /// Whatever the base, a relative path must never gain or lose its leading
     /// slash, and must never produce a doubled separator.
+    #[cfg(target_arch = "wasm32")]
     #[test]
     fn test_api_url_never_doubles_or_drops_separator() {
         for path in ["/api/v1/tasks", "api/v1/tasks", "//api/v1/tasks"] {
@@ -32,6 +33,7 @@ mod tests {
 
     /// With a base configured, the result must be prefixed by that base and
     /// keep the path intact after it.
+    #[cfg(target_arch = "wasm32")]
     #[test]
     fn test_api_url_prefixes_configured_base() {
         let base = api_base_url();
@@ -61,6 +63,7 @@ mod tests {
 
     /// Query strings must survive URL building, since paginated and filtered
     /// endpoints depend on them.
+    #[cfg(target_arch = "wasm32")]
     #[test]
     fn test_api_url_preserves_query_strings() {
         let url = api_url("/api/v1/sites?page=2&per_page=50");

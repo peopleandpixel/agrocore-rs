@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.59.0] - 2026-10-19
+
+### Added
+- **Role-Based Page Filtering**: All admin UI pages now check permissions before rendering. Workers see only tasks/sites/map, Viewers see only weather/settings, Managers see most resources, Admins/SuperAdmins see everything.
+- **Impersonation Badge**: Fixed impersonation banner now shows at top right with the impersonated user's name and a button to stop impersonation.
+- **JWT Auto-Refresh**: Tokens now auto-refresh every 15 minutes to prevent logout during active use. Tokens expire only when the browser is closed.
+- **Delete Confirmation Dialogs**: All delete actions now show a confirmation dialog before proceeding.
+- **SuperAdmin as Initial Setup Role**: The first user created during initial system setup is now correctly assigned the "SuperAdmin" role instead of "Admin".
+- **Migration 0024**: Follow-up migration that renames existing system "Admin" roles to "SuperAdmin" for databases created before this fix.
+- **Reusable DataList Component**: Generic table component with sorting, filtering, searching, and action columns for consistent list views across the admin UI.
+- **Localized Timeago**: "Last Login" column shows relative time (e.g., "5 minutes ago") in all 10 supported languages, with exact datetime on hover.
+- **User-Friendly Error Messages**: API errors now return human-readable messages instead of raw database constraint names or HTTP status codes.
+
+### Fixed
+- **i18n Code Generation**: Fixed `build.rs` to replace dots with underscores in YAML keys, preventing invalid Rust enum variants (e.g., `COMMON.ACTIONS` → `COMMON_ACTIONS`).
+- **Duplicate i18n Keys**: Removed duplicate keys (`sigpac.source_dataset`, `sigpac.usage_code`, `common.actions`) that caused enum redefinition errors.
+- **SuperAdmin Login Broken**: SuperAdmin users could not log in because the role was missing from the login pattern match. SuperAdmins now log in correctly.
+- **Inactive Users Disappearing**: Removed `is_active = true` filter from `find_all` query so inactive users remain visible in the admin UI.
+- **Toggle Switch 500 Error**: Fixed `assigned_site_ids` type mismatch (`NULL::json` → `'[]'::json`) and roles JSONB binding in user UPDATE query.
+- **Impersonation 500 Error**: Fixed `AuditAction` enum binding — changed from JSONB to plain TEXT string to match the database column type.
+- **Audit Log RLS Policy**: Relaxed `audit_logs` INSERT policy to allow Admin users, not just SuperAdmins, so triggers fire for all users.
+- **WASM-Only Tests**: Marked 3 API URL tests with `#[cfg(target_arch = "wasm32")]` so they no longer fail on non-WASM targets.
+- **Trunk.toml wasm_opt**: Removed redundant `wasm_opt` from `[build]` section; `data-wasm-opt="0"` in `index.html` is the correct control.
+- **Reactive Signal Warning**: Fixed i18n `ReadSignal` access outside reactive tracking context by using `.get_untracked()`.
+- **Page Reload on Toggle/Create/Delete**: Replaced all `window().location().reload()` calls with reactive signal updates for smooth UX.
+
+### Changed
+- Admin UI user list now uses the reusable `DataList` component with sorting and filtering.
+- User toggle switch shows colored indicators (green for active, red for inactive).
+- Current user's toggle is replaced with a static badge that cannot be clicked.
+- Error messages now use user-friendly text instead of raw database constraint names.
+
 ## [0.58.0] - 2026-10-08
 
 ### Added
@@ -14,6 +46,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `GET /api/v1/map/sites` — Returns site boundaries as GeoJSON features for map overlay (filters: site_id, object_type, bbox, limit)
   - `GET /api/v1/map/tasks` — Returns nearby sub-tasks with site boundaries as GeoJSON (filters: lat, lng, radius_m, limit)
 - **Map DTOs**: Added `MapSiteData` and `MapTaskData` in `crates/api/src/dto/spatial.rs` for typed map responses
+- **Per-crate log files**: Each crate now logs to its own JSONL file in `logs/`:
+  - `agrocore_api.jsonl`, `agrocore_domain.jsonl`, `agrocore_infrastructure.jsonl`, `agrocore_messaging.jsonl`, `agrocore_scheduler.jsonl`, `agrocore_worker.jsonl`
+  - `actix_web.jsonl`, `actix_server.jsonl`, `sqlx.jsonl`, `tower.jsonl`, `hyper.jsonl`, `reqwest.jsonl`
+- **Configurable logging**: `LoggingConfig` now supports per-crate log levels, file names, and enable/disable flags
+- **Builder methods**: `with_log_dir()`, `crate_log_level()`, `enable_crate_log()`, `get_crate_log_config()`
 
 ### Fixed
 - **TenantConfig company_profile**: Added missing `company_profile` field initialization in `CreateTenantDto` test and `Tenant` entity tests
@@ -23,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Admin UI MapLibre component (`MapLibreView`) now has working API endpoints for sites and tasks data
+- **Logging defaults**: `file_enabled` now `true` (was `false`), `log_dir` defaults to `logs/`
 
 ## [0.57.0] - 2026-10-06
 
