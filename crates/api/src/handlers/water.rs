@@ -9,6 +9,7 @@ use agrocore_domain::entities::water::{
 };
 use agrocore_shared::{Pagination, SharedError};
 use uuid::Uuid;
+use validator::Validate;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -73,6 +74,7 @@ pub async fn create_water_source(
     auth: AuthUser,
     dto: web::Json<CreateWaterSourceDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let source = state
         .db
         .water_source_repo()
@@ -105,6 +107,7 @@ pub async fn update_water_source(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateWaterSourceDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let source = state
         .db
         .water_source_repo()
@@ -160,6 +163,7 @@ pub async fn create_water_usage(
     auth: AuthUser,
     dto: web::Json<CreateWaterUsageDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let usage = state
         .db
         .water_usage_repo()
@@ -192,6 +196,7 @@ pub async fn update_water_usage(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateWaterUsageDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let usage = state
         .db
         .water_usage_repo()
@@ -247,6 +252,7 @@ pub async fn create_water_quota(
     auth: AuthUser,
     dto: web::Json<CreateWaterQuotaDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let quota = state
         .db
         .water_quota_repo()
@@ -279,6 +285,7 @@ pub async fn update_water_quota(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateWaterQuotaDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let quota = state
         .db
         .water_quota_repo()

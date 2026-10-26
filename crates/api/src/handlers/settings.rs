@@ -13,7 +13,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             // Groups first: `/{key}` matches any single segment, so the group
             // resources have to be registered before it or `/backup` is read as
             // the setting "backup". actix matches in registration order.
-            .configure(crate::handlers::settings_groups::configure)
+            .configure(crate::handlers::settings_groups::configure_groups)
             // Literal paths are registered before `/{key}` on purpose: the key
             // resource matches any single segment, so `/lpis/providers` would be
             // swallowed by `/{key}` = "lpis" if it came second. actix matches in

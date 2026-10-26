@@ -1,10 +1,10 @@
 use crate::api;
 use crate::i18n::{I18n, Language};
 use chrono::Utc;
-use icondata::*;
+use icondata_lu::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 #[component]
 pub fn CompliancePage() -> impl IntoView {
@@ -67,11 +67,11 @@ pub fn CompliancePage() -> impl IntoView {
                 </div>
                 <div class="flex gap-2">
                     <button class="btn btn-outline" on:click=on_export>
-                        <Icon icon=LuDownload width="20" height="20" />
+                        <Icon icon=&LuDownload width="20" height="20" />
                         {export_report}
                     </button>
                     <button class="btn btn-primary" on:click=move |_| set_show_modal.set(true)>
-                        <Icon icon=LuPlus width="20" height="20" />
+                        <Icon icon=&LuPlus width="20" height="20" />
                         {new_checklist}
                     </button>
                 </div>

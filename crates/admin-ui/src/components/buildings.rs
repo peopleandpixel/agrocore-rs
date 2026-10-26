@@ -10,10 +10,10 @@
 //! is worse than one that visibly does nothing.
 
 use crate::api;
-use icondata::{LuPlus, LuTrash2};
+use icondata_lu::{LuPlus, LuTrash2};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 /// The building kinds the API accepts.
 const BUILDING_TYPES: [(&str, &str); 3] = [
@@ -161,7 +161,7 @@ pub fn BuildingManagement() -> impl IntoView {
                     </label>
                 </div>
                 <button type="submit" class="btn btn-primary mt-3">
-                    <Icon icon=LuPlus width="16" height="16" />
+                    <Icon icon=&LuPlus width="16" height="16" />
                     {crate::t!(t, "btn_add")}
                 </button>
             </form>
@@ -270,7 +270,7 @@ pub fn BuildingManagement() -> impl IntoView {
                                                                 class="btn btn-ghost btn-xs"
                                                                 on:click=move |_| on_delete(id)
                                                             >
-                                                                <Icon icon=LuTrash2 width="14" height="14" />
+                                                                <Icon icon=&LuTrash2 width="14" height="14" />
                                                                 {crate::t!(t, "btn_delete")}
                                                             </button>
                                                         </td>

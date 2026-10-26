@@ -1,9 +1,9 @@
 use crate::api;
 use crate::i18n::{I18n, Language};
-use icondata::*;
+use icondata_lu::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 /// Helper: extract revenue total from a flattened Option<PaginatedResponse<Value>>
 fn sum_revenue(page: &Option<api::PaginatedResponse<serde_json::Value>>) -> f64 {
@@ -224,7 +224,7 @@ pub fn AnalyticsPage() -> impl IntoView {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="card bg-base-100 shadow">
                     <div class="card-body">
-                        <h2 class="card-title"><Icon icon=LuTrendingUp attr:class="text-primary" /> {harvest_prediction.clone()}</h2>
+                        <h2 class="card-title"><Icon icon=&LuTrendingUp attr:class="text-primary" /> {harvest_prediction.clone()}</h2>
                         <p class="text-sm">{based_on_weather.clone()}</p>
                         <div class="mt-4 p-4 bg-base-200 rounded-box">
                             <div class="flex justify-between items-center mb-2">
@@ -247,7 +247,7 @@ pub fn AnalyticsPage() -> impl IntoView {
 
                 <div class="card bg-base-100 shadow">
                     <div class="card-body">
-                        <h2 class="card-title"><Icon icon=LuDollarSign attr:class="text-success" /> {profitability.clone()}</h2>
+                        <h2 class="card-title"><Icon icon=&LuDollarSign attr:class="text-success" /> {profitability.clone()}</h2>
                         <p class="text-sm">{profitability_analysis.clone()}</p>
                         {move || {
                             if has_financial_data() {

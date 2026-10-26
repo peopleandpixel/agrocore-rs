@@ -135,7 +135,7 @@ pub struct Animal {
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema, Default, validator::Validate)]
 pub struct CreateAnimalDto {
     pub identifier: String,
     pub plot_id: Option<Uuid>,
@@ -151,7 +151,7 @@ pub struct CreateAnimalDto {
     pub tenant_id: Uuid,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, ToSchema, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, ToSchema, Default, validator::Validate)]
 pub struct UpdateAnimalDto {
     pub identifier: Option<String>,
     pub plot_id: Option<Uuid>,

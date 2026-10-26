@@ -1,5 +1,5 @@
 use crate::postgres::{
-    animal::PgAnimalRepo, audit_log::PgAuditLogRepo, breed::PgBreedRepo, building::PgBuildingRepo,
+    animal::PgAnimalRepo, audit_log::PgAuditLogRepo, building::PgBuildingRepo,
     clock_entry::PgClockEntryRepo, cold_chain_log::PgColdChainLogRepo,
     compliance::PgComplianceChecklistRepo, cost_center::PgCostCenterRepo, customer::PgCustomerRepo,
     equipment::PgEquipmentRepo, fertilizer_record::PgFertilizerRecordRepo,
@@ -14,13 +14,14 @@ use crate::postgres::{
     phenology_record::PgPhenologyRecordRepo, plant_protection_record::PgPlantProtectionRecordRepo,
     setting::PgSettingsRepo, site::PgSiteRepo, soil_moisture_config::PgSoilMoistureConfigRepo,
     task_data::PgTaskDataRepo, task_sub_task::PgTaskSubTaskRepo, tenant::PgTenantRepo,
-    tree::PgTreeRepo, user::PgUserRepo, variety::PgVarietyRepo, vineyard::PgVineyardRepo,
+    tree::PgTreeRepo, type_category::PgTypeCategoryRepo, type_entry::PgTypeEntryRepo,
+    user::PgUserRepo, vineyard::PgVineyardRepo,
     weather_data::PgWeatherDataRepo, weather_station::PgWeatherStationRepo,
     work_log::PgWorkLogRepo, worker::PgWorkerRepo, worker_location::PgWorkerLocationRepo,
     worker_task_status::PgWorkerTaskStatusRepo,
 };
 use agrocore_domain::repositories::{
-    AnimalRepository, AuditLogRepo, BreedRepository, BuildingRepository, ClockEntryRepo,
+    AnimalRepository, AuditLogRepo, BuildingRepository, ClockEntryRepo,
     ColdChainLogRepo, ComplianceChecklistRepo, CostCenterRepo, CustomerRepository,
     EquipmentRepository, FertilizerRecordRepo, FinancialRecordRepo, FrostWarningRepo,
     GroupRepository, GrowingDegreeDayRepo, HarvestDeliveryRepo, HarvestLotRepo, HarvestSeasonRepo,
@@ -28,7 +29,8 @@ use agrocore_domain::repositories::{
     LivestockRepository, OliveGroveRepo, OliveOilRecordRepo, OrderRepository, PACApplicationRepo,
     PestRiskRepo, PhenologyRecordRepo, PlantProtectionRecordRepo, SettingsRepository,
     SiteRepository, SoilMoistureConfigRepo, SpatialObjectRepository, TaskDataRepository,
-    TaskSubTaskRepository, TenantRepository, TreeRepository, UserRepository, VarietyRepository,
+    TaskSubTaskRepository, TenantRepository, TreeRepository, TypeCategoryRepository,
+    TypeEntryRepository, UserRepository,
     VineyardRepo, WaterQuotaRepo, WaterSourceRepo, WaterUsageRepo, WeatherDataRepo,
     WeatherStationRepo, WorkLogRepo, WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
 };
@@ -106,8 +108,8 @@ pub struct MockDatabase {
     pub group_repo: Option<Arc<agrocore_domain::repositories::MockGroupRepository>>,
     pub tree_repo: Option<Arc<agrocore_domain::repositories::MockTreeRepository>>,
     pub livestock_repo: Option<Arc<agrocore_domain::repositories::MockLivestockRepository>>,
-    pub variety_repo: Option<Arc<agrocore_domain::repositories::MockVarietyRepository>>,
-    pub breed_repo: Option<Arc<agrocore_domain::repositories::MockBreedRepository>>,
+    pub type_category_repo: Option<Arc<agrocore_domain::repositories::MockTypeCategoryRepository>>,
+    pub type_entry_repo: Option<Arc<agrocore_domain::repositories::MockTypeEntryRepository>>,
 }
 
 impl Database {
@@ -686,21 +688,22 @@ impl Database {
         }
     }
 
-    pub fn variety_repo(&self) -> Arc<dyn VarietyRepository> {
+    pub fn type_category_repo(&self) -> Arc<dyn TypeCategoryRepository> {
         match self {
-            Self::Postgres(db) => db.variety_repo(),
+            Self::Postgres(db) => db.type_category_repo(),
             #[cfg(feature = "mocks")]
-            Self::Mock(m) => m.variety_repo.clone().expect("variety_repo mock not set")
-                as Arc<dyn VarietyRepository>,
+            Self::Mock(m) => m.type_category_repo.clone().expect("type_category_repo mock not set")
+                as Arc<dyn TypeCategoryRepository>,
         }
     }
 
-    pub fn breed_repo(&self) -> Arc<dyn BreedRepository> {
+    pub fn type_entry_repo(&self) -> Arc<dyn TypeEntryRepository> {
         match self {
-            Self::Postgres(db) => db.breed_repo(),
+            Self::Postgres(db) => db.type_entry_repo(),
             #[cfg(feature = "mocks")]
             Self::Mock(m) => {
-                m.breed_repo.clone().expect("breed_repo mock not set") as Arc<dyn BreedRepository>
+                m.type_entry_repo.clone().expect("type_entry_repo mock not set")
+                    as Arc<dyn TypeEntryRepository>
             }
         }
     }
@@ -765,8 +768,8 @@ pub struct PostgresDb {
     pub group_repo: Arc<dyn GroupRepository>,
     pub tree_repo: Arc<dyn TreeRepository>,
     pub livestock_repo: Arc<dyn LivestockRepository>,
-    pub variety_repo: Arc<dyn VarietyRepository>,
-    pub breed_repo: Arc<dyn BreedRepository>,
+    pub type_category_repo: Arc<dyn TypeCategoryRepository>,
+    pub type_entry_repo: Arc<dyn TypeEntryRepository>,
 }
 
 impl PostgresDb {
@@ -903,8 +906,8 @@ impl PostgresDb {
             group_repo: Arc::new(PgGroupRepo::new(pool.clone())),
             tree_repo: Arc::new(PgTreeRepo::new(pool.clone())),
             livestock_repo: Arc::new(PgLivestockRepo::new(pool.clone())),
-            variety_repo: Arc::new(PgVarietyRepo::new(pool.clone())),
-            breed_repo: Arc::new(PgBreedRepo::new(pool.clone())),
+            type_category_repo: Arc::new(PgTypeCategoryRepo::new(pool.clone())),
+            type_entry_repo: Arc::new(PgTypeEntryRepo::new(pool.clone())),
             pool,
         })
     }
@@ -977,8 +980,8 @@ impl PostgresDb {
             group_repo: Arc::new(PgGroupRepo::new(pool.clone())),
             tree_repo: Arc::new(PgTreeRepo::new(pool.clone())),
             livestock_repo: Arc::new(PgLivestockRepo::new(pool.clone())),
-            variety_repo: Arc::new(PgVarietyRepo::new(pool.clone())),
-            breed_repo: Arc::new(PgBreedRepo::new(pool.clone())),
+            type_category_repo: Arc::new(PgTypeCategoryRepo::new(pool.clone())),
+            type_entry_repo: Arc::new(PgTypeEntryRepo::new(pool.clone())),
 
             pool,
         }
@@ -1203,12 +1206,12 @@ impl PostgresDb {
         self.livestock_repo.clone()
     }
 
-    pub fn variety_repo(&self) -> Arc<dyn VarietyRepository> {
-        self.variety_repo.clone()
+    pub fn type_category_repo(&self) -> Arc<dyn TypeCategoryRepository> {
+        self.type_category_repo.clone()
     }
 
-    pub fn breed_repo(&self) -> Arc<dyn BreedRepository> {
-        self.breed_repo.clone()
+    pub fn type_entry_repo(&self) -> Arc<dyn TypeEntryRepository> {
+        self.type_entry_repo.clone()
     }
 }
 

@@ -1,10 +1,10 @@
 use crate::api;
 use crate::i18n;
-use icondata::{LuArrowLeft, LuSave};
+use icondata_lu::{LuArrowLeft, LuSave};
 use leptos::ev::MouseEvent;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 /// EquipmentDetailPage - shows detailed equipment info, maintenance history,
 /// cost summary, and a form to record new maintenance.
@@ -196,7 +196,7 @@ pub fn EquipmentDetailPage() -> impl IntoView {
                 <button class="btn btn-ghost btn-sm" on:click=move |_| {
                     let _ = window().location().set_href("/equipment");
                 }>
-                    <Icon icon=LuArrowLeft width="16" height="16" />
+                    <Icon icon=&LuArrowLeft width="16" height="16" />
                 </button>
                 <h1 class="text-2xl font-bold">{crate::t!(t, "equipment_detail")}</h1>
             </div>
@@ -335,7 +335,7 @@ pub fn EquipmentDetailPage() -> impl IntoView {
                                         </div>
                                         <div>
                                             <button class="btn btn-primary w-full" on:click=on_record>
-                                                <Icon icon=LuSave width="16" height="16" />
+                                                <Icon icon=&LuSave width="16" height="16" />
                                                 {crate::t!(t, "save")}
                                             </button>
                                         </div>

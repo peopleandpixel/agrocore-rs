@@ -11,10 +11,10 @@
 //! offers instead is the current positions and a way to post the caller's own.
 
 use crate::api;
-use icondata::{LuPlus, LuTrash2};
+use icondata_lu::{LuPlus, LuTrash2};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 /// A numeric input that takes the raw string, so a half-typed value does not
 /// re-render the form and clear the field.
@@ -210,7 +210,7 @@ pub fn WorkforceLogs() -> impl IntoView {
                     </label>
                 </div>
                 <button type="submit" class="btn btn-primary mt-3">
-                    <Icon icon=LuPlus width="16" height="16" />
+                    <Icon icon=&LuPlus width="16" height="16" />
                     {crate::t!(t, "btn_add")}
                 </button>
             </form>
@@ -259,7 +259,7 @@ pub fn WorkforceLogs() -> impl IntoView {
                                                                 on:click=move |_| on_delete(id)
                                                             >
                                                                 <Icon
-                                                                    icon=LuTrash2
+                                                                    icon=&LuTrash2
                                                                     width="14"
                                                                     height="14"
                                                                 />

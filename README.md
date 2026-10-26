@@ -3,7 +3,7 @@
 [![Rust](https://img.shields.io/badge/rust-2024-orange.svg)](https://www.rust-lang.org/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Rust CI](https://github.com/peopleandpixel/agrocore-rs/actions/workflows/ci-cd.yml/badge.svg?branch=main)](https://github.com/peopleandpixel/agrocore-rs/actions/workflows/ci-cd.yml)
-[![Version](https://img.shields.io/badge/version-0.59.0-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.60.0-green.svg)](CHANGELOG.md)
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/peopleandpixel/agrocore-rs)](https://github.com/peopleandpixel/agrocore-rs/commits/main)
 [![Tests](https://img.shields.io/badge/tests-153%2B-brightgreen.svg)](https://github.com/peopleandpixel/agrocore-rs/actions/workflows/ci-cd.yml)
 [![Crates](https://img.shields.io/badge/crates-15-blue.svg)](#repository-layout)
@@ -47,18 +47,23 @@ All providers share a unified **BaseClient** with caching (Memory/Redis), rate l
 
 ## 🖥️ Admin UI Preview
 
-> **Screenshots coming soon** – the Admin UI (Leptos 0.8 / WASM) includes:
+> **The Admin UI (Leptos 0.9 / WASM) includes:**
 > - Dashboard with system status & business metrics
-> - Site/Field management (CRUD, crop, variety, area)
+> - Site/Field management (CRUD, crop, variety via dynamic types)
 > - Tasks & Orders (recurring, worker assignment, GPS clock-in/out)
-> - Livestock (animals, treatments, movements)
-> - Weather integration (Open-Meteo + station fallback)
-> - Finance (PAC applications, cost centers)
+> - Livestock (animals, treatments, movements, breed via dynamic types)
+> - Weather integration (Open-Meteo + station fallback, GDD, pest risks)
+> - Finance (PAC applications, cost centers, financial records)
 > - Equipment (maintenance, fuel, depreciation)
-> - Compliance tracking
+> - Compliance tracking (fertilizer, plant protection, applicator licenses)
+> - Harvest management (seasons, lots, deliveries, cold chain)
+> - Water management (sources, usage, quotas)
+> - Agriculture (olive groves, vineyards, kelter deliveries)
+> - **Dynamic Type System** — manage all categories (crop varieties, animal breeds, etc.) via UI with moderation workflow
+> - **Demo Mode** — public demo with auto-seed, read-only protection, auto-reset, and backup isolation
 > - Import Wizard (SIGPAC, BRP, RPG, iLPIS, GeoJSON, Shapefile)
-> - Settings (LPIS providers, backup targets, scheduler jobs)
-> - Dark/Light theme, PWA support, full i18n
+> - Settings (LPIS providers with encrypted credentials, backup targets, scheduler jobs)
+> - Dark/Light theme, PWA support, full i18n (10 languages)
 
 ---
 
@@ -68,8 +73,8 @@ All providers share a unified **BaseClient** with caching (Memory/Redis), rate l
 |-------|------------|
 | **Language** | Rust 2024 Edition |
 | **API** | Actix Web 4, JWT (30 min), Argon2, Governor rate limiting (120 req/min) |
-| **Frontend** | Leptos 0.8 (WASM), reactive, SSR-ready, Tailwind CSS |
-| **Database** | PostgreSQL 16 + PostGIS, 7 migrations (71 tables), sqlx compile-time checked |
+| **Frontend** | Leptos 0.9.0-rc0 (WASM), reactive, SSR-ready, Tailwind CSS, native SVG icons |
+| **Database** | PostgreSQL 16 + PostGIS, 44+ migrations (71+ tables), sqlx compile-time checked |
 | **Messaging** | NATS 2.10 + JetStream, request-reply, pub/sub |
 | **Infrastructure** | Docker Compose (prod-ready), systemd units, K8s manifests |
 | **Observability** | Prometheus metrics, structured logging (`agrocore-logging`), OTLP-ready |

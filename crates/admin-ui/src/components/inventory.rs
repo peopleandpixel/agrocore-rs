@@ -1,10 +1,10 @@
 use crate::api;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 // Re-export commonly used icons
-use icondata::{LuPlus, LuTrash2, LuTriangleAlert as LuAlertTriangle};
+use icondata_lu::{LuPlus, LuTrash2, LuTriangleAlert as LuAlertTriangle};
 
 #[component]
 #[allow(unused_variables)]
@@ -90,7 +90,7 @@ pub fn InventoryManagement() -> impl IntoView {
                     class="btn btn-primary"
                     on:click=move |_| set_show_add_modal.set(true)
                 >
-                    <Icon icon=LuPlus width="16" height="16" />
+                    <Icon icon=&LuPlus width="16" height="16" />
                     {crate::t!(t, "btn_add_item")}
                 </button>
             </div>
@@ -111,7 +111,7 @@ pub fn InventoryManagement() -> impl IntoView {
                     if !items.is_empty() {
                         view! {
                             <div class="alert alert-warning mb-4">
-                                <Icon icon=LuAlertTriangle width="16" height="16" />
+                                <Icon icon=&LuAlertTriangle width="16" height="16" />
                                 {format!("{} {}", items.len(), crate::t!(t, "items_below_minimum")())}
                             </div>
                         }.into_any()
@@ -239,7 +239,7 @@ pub fn InventoryManagement() -> impl IntoView {
                                                                 class="btn btn-sm btn-ghost"
                                                                 on:click=move |_| on_delete(item_id)
                                                             >
-                                                                <Icon icon=LuTrash2 width="14" height="14" />
+                                                                <Icon icon=&LuTrash2 width="14" height="14" />
                                                             </button>
                                                         </td>
                                                     </tr>

@@ -7,6 +7,7 @@ use prometheus::Registry;
 use utoipa_swagger_ui::SwaggerUi;
 
 pub mod dto;
+pub mod encryption;
 pub mod error;
 pub mod handlers;
 pub mod lpis_settings;
@@ -54,13 +55,32 @@ pub struct AppState {
     /// reachable in production. They additionally require an admin role; this
     /// flag is the second, independent barrier.
     pub demo_endpoints_enabled: bool,
+    /// When the API process started, for reporting uptime.
+    pub startup_time: std::time::Instant,
+
+    // ── Demo Mode (G3 - Option C) ──────────────────────────────────────────
+    /// True when the API started with `DEMO_MODE=1`. The demo tenant is seeded
+    /// automatically at startup if it does not exist yet.
+    pub is_demo_mode: bool,
+    /// ID of the demo tenant, populated after automatic seeding at startup.
+    /// Used by the read-only middleware and backup isolation.
+    pub demo_tenant_id: Option<uuid::Uuid>,
+    /// If true, all write operations (POST/PUT/DELETE) on the demo tenant
+    /// return 403. Controlled by `DEMO_READONLY=1`.
+    pub demo_readonly: bool,
+    /// If set to a positive number of hours, the demo data is automatically
+    /// reset after that many hours. Controlled by `DEMO_RESET_HOURS`.
+    pub demo_reset_hours: Option<u32>,
 }
 
 /// Whether the demo endpoints are enabled.
 ///
 /// Defaults to false. Set `ALLOW_DEMO_ENDPOINTS=1` to enable; the dev
 /// environment does this itself when `--demo` is passed.
-fn demo_endpoints_enabled() -> bool {
+///
+/// Exposed as `pub(crate)` so integration tests can verify the flag parsing
+/// without reaching into the handler module.
+pub fn demo_endpoints_enabled() -> bool {
     match std::env::var("ALLOW_DEMO_ENDPOINTS") {
         Ok(v) => {
             let enabled = matches!(v.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes");
@@ -73,9 +93,43 @@ fn demo_endpoints_enabled() -> bool {
     }
 }
 
+/// Whether the API is running in full demo mode.
+///
+/// When `DEMO_MODE=1`, the demo tenant is seeded automatically at startup,
+/// the health endpoint reports demo status, and the UI displays a banner.
+fn is_demo_mode() -> bool {
+    match std::env::var("DEMO_MODE") {
+        Ok(v) => matches!(v.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes"),
+        Err(_) => false,
+    }
+}
+
+/// Whether demo tenant writes are blocked.
+///
+/// When `DEMO_READONLY=1`, all POST/PUT/DELETE requests targeting the demo
+/// tenant return 403 Forbidden. Useful for public demo stands where visitors
+/// should not modify data.
+fn demo_readonly() -> bool {
+    match std::env::var("DEMO_READONLY") {
+        Ok(v) => matches!(v.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes"),
+        Err(_) => false,
+    }
+}
+
+/// Auto-reset interval in hours.
+///
+/// When `DEMO_RESET_HOURS` is set to a positive integer, the demo data is
+/// automatically reset after that many hours. Returns `None` if disabled.
+fn demo_reset_hours() -> Option<u32> {
+    match std::env::var("DEMO_RESET_HOURS") {
+        Ok(v) => v.trim().parse().ok().filter(|&h| h > 0),
+        Err(_) => None,
+    }
+}
+
 /// Builds a CORS configuration from the `CORS_ALLOWED_ORIGINS` environment variable.
 /// If the variable is set, only the specified origins are allowed.
-/// If unset, falls back to permissive mode (all origins) for development.
+/// If unset, falls back to a safe local-development default list (localhost/127.0.0.1).
 ///
 /// The env var accepts a comma-separated list of origins, e.g.:
 /// `CORS_ALLOWED_ORIGINS=https://app.example.com,https://admin.example.com`
@@ -97,10 +151,28 @@ fn build_cors() -> Cors {
         }
         Err(_) => {
             warn!(
-                "CORS_ALLOWED_ORIGINS not set - using permissive CORS policy (all origins allowed). \
-                 Set CORS_ALLOWED_ORIGINS in production for security."
+                "CORS_ALLOWED_ORIGINS not set — using local development defaults \
+                 (localhost/127.0.0.1). Set CORS_ALLOWED_ORIGINS in production for security."
             );
-            Cors::permissive().max_age(3600)
+            let mut cors = Cors::default()
+                .max_age(3600)
+                .allow_any_method()
+                .allow_any_header()
+                .supports_credentials();
+            // Safe local-development defaults — covers common dev setups.
+            for origin in [
+                "http://127.0.0.1:8080",
+                "http://localhost:8080",
+                "http://127.0.0.1:8081",
+                "http://localhost:8081",
+                "http://127.0.0.1:3000",
+                "http://localhost:3000",
+                "http://127.0.0.1:5173",
+                "http://localhost:5173",
+            ] {
+                cors = cors.allowed_origin(origin);
+            }
+            cors
         }
     }
 }
@@ -158,6 +230,52 @@ pub async fn run_server(
         )));
     }
 
+    // ── Demo Mode initialization ────────────────────────────────────────────
+    let demo_mode = is_demo_mode();
+    let demo_readonly_flag = demo_readonly();
+    let demo_reset_hours_flag = demo_reset_hours();
+    let mut demo_tenant_id: Option<uuid::Uuid> = None;
+
+    if demo_mode {
+        agrocore_logging::info!("DEMO_MODE enabled — checking for demo tenant...");
+
+        let pool = db.unscoped_pool();
+        let existing: Option<uuid::Uuid> = sqlx::query_scalar(
+            "SELECT id FROM tenants WHERE slug = $1 AND is_demo = true",
+        )
+        .bind("demo")
+        .fetch_optional(&pool)
+        .await
+        .unwrap_or(None);
+
+        if let Some(tid) = existing {
+            agrocore_logging::info!("Demo tenant already exists (id: {tid}), skipping seed.");
+            demo_tenant_id = Some(tid);
+        } else {
+            agrocore_logging::info!("No demo tenant found — seeding automatically...");
+            use crate::handlers::demo::seed_demo_internal;
+
+            if let Ok(seeded_tenant_id) = seed_demo_internal(&db).await {
+                demo_tenant_id = Some(seeded_tenant_id);
+                agrocore_logging::info!(
+                    "Demo tenant seeded successfully (id: {seeded_tenant_id})"
+                );
+            } else {
+                warn!("Failed to auto-seed demo tenant — manual seed required");
+            }
+        }
+    }
+
+    if demo_readonly_flag {
+        agrocore_logging::info!("DEMO_READONLY enabled — demo tenant writes will be blocked");
+    }
+
+    if let Some(hours) = demo_reset_hours_flag {
+        agrocore_logging::info!(
+            "DEMO_RESET_HOURS={hours} — demo data will auto-reset every {hours} hours"
+        );
+    }
+
     // Initialize LPIS Registry with all providers
     let lpis_registry = Arc::new(create_default_registry());
 
@@ -166,7 +284,7 @@ pub async fn run_server(
     let db_metrics = DbMetrics::new(&metrics_registry);
     let business_metrics = BusinessMetrics::new(&metrics_registry);
 
-    let state = web::Data::new(AppState {
+    let state_inner = AppState {
         db: Arc::new(db),
         messaging: messaging.map(Arc::new),
         lpis_registry,
@@ -178,7 +296,19 @@ pub async fn run_server(
         // Demo endpoints stay off unless explicitly enabled. They create and
         // delete tenants, so production must never have them reachable.
         demo_endpoints_enabled: demo_endpoints_enabled(),
-    });
+        startup_time: std::time::Instant::now(),
+        is_demo_mode: demo_mode,
+        demo_tenant_id,
+        demo_readonly: demo_readonly_flag,
+        demo_reset_hours: demo_reset_hours_flag,
+    };
+
+    // Spawn demo auto-reset background task if configured
+    if demo_reset_hours_flag.is_some() {
+        crate::middleware::spawn_demo_auto_reset(Arc::new(state_inner.clone())).await;
+    }
+
+    let state = web::Data::new(state_inner);
 
     let prometheus = PrometheusMetricsBuilder::new("agrocore")
         .endpoint("/metrics")
@@ -220,6 +350,7 @@ pub async fn run_server(
             .wrap(security_headers)
             .wrap(Governor::new(&gov_conf))
             .wrap(cors)
+            .wrap(crate::middleware::DemoReadOnlyMiddleware)
             .wrap(crate::middleware::MetricsMiddleware)
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").url(
                 "/api-docs/openapi.json",

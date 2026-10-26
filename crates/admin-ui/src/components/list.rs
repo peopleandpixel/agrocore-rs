@@ -1,6 +1,7 @@
 use leptos::prelude::*;
-use leptos_icons::Icon;
-use icondata::*;
+use std::sync::Arc;
+use crate::icon::Icon;
+use icondata_lu::*;
 
 /// Sort direction for table columns
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -21,129 +22,151 @@ impl SortDirection {
     }
 }
 
-/// A column definition for the list
-pub struct ColumnDef<T> {
-    pub key: &'static str,
-    pub label: String,
-    pub sortable: bool,
-    pub get_value: fn(&T) -> String,
-}
-
 /// Filter option for the list
+#[derive(Clone)]
 pub struct FilterOption {
     pub key: &'static str,
     pub label: String,
 }
 
-/// Search configuration for the list
-pub struct SearchConfig<T> {
-    /// Fields to search across — returns the searchable text for a row
-    pub get_search_text: fn(&T) -> String,
-}
+// ---------------------------------------------------------------------------
+// SimpleColumn – column definition for sortable tables
+// ---------------------------------------------------------------------------
 
-/// Action button definition
-pub struct ActionButton {
-    pub icon: IconType,
+#[derive(Clone)]
+pub struct SimpleColumn<T> {
+    pub key: String,
     pub label: String,
-    pub class: String,
-    pub disabled: bool,
-    pub on_click: Box<dyn Fn()>,
+    pub sortable: bool,
+    pub get_value: fn(&T) -> String,
 }
 
-#[derive(Clone, Copy)]
-pub struct IconType(pub &'static dyn leptoframe::icon::Icon);
+// ---------------------------------------------------------------------------
+// use_list_state – Hook: search + filter
+// ---------------------------------------------------------------------------
 
-impl IconType {
-    pub const PENCIL: Self = Self(&LuPencil);
-    pub const TRASH: Self = Self(&LuTrash2);
-    pub const USER: Self = Self(&LuCircleUser);
-    pub const EYE: Self = Self(&LuEye);
-}
-
-/// Generic list component with sorting, filtering, searching, and actions
-#[component]
-pub fn DataList<T, F, S, A>(
-    /// Human-readable singular name of the item type (e.g., "User", "Site")
-    item_name: String,
-    /// Human-readable plural name (e.g., "Users", "Sites")
-    item_name_plural: String,
-    /// Description text shown below the title
-    description: String,
-    /// The data items to display
-    items: Signal<Vec<T>>,
-    /// Unique key for each item
-    key_fn: fn(&T) -> String,
-    /// Column definitions
-    columns: Vec<ColumnDef<T>>,
-    /// Available filter options with their labels
-    filters: Vec<FilterOption>,
-    /// A function that returns filtered items given the current filter key
+/// Returns reactive state for a filterable, searchable list.
+pub fn use_list_state<T>(
+    items: ReadSignal<Vec<T>>,
+    search_text_fn: fn(&T) -> String,
     filter_fn: fn(&[T], Option<&str>) -> Vec<T>,
-    /// Search configuration
-    search_config: SearchConfig<T>,
-    /// Whether to show the search bar
-    show_search: bool,
-    /// Action buttons renderer — receives the item and should return action buttons
-    actions: Option<impl Fn(&T) -> impl IntoView + 'static>,
-    /// Button to add a new item (label, on_click callback)
-    add_button: Option<(String, Box<dyn Fn()>)>,
-    /// Additional buttons in the header
-    header_buttons: Option<impl IntoView + 'static>,
-    /// Custom footer content (e.g., pagination)
-    footer: Option<impl IntoView + 'static>,
-) -> impl IntoView
+    filters: Vec<FilterOption>,
+) -> (
+    ReadSignal<String>,
+    WriteSignal<String>,
+    Memo<Vec<T>>,
+    Memo<usize>,
+    Memo<usize>,
+    ReadSignal<Option<String>>,
+    WriteSignal<Option<String>>,
+    Vec<FilterOption>,
+)
 where
-    T: Clone + 'static,
-    F: Fn(&T) -> String + 'static,
-    S: Fn(&T) -> String + 'static,
-    A: Fn(&T) -> impl IntoView + 'static,
+    T: Clone + PartialEq + Send + Sync + 'static,
 {
-    let t = crate::i18n::use_i18n();
-
-    // Sort state: (column_key, direction)
-    let (sort_column, set_sort_column) = signal(None::<&'static str>);
-    let (sort_direction, set_sort_direction) = signal(SortDirection::None);
-
-    // Filter state
+    let (search_query, set_search_query) = signal(String::new());
     let (active_filter, set_active_filter) = signal(None::<String>);
 
-    // Search state
-    let (search_query, set_search_query) = signal(String::new());
-
-    // Apply search filter
-    let filtered_by_search = Memo::new(move |_| {
+    let filtered_items = Memo::new(move |_| {
         let query = search_query.get().trim().to_lowercase();
-        if query.is_empty() {
-            items.get().clone()
-        } else {
-            items
-                .get()
-                .into_iter()
-                .filter(|item| {
-                    let text = (search_config.get_search_text)(item).to_lowercase();
-                    text.contains(&query)
-                })
-                .collect()
-        }
+        let filter_key_owned = active_filter.get();
+        let filter_key = filter_key_owned.as_deref();
+
+        let mut result: Vec<T> = items
+            .get()
+            .into_iter()
+            .filter(|item| {
+                if !query.is_empty() {
+                    let text = (search_text_fn)(item).to_lowercase();
+                    if !text.contains(&query) {
+                        return false;
+                    }
+                }
+                true
+            })
+            .collect();
+
+        result = (filter_fn)(&result, filter_key);
+        result
     });
 
-    // Apply custom filter
-    let filtered_by_status = Memo::new(move |_| {
-        let items = filtered_by_search.get();
-        let filter_key = active_filter.get().as_deref();
-        (filter_fn)(&items, filter_key)
-    });
+    let filtered_count = Memo::new(move |_| filtered_items.get().len());
+    let total_count = Memo::new(move |_| items.get().len());
 
-    // Apply sort
+    (
+        search_query,
+        set_search_query,
+        filtered_items,
+        filtered_count,
+        total_count,
+        active_filter,
+        set_active_filter,
+        filters,
+    )
+}
+
+// ---------------------------------------------------------------------------
+// use_sortable_list_state – Hook: search + filter + sort
+// ---------------------------------------------------------------------------
+
+/// Returns reactive state for a sortable, filterable, searchable list.
+pub fn use_sortable_list_state<T>(
+    items: ReadSignal<Vec<T>>,
+    columns: ReadSignal<Vec<SimpleColumn<T>>>,
+    search_text_fn: fn(&T) -> String,
+    filter_fn: fn(&[T], Option<&str>) -> Vec<T>,
+    filters: Vec<FilterOption>,
+) -> (
+    ReadSignal<String>,
+    WriteSignal<String>,
+    Memo<Vec<T>>,
+    Memo<usize>,
+    Memo<usize>,
+    ReadSignal<Option<String>>,
+    WriteSignal<Option<String>>,
+    ReadSignal<Option<String>>,
+    WriteSignal<Option<String>>,
+    ReadSignal<SortDirection>,
+    WriteSignal<SortDirection>,
+    Arc<dyn Fn(String) + Send + Sync + 'static>,
+    Vec<FilterOption>,
+)
+where
+    T: Clone + PartialEq + Send + Sync + 'static,
+{
+    let (search_query, set_search_query) = signal(String::new());
+    let (active_filter, set_active_filter) = signal(None::<String>);
+    let (sort_column, set_sort_column) = signal(None::<String>);
+    let (sort_direction, set_sort_direction) = signal(SortDirection::None);
+
     let sorted_items = Memo::new(move |_| {
-        let mut items = filtered_by_status.get();
+        let query = search_query.get().trim().to_lowercase();
+        let filter_key_owned = active_filter.get();
+        let filter_key = filter_key_owned.as_deref();
         let col = sort_column.get();
         let dir = sort_direction.get();
+        let cols = columns.get();
 
-        if let Some(col_key) = col {
+        let mut result: Vec<T> = items
+            .get()
+            .into_iter()
+            .filter(|item| {
+                if !query.is_empty() {
+                    let text = (search_text_fn)(item).to_lowercase();
+                    if !text.contains(&query) {
+                        return false;
+                    }
+                }
+                true
+            })
+            .collect();
+
+        result = (filter_fn)(&result, filter_key);
+
+        if let Some(ref col_key) = col {
             if dir != SortDirection::None {
-                if let Some(col_def) = columns.iter().find(|c| c.key == col_key) {
-                    items.sort_by(|a, b| {
+                if let Some(col_def) = cols.iter().find(|c| c.key == *col_key) {
+                    result.sort_by(|a, b| {
                         let va = (col_def.get_value)(a);
                         let vb = (col_def.get_value)(b);
                         match dir {
@@ -155,241 +178,345 @@ where
                 }
             }
         }
-        items
+        result
     });
 
-    // Handle column header click for sorting
-    let on_sort = move |col_key: &'static str| {
-        let current_col = sort_column.get();
-        let current_dir = sort_direction.get();
+    let on_sort = {
+        let sc = sort_column;
+        let sd = sort_direction;
+        let set_sc = set_sort_column;
+        let set_sd = set_sort_direction;
+        Arc::new(move |col_key: String| {
+            let current_col = sc.get();
+            let current_dir = sd.get();
 
-        if current_col == Some(col_key) {
-            let next = current_dir.next();
-            set_sort_direction.set(next);
-            if next == SortDirection::None {
-                set_sort_column.set(None);
+            if current_col == Some(col_key.clone()) {
+                let next = current_dir.next();
+                set_sd.set(next);
+                if next == SortDirection::None {
+                    set_sc.set(None);
+                }
+            } else {
+                set_sc.set(Some(col_key));
+                set_sd.set(SortDirection::Asc);
             }
-        } else {
-            set_sort_column.set(Some(col_key));
-            set_sort_direction.set(SortDirection::Asc);
-        }
+        })
     };
 
-    // Clear search
+    let filtered_count = Memo::new(move |_| sorted_items.get().len());
+    let total_count = Memo::new(move |_| items.get().len());
+
+    (
+        search_query,
+        set_search_query,
+        sorted_items,
+        filtered_count,
+        total_count,
+        active_filter,
+        set_active_filter,
+        sort_column,
+        set_sort_column,
+        sort_direction,
+        set_sort_direction,
+        on_sort,
+        filters,
+    )
+}
+
+// ---------------------------------------------------------------------------
+// ListToolbar – reusable search + filter + count toolbar
+// ---------------------------------------------------------------------------
+
+#[component]
+pub fn ListToolbar(
+    /// Search placeholder signal (empty string to hide search)
+    search_placeholder: ReadSignal<String>,
+    /// Search signal
+    search_query: ReadSignal<String>,
+    set_search_query: WriteSignal<String>,
+    /// Filter options as signal
+    filters: ReadSignal<Vec<FilterOption>>,
+    /// Active filter signal
+    _active_filter: ReadSignal<Option<String>>,
+    set_active_filter: WriteSignal<Option<String>>,
+    /// Item counts
+    filtered_count: Memo<usize>,
+    total_count: Memo<usize>,
+) -> impl IntoView {
+    let t = crate::i18n::use_i18n();
+
     let on_clear_search = move |_| {
         set_search_query.set(String::new());
     };
 
-    // Count of filtered items
-    let filtered_count = Memo::new(move |_| sorted_items.get().len());
-    let total_count = Memo::new(move |_| items.get().len());
+    view! {
+        <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <Show when=move || !search_placeholder.get().is_empty()>
+                <div class="form-control flex-1 max-w-md">
+                    <div class="relative">
+                        <input
+                            type="text"
+                            class="input input-bordered input-sm w-full pr-8"
+                            placeholder=move || {
+                                let ph = search_placeholder.get();
+                                format!("{}...", ph)
+                            }
+                            value=search_query
+                            on:input=move |ev| set_search_query.set(event_target_value(&ev))
+                        />
+                        <Show when=move || !search_query.get().is_empty()>
+                            <button
+                                class="absolute right-2 top-1/2 -translate-y-1/2 btn btn-ghost btn-xs btn-circle"
+                                on:click=on_clear_search
+                            >
+                                <Icon icon=&LuX width="14" height="14" />
+                            </button>
+                        </Show>
+                    </div>
+                </div>
+            </Show>
+
+            <Show when=move || !filters.get().is_empty()>
+                {move || {
+                    let opts = filters.get();
+                    Some(view! {
+                        <select
+                            class="select select-bordered select-sm"
+                            on:change=move |ev| {
+                                let val = event_target_value(&ev);
+                                if val.is_empty() {
+                                    set_active_filter.set(None);
+                                } else {
+                                    set_active_filter.set(Some(val));
+                                }
+                            }
+                        >
+                            <option value="">{t("filter_all")}</option>
+                            {opts.iter().map(|f| {
+                                view! {
+                                    <option value={f.key}>{f.label.clone()}</option>
+                                }
+                            }).collect_view()}
+                        </select>
+                    }.into_view())
+                }}
+            </Show>
+
+            <div class="text-sm text-base-content/60">
+                <Show
+                    when=move || filtered_count.get() != total_count.get()
+                    fallback=move || {
+                        view! {
+                            <span>{filtered_count.get()} {t("items")}</span>
+                        }
+                    }
+                >
+                    <span>
+                        {filtered_count.get()} / {total_count.get()} {t("items")}
+                    </span>
+                </Show>
+            </div>
+        </div>
+    }
+}
+
+// ---------------------------------------------------------------------------
+// ListHeader – reusable title + add button header
+// ---------------------------------------------------------------------------
+
+#[component]
+pub fn ListHeader(
+    title: String,
+    description: Option<String>,
+    add_button: Option<impl IntoView>,
+    extra_buttons: Option<impl IntoView>,
+) -> impl IntoView {
+    view! {
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold">{title}</h1>
+                {description.map(|desc| view! { <p class="text-base-content/60">{desc}</p> })}
+            </div>
+            <div class="flex gap-2">
+                {extra_buttons.map(|btns| btns.into_view())}
+                {add_button.map(|btn| btn.into_view())}
+            </div>
+        </div>
+    }
+}
+
+// ---------------------------------------------------------------------------
+// ListEmpty – "no results" row
+// ---------------------------------------------------------------------------
+
+#[component]
+pub fn ListEmpty(colspan: usize) -> impl IntoView {
+    let t = crate::i18n::use_i18n();
 
     view! {
-        <div class="flex flex-col gap-4">
-            // Header with title and actions
-            <div class="flex justify-between items-center">
-                <div>
-                    <h1 class="text-3xl font-bold">{item_name_plural.clone()}</h1>
-                    <p class="text-base-content/60">{description.clone()}</p>
-                </div>
-                <div class="flex gap-2">
-                    {move || {
-                        if let Some(Some(btns)) = &header_buttons {
-                            Some(btns.clone().into_view().into_any())
-                        } else {
-                            None
-                        }
-                    }}
-                    {move || {
-                        if let Some((label, on_click)) = &add_button {
-                            Some(view! {
-                                <button class="btn btn-primary" on:click=(*on_click).clone()>
-                                    <Icon icon=LuPlus width="20" height="20" />
-                                    {t("add")} " " {label.clone()}
-                                </button>
-                            }.into_any())
-                        } else {
-                            None
-                        }
-                    }}
-                </div>
-            </div>
+        <tr>
+            <td colspan=colspan class="text-center py-8 text-base-content/50">
+                {t("no_results")}
+            </td>
+        </tr>
+    }
+}
 
-            // Toolbar: search, filters, count
-            <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                // Search input
-                <Show when=move || show_search>
-                    <div class="form-control flex-1 max-w-md">
-                        <div class="relative">
-                            <input
-                                type="text"
-                                class="input input-bordered input-sm w-full pr-8"
-                                placeholder=move || format!("{}...", t("search"))
-                                value=search_query
-                                on:input=move |ev| set_search_query.set(event_target_value(&ev))
+// ---------------------------------------------------------------------------
+// AddButton – convenience button
+// ---------------------------------------------------------------------------
+
+#[component]
+pub fn AddButton(
+    label: String,
+    on_click: Arc<dyn Fn() + Send + Sync + 'static>,
+) -> impl IntoView {
+    let t = crate::i18n::use_i18n();
+
+    view! {
+        <button class="btn btn-primary" on:click=move |_| on_click()>
+            <Icon icon=&LuPlus width="20" height="20" />
+            {t("add")} " " {label}
+        </button>
+    }
+}
+
+// ---------------------------------------------------------------------------
+// SortableTableHeaderCell – single header cell component
+// ---------------------------------------------------------------------------
+
+#[component]
+pub fn SortableTableHeaderCell(
+    label: String,
+    sortable: bool,
+    is_sorted: bool,
+    dir: SortDirection,
+    on_sort: Arc<dyn Fn(String) + Send + Sync + 'static>,
+    col_key: String,
+) -> impl IntoView {
+    let arrow = if is_sorted {
+        match dir {
+            SortDirection::Asc => "↑",
+            SortDirection::Desc => "↓",
+            SortDirection::None => "↕",
+        }
+    } else {
+        "↕"
+    };
+    let opacity_class = if is_sorted && dir != SortDirection::None {
+        ""
+    } else {
+        "opacity-30"
+    };
+
+    // Always use the same on:click closure to keep the View type identical
+    let on_click = {
+        let on_sort_for_col = on_sort.clone();
+        let click_key = col_key.clone();
+        move |_| {
+            if sortable {
+                (on_sort_for_col)(click_key.clone());
+            }
+        }
+    };
+
+    view! {
+        <th>
+            <button
+                class="flex items-center gap-1 hover:text-primary cursor-pointer"
+                on:click=on_click
+            >
+                <span>{label}</span>
+                <span class={opacity_class}>{arrow}</span>
+            </button>
+        </th>
+    }
+}
+
+// ---------------------------------------------------------------------------
+// SortableTableHeader – reusable sortable column headers
+// ---------------------------------------------------------------------------
+
+#[component]
+pub fn SortableTableHeader<T>(
+    columns: ReadSignal<Vec<SimpleColumn<T>>>,
+    sort_column: ReadSignal<Option<String>>,
+    sort_direction: ReadSignal<SortDirection>,
+    on_sort: Arc<dyn Fn(String) + Send + Sync + 'static>,
+    has_actions: bool,
+) -> impl IntoView
+where
+    T: Clone + Send + Sync + 'static,
+{
+    view! {
+        <thead>
+            <tr>
+                {move || {
+                    let cols = columns.get();
+                    let is_sorted_col = sort_column.get();
+                    let dir = sort_direction.get();
+                    let on_sort_ref = on_sort.clone();
+
+                    cols.iter().map(|col| {
+                        let col_key = col.key.clone();
+                        let col_label = col.label.clone();
+                        let sortable = col.sortable;
+                        let is_sorted = is_sorted_col == Some(col_key.clone());
+                        let on_sort_for_cell = on_sort_ref.clone();
+
+                        view! {
+                            <SortableTableHeaderCell
+                                label={col_label}
+                                sortable={sortable}
+                                is_sorted={is_sorted}
+                                dir={dir}
+                                on_sort={on_sort_for_cell}
+                                col_key={col_key}
                             />
-                            <Show when=move || !search_query.get().is_empty()>
-                                <button
-                                    class="absolute right-2 top-1/2 -translate-y-1/2 btn btn-ghost btn-xs btn-circle"
-                                    on:click=on_clear_search
-                                >
-                                    <Icon icon=LuX width="14" height="14" />
-                                </button>
-                            </Show>
-                        </div>
-                    </div>
-                </Show>
-
-                // Filter dropdown
-                <Show when=move || !filters.is_empty()>
-                    <select
-                        class="select select-bordered select-sm"
-                        value=active_filter
-                        on:change=move |ev| {
-                            let val = event_target_value(&ev);
-                            if val.is_empty() {
-                                set_active_filter.set(None);
-                            } else {
-                                set_active_filter.set(Some(val));
-                            }
                         }
-                    >
-                        <option value="">{t("filter_all")}</option>
-                        {filters.iter().map(|f| {
-                            view! {
-                                <option value={f.key}>{f.label.clone()}</option>
-                            }
-                        }).collect_view()}
-                    </select>
-                </Show>
+                    }).collect_view()
+                }}
+                {move || {
+                    if has_actions {
+                        Some(view! { <th></th> })
+                    } else {
+                        None
+                    }
+                }}
+            </tr>
+        </thead>
+    }
+}
 
-                // Item count
-                <div class="text-sm text-base-content/60">
-                    <Show
-                        when=move || filtered_count.get() != total_count.get()
-                        fallback=move || {
-                            view! {
-                                <span>{total_count.get()} {item_name_plural.to_lowercase()}</span>
-                            }
-                        }
-                    >
-                        <span>
-                            {filtered_count.get()} / {total_count.get()} {item_name_plural.to_lowercase()}
-                        </span>
-                    </Show>
-                </div>
-            </div>
+// ---------------------------------------------------------------------------
+// DataList – generic list with search, filter, and custom row rendering
+// ---------------------------------------------------------------------------
 
-            // Table card
+/// A generic list component that provides search, filter, and count.
+/// The caller renders the table body rows using the `filtered_items` memo.
+///
+/// Use this with `use_list_state` or `use_sortable_list_state` hooks.
+#[component]
+pub fn DataListLayout(
+    /// Header section
+    header: impl IntoView,
+    /// Toolbar section (use ListToolbar)
+    toolbar: impl IntoView,
+    /// Table content
+    table: impl IntoView,
+    /// Optional footer
+    footer: Option<impl IntoView>,
+) -> impl IntoView {
+    view! {
+        <div class="flex flex-col gap-4">
+            {header}
+            {toolbar}
             <div class="card bg-base-100 shadow">
                 <div class="overflow-x-auto">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                {columns.iter().map(|col| {
-                                    let is_sorted = move || {
-                                        sort_column.get() == Some(col.key)
-                                    };
-                                    let sort_icon = move || {
-                                        if !col.sortable {
-                                            return view! {}.into_any();
-                                        }
-                                        if !is_sorted() {
-                                            return view! {
-                                                <span class="opacity-30 ml-1">↕</span>
-                                            }.into_any();
-                                        }
-                                        match sort_direction.get() {
-                                            SortDirection::Asc => view! {
-                                                <span class="ml-1">↑</span>
-                                            }.into_any(),
-                                            SortDirection::Desc => view! {
-                                                <span class="ml-1">↓</span>
-                                            }.into_any(),
-                                            SortDirection::None => view! {
-                                                <span class="opacity-30 ml-1">↕</span>
-                                            }.into_any(),
-                                        }
-                                    };
-
-                                    view! {
-                                        <th>
-                                            <Show
-                                                when=move || col.sortable
-                                                fallback=move || {
-                                                    view! {
-                                                        <span>{col.label.clone()}</span>
-                                                    }
-                                                }
-                                            >
-                                                <button
-                                                    class="flex items-center gap-1 hover:text-primary cursor-pointer"
-                                                    on:click=move |_| on_sort(col.key)
-                                                >
-                                                    <span>{col.label.clone()}</span>
-                                                    {sort_icon}
-                                                </button>
-                                            </Show>
-                                        </th>
-                                    }
-                                }).collect_view()}
-                                {move || {
-                                    if actions.is_some() {
-                                        Some(view! {
-                                            <th></th>
-                                        }.into_any())
-                                    } else {
-                                        None
-                                    }
-                                }}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <For
-                                each=move || {
-                                    sorted_items.get().iter().map(|item| (key_fn)(item).clone(), item.clone()).collect::<Vec<_>>()
-                                }
-                                key=|item| (key_fn)(item)
-                                children=move |item| {
-                                    view! {
-                                        <tr>
-                                            {columns.iter().map(|col| {
-                                                let value = (col.get_value)(&item);
-                                                view! {
-                                                    <td>{value}</td>
-                                                }
-                                            }).collect_view()}
-                                            {move || {
-                                                if let Some(ref actions_fn) = actions {
-                                                    Some(actions_fn(&item).into_view().into_any())
-                                                } else {
-                                                    None
-                                                }
-                                            }}
-                                        </tr>
-                                    }
-                                }
-                            />
-                            <Show when=move || sorted_items.get().is_empty()>
-                                <tr>
-                                    <td colspan={columns.len() + if actions.is_some() { 1 } else { 0 }} class="text-center py-8 text-base-content/50">
-                                        {t("no_results")}
-                                    </td>
-                                </tr>
-                            </Show>
-                        </tbody>
-                    </table>
+                    {table}
                 </div>
             </div>
-
-            // Footer (e.g., pagination)
-            {move || {
-                if let Some(Some(footer_view)) = &footer {
-                    Some(footer_view.clone().into_view().into_any())
-                } else {
-                    None
-                }
-            }}
+            {footer.map(|fv| fv.into_view())}
         </div>
     }
 }

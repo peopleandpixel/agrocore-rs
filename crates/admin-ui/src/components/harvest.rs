@@ -12,10 +12,10 @@
 //! others.
 
 use crate::api;
-use icondata::{LuPlus, LuTrash2};
+use icondata_lu::{LuPlus, LuTrash2};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 fn num(label: String, value: ReadSignal<String>, set: WriteSignal<String>) -> impl IntoView {
     view! {
@@ -372,7 +372,7 @@ pub fn HarvestManagement() -> impl IntoView {
                         {date(crate::t!(t, "season_end")().to_string(), s_end, set_s_end)}
                     </div>
                     <button type="submit" class="btn btn-primary mt-3">
-                        <Icon icon=LuPlus width="16" height="16" />
+                        <Icon icon=&LuPlus width="16" height="16" />
                         {crate::t!(t, "btn_add")}
                     </button>
                 </form>
@@ -412,7 +412,7 @@ pub fn HarvestManagement() -> impl IntoView {
                         )}
                     </div>
                     <button type="submit" class="btn btn-primary mt-3">
-                        <Icon icon=LuPlus width="16" height="16" />
+                        <Icon icon=&LuPlus width="16" height="16" />
                         {crate::t!(t, "btn_add")}
                     </button>
                 </form>
@@ -458,7 +458,7 @@ pub fn HarvestManagement() -> impl IntoView {
                         )}
                     </div>
                     <button type="submit" class="btn btn-primary mt-3">
-                        <Icon icon=LuPlus width="16" height="16" />
+                        <Icon icon=&LuPlus width="16" height="16" />
                         {crate::t!(t, "btn_add")}
                     </button>
                 </form>
@@ -498,7 +498,7 @@ pub fn HarvestManagement() -> impl IntoView {
                         )}
                     </div>
                     <button type="submit" class="btn btn-primary mt-3">
-                        <Icon icon=LuPlus width="16" height="16" />
+                        <Icon icon=&LuPlus width="16" height="16" />
                         {crate::t!(t, "btn_add")}
                     </button>
                 </form>
@@ -545,7 +545,7 @@ pub fn HarvestManagement() -> impl IntoView {
                                                                 on:click=move |_| (del_season)(id)
                                                             >
                                                                 <Icon
-                                                                    icon=LuTrash2
+                                                                    icon=&LuTrash2
                                                                     width="14"
                                                                     height="14"
                                                                 />
@@ -613,7 +613,7 @@ pub fn HarvestManagement() -> impl IntoView {
                                                                 on:click=move |_| (del_lot)(id)
                                                             >
                                                                 <Icon
-                                                                    icon=LuTrash2
+                                                                    icon=&LuTrash2
                                                                     width="14"
                                                                     height="14"
                                                                 />
@@ -683,7 +683,7 @@ pub fn HarvestManagement() -> impl IntoView {
                                                                 on:click=move |_| (del_delivery)(id)
                                                             >
                                                                 <Icon
-                                                                    icon=LuTrash2
+                                                                    icon=&LuTrash2
                                                                     width="14"
                                                                     height="14"
                                                                 />
@@ -751,7 +751,7 @@ pub fn HarvestManagement() -> impl IntoView {
                                                                 on:click=move |_| (del_cold)(id)
                                                             >
                                                                 <Icon
-                                                                    icon=LuTrash2
+                                                                    icon=&LuTrash2
                                                                     width="14"
                                                                     height="14"
                                                                 />

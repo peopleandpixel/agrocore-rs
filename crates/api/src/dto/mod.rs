@@ -1,7 +1,6 @@
 //! API Data Transfer Objects
 
 pub mod backup;
-pub mod breed;
 pub mod building;
 pub mod calculations;
 pub mod common;
@@ -32,7 +31,6 @@ pub mod spatial;
 pub mod specialized;
 pub mod tree;
 pub mod user;
-pub mod variety;
 pub mod water;
 pub mod weather;
 pub mod workforce;
@@ -41,7 +39,6 @@ pub mod demo;
 
 // Re-exports for handlers
 pub use backup::*;
-pub use breed::*;
 pub use building::*;
 pub use calculations::*;
 pub use common::*;
@@ -63,7 +60,6 @@ pub use site::*;
 pub use specialized::*;
 pub use tree::*;
 pub use user::*;
-pub use variety::*;
 pub use water::*;
 pub use weather::*;
 pub use workforce::*;

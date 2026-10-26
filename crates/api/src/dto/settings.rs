@@ -4,6 +4,22 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct LpisProviderAuthDto {
+    /// API key for authentication (encrypted in DB).
+    #[serde(default)]
+    pub api_key: Option<String>,
+    /// Username for basic auth (encrypted in DB).
+    #[serde(default)]
+    pub username: Option<String>,
+    /// Password for basic auth (encrypted in DB).
+    #[serde(default)]
+    pub password: Option<String>,
+    /// Bearer token for authentication (encrypted in DB).
+    #[serde(default)]
+    pub bearer_token: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct LpisProviderConfig {
     pub base_url: String,
     pub timeout_seconds: u64,
@@ -18,6 +34,12 @@ pub struct LpisProviderConfig {
     /// invented ones, so a client cannot tell a configured provider from a
     /// default by comparing domains.
     pub configured: Option<String>,
+    /// Whether credentials are configured for this provider (read-only indicator).
+    #[serde(default)]
+    pub has_credentials: bool,
+    /// Authentication credentials (only when saving, never returned in responses).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auth: Option<LpisProviderAuthDto>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]

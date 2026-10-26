@@ -2,10 +2,10 @@ use crate::api;
 use crate::i18n::I18n;
 use crate::i18n::Language;
 use chrono::Utc;
-use icondata::*;
+use icondata_lu::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 fn station_label(station: &serde_json::Value) -> String {
     station
@@ -73,10 +73,10 @@ pub fn WeatherManagement() -> impl IntoView {
                             <h2 class="card-title">{current_weather}</h2>
                             {move || fallback_weather.read().as_ref().and_then(|snapshot| snapshot.clone()).map(|snapshot| view! {
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                                    <WeatherStat icon=LuThermometer label=temperature.clone() value=snapshot.temperature_c.map(|value| format!("{:.1} °C", value)).unwrap_or_else(|| String::from("—")) />
-                                    <WeatherStat icon=LuDroplets label=humidity.clone() value=snapshot.humidity_percent.map(|value| format!("{:.0}%", value)).unwrap_or_else(|| String::from("—")) />
-                                    <WeatherStat icon=LuWind label=wind.clone() value=snapshot.wind_kmh.map(|value| format!("{:.0} km/h", value)).unwrap_or_else(|| String::from("—")) />
-                                    <WeatherStat icon=LuCloudRain label=precipitation.clone() value=snapshot.precipitation_mm.map(|value| format!("{:.1} mm", value)).unwrap_or_else(|| String::from("—")) />
+                                    <WeatherStat icon=&LuThermometer label=temperature.clone() value=snapshot.temperature_c.map(|value| format!("{:.1} °C", value)).unwrap_or_else(|| String::from("—")) />
+                                    <WeatherStat icon=&LuDroplets label=humidity.clone() value=snapshot.humidity_percent.map(|value| format!("{:.0}%", value)).unwrap_or_else(|| String::from("—")) />
+                                    <WeatherStat icon=&LuWind label=wind.clone() value=snapshot.wind_kmh.map(|value| format!("{:.0} km/h", value)).unwrap_or_else(|| String::from("—")) />
+                                    <WeatherStat icon=&LuCloudRain label=precipitation.clone() value=snapshot.precipitation_mm.map(|value| format!("{:.1} mm", value)).unwrap_or_else(|| String::from("—")) />
                                 </div>
                                 <p class="text-sm opacity-70 mt-4">
                                     {format!("{}: {}", source, snapshot.location_label)}
@@ -204,7 +204,7 @@ pub fn WeatherManagement() -> impl IntoView {
 }
 
 #[component]
-fn WeatherStat(icon: icondata::Icon, label: String, value: String) -> impl IntoView {
+fn WeatherStat(icon: &'static icondata_core::IconData, label: String, value: String) -> impl IntoView {
     view! {
         <div class="flex flex-col items-center p-2 bg-base-200 rounded-box">
             <Icon icon=icon width="24" height="24" attr:class="mb-1 opacity-70" />

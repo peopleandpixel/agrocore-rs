@@ -6,8 +6,9 @@ use agrocore_domain::entities::harvest::{
     CreateColdChainLogDto, CreateHarvestDeliveryDto, CreateHarvestLotDto, CreateHarvestSeasonDto,
     UpdateColdChainLogDto, UpdateHarvestDeliveryDto, UpdateHarvestLotDto, UpdateHarvestSeasonDto,
 };
-use agrocore_shared::Pagination;
+use agrocore_shared::{Pagination, SharedError};
 use uuid::Uuid;
+use validator::Validate;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -78,6 +79,7 @@ pub async fn create_season(
     auth: AuthUser,
     dto: web::Json<CreateHarvestSeasonDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let res = state
         .db
         .harvest_season_repo()
@@ -110,6 +112,7 @@ pub async fn update_season(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateHarvestSeasonDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let res = state
         .db
         .harvest_season_repo()
@@ -160,6 +163,7 @@ pub async fn create_lot(
     auth: AuthUser,
     dto: web::Json<CreateHarvestLotDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let res = state
         .db
         .harvest_lot_repo()
@@ -192,6 +196,7 @@ pub async fn update_lot(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateHarvestLotDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let res = state
         .db
         .harvest_lot_repo()
@@ -242,6 +247,7 @@ pub async fn create_delivery(
     auth: AuthUser,
     dto: web::Json<CreateHarvestDeliveryDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let res = state
         .db
         .harvest_delivery_repo()
@@ -274,6 +280,7 @@ pub async fn update_delivery(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateHarvestDeliveryDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let res = state
         .db
         .harvest_delivery_repo()
@@ -324,6 +331,7 @@ pub async fn create_cold_chain_log(
     auth: AuthUser,
     dto: web::Json<CreateColdChainLogDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let res = state
         .db
         .cold_chain_log_repo()
@@ -355,6 +363,7 @@ pub async fn update_cold_chain_log(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateColdChainLogDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let res = state
         .db
         .cold_chain_log_repo()

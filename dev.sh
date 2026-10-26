@@ -14,6 +14,7 @@
 #
 # Verwendung:
 #   ./dev.sh              # Startet Development-Modus
+#   ./dev.sh --demo       # Startet mit Demo-Daten (Auto-Seed, Read-Only, Auto-Reset)
 #   ./dev.sh stop         # Stoppt alle Dienste
 #   ./dev.sh down         # Stoppt und entfernt alle Container
 #
@@ -24,6 +25,16 @@ cd "$SCRIPT_DIR"
 
 ADMIN_UI_DIR="$SCRIPT_DIR/crates/admin-ui"
 ACTION="${1:-up}"
+DEMO_FLAG=false
+
+# Parse flags
+for arg in "$@"; do
+    case "$arg" in
+        --demo)
+            DEMO_FLAG=true
+            ;;
+    esac
+done
 
 # ---------------------------------------------------------------
 # Health-Check: wartet bis ein Container healthy ist
@@ -53,12 +64,23 @@ wait_for_healthy() {
 # ---------------------------------------------------------------
 start_backend() {
     echo "🌱 AgroCore — Development-Modus starten"
+    if [ "$DEMO_FLAG" = true ]; then
+        echo "🎭 DEMO-MODUS: Auto-Seed, Read-Only, Auto-Reset (24h)"
+    fi
     echo "=============================================="
 
     # AdminUI Container stoppen, falls vorhanden
     if docker ps --format '{{.Names}}' | grep -q 'agrocore-admin-ui'; then
         echo "🔧 Stoppe Docker AdminUI-Container (Trunk übernimmt)..."
         docker stop agrocore-admin-ui >/dev/null 2>&1 || true
+    fi
+
+    # Demo-Modus: Env-Vars setzen
+    if [ "$DEMO_FLAG" = true ]; then
+        export DEMO_MODE=1
+        export ALLOW_DEMO_ENDPOINTS=1
+        export DEMO_READONLY=1
+        export DEMO_RESET_HOURS=24
     fi
 
     # Backend-Dienste starten (ohne admin-ui)
@@ -71,6 +93,14 @@ start_backend() {
     echo ""
     echo "✅ Backend-Dienste sind bereit."
     echo "   API: http://localhost:8080"
+
+    if [ "$DEMO_FLAG" = true ]; then
+        echo ""
+        echo "🎭 Demo-Zugang:"
+        echo "   Benutzer: demo@agrocore.local"
+        echo "   Passwort: demo1234-agrocore"
+        echo "   (Oder DEMO_ADMIN_PASSWORD Umgebungsvariable)"
+    fi
 }
 
 # ---------------------------------------------------------------

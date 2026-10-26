@@ -1,9 +1,9 @@
 use crate::api;
 use crate::components::toast::{ToastContext, ToastType};
-use icondata::*;
+use icondata_lu::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 /// CustomersPage — customer management with search and lookup.
 /// Consumes orphaned API routes:
@@ -105,7 +105,7 @@ pub fn CustomersPage() -> impl IntoView {
 
             {move || error.get().map(|err| view! {
                 <div class="alert alert-error">
-                    <Icon icon=LuCircleAlert width="20" height="20" />
+                    <Icon icon=&LuCircleAlert width="20" height="20" />
                     <span>{err}</span>
                 </div>
             })}
@@ -135,7 +135,7 @@ pub fn CustomersPage() -> impl IntoView {
                         on:input=move |ev| set_search_query.set(event_target_value(&ev))
                     />
                     <button class="btn btn-primary" on:click=on_search_by_name>
-                        <Icon icon=LuSearch width="16" height="16" />
+                        <Icon icon=&LuSearch width="16" height="16" />
                         {crate::t!(t, "search")}
                     </button>
                 </div>
@@ -151,7 +151,7 @@ pub fn CustomersPage() -> impl IntoView {
                         on:input=move |ev| set_customer_number.set(event_target_value(&ev))
                     />
                     <button class="btn btn-primary" on:click=on_search_by_number>
-                        <Icon icon=LuSearch width="16" height="16" />
+                        <Icon icon=&LuSearch width="16" height="16" />
                         {crate::t!(t, "search")}
                     </button>
                 </div>
@@ -165,7 +165,7 @@ pub fn CustomersPage() -> impl IntoView {
 
             <Show when=move || !loading.get() && customers.get().is_empty() && selected_customer.get().is_none()>
                 <div class="text-center py-8 text-base-content/60">
-                    <Icon icon=LuUsers width="48" height="48" />
+                    <Icon icon=&LuUsers width="48" height="48" />
                     <p>{crate::t!(t, "no_customers_found")}</p>
                 </div>
             </Show>
@@ -197,7 +197,7 @@ pub fn CustomersPage() -> impl IntoView {
                                     </div>
                                     <div class="mt-4">
                                         <button class="btn btn-outline btn-primary" on:click=move |_| on_view_orders(c_clone.clone())>
-                                            <Icon icon=LuShoppingBag width="16" height="16" />
+                                            <Icon icon=&LuShoppingBag width="16" height="16" />
                                             {crate::t!(t, "view_orders")}
                                         </button>
                                     </div>

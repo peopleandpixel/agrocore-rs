@@ -14,6 +14,8 @@ pub struct Tenant {
     #[sqlx(json)]
     pub config: TenantConfig,
     pub is_active: bool,
+    /// Whether this tenant is a demo tenant (auto-seeded, resettable).
+    pub is_demo: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -133,6 +135,7 @@ mod tests {
             slug: String::new(),
             config: TenantConfig::default(),
             is_active: true,
+            is_demo: false,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };

@@ -1,9 +1,9 @@
 use crate::api;
 use crate::i18n;
-use icondata::*;
+use icondata_lu::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 /// TaskDetailPage — shows a single task with start/stop actions.
 /// Consumes orphaned API routes:
@@ -56,20 +56,20 @@ pub fn TaskDetailPage() -> impl IntoView {
                             <button class="btn btn-ghost btn-sm" on:click=move |_| {
                                 let _ = window().location().set_href("/tasks");
                             }>
-                                <Icon icon=LuArrowLeft width="16" height="16" />
+                                <Icon icon=&LuArrowLeft width="16" height="16" />
                             </button>
                             <h1 class="text-3xl font-bold">{crate::t!(t, "task_detail")}</h1>
                         </div>
 
                         {move || success.get().map(|msg| view! {
                             <div class="alert alert-success">
-                                <Icon icon=LuCircleCheck width="20" height="20" />
+                                <Icon icon=&LuCircleCheck width="20" height="20" />
                                 <span>{msg}</span>
                             </div>
                         })}
                         {move || error.get().map(|err| view! {
                             <div class="alert alert-error">
-                                <Icon icon=LuCircleAlert width="20" height="20" />
+                                <Icon icon=&LuCircleAlert width="20" height="20" />
                                 <span>{err}</span>
                             </div>
                         })}
@@ -134,7 +134,7 @@ pub fn TaskDetailPage() -> impl IntoView {
                                                             }
                                                         });
                                                     }>
-                                                        <Icon icon=LuPlay width="16" height="16" />
+                                                        <Icon icon=&LuPlay width="16" height="16" />
                                                         {crate::t!(t, "start_task")}
                                                     </button>
                                                     <button class="btn btn-outline btn-warning" on:click=move |_| {
@@ -147,7 +147,7 @@ pub fn TaskDetailPage() -> impl IntoView {
                                                             }
                                                         });
                                                     }>
-                                                        <Icon icon=LuPause width="16" height="16" />
+                                                        <Icon icon=&LuPause width="16" height="16" />
                                                         {crate::t!(t, "stop_task")}
                                                     </button>
                                                     <button class="btn btn-outline btn-accent" on:click=move |_| {
@@ -160,7 +160,7 @@ pub fn TaskDetailPage() -> impl IntoView {
                                                             }
                                                         });
                                                     }>
-                                                        <Icon icon=LuRocket width="16" height="16" />
+                                                        <Icon icon=&LuRocket width="16" height="16" />
                                                         {crate::t!(t, "start_order")}
                                                     </button>
                                                     <button class="btn btn-outline btn-success" on:click=move |_| {
@@ -173,7 +173,7 @@ pub fn TaskDetailPage() -> impl IntoView {
                                                             }
                                                         });
                                                     }>
-                                                        <Icon icon=LuSquareCheck width="16" height="16" />
+                                                        <Icon icon=&LuSquareCheck width="16" height="16" />
                                                         {crate::t!(t, "complete_order")}
                                                     </button>
                                                 </div>

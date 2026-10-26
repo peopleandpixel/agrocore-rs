@@ -1,9 +1,10 @@
 use crate::ViewMode;
 use crate::api;
 use crate::components::error_boundary::user_friendly_error;
-use icondata::*;
+use icondata_lu::*;
+use icondata_im::ImMagicWand;
 use leptos::prelude::*;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 #[component]
 pub fn DashboardView() -> impl IntoView {
@@ -69,7 +70,7 @@ pub fn DashboardView() -> impl IntoView {
 
                 <div class="flex items-center gap-4">
                     <div class="glass bg-success/10 text-success border-success/20 badge gap-2 p-4 hidden md:flex font-medium">
-                        <Icon icon=LuActivity width="16" height="16" />
+                        <Icon icon=&LuActivity width="16" height="16" />
                         {move || {
                             let total = tasks_resource.read().as_ref().map(|t| t.total).unwrap_or(0);
                             format!("{} {}", total, t("tasks"))
@@ -83,13 +84,13 @@ pub fn DashboardView() -> impl IntoView {
                 view! {
                     <div class="card bg-gradient-to-br from-primary to-primary-focus text-primary-content shadow-2xl overflow-hidden relative border-none">
                         <div class="absolute top-[-20%] right-[-10%] opacity-10 rotate-12">
-                            <Icon icon=LuActivity width="300" height="300" />
+                            <Icon icon=&LuActivity width="300" height="300" />
                         </div>
                         <div class="card-body items-center text-center py-16 relative z-10">
                             <h2 class="card-title text-4xl font-black mb-6 leading-tight">{crate::t!(t, "wizard_tasks")}</h2>
                             <p class="mb-10 max-w-lg text-lg opacity-90">{crate::t!(t, "dashboard_simple_mode_text")}</p>
                             <a href="/wizard" class="btn btn-lg bg-base-100 text-primary border-none hover:scale-105 transition-transform duration-300 gap-3 px-10">
-                                <Icon icon=ImMagicWand width="24" height="24" />
+                                <Icon icon=&ImMagicWand width="24" height="24" />
                                 {crate::t!(t, "start_wizard")}
                             </a>
                         </div>
@@ -100,7 +101,7 @@ pub fn DashboardView() -> impl IntoView {
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div class="stat bg-base-100 shadow-sm border border-base-200 rounded-2xl hover:shadow-md transition-shadow">
                             <div class="stat-figure text-primary/40">
-                                <Icon icon=LuClock width="32" height="32" />
+                                <Icon icon=&LuClock width="32" height="32" />
                             </div>
                             <div class="stat-title font-medium text-base-content/60">{crate::t!(t, "tasks")}</div>
                             <div class="stat-value text-primary font-black tracking-tight">
@@ -111,7 +112,7 @@ pub fn DashboardView() -> impl IntoView {
 
                         <div class="stat bg-base-100 shadow-sm border border-base-200 rounded-2xl hover:shadow-md transition-shadow">
                             <div class="stat-figure text-secondary/40">
-                                <Icon icon=LuMap width="32" height="32" />
+                                <Icon icon=&LuMap width="32" height="32" />
                             </div>
                             <div class="stat-title font-medium text-base-content/60">{crate::t!(t, "sites")}</div>
                             <div class="stat-value text-secondary font-black tracking-tight">
@@ -122,7 +123,7 @@ pub fn DashboardView() -> impl IntoView {
 
                         <div class="stat bg-base-100 shadow-sm border border-base-200 rounded-2xl hover:shadow-md transition-shadow">
                             <div class="stat-figure text-warning/40">
-                                <Icon icon=LuUsers width="32" height="32" />
+                                <Icon icon=&LuUsers width="32" height="32" />
                             </div>
                             <div class="stat-title font-medium text-base-content/60">{crate::t!(t, "users")}</div>
                             <div class="stat-value text-warning font-black tracking-tight">
@@ -133,7 +134,7 @@ pub fn DashboardView() -> impl IntoView {
 
                         <div class="stat bg-base-100 shadow-sm border border-base-200 rounded-2xl hover:shadow-md transition-shadow">
                             <div class="stat-figure text-info/40">
-                                <Icon icon=LuTractor width="32" height="32" />
+                                <Icon icon=&LuTractor width="32" height="32" />
                             </div>
                             <div class="stat-title font-medium text-base-content/60">{crate::t!(t, "nav_equipment")}</div>
                             <div class="stat-value text-info font-black tracking-tight">
@@ -153,14 +154,14 @@ pub fn DashboardView() -> impl IntoView {
                                     </div>
                                     <div class="space-y-4">
                                         <div class="flex flex-col items-center justify-center py-12 opacity-30 gap-4">
-                                            <Icon icon=LuClipboardList width="64" height="64" />
+                                            <Icon icon=&LuClipboardList width="64" height="64" />
                                             <p class="text-sm font-medium italic">{crate::t!(t, "no_active_tasks")}</p>
                                         </div>
                                     </div>
                                     <div class="card-actions justify-end mt-4 border-t border-base-200 pt-4">
                                         <a href="/tasks" class="btn btn-ghost btn-sm gap-2">
                                             {crate::t!(t, "view_all")}
-                                            <Icon icon=LuChevronRight width="16" height="16" />
+                                            <Icon icon=&LuChevronRight width="16" height="16" />
                                         </a>
                                     </div>
                                 </div>
@@ -206,7 +207,7 @@ pub fn DashboardView() -> impl IntoView {
                                         <div>
                                             <div class="flex justify-between items-center opacity-60">
                                                 <div class="text-lg font-bold">{crate::t!(t, "no_weather_data")}</div>
-                                                <Icon icon=LuCloudSun width="32" height="32" />
+                                                <Icon icon=&LuCloudSun width="32" height="32" />
                                             </div>
                                             <div class="divider opacity-10"></div>
                                             <p class="text-sm font-medium opacity-50">{crate::t!(t, "no_weather_stations")}</p>
@@ -221,14 +222,14 @@ pub fn DashboardView() -> impl IntoView {
                                     <h2 class="card-title text-xl font-bold mb-4">{crate::t!(t, "quick_actions")}</h2>
                                     <div class="grid grid-cols-1 gap-3 mt-2">
                                         <a href="/tasks" class="btn btn-primary btn-sm justify-start gap-3 rounded-xl h-10 shadow-sm border-none">
-                                            <Icon icon=LuPlus width="18" height="18" /> {crate::t!(t, "new_order_btn")}
+                                            <Icon icon=&LuPlus width="18" height="18" /> {crate::t!(t, "new_order_btn")}
                                         </a>
                                         <a href="/resources" class="btn btn-outline btn-sm justify-start gap-3 rounded-xl h-10">
-                                            <Icon icon=LuActivity width="18" height="18" /> {crate::t!(t, "issue_report")}
+                                            <Icon icon=&LuActivity width="18" height="18" /> {crate::t!(t, "issue_report")}
                                         </a>
                                         <Show when=move || user_role.get() == crate::UserRole::Admin || user_role.get() == crate::UserRole::Manager>
                                             <a href="/users" class="btn btn-outline btn-info btn-sm justify-start gap-3 rounded-xl h-10">
-                                                <Icon icon=LuUsers width="18" height="18" /> {crate::t!(t, "nav_users")}
+                                                <Icon icon=&LuUsers width="18" height="18" /> {crate::t!(t, "nav_users")}
                                             </a>
                                         </Show>
                                     </div>

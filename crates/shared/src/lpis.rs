@@ -376,6 +376,29 @@ pub struct LpisProviderConfig {
     pub rate_limit_requests_per_second: u32,
     pub rate_limit_burst_size: u32,
     pub enabled: bool,
+    /// Optional authentication credentials for the provider.
+    /// When present, these override any built-in defaults.
+    #[serde(default)]
+    pub auth: Option<LpisProviderAuth>,
+}
+
+/// Authentication credentials for an LPIS provider.
+///
+/// Stored encrypted in the database; the API returns only a masked indicator.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct LpisProviderAuth {
+    /// API key or token for header-based authentication.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub api_key: Option<String>,
+    /// Username for basic authentication.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub username: Option<String>,
+    /// Password for basic authentication.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
+    /// Bearer token for OAuth-style authentication.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bearer_token: Option<String>,
 }
 
 impl Default for LpisProviderConfig {
@@ -387,6 +410,7 @@ impl Default for LpisProviderConfig {
             rate_limit_requests_per_second: 10,
             rate_limit_burst_size: 20,
             enabled: true,
+            auth: None,
         }
     }
 }

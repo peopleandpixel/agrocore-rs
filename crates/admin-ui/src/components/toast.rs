@@ -1,6 +1,6 @@
-use icondata::*;
+use icondata_lu::*;
 use leptos::prelude::*;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 use uuid::Uuid;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -81,7 +81,7 @@ pub fn ToastContainer() -> impl IntoView {
                             <Icon icon=icon width="20" height="20" />
                             <span class="flex-1 text-sm font-medium">{toast.message}</span>
                             <button class="btn btn-ghost btn-xs btn-circle" on:click=move |_| remove.run(id)>
-                                <Icon icon=LuX width="16" height="16" />
+                                <Icon icon=&LuX width="16" height="16" />
                             </button>
                         </div>
                     }

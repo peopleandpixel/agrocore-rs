@@ -1,0 +1,1733 @@
+orders_load_failed: Não foi possível carregar a lista de tarefas
+retry: Tentar novamente
+no_orders_yet: Ainda não há tarefas
+setup_title: Configuração Inicial
+admin_password: Senha do Administrador
+password_requirements: Pelo menos 12 caracteres com maiúscula, minúscula, número e caractere especial
+password_confirm: Confirmar Senha
+password_mismatch: As senhas não coincidem
+tenant_name: Nome da Organização
+tenant_slug: 'Identificador (ex: minha-fazenda)'
+finish_setup: Concluir Configuração
+continue: Continuar
+back: Voltar
+wizard_language: Idioma do assistente
+setup_step_admin: Admin
+setup_step_tenant: Empresa
+setup_step_company: Empresa
+site_created: Recursos
+site_deleted: Site eliminado com sucesso
+site_updated: Site atualizado com sucesso
+edit_site: Editar site
+edit_site_title: Editar site
+delete_site: Eliminar site
+delete_polygon: Eliminar polígono
+redraw_polygon: Redesenha polígono
+edit_polygon_hint: Arraste os vértices para editar a forma. Duplo clique num vértice para eliminá-lo.
+setup_complete: Configuração concluída com sucesso
+order_created: Ordem criada com sucesso
+order_deleted: Ordem eliminada com sucesso
+order_updated: Ordem atualizada com sucesso
+assign_workers: Atribuir trabalhadores
+more_tasks: mais tarefas
+app_title: AgroCore Admin
+nav_my_tasks: My Tasks
+audit_desc: Track all changes in the system.
+timestamp: Timestamp
+entity: Entity
+action: Action
+user: User
+changes: Changes
+manage_sites_desc: Manage your sites.
+add_site_btn: Add Site
+name: Name
+crop: Crop
+area: Area
+active: Active
+inactive: Inactive
+add_new_site: Add New Site
+site_type_vineyard: Vineyard
+site_type_field: Field
+site_type_cork_oak_montado: Cork Oak Montado
+site_type_holm_oak_montado: Holm Oak Montado
+site_type_olive_grove: Olive Grove
+site_type_orchard: Orchard
+site_type_almond_orchard: Almond Orchard
+site_type_citrus_grove: Citrus Grove
+site_type_pasture: Pasture
+site_type_greenhouse: Greenhouse
+site_type_other: Other
+crop_type_grape: Grape
+crop_type_olive: Olive
+crop_type_grain: Grain
+group_herd: Rebanho
+group_grove: Grupo de árvores
+group_coop: Galinheiro
+group_building: Edifício
+livestock_goat: Cabra
+livestock_chicken: Frango
+livestock_sheep: Ovelha
+livestock_cattle: Gado
+tree_cork_oak: Sobreiro
+crop_type_other: Other
+variety: Variety
+draw_area: Draw Area
+validation_draw_polygon: Please draw a polygon area first.
+validation_site_label: Please provide a site name.
+drawing_mode_on: Desenho ativado
+drawing_mode_off: Desenho desativado
+maximize_window: Maximizar janela
+restore_window: Restaurar janela
+drawing_mode_hint: Click the pencil button to enable drawing mode, then click on the map to draw your area.
+finish_polygon: Finalizar área
+cancel_drawing: Cancelar desenho
+users_desc: Manage team members and their access permissions.
+role_permissions: Role Permissions
+invite_user: Create User
+role: Role
+last_login: Last Login
+role_superadmin: Super Admin
+role_admin: Admin
+role_manager: Manager
+role_worker: Worker
+role_viewer: Viewer
+edit_user: Edit User
+role_permissions_overview: Roles and Permissions Overview
+role_permissions_desc: Each role has defined permissions. Permissions cannot be assigned individually - only the user role.
+role_admin_desc: Full access to all areas and user management
+role_manager_desc: Management without user permissions
+role_worker_desc: Input and view of own data
+role_viewer_desc: Read-only access
+impersonate: Impersonate
+cannot_delete_self: Cannot delete your own account
+cannot_delete_last_admin: Cannot delete the last admin
+impersonating_as: Impersonating as
+unknown_user: Usuário desconhecido
+stop_impersonation: Stop Impersonation
+just_now: Agora mesmo
+one_minute_ago: 1 minuto atrás
+minutes_ago: minutos atrás
+one_hour_ago: 1 hora atrás
+hours_ago: horas atrás
+one_day_ago: 1 dia atrás
+days_ago: dias atrás
+one_week_ago: 1 semana atrás
+weeks_ago: semanas atrás
+one_month_ago: 1 mês atrás
+months_ago: meses atrás
+one_year_ago: 1 ano atrás
+years_ago: anos atrás
+permissions_all: create, read, update, delete
+permissions_read_update: create, read, update
+permissions_read_create: create, read
+permissions_read: read
+permissions_none: none
+new_application: New Application
+balance: Balance
+finance_quicklink: Finance Quicklink
+finance_quicklink_desc: Quickly record new income or expenses.
+create_booking: Create Booking
+last_financial_records: Last Financial Records
+no_financial_records: No financial records yet.
+create_pac_application_title: Create PAC Application
+date: Date
+amount: Amount
+worker_map_osm: Worker Map (OSM)
+in_task: In Task
+ready_idle: Ready / Idle
+worker: Worker
+position: Position
+last_reported: Last reported
+organic: Organic
+haccp: HACCP
+close: Close
+setup_admin_title: Conta de administrador
+setup_tenant_title: Criar primeira empresa
+setup_company_title: Detalhes da empresa
+company_name: Nome da empresa
+company_address: Endereço da empresa
+company_country: País
+company_email: E-mail da empresa
+company_phone: Telefone da empresa
+setup_resources_title: Recursos iniciais
+optional_label: opcional
+setup_resource_type: Tipo de campo
+setup_equipment: Equipamento
+setup_first_machine: Primeira máquina
+redirecting: A redirecionar...
+dashboard: Painel
+sites: Locais
+tasks: Tarefas
+users: Usuários
+settings: Configurações
+first_name: Nome
+last_name: Sobrenome
+email: E-mail
+password: Palavra-passe
+company_profile: Perfil da empresa
+tax_id: NIF / IVA
+office_email: E-mail da sede
+international_phone: Telefone internacional
+address: Endereço
+website: Site
+country: País
+update_profile: Atualizar perfil
+display_and_language: Exibição e idioma
+system_language: Idioma do sistema
+language_de: Deutsch
+language_en: English
+language_es: Español
+language_fr: Français
+language_pt: Português
+timezone: Fuso horário
+timezone_europe_berlin: Europa/Berlim (UTC+2)
+timezone_utc: UTC
+system_status: Estado do sistema
+api_connection: Ligação API
+online: Online
+database: Base de dados
+connected: Ligada
+version: Versão
+uptime: Tempo ativo
+export_system_log: Exportar registo do sistema
+danger_zone: Zona de risco
+danger_zone_desc: Estas ações não podem ser desfeitas.
+export_all_data: Exportar todos os dados
+delete_tenant: Eliminar tenant
+profile_saved: Perfil guardado no servidor.
+time: Hora
+initialized: Inicializado
+mode_full: Full View
+mode_simple: Simple View
+wizard_tasks: What would you like to do?
+start_wizard: Start Wizard
+task_planting: Plan Planting
+task_harvest: Record Harvest
+task_protection: Crop Protection
+livestock_management: Livestock Management
+weather_and_phenology: Weather & Phenology
+finance_and_pac: Finance & PAC
+equipment_management: Equipment Management
+analytics_and_predictions: Analytics & Predictions
+site_management: Site Management
+order_management: Order Management
+add_animal: Add Animal
+add_equipment: Add Equipment
+record_treatment: Record Treatment
+record_finance: Record Finance
+weather_current: Current Weather
+weather_stations: Weather Stations
+phenology: Phenology
+pac_applications: PAC Applications
+cost_centers: Cost Centers
+financial_records: Financial Records
+theme_light: Light
+theme_dark: Dark
+theme_toggle: Toggle Theme
+validation_required: Please fill in all required fields.
+validation_invalid_slug: Please enter a valid slug.
+starting_setup: Starting setup...
+first_machine_placeholder: Optional machine name
+new_order_btn: New Order
+new_order_form: Create Order
+order_type: Order type
+order_type_plant_protection: Proteção das culturas
+order_type_fertilization: Fertilização
+order_type_pruning: Poda
+order_type_harvest: Colheita
+order_type_soil_work: Trabalho do solo
+order_type_irrigation: Irrigação
+order_type_monitoring: Monitorização
+order_type_livestock_feeding: Alimentação
+order_type_livestock_watering: Abastecimento de água
+order_type_livestock_relocation: Transferência
+order_type_livestock_health_check: Controlo de saúde
+order_type_barn_cleaning: Limpeza do estábulo
+order_type_egg_collection: Recolha de ovos
+order_type_shearing: Tosquia
+order_type_milking: Ordenha
+description: Description
+actions: Actions
+status: Status
+site: Site
+choose_site: Escolher um local
+choose_sites: Escolher locais
+choose_workers: Escolher trabalhadores
+cancel: Cancelar
+delete: Excluir
+delete_user: Excluir usuário
+delete_user_confirm: Tem certeza de que deseja excluir o seguinte usuário?
+delete_user_warning: Esta ação não pode ser desfeita.
+save: Save
+login_title: AgroCore Login
+login_subtitle: Sign in with the first admin account.
+sign_in: Sign in
+signing_in: Signing in...
+role_simulate: 'Simulate role:'
+nav_dashboard: Dashboard
+nav_wizard: Start Wizard
+nav_sites: Sites
+nav_tasks: Tasks
+nav_map: Map
+nav_groups: Grupos
+nav_trees: Árvores
+nav_buildings: Edifícios
+nav_plot_entities: Entidades do Campo
+nav_livestock: Livestock
+nav_weather: Weather
+nav_resources: Resources
+nav_equipment: Equipment
+nav_finance: Finance
+nav_analytics: Analytics
+nav_inventory: Inventário
+nav_audit: Audit Logs
+nav_compliance: Compliance
+nav_users: Usuários e Funções
+nav_roles: Funções e Permissões
+roles_overview: Visão geral de funções
+impersonation: Suplantação
+permissions_all_tenants: Todos os tenants
+permissions_tenant_users: Usuários do tenant
+role_permissions_note: Cada função define um conjunto de permissões. Os usuários podem ter múltiplas funções, e as permissões
+  individuais podem ser concedidas ou revogadas por usuário.
+role_superadmin_desc: Acesso completo ao sistema, pode gerir tenants
+nav_settings: Definições
+nav_types: Gestão de Tipos
+nav_grafana: Grafana
+type_management: Gestão de Tipos
+type_categories: Categorias de Tipos
+type_entries: Entradas de Tipos
+type_name: Nome
+type_code: Código
+type_description: Descrição
+type_parent: Tipo Pai
+type_is_active: Ativo
+create_type: Criar Tipo
+edit_type: Editar Tipo
+delete_type: Eliminar Tipo
+type_created: Tipo criado
+type_updated: Tipo atualizado
+type_deleted: Tipo eliminado
+name_code_required: Nome e código são obrigatórios
+name_required: Nome é obrigatório
+select_category_first: Selecione uma categoria primeiro
+no_types_found: Nenhum tipo encontrado
+select_category_to_start: Selecione uma categoria para começar
+search_categories: Pesquisar categorias
+select_category: Selecionar categoria
+select_unit: Selecionar unidade
+select_method: Selecionar método
+select_species: Selecionar espécie
+select_status: Selecionar estado
+theme: Theme
+logout: Logout
+nav_group_general: Geral
+nav_group_operations: Operações
+nav_group_nature: Natureza
+nav_group_resources: Recursos
+nav_group_finance: Finanças
+nav_group_administration: Administração
+nav_group_worker: Trabalhador
+not_found: 404 Not Found
+access_denied: Acesso negado
+access_denied_desc: Você não tem permissão para ver esta página. Entre em contato com seu administrador se achar que é um
+  erro.
+go_to_dashboard: Ir para o painel
+dashboard_welcome_prefix: Welcome to
+dashboard_tasks_desc: Registado atualmente
+dashboard_sites_desc: Parcelas disponíveis
+dashboard_users_desc: Guardado no sistema
+dashboard_equipment_desc: Entradas disponíveis
+active_tasks: Active tasks
+no_active_tasks: No active tasks.
+view_all: View all
+quick_actions: Quick actions
+issue_report: Report issue
+weather_forecast: Weather forecast
+no_weather_data: No weather data available.
+weather_no_external_data: Sem dados meteorológicos. Se não houver estação, usa-se o endereço da configuração para uma consulta
+  externa.
+weather_stations_title: Weather stations
+no_weather_stations: No weather stations available yet.
+phenology_title: Phenology
+observe: Observation
+last_report: Last report
+report_observation: Report observation
+observation_note: Note
+weather_current_data: Current weather data
+source: Source
+temperature: Temperature
+humidity: Humidity
+wind: Wind
+precipitation: Precipitation
+current_weather: Current weather
+station: Station
+loading: Loading...
+weather_observation_title: Registar observação BBCH
+weather_bbch_desc: Estádios BBCH atuais das suas culturas.
+resource_management: Resource management
+history: History
+add_inventory: Add inventory
+water_irrigation: Water & irrigation
+no_water_sensor: No irrigation sensors connected yet.
+workers: Workers
+in_use: In use
+hours_today: Hours today
+time_tracking_later: Time tracking will follow later.
+workers_in_system: Utilizadores no sistema
+inventory_stock: Inventory stock
+inventory_available: available equipment entries.
+livestock_total: Total herd
+animals_in_system: Animals in the system
+under_treatment: Under treatment
+grazing: On pasture
+treatment_from_data: Calculado a partir dos dados de tratamento.
+grazing_from_data: O estado de pastoreio segue os dados do animal.
+animal_list: Animal list
+id_name: ID / name
+species: Species
+last_action: Last action
+animal_actions: Actions
+add_animal_btn: Add animal
+add_treatment: Add treatment
+no_animal_selected: No animal selected.
+identifier: Identificador
+breed: Raça
+species_cattle: Bovino
+species_sheep: Ovelha
+species_goat: Cabra
+species_pig: Porco
+species_poultry: Aves
+species_horse: Cavalo
+compliance_certification: Compliance & certification
+export_report: Export report
+new_checklist: New checklist
+compliance_score: Compliance score
+open_actions: Open actions
+next_audit: Next audit
+certification_status: Certification status
+application_history: Plant protection history
+entry: Entry
+recorded: Recorded
+no_protection_entries: No plant protection entries yet.
+create_checklist: Create checklist
+due_date: Due date
+type: Type
+score_from_checks: Calculado com base nas inspeções.
+active_checks: Inspeções ativas
+analytics_title: Analytics & predictions
+harvest_prediction: Harvest prediction
+based_on_weather: Based on weather data and BBCH stage.
+confidence: Confidence
+start_simulation: Start simulation
+profitability: Profitability
+profitability_analysis: Analysis of margins per field.
+detail_report: Detail report
+material_calculation: Material calculation
+site_label: Site
+measure: Measure
+calculate_demand: Calculate demand
+forecast_reference: Merlot Block A
+operation_label: Operation
+wizard_livestock: Tratamento animal
+wizard_finance: Entrada financeira
+wizard_bbch: Observação BBCH
+wizard_title: What would you like to do?
+wizard_more_tasks: More tasks?
+wizard_start: Start
+wizard_livestock_desc: Document medical measures.
+wizard_finance_desc: Quickly record income or expenses.
+wizard_bbch_desc: Log current growth stages.
+setup_welcome: Bem-vindo ao AgroCore. Vamos configurar o seu sistema.
+setup_admin_desc: Crie o primeiro usuário administrador para esta instalação.
+setup_tenant_desc: A empresa representa a sua organização no sistema.
+setup_company_desc: Metadados opcionais da sua organização.
+setup_resources_desc: Defina um tipo inicial de campo para o espaço de trabalho.
+setup_admin_help: Use a primeira conta de administrador para concluir a configuração e gerir o sistema.
+setup_tenant_help: O identificador faz parte dos URLs e deve ser curto e estável.
+setup_company_help: Os dados da empresa são usados para contacto e integrações posteriores.
+setup_resources_help: Escolha os módulos que quer ativar desde o início.
+validation_required_company: Preencha o nome da empresa, o endereço e o país.
+validation_invalid_email: Please enter a valid email address.
+validation_invalid_phone: Please enter a valid international phone number.
+profile_saved_server: Perfil guardado no servidor.
+profile_save_failed: Falha ao guardar
+settings_tab_company: Empresa
+settings_tab_display: Exibição e Idioma
+settings_tab_lpis: Fornecedores LPIS
+settings_tab_status: Status do Sistema
+settings_tab_danger: Zona de Perigo
+lpis_provider_settings: Configuração do fornecedor LPIS
+lpis_provider_desc: Configure fornecedores LPIS para cada país. As alterações requerem reinício.
+base_url: URL base
+timeout_seconds: Tempo limite (s)
+cache_ttl_seconds: TTL do cache (s)
+rate_limit: Limite de taxa (req/s)
+enabled: Ativado
+save_lpis_settings: Guardar configuração LPIS
+default_inherited: Padrão (herdado)
+reset_to_default: Repor
+settings_server_stored: Estes valores são armazenados no servidor e aplicam-se a todo o tenant.
+settings_reload: Recarregar
+settings_restore_defaults: Repor tudo para valores padrão
+settings_loaded_failed: A configuração não pôde ser carregada
+settings_restored: Valores padrão restaurados
+system_log_title: Registro do sistema
+lpis_country_spain: Espanha (SIGPAC)
+lpis_country_netherlands: Países Baixos (BRP)
+lpis_country_france: França (RPG)
+lpis_country_portugal: Portugal (iLPIS)
+lpis_country_italy: Itália (SIAN)
+lpis_country_germany: Alemanha (LPIS)
+lpis_country_poland: Polônia (LPIS)
+lpis_country_austria: Áustria (INVEKOS)
+setting_saved: Guardado
+setting_reset: Reposto
+dashboard_simple_mode_text: Use os assistentes guiados para terminar tarefas complexas rapidamente.
+dashboard_weather_setup_address: O endereço da configuração é usado quando disponível.
+no_sensor_weather: No sensor available. The setup address is used when present.
+weather_no_site_for_observation: Não existe uma parcela disponível para a observação.
+resource_overview: Overview of water, energy, supplies, and staff.
+resource_assignments_desc: As atribuições são derivadas de tarefas e funções.
+manage_requirements: Manage legal requirements and certifications.
+next_audit_desc: A data será preenchida com dados de auditoria.
+certification_status_desc: Os certificados aparecem quando os dados de auditoria estiverem ligados.
+compliance_no_site_for_checklist: Não há uma parcela disponível para a lista de verificação.
+analytics_no_site_for_prediction: Não há uma parcela disponível para a previsão.
+analytics_no_site_for_calculation: Não há uma parcela disponível para o cálculo.
+profitability_chart_placeholder: '[Gráfico: rentabilidade por parcela]'
+wizard_explore: Select a section to be guided step by step.
+wizard_planting_desc: Plan the next planting on your sites.
+wizard_protection_desc: Document fertilization or crop protection.
+wizard_harvest_desc: Record harvest quantities and quality.
+language_it: Italiano
+language_pl: Polski
+language_ro: Română
+language_uk: Українська
+language_nl: Nederlands
+my_tasks: Minhas Tarefas
+start: Iniciar
+stop: Parar
+complete: Concluir
+import_title: Importação de Dados
+import_desc: Importar parcels de arquivos GeoJSON ou Shapefile.
+import_geojson: Importar GeoJSON
+import_shapefile: Importar Shapefile
+upload_geojson: Carregar arquivo GeoJSON
+upload_shapefile: Carregar Shapefile (ZIP)
+drag_drop_geojson: Arraste e solte o arquivo GeoJSON aqui, ou clique para navegar
+drag_drop_shapefile: Arraste e solte Shapefile (ZIP) aqui, ou clique para navegar
+skip_duplicates: Ignorar duplicatas
+update_existing: Atualizar parcelas existentes
+validate_lpis: Validar contra LPIS (referência SIGPAC)
+import_result: Resultado do Importe
+import_total: Total
+import_created: Criados
+import_updated: Atualizados
+import_skipped: Ignorados
+import_errors: Erros
+import_warnings: Avisos
+import_duplicate_ids: IDs duplicados
+import_error: Erro
+import_warning: Aviso
+validation_failed: Validação falhou
+select_file: Selecionar arquivo
+browse_files: Navegar arquivos
+import_options: Opções de importação
+import_button: Importar
+import_in_progress: Importando...
+import_success: Importação concluída com sucesso
+duplicate_detected: Duplicata detectada
+lpis_validation: Validação LPIS
+area_difference: Diferença de área
+boundary_difference: Diferença de limite
+validation_passed: Validação aprovada
+validation_failed_lpis: Validação LPIS falhou
+parcel_detail: Detalhes da parcela
+source_dataset: Conjunto de dados
+source_year: Ano de origem
+official_area: Área oficial
+usage_code: Código de uso
+usage_description: Descrição de uso
+nav_import: Importar
+nav_sigpac: SIGPAC
+select_geojson: Selecionar arquivo GeoJSON
+select_shapefile: Selecionar Shapefile (ZIP)
+search_filter: Pesquisar e Filtrar
+search: Pesquisar
+all_types: Todos os Tipos
+in_usage: Em Uso
+needs_maintenance: Precisa de Manutenção
+clear_filters: Limpar Filtros
+maintenance_hours: Horas de Operação
+next_maintenance: Próxima Manutenção
+maintenance_due: Manutenção Pendente
+no_deadline: Sem prazo
+wrench: Manutenção
+record_maintenance: Registrar Manutenção
+hours: Horas
+note: Nota
+performed_at: Realizado em
+total_cost: Custo Total (EUR)
+none: Nenhum
+true: Sim
+false: Não
+equipment_detail: Detalhes do Equipamento
+basic_info: Informação Básica
+maintenance_info: Informação de Manutenção
+maintenance_history: Histórico de Manutenção
+no_maintenance_records: Nenhum registro de manutenção encontrado
+maintenance_recorded_success: Manutenção registrada com sucesso
+invalid_equipment_id: ID de equipamento inválido
+equipment_not_found: Equipamento não encontrado
+maintenance_intervals: Intervalos de Manutenção
+days: Dias
+cost_summary: Resumo de Custos de Manutenção
+parts_cost: Custo de Peças (EUR)
+labor_hours: Horas de Trabalho
+downtime_hours: Tempo de Inatividade (horas)
+total_maintenance_count: Ações de Manutenção Total
+cost_summary_loading: Carregando resumo de custos...
+usage_logging: Registro de Uso
+usage_worker: Trabalhador
+usage_task: Tarefa
+usage_operation: Operação
+usage_started_at: Hora de início
+usage_ended_at: Hora de término
+usage_hours_operated: Horas operacionais
+usage_recorded_at: Registrado em
+record_usage: Registrar uso
+usage_total_hours: Horas totais
+usage_total_sessions: Total de sessões
+usage_avg_hours: Horas médias por sessão
+usage_first_used: Primeiro uso
+usage_last_used: Último uso
+no_usage_records: Nenhum registro de uso encontrado.
+usage_summary_loading: Carregando resumo de uso...
+depreciation: Depreciação
+depreciation_loading: Carregando depreciação...
+cost_basis: Custo base
+salvage_value: Valor residual
+accumulated_depreciation: Depreciação acumulada
+net_book_value: Valor líquido
+annual_depreciation: Depreciação anual
+useful_life_years: Vida útil
+depreciation_year: Ano
+depreciation_method: Método
+no_depreciation_records: Nenhum registro de depreciação encontrado.
+tree_count: Quantidade
+tree_label: Rótulo
+tree_type: Tipo
+plot_id_field: ID do talhão
+btn_add: Adicionar
+btn_save: Guardar
+btn_delete: Eliminar
+btn_cancel: Cancelar
+no_records: Ainda sem registos
+field_required: Este campo é obrigatório
+invalid_uuid: UUID inválido
+parent_group: Grupo principal
+none_label: Nenhum
+delete_failed: Falha ao eliminar
+save_failed: Falha ao guardar
+cork_oak: Sobreiro
+olive: Oliveira
+almond: Amendoeira
+other_label: Outro
+herd: Rebanho
+grove_group: Pomar
+coop_group: Capela
+barn_type: Celeiro
+coop_type: Capela
+other_building: Outro
+plot_subentity_title: Resumo do talhão
+plot_choose: Escolher talhão
+plot_choose_hint: Escolha um talhão para ver grupos, árvores e edifícios
+plot_subentity_kind: Tipo
+kind_group: Grupo
+kind_tree: Árvore
+kind_building: Edifício
+edit_label: Editar
+kind_animal: Animal
+animal_species: Espécie
+animal_birth_date: Data de nascimento
+animal_identifier: Identificador
+animal_breed: Raça
+animal_status: Estado
+goat: Cabra
+sheep: Ovelha
+cattle: Bovino
+pig: Porco
+horse: Cavalo
+chicken: Galinha
+duck: Pato
+turkey: Peru
+goose: Gans
+grape: Uva
+crop_olive: Oliveira
+apple: Maçã
+citrus: Cítricos
+vegetable: Hortaliça
+nut: Noz
+crop_cork_oak: Sobreiro
+crop_almond: Amendoeira
+hazelnut: Avelã
+chestnut: Castanha
+berry: Fruto silvestre
+tropical: Tropical
+poultry: Aves
+livestock: Gado
+fallow: Falha
+forest: Floresta
+pasture: Pastagem
+grain: Cereal
+tool_nutrition_demand: Necessidade de nutrientes
+tool_fertilizer_amount: Quantidade de fertilizante
+tool_nutrition_balance: Balanço de nutrientes
+tool_water_rate: Taxa de aplicação de água
+tool_material: Quantidade de material
+tool_crown_volume: Volume da copa
+tool_forage: Necessidade de forragem
+tool_nitrogen: Necessidade de azoto
+tool_difficulty: Acréscimo de dificuldade
+tool_profitability: Rentabilidade
+tool_harvest_estimation: Estimativa de colheita
+tool_workflow: Seguimento de fluxo
+tool_weather_fetch: Obter meteorologia
+calc_section_general: Geral
+calc_section_nutrition: Nutrição
+calc_section_water: Água
+calc_section_cost: Custo
+calc_run: Calcular
+calc_result: Resultado
+avg_temperature: Temperatura média
+base_temperature: Temperatura base
+bbch_stage: Estádio BBCH
+current_stage: Estádio atual
+target_stage: Estádio alvo
+steep_slope: Encosta íngreme
+heavy_soil: Solo pesado
+narrow_lanes: Passagens estreitas
+material_method: Método de área
+speed_kmh: Velocidade (km/h)
+nozzle_flow: Caudal do bico (l/min)
+lane_width: Largura de faixa (m)
+nozzle_count: Número de bicos
+crown_diameter: Diâmetro da copa (m)
+tree_height: Altura da árvore (m)
+trees_per_ha: Árvores por hectare
+body_weight: Peso corporal (kg)
+demand_percent: Necessidade (% do peso)
+animal_count_field: Número de animais
+dose_per_ha: Dose por hectare
+yield_amount: Quantidade de colheita
+price_per_unit: Preço por unidade
+material_costs: Custos de material
+labor_costs: Custos de mão de obra
+machinery_costs: Custos de maquinaria
+latitude_field: Latitude
+longitude_field: Longitude
+nav_calculators: Calculadoras
+calc_tool: Ferramenta
+area_ha: Área (ha)
+expected_yield: Rendimento esperado
+demand_per_ha: Necessidade por hectare
+soil_n: Azoto do solo (N)
+soil_p: Fósforo do solo (P)
+soil_k: Potássio do solo (K)
+organic_matter: Matéria orgânica (%)
+base_rate: Tarifa base
+crop_type: Tipo de cultura
+not_implemented: Acessível pela API, ainda não ligado a este formulário
+crop_grape: Uva
+crop_apple: Maçã
+crop_citrus: Cítricos
+crop_vegetable: Hortaliça
+crop_nut: Noz
+crop_type_cork_oak: Sobreiro
+crop_type_olive_2: Oliveira
+crop_type_almond: Amendoeira
+crop_hazelnut: Avelã
+crop_chestnut: Castanha
+crop_berry: Fruto silvestre
+crop_tropical: Tropical
+crop_poultry: Aves
+crop_livestock: Gado
+crop_fallow: Falha
+crop_forest: Floresta
+crop_pasture: Pastagem
+crop_grain: Cereal
+crop_other: Outro
+crop_unknown: Desconhecido
+method_net_area: Área líquida
+method_gross_area: Área bruta
+method_leaf_wall_measured: Parede foliar (medida)
+method_leaf_wall_gross: Parede foliar (bruta)
+method_ground_protection: Proteção do solo
+method_herbicide_protection: Proteção com herbicida
+method_tree_crown_volume: Volume da copa
+calc_weather_providers: Fornecedores meteorológicos
+nav_work_logs: Registos de trabalho
+nav_worker_locations: Posições dos trabalhadores
+worker_id: ID do trabalhador
+log_date: Data
+hours_worked: Horas trabalhadas
+overtime_hours: Horas extra
+rest_hours: Horas de descanso
+task_description: Descrição da tarefa
+breaks_taken: Pausas
+night_shift: Turno da noite
+report_own_position: Comunicar a minha posição
+timestamp_2: Marca de tempo
+weather_warnings: Alertas meteorológicas
+frost_warning: Alerta de geada
+frost_warnings: Alertas de geada
+active_frost_warnings: Alertas de geada ativas
+no_active_warnings: Nenhum alerta ativo
+station_id: ID da estação
+threshold_temp: Limiar (°C)
+notify_email: Notificar por e-mail
+notify_sms: Notificar por SMS
+pest_risk: Risco de pragas
+pest_risks: Riscos de pragas
+risk_level: Nível de risco
+risk_low: Baixo
+risk_medium: Médio
+risk_high: Alto
+risk_critical: Crítico
+assessment_date: Data da avaliação
+pest_type: Tipo de praga
+confidence_2: Confiança
+recommended_action: Ação recomendada
+model_version: Versão do modelo
+applicator_licenses: Licenças de aplicador
+license_type: Tipo de licença
+license_number: Número da licença
+license_basic: Básico
+license_advanced: Avançado
+license_professional: Profissional
+issued_by: Emitida por
+valid_from: Válida a partir de
+valid_until: Válida até
+user_id: ID do utilizador
+nav_water: Água
+water_sources: Fontes de água
+water_source_type: Tipo de fonte
+water_capacity: Capacidade (m³)
+water_current_usage: Uso atual
+water_usage: Consumo de água
+water_source_id: ID da fonte
+water_volume: Volume (m³)
+irrigation_method: Método de rega
+efficiency_pct: Eficiência (%)
+usage_date: Data de consumo
+water_quotas: Quotas de água
+quota_year: Ano
+quota_allocated: Atribuído (m³)
+quota_used: Usado (m³)
+quota_remaining: Restante (m³)
+water_source_well: Poço
+water_source_reservoir: Represa
+water_source_river: Rio
+water_source_canal: Canal
+water_source_comunidad: Comunidade de regantes
+water_source_rainwater: Recolha de água da chuva
+water_source_desalination: Dessalinização
+irrigation_drip: Rega gota a gota
+irrigation_sprinkler: Aspersão
+irrigation_flood: Rega por inundação
+irrigation_pivot: Pivô
+irrigation_micro: Microaspersão
+irrigation_subsurface: Rega subterrânea
+nav_harvest: Colheita
+harvest_seasons: Saisons de colheita
+season_start: Data de início
+season_end: Data de fim
+harvest_lots: Lotes de colheita
+season_id: ID da estação
+lot_number: Número do lote
+site_ids: IDs de talhões (separados por vírgula)
+lot_variety: Variedade
+quality_target: Objetivo de qualidade
+lot_status: Estado
+lot_collecting: Em colheita
+lot_processed: Processado
+lot_shipped: Expedido
+lot_stored: Armazenado
+harvest_deliveries: Entregas
+lot_id: ID do lote
+delivery_date: Data de entrega
+gross_weight: Peso bruto (kg)
+tare_weight: Peso de Tara (kg)
+net_weight: Peso líquido (kg)
+total_weight: Peso total (kg)
+carrier_name: Transportador
+vehicle_id: ID do veículo
+delivery_temperature: Temperatura na entrega (°C)
+cold_chain: Cadeia fria
+sensor_id: ID do sensor
+recorded_at: Registado em
+temperature_field: Temperatura (°C)
+location_field: Localização
+nav_agriculture: Culturas especializadas
+olive_groves: Olivais
+olive_grove_id: ID do olival
+olive_oil_records: Registos de azeite
+olive_quantity: Quantidade (kg)
+olive_yield: Rendimento de azeite (kg)
+acidity_pct: Acidez (%)
+peroxide_value: Valor de peróxidos
+k232: K232
+k270: K270
+notes_field: Notas
+vineyards: Vinhedos
+vineyard_id: ID da vinha
+doc_area: Área DOC
+vintage: Vindima
+grape_variety: Variedade de uva
+brix: Brix
+ph: pH
+acidity: Acidez
+yield_tons: Rendimento (t)
+quality_grade: Nível de qualidade
+grade_reserva: Reserva
+grade_grande_reserva: Grande Reserva
+grade_garrafeira: Garrafeira
+grade_superior: Superior
+grade_classic: Clássico
+grade_late_harvest: Vindima tardia
+slope_percent: Inclinação (%)
+altitude_m: Altitude (m)
+is_organic: Biológico
+certification_body: Organismo certificador
+certification_number: Número de certificação
+planting_year: Ano de plantio
+spacing_m: Espaçamento (m)
+irrigation_type: Tipo de rega
+kelter_deliveries: Entregas na adega
+kelter_name: Nome da adega
+transport_company: Empresa de transporte
+tool_fertilizer_amount_legacy: Quantidade de fertilizante (rota antiga)
+tool_profitability_specialized: Rentabilidade (culturas especializadas)
+add_equipment_btn: Adicionar Equipamento
+add_worker: Adicionar Trabalhador
+all_items: Todos os Itens
+analytics: Análise
+available: Disponível
+below_minimum: Abaixo do Mínimo
+btn_add_item: Adicionar Item
+category: Categoria
+category_equipment: Equipamento
+category_feed: Ração
+category_fertilizer: Fertilizante
+category_fuel: Combustível
+category_herbicide: Herbicida
+category_medicine: Medicamento
+category_other: Outro
+category_pesticide: Pesticida
+category_seed: Semente
+category_spare_part: Peça Sobressalente
+clock_actions: Ações de Relógio
+clock_in: Registrar Entrada
+clock_out: Registrar Saída
+code: Código
+common.close_detail: Fechar
+common.n_a: N/A
+common.of: de
+common.page: Página
+common.refresh: Atualizar
+complete_order: Completar Pedido
+contract_type: Tipo de Contrato
+created_at: Criado em
+current_stock: Estoque Atual
+customer_id: ID do Cliente
+customer_management: Gestão de Clientes
+customer_number: Número do Cliente
+customer_orders: Pedidos do Cliente
+deadline: Prazo
+equipment: Equipamento
+equipment_type_harvester: Colhedora
+equipment_type_plow: Arado
+equipment_type_seeder: Semeadora
+equipment_type_sprayer: Pulverizador
+equipment_type_tractor: Trator
+equipment_type_trailer: Reboque
+finance: Finanças
+harvest_date: Data de Colheita
+hourly_rate: Taxa Horária
+humidity_pct: Umidade (%)
+invalid_task_id: ID de tarefa inválido
+inventory_method: Método de Inventário
+item_name: Nome do Item
+items_below_minimum: Itens Abaixo do Mínimo
+label: Rótulo
+location_code: Código de Localização
+location_name: Nome da Localização
+map_title: Mapa
+min_stock: Estoque Mínimo
+nav_workers: Trabalhadores
+no_customers_found: Nenhum cliente encontrado
+no_rate: Sem Taxa
+no_tasks_assigned: Nenhuma tarefa atribuída
+no_tasks_desc: Nenhuma tarefa foi criada ainda.
+order_completed_success: Pedido concluído com sucesso
+orders: Pedidos
+order_started_success: Pedido iniciado com sucesso
+planned_date: Data Planejada
+search_by_name: Pesquisar por nome
+search_by_number: Pesquisar por número
+search_customers: Pesquisar Clientes
+sigpac.aggregate: Agrupar
+sigpac.area_hectares: Área (hectares)
+sigpac.enclosure: Cercamento
+sigpac.filters: Filtros
+sigpac.latitude: Latitude
+sigpac.longitude: Longitude
+sigpac.municipality: Município
+sigpac.no_results: Nenhum resultado encontrado
+sigpac.official_area_ha: Área Oficial (ha)
+sigpac.parcel: Parcela
+sigpac.parcel_detail: Detalhe da Parcela
+sigpac.per_page: Por Página
+sigpac.polygon: Polígono
+sigpac.province: Província
+sigpac.radius_meters: Raio (metros)
+sigpac.results: Resultados
+sigpac.search_near_point: Pesquisar Perto do Ponto
+sigpac.sigpac_reference: Referência SIGPAC
+sigpac.spatial_search: Pesquisa Espacial
+sigpac.subtitle: Pesquisa de registro de parcelas
+sigpac.title: Registro de Parcelas
+sigpac.zone: Zona
+start_order: Iniciar Pedido
+start_task: Iniciar Tarefa
+stop_task: Parar Tarefa
+storage_locations: Locais de Armazenamento
+task_detail: Detalhe da Tarefa
+task_done: Tarefa Concluída
+task_load_failed: As tarefas não puderam ser carregadas
+task_pending: Pendente
+task_started_success: Tarefa iniciada com sucesso
+task_stopped: Tarefa Parada
+task_stopped_success: Tarefa parada com sucesso
+task_type: Tipo de Tarefa
+tenant: Inquilino
+unit: Unidade
+updated_at: Atualizado em
+view_details: Ver Detalhes
+view_orders: Ver Pedidos
+view_tasks: Ver Tarefas
+worker_tasks_desc: Gerenciar tarefas e atribuições de trabalhadores
+filter_all: Todos
+no_results: Nenhum resultado encontrado
+add: Adicionar
+animal_species_gefluegel: Geflügel
+animal_species_goat: Goat
+animal_species_sheep: Sheep
+animal_species_cattle: Cattle
+animal_species_pig: Pig
+animal_species_horse: Horse
+animal_species_chicken: Chicken
+animal_species_duck: Duck
+animal_species_turkey: Turkey
+animal_species_goose: Goose
+site_type_corkOakMontado: Cork Oak Montado
+site_type_holmOakMontado: Holm Oak Montado
+site_type_oliveGrove: Olive Grove
+site_type_almondOrchard: Almond Orchard
+site_type_citrusGrove: Citrus Grove
+crop_type_apple: Apple
+crop_type_citrus: Citrus
+crop_type_nut: Nut
+crop_type_corkOak: Cork Oak
+crop_type_hazelnut: Hazelnut
+crop_type_chestnut: Chestnut
+crop_type_berry: Berry
+crop_type_tropical: Tropical
+crop_type_poultry: Poultry
+crop_type_livestock: Livestock
+crop_type_fallow: Fallow
+crop_type_forest: Forest
+crop_type_unknown: Unknown
+order_type_plantProtection: Plant Protection
+order_type_soilWork: Soil Work
+order_type_livestockFeeding: Livestock Feeding
+order_type_livestockWatering: Livestock Watering
+order_type_livestockRelocation: Livestock Relocation
+order_type_livestockHealthCheck: Livestock Health Check
+order_type_barnCleaning: Barn Cleaning
+order_type_eggCollection: Egg Collection
+order_type_salesOrder: Sales Order
+order_status_draft: Draft
+order_status_planned: Planned
+order_status_inProgress: In Progress
+order_status_completed: Completed
+order_status_cancelled: Cancelled
+equipment_type_mulcher: Mulcher
+equipment_type_tool: Tool
+building_type_chickenCoop: Chicken Coop
+building_type_goatStable: Goat Stable
+building_type_barn: Barn
+group_type_herd: Herd
+group_type_flock: Flock
+group_type_grove: Grove
+group_type_coop: Coop
+water_source_type_well: Well
+water_source_type_reservoir: Reservoir
+water_source_type_river: River
+water_source_type_canal: Canal
+water_source_type_comunidadDeRegantes: Comunidad De Regantes
+water_source_type_rainwaterHarvesting: Rainwater Harvesting
+water_source_type_desalination: Desalination
+irrigation_method_drip: Drip
+irrigation_method_sprinkler: Sprinkler
+irrigation_method_flood: Flood
+irrigation_method_pivot: Pivot
+irrigation_method_microSprinkler: Micro Sprinkler
+irrigation_method_subsurface: Subsurface
+animal_status_active: Active
+animal_status_inactive: Inactive
+animal_status_sold: Sold
+animal_status_deceased: Deceased
+weather_station_type_iot: IoT
+weather_station_type_manual: Manual
+weather_station_type_virtual: Virtual
+weather_station_type_externalApi: External API
+inventory_category_seed: Seed
+inventory_category_fertilizer: Fertilizer
+inventory_category_pesticide: Pesticide
+inventory_category_herbicide: Herbicide
+inventory_category_fuel: Fuel
+inventory_category_feed: Feed
+inventory_category_medicine: Medicine
+inventory_category_sparePart: Spare Part
+inventory_category_equipment: Equipment
+unit_of_measure_kg: Kilogram
+unit_of_measure_liter: Liter
+unit_of_measure_bag: Bag
+unit_of_measure_unit: Unit
+unit_of_measure_box: Box
+unit_of_measure_bale: Bale
+oil_grade_extraVirgin: Extra Virgin
+oil_grade_virgin: Virgin
+oil_grade_lampante: Lampante
+oil_grade_refined: Refined
+oil_grade_pomace: Pomace
+quality_grade_reserva: Reserva
+quality_grade_grandeReserva: Grande Reserva
+quality_grade_garrafeira: Garrafeira
+quality_grade_superior: Superior
+quality_grade_classic: Classic
+quality_grade_lateHarvest: Late Harvest
+doc_area_douro: Douro
+doc_area_alentejo: Alentejo
+doc_area_vinhoVerde: Vinho Verde
+doc_area_dao: Dão
+doc_area_bairrada: Bairrada
+doc_area_lisboa: Lisboa
+doc_area_peninsulaDeSetubal: Península de Setúbal
+doc_area_algarve: Algarve
+doc_area_tejo: Tejo
+doc_area_minho: Minho
+doc_area_trasmontes: Trasmontes
+bbch_stage_dormancy: Dormancy
+bbch_stage_budSwelling: Bud Swelling
+bbch_stage_woolStage: Wool Stage
+bbch_stage_budBreak: Bud Break
+bbch_stage_firstLeaf: First Leaf
+bbch_stage_leafDevelopment: Leaf Development
+bbch_stage_inflorescenceVisible: Inflorescence Visible
+bbch_stage_inflorescenceFullyDeveloped: Inflorescence Fully Developed
+bbch_stage_floweringBegins: Flowering Begins
+bbch_stage_floweringEnds: Flowering Ends
+bbch_stage_fruitSet: Fruit Set
+bbch_stage_peaSizeBerries: Pea Size Berries
+bbch_stage_berriesTouching: Berries Touching
+bbch_stage_veraisonBegins: Veraison Begins
+bbch_stage_berriesRipe: Berries Ripe
+bbch_stage_afterHarvest: After Harvest
+bbch_stage_winterDormancy: Winter Dormancy
+spatial_object_type_farm: Farm
+spatial_object_type_site: Site
+spatial_object_type_building: Building
+spatial_object_type_stable: Stable
+spatial_object_type_shed: Shed
+spatial_object_type_pen: Pen
+spatial_object_type_tree: Tree
+spatial_object_type_oliveTree: Olive Tree
+spatial_object_type_waterPoint: Water Point
+spatial_object_type_fence: Fence
+variety_category_vegetable: Vegetable
+checklist_type_gap: GAP
+checklist_type_organic: Organic
+checklist_type_globalGAP: GlobalGAP
+checklist_type_haccp: HACCP
+compliance_status_pending: Pending
+compliance_status_failed: Failed
+compliance_status_expired: Expired
+audit_action_created: Created
+audit_action_updated: Updated
+audit_action_deleted: Deleted
+audit_action_viewed: Viewed
+audit_action_exported: Exported
+audit_action_approved: Approved
+audit_action_rejected: Rejected
+pac_status_submitted: Submitted
+pac_status_inReview: In Review
+pac_status_paid: Paid
+cost_center_type_crop: Crop
+cost_center_type_activity: Activity
+cost_center_type_general: General
+financial_record_type_expense: Expense
+financial_record_type_income: Income
+financial_record_type_subsidy: Subsidy
+contract_type_permanent: Permanent
+contract_type_temporary: Temporary
+contract_type_seasonal: Seasonal
+contract_type_freelance: Freelance
+contract_type_apprenticeship: Apprenticeship
+clock_entry_type_clockIn: Clock In
+clock_entry_type_clockOut: Clock Out
+lot_status_collecting: Collecting
+lot_status_processed: Processed
+lot_status_shipped: Shipped
+lot_status_stored: Stored
+plant_protection_area_method_netArea: Net Area
+plant_protection_area_method_grossArea: Gross Area
+plant_protection_area_method_leafWallMeasured: Leaf Wall Measured
+plant_protection_area_method_leafWallGross: Leaf Wall Gross
+plant_protection_area_method_groundProtection: Ground Protection
+plant_protection_area_method_herbicideProtection: Herbicide Protection
+plant_protection_area_method_treeCrownVolume: Tree Crown Volume
+task_execution_mode_autoPresence: Auto Presence
+task_execution_mode_manualWithDefaultDuration: Manual with Default Duration
+recurrence_cadence_hourly: Hourly
+recurrence_cadence_daily: Daily
+recurrence_cadence_weekly: Weekly
+recurrence_cadence_monthly: Monthly
+recurrence_cadence_yearly: Yearly
+sub_task_status_new: New
+sub_task_status_started: Started
+sub_task_status_paused: Paused
+sub_task_status_stopped: Stopped
+sub_task_status_done: Done
+depreciation_method_straightLine: Straight Line
+depreciation_method_doubleDeclining: Double Declining
+inventory_method_fifo: FIFO
+inventory_method_fefo: FIFO (Expired First)
+transaction_type_stockIn: Stock In
+transaction_type_stockOut: Stock Out
+transaction_type_transfer: Transfer
+transaction_type_adjustment: Adjustment
+risk_level_low: Low
+risk_level_medium: Medium
+risk_level_high: High
+risk_level_critical: Critical
+iot_device_type_weatherStation: Weather Station
+iot_device_type_soilSensor: Soil Sensor
+iot_device_type_soilMoistureProbe: Soil Moisture Probe
+iot_device_type_irrigationValve: Irrigation Valve
+iot_device_type_generic: Generic
+setting_value_type_string: String
+setting_value_type_number: Number
+setting_value_type_boolean: Boolean
+setting_value_type_json: JSON
+setting_value_type_array: Array
+sync_entity_type_order: Order
+sync_entity_type_task: Task
+sync_entity_type_taskData: Task Data
+sync_entity_type_animal: Animal
+sync_entity_type_weatherData: Weather Data
+sync_entity_type_harvestSeason: Harvest Season
+sync_entity_type_harvestLot: Harvest Lot
+sync_entity_type_harvestDelivery: Harvest Delivery
+sync_entity_type_coldChainLog: Cold Chain Log
+sync_entity_type_kelterDelivery: Kelter Delivery
+sync_entity_type_oliveOilRecord: Olive Oil Record
+sync_entity_type_waterSource: Water Source
+sync_entity_type_waterUsage: Water Usage
+sync_entity_type_waterQuota: Water Quota
+sync_entity_type_plantProtectionRecord: Plant Protection Record
+sync_entity_type_applicatorLicense: Applicator License
+sync_entity_type_fertilizerRecord: Fertilizer Record
+sync_entity_type_complianceChecklist: Compliance Checklist
+sync_entity_type_complianceItem: Compliance Item
+sync_entity_type_auditLog: Audit Log
+sync_entity_type_pacApplication: PAC Application
+sync_entity_type_costCenter: Cost Center
+sync_entity_type_financialRecord: Financial Record
+sync_entity_type_user: User
+sync_entity_type_worker: Worker
+sync_entity_type_workerLocation: Worker Location
+sync_entity_type_workLog: Work Log
+sync_entity_type_workerTaskStatus: Worker Task Status
+sync_entity_type_phenologyRecord: Phenology Record
+sync_entity_type_typeCategory: Type Category
+sync_entity_type_typeEntry: Type Entry
+sync_operation_create: Create
+sync_operation_update: Update
+sync_operation_delete: Delete
+conflict_type_concurrentModification: Concurrent Modification
+conflict_type_updateAfterDelete: Update After Delete
+conflict_type_duplicateCreate: Duplicate Create
+conflict_type_versionMismatch: Version Mismatch
+conflict_resolution_lastWriterWins: Last Writer Wins
+conflict_resolution_serverWins: Server Wins
+conflict_resolution_clientWins: Client Wins
+conflict_resolution_merge: Merge
+crop_type_wheat: Wheat
+crop_type_corn: Corn
+crop_type_rice: Rice
+crop_type_vegetables: Vegetables
+crop_type_fruit: Fruit
+inventory_category_seeds: Seeds
+inventory_category_fertilizers: Fertilizers
+inventory_category_plant_protection: Plant Protection
+unit_of_measure_meters: Meters
+unit_of_measure_pieces: Pieces
+unit_of_measure_hectoliters: Hectoliters
+inventory_method_average_cost: Average Cost
+water_source_type_rainwater: Rainwater
+water_source_type_municipal: Municipal
+irrigation_method_center_pivot: Center Pivot
+checklist_type_safety: Safety
+checklist_type_environmental: Environmental
+checklist_type_quality: Quality
+checklist_type_regulatory: Regulatory
+checklist_type_custom: Custom
+compliance_status_overdue: Overdue
+cost_center_type_production: Production
+cost_center_type_administration: Administration
+cost_center_type_sales: Sales
+lot_status_processing: Processing
+worker_task_status_type_in_progress: In Progress
+worker_task_status_type_resumed: Resumed
+animal_status_transferred: Transferred
+task_execution_mode_automatic: Automatic
+task_execution_mode_semi_automatic: Semi Automatic
+license_type_basic: Basic
+license_type_advanced: Advanced
+license_type_drone: Drone
+bbch_stage_scale0: Scale 0
+bbch_stage_scale1: Scale 1
+bbch_stage_scale2: Scale 2
+bbch_stage_scale3: Scale 3
+bbch_stage_scale4: Scale 4
+bbch_stage_scale5: Scale 5
+bbch_stage_scale6: Scale 6
+bbch_stage_scale7: Scale 7
+bbch_stage_scale8: Scale 8
+bbch_stage_scale9: Scale 9
+animal_species_rindvieh: Rindvieh
+animal_species_schafe: Schafe
+animal_species_ziegen: Ziegen
+animal_species_schweine: Schweine
+animal_species_gefluegel_eu: Geflügel
+animal_species_pferde: Pferde
+animal_species_milchvieh: Milchvieh
+animal_species_mastvieh: Mastvieh
+animal_species_milchschafe: Milchschafe
+animal_species_wollschafe: Wollschafe
+animal_species_fleischschafe: Fleischschafe
+animal_species_milchziegen: Milchziegen
+animal_species_fleischziegen: Fleischziegen
+animal_species_sauen: Sauen
+animal_species_mastschweine: Mastschweine
+animal_species_huhn: Huhn
+animal_species_ente: Ente
+animal_species_gans: Gans
+animal_species_truthahn: Truthahn
+animal_species_reitpferd: Reitpferd
+animal_species_zugpferd: Zugpferd
+animal_species_pony: Pony
+animal_species_bienen: Bienen
+animal_species_kaninchen: Kaninchen
+animal_species_fische: Fische
+crop_type_weinrebe: Weinrebe
+crop_type_weizen: Weizen
+crop_type_mais: Mais
+crop_type_gemuese: Gemüse
+crop_type_obst: Obst
+crop_type_nuesse: Nüsse
+crop_type_energiepflanzen: Energiepflanzen
+crop_type_rotwein: Rotwein
+crop_type_weisswein: Weißwein
+crop_type_rose: Rosé
+crop_type_winterweizen: Winterweizen
+crop_type_sommerweizen: Sommerweizen
+crop_type_dinkel: Dinkel
+crop_type_silomais: Silomais
+crop_type_koernermais: Körnermais
+crop_type_suessmais: Süßmais
+crop_type_salat: Salat
+crop_type_tomaten: Tomaten
+crop_type_karotten: Karotten
+crop_type_zwiebeln: Zwiebeln
+crop_type_aepfel: Äpfel
+crop_type_birnen: Birnen
+crop_type_kirschen: Kirschen
+crop_type_beeren: Beeren
+crop_type_mandeln: Mandeln
+crop_type_haselnuesse: Haselnüsse
+crop_type_walnuesse: Walnüsse
+crop_type_raps: Raps
+crop_type_miscanthus: Miscanthus
+crop_type_roggen: Roggen
+crop_type_gerste: Gerste
+crop_type_hafer: Hafer
+crop_type_kartoffel: Kartoffel
+crop_type_zuckerruebe: Zuckerrübe
+crop_type_sonnenblume: Sonnenblume
+crop_type_soja: Soja
+crop_type_luzerne: Luzerne
+crop_type_gras: Gras
+crop_type_ackerbohnen: Ackerbohnen
+crop_type_erbse: Erbse
+crop_type_oliven: Oliven
+crop_type_hopfen: Hopfen
+crop_type_flachs: Flachs
+site_type_obstgarten: Obstgarten
+site_type_acker: Acker
+site_type_gruenland: Grünland
+site_type_apfelgarten: Apfelgarten
+site_type_birnengarten: Birnengarten
+site_type_kirschgarten: Kirschgarten
+site_type_beerenplantage: Beerenplantage
+site_type_getreideacker: Getreideacker
+site_type_gemueseacker: Gemüseacker
+site_type_maisacker: Maisacker
+site_type_weide: Weide
+site_type_wiese: Wiese
+site_type_weinberg: Weinberg
+site_type_gewaechshaus: Gewächshaus
+site_type_hopfenfeld: Hopfenfeld
+site_type_olivenhain: Olivenhain
+site_type_nussplantage: Nussplantage
+site_type_forst: Forst
+site_type_brache: Brache
+site_type_hof: Hof
+site_type_stall: Stall
+site_type_teich: Teich
+site_type_bienenstand: Bienenstand
+equipment_type_traktor_eu: Traktor
+equipment_type_spritze: Spritze
+equipment_type_maehdrescher: Mähdrescher
+equipment_type_ballenpresse: Ballenpresse
+equipment_type_saeemaschine: Sämaschine
+equipment_type_bewaesserungsanlage: Bewässerungsanlage
+equipment_type_drohne: Drohne
+equipment_type_werkzeug: Werkzeug
+equipment_type_maehwerk: Mähwerk
+equipment_type_kleintraktor: Kleintraktor
+equipment_type_mitteltraktor: Mitteltraktor
+equipment_type_grosstraktor: Großtraktor
+equipment_type_feldspritze: Feldspritze
+equipment_type_rebspritze: Rebspritze
+equipment_type_traegerspritze: Trägerspritze
+equipment_type_spritze_drohne: Spritze Drohne
+equipment_type_getreidemaehdrescher: Getreidemähdrescher
+equipment_type_ruebemaehdrescher: Rübenmähdrescher
+equipment_type_rundballen: Rundballen
+equipment_type_quadratballen: Quadratballen
+equipment_type_getreidesaeemaschine: Getreidesämaschine
+equipment_type_rapsaeemaschine: Rapsämaschine
+equipment_type_tropfbewaesserung: Tropfbewässerung
+equipment_type_spruehdrohne: Sprühdrohne
+equipment_type_aufklaerungsdrohne: Aufklärungsdrohne
+equipment_type_handwerkzeug: Handwerkzeug
+equipment_type_elektrowerkzeug: Elektrowerkzeug
+equipment_type_sichelmaehrer: Sichelmäher
+equipment_type_rotormaehrer: Rotormäher
+equipment_type_scheibenmaehrer: Scheibenmäher
+equipment_type_heckenschere: Heckenschere
+equipment_type_pflug: Pflug
+equipment_type_grubber: Grubber
+equipment_type_kultivator: Kultivator
+equipment_type_duengerstreuer: Düngerstreuer
+equipment_type_guelleausbringungsgeraet: Gülleausbringungsgerät
+equipment_type_erntehelfer: Erntehelfer
+equipment_type_anhaenger: Anhänger
+equipment_type_lkw: LKW
+equipment_type_gabelstapler: Gabelstapler
+equipment_type_generator: Generator
+equipment_type_melkmaschine: Melkmaschine
+equipment_type_fuetterungsroboter: Fütterungsroboter
+equipment_type_strohballenhandler: Strohballenhandler
+equipment_type_frontlader: Frontlader
+equipment_type_ruecklader: Rücklader
+equipment_type_bagger: Bagger
+equipment_type_planiermaschine: Planiermaschine
+equipment_type_walze: Walze
+equipment_type_heuwender: Heuwender
+building_type_stall_eu: Stall
+building_type_silo: Silo
+building_type_kuhstall: Kuhstall
+building_type_schafstall: Schafstall
+building_type_ziegenstall: Ziegenstall
+building_type_schweinestall: Schweinestall
+building_type_pferdestall: Pferdestall
+building_type_getreidesilo: Getreidesilo
+building_type_silagesilo: Silagesilo
+building_type_huehnerstall: Hühnerstall
+building_type_scheune: Scheune
+building_type_maschinenhalle: Maschinenhalle
+building_type_lagerhalle: Lagerhalle
+building_type_verarbeitungsgebaeude: Verarbeitungsgebäude
+building_type_kelterei: Kelterei
+building_type_weinkeller: Weinkeller
+building_type_bienenhaus: Bienenhaus
+building_type_gewaechshaus_building: Gewächshaus
+building_type_fischteich: Fischteich
+building_type_duengerlager: Düngerlager
+building_type_pflanzenschutzlager: Pflanzenschutzlager
+order_type_pflanzenschutz: Pflanzenschutz
+order_type_duengen: Düngen
+order_type_beschneiden: Beschneiden
+order_type_ernten: Ernten
+order_type_bienen_order: Bienen
+order_type_fischerei: Fischerei
+order_type_fungizid: Fungizid
+order_type_insektizid: Insektizid
+order_type_herbizid: Herbizid
+order_type_akarizid: Akarizid
+order_type_stickstoff: Stickstoff
+order_type_phosphor: Phosphor
+order_type_kalium: Kalium
+order_type_guelle: Gülle
+order_type_kompost: Kompost
+order_type_winterschnitt: Winterschnitt
+order_type_sommerschnitt: Sommerschnitt
+order_type_getreide_ernte: Getreide Ernte
+order_type_kartoffel_ernte: Kartoffel Ernte
+order_type_obst_ernte: Obst Ernte
+order_type_wein_ernte: Wein Ernte
+order_type_oliven_ernte: Oliven Ernte
+order_type_honig_ernten: Honig ernten
+order_type_varroa_behandeln: Varroa behandeln
+order_type_fisch_fuettern: Fisch füttern
+order_type_fisch_ernten: Fisch ernten
+order_type_wasser_pruefen: Wasser prüfen
+order_type_pfluegen: Pflügen
+order_type_grubbern: Grubbern
+order_type_kultivieren: Kultivieren
+order_type_saen: Säen
+order_type_ranken: Ranken
+order_type_pfluecken: Pflücken
+order_type_heuen: Heuen
+order_type_silieren: Silieren
+order_type_bewaessern: Bewässern
+order_type_fuettern: Füttern
+order_type_traenken: Tränken
+order_type_melken: Melken
+order_type_stall_reinigen: Stall reinigen
+order_type_eier_sammeln: Eier sammeln
+order_type_scheren: Scheren
+order_type_gesundheit_pruefen: Gesundheit prüfen
+order_type_besamen: Besamen
+order_type_umstellen: Umstellen
+order_type_monitoring_order: Monitoring
+order_type_wartung: Wartung
+order_type_reparatur: Reparatur
+order_type_verkauf: Verkauf
+order_type_lieferung: Lieferung
+order_type_inventur: Inventur
+variety_category_weinrebe_variety: Weinrebe
+variety_category_beeren_variety: Beeren
+variety_category_rotweinsorte: Rotweinsorte
+variety_category_weissweinsorte: Weißweinsorte
+variety_category_erdbeere: Erdbeere
+variety_category_himbeere: Himbeere
+variety_category_brombeere: Brombeere
+variety_category_heidelbeere: Heidelbeere
+variety_category_oliven_variety: Oliven
+variety_category_weizen_variety: Weizen
+variety_category_roggen_variety: Roggen
+variety_category_gerste_variety: Gerste
+variety_category_mais_variety: Mais
+variety_category_kartoffel_variety: Kartoffel
+variety_category_aepfel_variety: Äpfel
+variety_category_birnen_variety: Birnen
+variety_category_kirschen_variety: Kirschen
+variety_category_zitrusfruechte: Zitrusfrüchte
+variety_category_nuesse_variety: Nüsse
+variety_category_gemuese_variety: Gemüse
+variety_category_getreide_variety: Getreide
+variety_category_huelsenfruechte: Hülsenfrüchte
+variety_category_oelfruechte: Ölfrüchte
+variety_category_faserpflanzen: Faserpflanzen
+variety_category_heilpflanzen: Heilpflanzen
+species_rind: Rind
+species_schaf: Schaf
+species_ziege: Ziege
+species_schwein: Schwein
+species_huhn_species: Huhn
+species_pferd: Pferd
+species_kaninchen_species: Kaninchen
+species_biene: Biene
+species_fisch: Fisch
+inventory_category_duengemittel: Düngemittel
+inventory_category_pflanzenschutz_inv: Pflanzenschutz
+inventory_category_kraftstoff: Kraftstoff
+inventory_category_futter: Futter
+inventory_category_mineralduenger: Mineraldünger
+inventory_category_organische_duenger: Organische Dünger
+inventory_category_fungizide: Fungizide
+inventory_category_insektizide: Insektizide
+inventory_category_herbizide: Herbizide
+inventory_category_diesel: Diesel
+inventory_category_benzin: Benzin
+inventory_category_adblue: AdBlue
+inventory_category_kraftfutter: Kraftfutter
+inventory_category_raufutter: Raufutter
+inventory_category_mineralfutter: Mineralfutter
+inventory_category_saatgut: Saatgut
+inventory_category_tiermedizin: Tiermedizin
+inventory_category_ersatzteile: Ersatzteile
+inventory_category_betriebsmittel: Betriebsmittel
+inventory_category_verpackungsmaterial: Verpackungsmaterial
+inventory_category_elektroartikel: Elektroartikel
+inventory_category_werkzeuge_inv: Werkzeuge
+inventory_category_sonstiges: Sonstiges
+soil_type_sandboden: Sandboden
+soil_type_lehmboden: Lehmboden
+soil_type_tonboden: Tonboden
+soil_type_kiesboden: Kiesboden
+soil_type_humusboden: Humusboden
+soil_type_margelboden: Mergelboden
+fertilizer_type_stickstoffduenger: Stickstoffdünger
+fertilizer_type_phosphorduenger: Phosphordünger
+fertilizer_type_kaliumduenger: Kaliumdünger
+fertilizer_type_vollduenger: Volldünger
+fertilizer_type_guelle_fert: Gülle
+fertilizer_type_mist: Mist
+fertilizer_type_kompost_fert: Kompost
+fertilizer_type_mineralduenger_fert: Mineraldünger
+fertilizer_type_organischer_duenger: Organischer Dünger
+fertilizer_type_blattduenger: Blattdünger
+pest_type_insekt: Insekt
+pest_type_pilz: Pilz
+pest_type_saeugetier_pest: Säugetier
+pest_type_blattlaus: Blattlaus
+pest_type_raupen: Raupen
+pest_type_kaefer: Käfer
+pest_type_mehltau: Mehltau
+pest_type_rost: Rost
+pest_type_botrytis: Botrytis
+pest_type_hasen: Hasen
+pest_type_rehe: Rehe
+pest_type_bakterie: Bakterie
+pest_type_virus: Virus
+pest_type_unkraut: Unkraut
+pest_type_nematode: Nematode
+pest_type_vogel: Vogel
+weather_condition_sonnig: Sonnig
+weather_condition_bewolkt: Bewölkt
+weather_condition_regen: Regen
+weather_condition_schnee: Schnee
+weather_condition_hagel: Hagel
+weather_condition_sturm: Sturm
+weather_condition_nebel: Nebel
+weather_condition_frost: Frost
+weather_condition_trockenheit: Trockenheit
+contract_type_festanstellung: Festanstellung
+contract_type_zeitarbeitsvertrag: Zeitarbeitsvertrag
+contract_type_saisonarbeitsvertrag: Saisonarbeitsvertrag
+contract_type_minijob: Minijob
+contract_type_aushilfe: Aushilfe
+depreciation_method_linear: Linear
+depreciation_method_degressiv: Degressiv
+depreciation_method_doppelte_degressiv: Doppelte degressiv
+depreciation_method_leistungsbezogen: Leistungsbezogen
+water_source_type_brunnen: Brunnen
+water_source_type_teich_water: Teich
+water_source_type_fluss: Fluss
+water_source_type_kanal: Kanal
+water_source_type_regenwasser: Regenwasser
+water_source_type_leitungswasser: Leitungswasser
+water_source_type_grundwasser: Grundwasser
+water_source_type_see: See
+irrigation_method_tropfbewaesserung_irr: Tropfbewässerung
+irrigation_method_uerberstau: Überstau
+irrigation_method_unterflurbewaesserung: Unterflurbewässerung
+irrigation_method_beregnung: Beregnung
+weather_station_type_satellit: Satellit
+weather_station_type_modell: Modell
+site_type: Tipo de local
+order_status: Status da tarefa
+equipment_type: Tipo de equipamento
+building_type: Tipo de edifício
+soil_type: Tipo de solo
+fertilizer_type: Tipo de fertilizante
+weather_condition: Condição climática
+variety_category: Categoria de variedade
+inventory_category: Categoria de inventário
+unit_of_measure: Unidade de medida
+checklist_type: Tipo de lista de verificação
+compliance_status: Status de conformidade
+task_execution_mode: Modo de execução
+recurrence_cadence: Cadência de recorrência
+pac_status: Status PAC
+cost_center_type: Tipo de centro de custo
+financial_record_type: Tipo de registro financeiro
+worker_task_status: Status da tarefa
+setting_value_type: Tipo de configuração
+transaction_type: Tipo de transação
+weather_station_type: Tipo de estação meteorológica
+audit_action: Ação de auditoria
+clock_entry_type: Tipo de entrada de tempo
+iot_device_type: Tipo de dispositivo IoT
+plant_protection_area_method: Método de área
+livestock_type: Tipo de gado
+harvest_lot_status: Status do lote de colheita
+transaction_type_inventory: Transação de inventário
+oil_grade: Grau de óleo
+group_type: Tipo de grupo
+spatial_object_type: Tipo de geometria
+sub_task_status: Status da subtarefa
+overall_task_status: Status geral
+# Variety attribute labels
+variety_berry_colour: Cor do baga
+variety_use_kind: Uso
+variety_registration_countries: Países de registo
+variety_vivc_no: Número VIVC
+variety_synonyms: Sinónimos
+variety_source: Fonte
+variety_origin: Origem
+variety_category_label: Categoria
+# Breed attribute labels
+breed_origin: Origem
+breed_use_kind: Uso
+breed_birth_weight: Peso ao nascer (kg)
+breed_mature_weight: Peso adulto (kg)
+breed_eggs_per_year: Ovos/Ano
+breed_wool_per_year: Lã/Ano (kg)
+breed_wool_micron: Diâmetro da fibra (µm)
+breed_gestation_days: Dias de gestação
+breed_litter_size: Tamanho da ninhada
+breed_milk_per_year: Leite/Ano (kg)
+breed_daily_gain: Ganho diário (g)
+breed_productive_lifespan: Vida produtiva (anos)
+# Species labels
+species_common_name: Nome comum
+species_scientific_name: Nome científico
+species_kingdom: Reino
+# Crop species common names
+crop_species_vitis_vinifera: Videira
+crop_species_olea_europaea: Oliveira
+crop_species_bos_taurus: Gado
+crop_species_ovis_aries: Ovelha
+crop_species_capra_hircus: Cabra
+crop_species_sus_scrofa_domesticus: Porco
+crop_species_equus_caballus: Cavalo
+crop_species_gallus_gallus_domesticus: Galinha
+
+# Type Moderation
+nav_type_moderation: Moderação de tipos
+type_moderation: Moderação de tipos
+no_pending_entries: Nenhum tipo pendente de aprovação
+created_by: Criado por
+merge_type: Mesclar
+search_existing_type: Pesquisar tipo existente
+type_approved: Tipo aprovado
+type_rejected: Tipo rejeitado
+type_merged: Tipos mesclados

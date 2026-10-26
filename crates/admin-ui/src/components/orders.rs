@@ -1,10 +1,10 @@
 use crate::api;
 use crate::components::form::RequiredLabel;
 use crate::components::toast::{ToastContext, ToastType};
-use icondata::*;
+use icondata_lu::*;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 fn submit_order(
     label: String,
@@ -133,7 +133,7 @@ pub fn OrderList() -> impl IntoView {
             <div class="flex justify-between items-center">
                 <h1 class="text-3xl font-bold">{crate::t!(t, "order_management")}</h1>
                 <button class="btn btn-primary" on:click=move |_| set_show_add_modal.set(true)>
-                    <Icon icon=LuPlus width="20" height="20" />
+                    <Icon icon=&LuPlus width="20" height="20" />
                     {crate::t!(t, "new_order_btn")}
                 </button>
             </div>
@@ -156,13 +156,13 @@ pub fn OrderList() -> impl IntoView {
                         <div class="card bg-base-100 shadow">
                             <div class="alert alert-error m-4">
                                 <div class="flex items-center gap-3">
-                                    <Icon icon=LuTriangleAlert width="24" height="24" />
+                                    <Icon icon=&LuTriangleAlert width="24" height="24" />
                                     <div class="flex-1">
                                         <h3 class="font-bold">{crate::t!(t, "orders_load_failed")}</h3>
                                         <p class="text-sm opacity-80">{err}</p>
                                     </div>
                                     <button class="btn btn-sm btn-outline" on:click=on_retry>
-                                        <Icon icon=LuRefreshCw width="16" height="16" />
+                                        <Icon icon=&LuRefreshCw width="16" height="16" />
                                         {crate::t!(t, "retry")}
                                     </button>
                                 </div>
@@ -175,7 +175,7 @@ pub fn OrderList() -> impl IntoView {
                         <div class="card bg-base-100 shadow">
                             <div class="flex flex-col items-center py-12 gap-2">
                                 <div class="opacity-30">
-                                    <Icon icon=LuClipboardList width="48" height="48" />
+                                    <Icon icon=&LuClipboardList width="48" height="48" />
                                 </div>
                                 <p class="text-base-content/60">{crate::t!(t, "no_orders_yet")}</p>
                             </div>
@@ -225,7 +225,7 @@ pub fn OrderList() -> impl IntoView {
                                                                 class="btn btn-sm btn-ghost text-error"
                                                                 on:click=move |_| on_delete(order_id)
                                                             >
-                                                                <Icon icon=LuTrash2 width="16" height="16" />
+                                                                <Icon icon=&LuTrash2 width="16" height="16" />
                                                             </button>
                                                         </td>
                                                     </tr>

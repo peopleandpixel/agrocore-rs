@@ -17,10 +17,10 @@
 //! as `"net_area"` — not the Rust variant names.
 
 use crate::api;
-use icondata::LuCalculator;
+use icondata_lu::LuCalculator;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 /// The tools, grouped by what they are for. The i18n key per tool is the label
 /// shown in the picker.
@@ -452,7 +452,7 @@ pub fn CalculatorsPage() -> impl IntoView {
     view! {
         <div class="p-6">
             <h1 class="text-2xl font-bold mb-4 flex items-center gap-2">
-                <Icon icon=LuCalculator width="24" height="24" />
+                <Icon icon=&LuCalculator width="24" height="24" />
                 {crate::t!(t, "nav_calculators")}
             </h1>
 

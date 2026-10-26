@@ -1,9 +1,9 @@
 use crate::api;
 use crate::i18n::{I18n, Language};
-use icondata::*;
+use icondata_lu::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 #[component]
 pub fn ResourcesPage() -> impl IntoView {
@@ -52,11 +52,11 @@ pub fn ResourcesPage() -> impl IntoView {
                 </div>
                 <div class="flex gap-2">
                     <button class="btn btn-outline" on:click=on_export>
-                        <Icon icon=LuHistory width="20" height="20" />
+                        <Icon icon=&LuHistory width="20" height="20" />
                         {move || history()}
                     </button>
                     <button class="btn btn-primary" on:click=on_add_inventory>
-                        <Icon icon=LuPlus width="20" height="20" />
+                        <Icon icon=&LuPlus width="20" height="20" />
                         {move || add_inventory()}
                     </button>
                 </div>
@@ -66,7 +66,7 @@ pub fn ResourcesPage() -> impl IntoView {
                 // Wasser & Energie
                 <div class="card bg-base-100 shadow">
                     <div class="card-body">
-                        <h2 class="card-title"><Icon icon=LuDroplets attr:class="text-info" width="24" height="24" /> {move || water_irrigation()}</h2>
+                        <h2 class="card-title"><Icon icon=&LuDroplets attr:class="text-info" width="24" height="24" /> {move || water_irrigation()}</h2>
                         <div class="alert alert-info mt-2">
                             <span>{move || no_water_sensor()}</span>
                         </div>
@@ -76,7 +76,7 @@ pub fn ResourcesPage() -> impl IntoView {
                 // Personal
                 <div class="card bg-base-100 shadow">
                     <div class="card-body">
-                        <h2 class="card-title"><Icon icon=LuUsers attr:class="text-success" width="24" height="24" /> {move || workers()}</h2>
+                        <h2 class="card-title"><Icon icon=&LuUsers attr:class="text-success" width="24" height="24" /> {move || workers()}</h2>
                         <div class="stats bg-base-200 w-full mt-2">
                             <div class="stat">
                                 <div class="stat-title">{move || in_use()}</div>
@@ -100,7 +100,7 @@ pub fn ResourcesPage() -> impl IntoView {
                 // Betriebsmittel (Lager)
                 <div class="card bg-base-100 shadow lg:col-span-2">
                     <div class="card-body">
-                        <h2 class="card-title"><Icon icon=LuPackage attr:class="text-warning" width="24" height="24" /> {move || inventory_stock()}</h2>
+                        <h2 class="card-title"><Icon icon=&LuPackage attr:class="text-warning" width="24" height="24" /> {move || inventory_stock()}</h2>
                         <div class="alert alert-info mt-4">
                             <span>{move || format!("{} {}", equipment.read().as_ref().map(|page| page.as_ref().map(|p| p.total).unwrap_or(0)).unwrap_or(0), inventory_available())}</span>
                         </div>

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod breed;
 pub mod building;
 pub mod compliance;
 pub mod customer;
@@ -34,8 +33,8 @@ pub mod task;
 pub mod task_state;
 pub mod tenant;
 pub mod tree;
+pub mod type_system;
 pub mod user;
-pub mod variety;
 pub mod vineyard;
 pub mod water;
 pub mod weather;
@@ -45,7 +44,6 @@ pub mod workforce;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-pub use breed::{Breed, CreateBreedDto, Species, UpdateBreedDto};
 pub use building::{Building, BuildingType, CreateBuildingDto, UpdateBuildingDto};
 pub use compliance::{
     AuditAction, AuditLog, ChecklistItem, ChecklistType, ComplianceChecklist, ComplianceStatus,
@@ -74,7 +72,6 @@ pub use sync::{
 };
 pub use task::{CreateTaskDataDto, GpsPoint, MaterialUsage, TaskData, UpdateTaskDataDto};
 pub use tree::{CreateTreeDto, Tree, TreeType, UpdateTreeDto};
-pub use variety::{CreateVarietyDto, UpdateVarietyDto, Variety, VarietyCategory};
 pub use vineyard::{
     CreateKelterDeliveryDto, CreateVineyardDto, DocArea, KelterDelivery, QualityGrade,
     UpdateKelterDeliveryDto, UpdateVineyardDto, Vineyard,

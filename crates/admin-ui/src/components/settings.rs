@@ -5,10 +5,10 @@ use crate::components::form::{
 };
 use crate::i18n::{I18n, LANGUAGE_OPTIONS, Language};
 use agrocore_shared::lpis::LpisCountry;
-use icondata::*;
+use icondata_lu::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 #[component]
 pub fn SettingsPage() -> impl IntoView {
     let i18n = use_context::<I18n>().expect("i18n engine");
@@ -239,7 +239,7 @@ pub fn SettingsPage() -> impl IntoView {
                 <div class="lg:col-span-2 space-y-6">
                     <div class="card bg-base-100 shadow">
                         <div class="card-body">
-                            <h2 class="card-title mb-4"><Icon icon=LuBriefcase width="20" height="20" /> {company_profile}</h2>
+                            <h2 class="card-title mb-4"><Icon icon=&LuBriefcase width="20" height="20" /> {company_profile}</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="form-control w-full">
                                     <label class="label"><RequiredLabel required=true>{company_name_label}</RequiredLabel></label>
@@ -288,7 +288,7 @@ pub fn SettingsPage() -> impl IntoView {
 
                     <div class="card bg-base-100 shadow">
                         <div class="card-body">
-                            <h2 class="card-title mb-4"><Icon icon=LuGlobe width="20" height="20" /> {display_and_language}</h2>
+                            <h2 class="card-title mb-4"><Icon icon=&LuGlobe width="20" height="20" /> {display_and_language}</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="form-control w-full">
                                     <label class="label"><span class="label-text">{system_language}</span></label>
@@ -326,7 +326,7 @@ pub fn SettingsPage() -> impl IntoView {
 
                     <div class="card bg-base-100 shadow">
                         <div class="card-body">
-                            <h2 class="card-title mb-4"><Icon icon=LuDatabase width="20" height="20" /> "LPIS Provider Settings"</h2>
+                            <h2 class="card-title mb-4"><Icon icon=&LuDatabase width="20" height="20" /> "LPIS Provider Settings"</h2>
                             <p class="text-base-content/60 mb-4">"Configure LPIS providers for each country. Changes require restart."</p>
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 {move || {
@@ -382,7 +382,7 @@ pub fn SettingsPage() -> impl IntoView {
                 <div class="space-y-6">
                     <div class="card bg-base-100 shadow">
                         <div class="card-body">
-                            <h2 class="card-title"><Icon icon=LuShieldCheck width="20" height="20" /> {system_status}</h2>
+                            <h2 class="card-title"><Icon icon=&LuShieldCheck width="20" height="20" /> {system_status}</h2>
                             <ul class="space-y-2 mt-2">
                                 <li class="flex justify-between items-center text-sm">
                                     <span>{api_connection}</span>
@@ -404,7 +404,7 @@ pub fn SettingsPage() -> impl IntoView {
 
                     <div class="card bg-base-100 shadow border-2 border-error/20">
                         <div class="card-body">
-                            <h2 class="card-title text-error"><Icon icon=LuTrash2 width="20" height="20" /> {danger_zone}</h2>
+                            <h2 class="card-title text-error"><Icon icon=&LuTrash2 width="20" height="20" /> {danger_zone}</h2>
                             <p class="text-xs opacity-70">{danger_zone_desc}</p>
                             <div class="space-y-2 mt-4">
                                 <button class="btn btn-outline btn-error btn-sm w-full" on:click=on_export_all_data>{export_all_data}</button>

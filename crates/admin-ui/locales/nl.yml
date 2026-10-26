@@ -1,0 +1,1732 @@
+orders_load_failed: De takenlijst kon niet worden geladen
+retry: Opnieuw proberen
+no_orders_yet: Nog geen taken
+setup_title: Initiële installatie
+admin_password: Beheerderswachtwoord
+password_requirements: Minstens 12 tekens met hoofdletter, kleine letter, cijfer en speciaal teken
+password_confirm: Bevestig wachtwoord
+password_mismatch: Wachtwoorden komen niet overeen
+tenant_name: Organisatienaam
+tenant_slug: Organisatie Slug (bijvoorbeeld my-farm)
+finish_setup: Volledige installatie
+continue: Ga door
+back: Terug
+wizard_language: Assistenttaal
+setup_step_admin: Beheerder
+setup_step_tenant: Organisatie
+setup_step_company: Bedrijf
+site_created: Hulpbronnen
+site_deleted: Locatie succesvol verwijderd
+site_updated: Locatie succesvol bijgewerkt
+edit_site: Locatie bewerken
+edit_site_title: Locatie bewerken
+delete_site: Locatie verwijderen
+delete_polygon: Polygon verwijderen
+redraw_polygon: Polygon opnieuw tekenen
+edit_polygon_hint: Sleep hoekpunten om de vorm te bewerken. Dubbelklik op een hoekpunt om het te verwijderen.
+setup_complete: Installatie succesvol voltooid
+order_created: Order succesvol aangemaakt
+order_deleted: Order succesvol verwijderd
+order_updated: Order succesvol bijgewerkt
+assign_workers: Werkers toewijzen
+more_tasks: meer taken
+app_title: AgroCore Admin
+nav_my_tasks: My Tasks
+audit_desc: Track all changes in the system.
+timestamp: Timestamp
+entity: Entity
+action: Action
+user: User
+changes: Changes
+manage_sites_desc: Manage your sites.
+add_site_btn: Add Site
+name: Name
+crop: Crop
+area: Area
+active: Active
+inactive: Inactive
+add_new_site: Add New Site
+site_type_vineyard: Vineyard
+site_type_field: Field
+site_type_cork_oak_montado: Cork Oak Montado
+site_type_holm_oak_montado: Holm Oak Montado
+site_type_olive_grove: Olive Grove
+site_type_orchard: Orchard
+site_type_almond_orchard: Almond Orchard
+site_type_citrus_grove: Citrus Grove
+site_type_pasture: Pasture
+site_type_greenhouse: Greenhouse
+site_type_other: Other
+crop_type_grape: Grape
+crop_type_olive: Olive
+crop_type_grain: Grain
+group_herd: Kudde
+group_grove: Boomgroep
+group_coop: Hok
+group_building: Gebouw
+livestock_goat: Geit
+livestock_chicken: Kip
+livestock_sheep: Schap
+livestock_cattle: Rundvee
+tree_cork_oak: Kurkeik
+crop_type_other: Other
+variety: Variety
+draw_area: Draw Area
+validation_draw_polygon: Please draw a polygon area first.
+validation_site_label: Please provide a site name.
+drawing_mode_on: Tekenen aan
+drawing_mode_off: Tekenen uit
+maximize_window: Venster maximaliseren
+restore_window: Venster herstellen
+drawing_mode_hint: Click the pencil button to enable drawing mode, then click on the map to draw your area.
+finish_polygon: Gebied afronden
+cancel_drawing: Tekenen annuleren
+users_desc: Manage team members and their access permissions.
+role_permissions: Role Permissions
+invite_user: Create User
+role: Role
+last_login: Last Login
+role_superadmin: Super Admin
+role_admin: Admin
+role_manager: Manager
+role_worker: Worker
+role_viewer: Viewer
+edit_user: Edit User
+role_permissions_overview: Roles and Permissions Overview
+role_permissions_desc: Each role has defined permissions. Permissions cannot be assigned individually - only the user role.
+role_admin_desc: Full access to all areas and user management
+role_manager_desc: Management without user permissions
+role_worker_desc: Input and view of own data
+role_viewer_desc: Read-only access
+impersonate: Impersonate
+cannot_delete_self: Cannot delete your own account
+cannot_delete_last_admin: Cannot delete the last admin
+impersonating_as: Impersonating as
+unknown_user: Onbekende gebruiker
+stop_impersonation: Stop Impersonation
+just_now: Zojuist
+one_minute_ago: 1 minuut geleden
+minutes_ago: minuten geleden
+one_hour_ago: 1 uur geleden
+hours_ago: uren geleden
+one_day_ago: 1 dag geleden
+days_ago: dagen geleden
+one_week_ago: 1 week geleden
+weeks_ago: weken geleden
+one_month_ago: 1 maand geleden
+months_ago: maanden geleden
+one_year_ago: 1 jaar geleden
+years_ago: jaren geleden
+permissions_all: create, read, update, delete
+permissions_read_update: create, read, update
+permissions_read_create: create, read
+permissions_read: read
+permissions_none: none
+new_application: New Application
+balance: Balance
+finance_quicklink: Finance Quicklink
+finance_quicklink_desc: Quickly record new income or expenses.
+create_booking: Create Booking
+last_financial_records: Last Financial Records
+no_financial_records: No financial records yet.
+create_pac_application_title: Create PAC Application
+date: Date
+amount: Amount
+worker_map_osm: Worker Map (OSM)
+in_task: In Task
+ready_idle: Ready / Idle
+worker: Worker
+position: Position
+last_reported: Last reported
+organic: Organic
+haccp: HACCP
+close: Close
+setup_admin_title: Beheerderaccount
+setup_tenant_title: Eerste organisatie aanmaken
+setup_company_title: Bedrijfsgegevens
+company_name: Bedrijfsnaam
+company_address: Bedrijfsadres
+company_country: Land
+company_email: E-mail van het bedrijf
+company_phone: Bedrijfstelefoon
+setup_resources_title: Initiële bronnen
+optional_label: optioneel
+setup_resource_type: Veldtype
+setup_equipment: Uitrusting
+setup_first_machine: Naam van de eerste machine
+redirecting: Omleiden...
+dashboard: Dashboard
+sites: Sites
+tasks: Taken
+users: Gebruikers
+settings: Instellingen
+first_name: Voornaam
+last_name: Achternaam
+email: E-mail
+password: Wachtwoord
+company_profile: Bedrijfsprofiel
+tax_id: Belastingnummer / BTW
+office_email: E-mail hoofdkantoor
+international_phone: Internationale telefoon
+address: Adres
+website: Website
+country: Land
+update_profile: Profiel bijwerken
+display_and_language: Weergave & taal
+system_language: Systeem taal
+language_de: Deutsch
+language_en: English
+language_es: Español
+language_fr: Français
+language_pt: Português
+timezone: Tijdzone
+timezone_europe_berlin: Europa/Berlijn (UTC+2)
+timezone_utc: UTC
+system_status: Systeemstatus
+api_connection: API-verbinding
+online: Online
+database: Database
+connected: Verbonden
+version: Versie
+uptime: Actieve tijd
+export_system_log: Systeemlogboek exporteren
+danger_zone: Gevarenzone
+danger_zone_desc: Deze acties kunnen niet ongedaan worden gemaakt.
+export_all_data: Exporteer alle gegevens
+delete_tenant: Organisatie verwijderen
+profile_saved: Profiel op server opgeslagen.
+time: Tijd
+initialized: Geïnitialiseerd
+mode_full: Volledige weergave
+mode_simple: Eenvoudige weergave
+wizard_tasks: Wat zou je graag willen doen?
+start_wizard: Wizard starten
+task_planting: Planten plannen
+task_harvest: Recordoogst
+task_protection: Gewasbescherming
+livestock_management: Veebeheer
+weather_and_phenology: Weer en fenologie
+finance_and_pac: Financiën & PAC
+equipment_management: Beheer van apparatuur
+analytics_and_predictions: Analyses en voorspellingen
+site_management: Sitebeheer
+order_management: Orderbeheer
+add_animal: Dier toevoegen
+add_equipment: Apparatuur toevoegen
+record_treatment: Behandeling registreren
+record_finance: Financiën opnemen
+weather_current: Huidig weer
+weather_stations: Weerstations
+phenology: Fenologie
+pac_applications: PAC-toepassingen
+cost_centers: Kostenplaatsen
+financial_records: Financiële gegevens
+theme_light: Licht
+theme_dark: Donker
+theme_toggle: Thema wisselen
+validation_required: Vul alle verplichte velden in.
+validation_invalid_slug: Voer een geldige slug in.
+starting_setup: Installatie starten...
+first_machine_placeholder: Optionele machinenaam
+new_order_btn: Nieuwe bestelling
+new_order_form: Orde creëren
+order_type: Besteltype
+order_type_plant_protection: Gewasbescherming
+order_type_fertilization: Bemesting
+order_type_pruning: Snoeien
+order_type_harvest: Oogst
+order_type_soil_work: Bewerkingen van de bodem
+order_type_irrigation: Irrigatie
+order_type_monitoring: Monitoring
+order_type_livestock_feeding: Voeren
+order_type_livestock_watering: Water geven
+order_type_livestock_relocation: Verplaatsing
+order_type_livestock_health_check: Gezondheidscontrole
+order_type_barn_cleaning: Stalreiniging
+order_type_egg_collection: Eieren verzamelen
+order_type_shearing: Scheren
+order_type_milking: Melken
+description: Beschrijving
+actions: Acties
+status: Status
+site: Locatie
+choose_site: Kies een locatie
+choose_sites: Kies locaties
+choose_workers: Kies werknemers
+cancel: Annuleer
+delete: Verwijder
+delete_user: Gebruiker verwijderen
+delete_user_confirm: Weet u zeker dat u de volgende gebruiker wilt verwijderen?
+delete_user_warning: Deze actie kan niet ongedaan worden gemaakt.
+save: Opslaan
+login_title: AgroCore-login
+login_subtitle: Meld u aan met het eerste beheerdersaccount.
+sign_in: Log in
+signing_in: Aanmelden...
+role_simulate: 'Rol simuleren:'
+nav_dashboard: Dashboard
+nav_wizard: Wizard starten
+nav_sites: Sites
+nav_tasks: Taken
+nav_map: Kaart
+nav_groups: Groepen
+nav_trees: Bomen
+nav_buildings: Gebouwen
+nav_plot_entities: Veldentiteiten
+nav_livestock: Vee
+nav_weather: Weer
+nav_resources: Hulpbronnen
+nav_equipment: Uitrusting
+nav_finance: Financiën
+nav_analytics: Analyses
+nav_inventory: Inventaris
+nav_audit: Audit Logs
+nav_compliance: Naleving
+nav_users: Gebruikers & Rollen
+nav_roles: Rollen & Rechten
+roles_overview: Rollenoverzicht
+impersonation: Impersonatie
+permissions_all_tenants: Alle tenants
+permissions_tenant_users: Tenant-gebruikers
+role_permissions_note: Elke rol definieert een set van rechten. Gebruikers kunnen meerdere rollen hebben, en individuele rechten
+  kunnen per gebruiker worden toegekend of ingetrokken.
+role_superadmin_desc: Volledige systeemtoegang, kan tenants beheren
+nav_settings: Instellingen
+nav_types: Typebeheer
+nav_grafana: Grafana
+type_management: Typebeheer
+type_categories: Typecategorieën
+type_entries: Type-invoer
+type_name: Naam
+type_code: Code
+type_description: Beschrijving
+type_parent: Oudertype
+type_is_active: Actief
+create_type: Type Aanmaken
+edit_type: Type Bewerken
+delete_type: Type Verwijderen
+type_created: Type aangemaakt
+type_updated: Type bijgewerkt
+type_deleted: Type verwijderd
+name_code_required: Naam en code zijn verplicht
+name_required: Naam is verplicht
+select_category_first: Selecteer eerst een categorie
+no_types_found: Geen typen gevonden
+select_category_to_start: Selecteer een categorie om te beginnen
+search_categories: Zoek categorieën
+select_category: Selecteer categorie
+select_unit: Selecteer eenheid
+select_method: Selecteer methode
+select_species: Selecteer soort
+select_status: Selecteer status
+theme: Thema
+logout: Uitloggen
+nav_group_general: Algemeen
+nav_group_operations: Operaties
+nav_group_nature: Natuur
+nav_group_resources: Hulpbronnen
+nav_group_finance: Financiën
+nav_group_administration: Administratie
+nav_group_worker: Werknemer
+not_found: 404 Niet gevonden
+access_denied: Toegang geweigerd
+access_denied_desc: Je hebt geen toestemming om deze pagina te bekijken. Neem contact op met je beheerder als je denkt dat
+  dit een fout is.
+go_to_dashboard: Naar dashboard
+dashboard_welcome_prefix: Welkom bij
+dashboard_tasks_desc: Momenteel opgenomen
+dashboard_sites_desc: Beschikbare pakketten
+dashboard_users_desc: Opgeslagen in het systeem
+dashboard_equipment_desc: Beschikbare vermeldingen
+active_tasks: Actieve taken
+no_active_tasks: Geen actieve taken.
+view_all: Bekijk alles
+quick_actions: Snelle acties
+issue_report: Probleem melden
+weather_forecast: Weersvoorspelling
+no_weather_data: Geen weergegevens beschikbaar.
+weather_no_external_data: 'Geen weergegevens beschikbaar. '
+weather_stations_title: Weerstations
+no_weather_stations: Er zijn nog geen weerstations beschikbaar.
+phenology_title: Fenologie
+observe: Observatie
+last_report: Laatste rapport
+report_observation: Observatie melden
+observation_note: Let op
+weather_current_data: Actuele weergegevens
+source: Bron
+temperature: Temperatuur
+humidity: Vochtigheid
+wind: Wind
+precipitation: Neerslag
+current_weather: Huidig weer
+station: Station
+loading: Laden...
+weather_observation_title: Neem BBCH-observatie op
+weather_bbch_desc: Huidige BBCH-stadia voor uw gewassen.
+resource_management: Beheer van hulpbronnen
+history: Geschiedenis
+add_inventory: Voeg inventaris toe
+water_irrigation: Water en irrigatie
+no_water_sensor: Nog geen irrigatiesensoren aangesloten.
+workers: Werknemers
+in_use: In gebruik
+hours_today: Uren vandaag
+time_tracking_later: Tijdregistratie volgt later.
+workers_in_system: Werknemers in het systeem
+inventory_stock: Inventaris voorraad
+inventory_available: beschikbare apparatuurinvoer.
+livestock_total: Totale kudde
+animals_in_system: Dieren in het systeem
+under_treatment: Onder behandeling
+grazing: Op weiland
+treatment_from_data: Berekend op basis van behandelingsgegevens.
+grazing_from_data: De weidestatus volgt de diergegevens.
+animal_list: Dierenlijst
+id_name: Identiteitskaart / naam
+species: Soorten
+last_action: Laatste actie
+animal_actions: Acties
+add_animal_btn: Dier toevoegen
+add_treatment: Behandeling toevoegen
+no_animal_selected: Geen dier geselecteerd.
+identifier: Identificatie
+breed: Ras
+species_cattle: Vee
+species_sheep: Schapen
+species_goat: Geit
+species_pig: Varken
+species_poultry: Gevogelte
+species_horse: Paard
+compliance_certification: Compliance & certificering
+export_report: Rapport exporteren
+new_checklist: Nieuwe controlelijst
+compliance_score: Nalevingsscore
+open_actions: Acties openen
+next_audit: Volgende audit
+certification_status: Certificeringsstatus
+application_history: Gewasbeschermingsgeschiedenis
+entry: Binnenkomst
+recorded: Opgenomen
+no_protection_entries: Er zijn nog geen gewasbeschermingsmiddelen gevonden.
+create_checklist: Controlelijst maken
+due_date: Vervaldatum
+type: Typ
+score_from_checks: Berekend op basis van inspecties.
+active_checks: Actieve controles
+analytics_title: Analyses en voorspellingen
+harvest_prediction: Oogstvoorspelling
+based_on_weather: Gebaseerd op weergegevens en BBCH-podium.
+confidence: Vertrouwen
+start_simulation: Simulatie starten
+profitability: Winstgevendheid
+profitability_analysis: Analyse van marges per veld.
+detail_report: Gedetailleerd rapport
+material_calculation: Materiaalberekening
+site_label: Locatie
+measure: Maatregel
+calculate_demand: Bereken de vraag
+forecast_reference: Merlotblok A
+operation_label: Operatie
+wizard_livestock: Dierenbehandeling
+wizard_finance: Financiële invoer
+wizard_bbch: BBCH-observatie
+wizard_title: Wat zou je graag willen doen?
+wizard_more_tasks: Meer taken?
+wizard_start: Begin
+wizard_livestock_desc: Documenteer medische maatregelen.
+wizard_finance_desc: Registreer snel inkomsten of uitgaven.
+wizard_bbch_desc: Registreer de huidige groeifasen.
+setup_welcome: 'Welkom bij AgroCore. '
+setup_admin_desc: Maak de eerste beheerder aan voor deze installatie.
+setup_tenant_desc: De organisatie vertegenwoordigt uw bedrijf in het systeem.
+setup_company_desc: Optionele metadata voor uw organisatie.
+setup_resources_desc: Definieer een initieel veldtype voor de werkruimte.
+setup_admin_help: Gebruik het eerste beheerdersaccount om de installatie te voltooien en het systeem te beheren.
+setup_tenant_help: De slug wordt onderdeel van de URLs en moet kort en stabiel blijven.
+setup_company_help: Bedrijfsgegevens worden gebruikt voor contactgegevens en latere integraties.
+setup_resources_help: Kies vanaf het begin de modules die u wilt inschakelen.
+validation_required_company: Vul de bedrijfsnaam, het adres en het land in.
+validation_invalid_email: Voer een geldig e-mailadres in.
+validation_invalid_phone: Voer een geldig internationaal telefoonnummer in.
+profile_saved_server: Profiel op server opgeslagen.
+profile_save_failed: Opslaan mislukt
+settings_tab_company: Bedrijf
+settings_tab_display: Weergave & Taal
+settings_tab_lpis: LPIS-leveranciers
+settings_tab_status: Systeemstatus
+settings_tab_danger: Gevarenzone
+lpis_provider_settings: LPIS-leveranciersinstellingen
+lpis_provider_desc: Configureer LPIS-leveranciers voor elk land. Wijzigingen vereisen herstart.
+base_url: Basis-URL
+timeout_seconds: Time-out (s)
+cache_ttl_seconds: Cache TTL (s)
+rate_limit: Snelheidslimiet (req/s)
+enabled: Ingeschakeld
+save_lpis_settings: LPIS-instellingen opslaan
+default_inherited: Standaard (geërfd)
+reset_to_default: Resetten
+settings_server_stored: Deze waarden worden serverzijde opgeslagen en gelden voor de hele organisatie.
+settings_reload: Herladen
+settings_restore_defaults: Alles resetten naar standaardwaarden
+settings_loaded_failed: Instellingen konden niet worden geladen
+settings_restored: Standaardwaarden hersteld
+system_log_title: Systeemlogboek
+lpis_country_spain: Spanje (SIGPAC)
+lpis_country_netherlands: Nederland (BRP)
+lpis_country_france: Frankrijk (RPG)
+lpis_country_portugal: Portugal (iLPIS)
+lpis_country_italy: Italië (SIAN)
+lpis_country_germany: Duitsland (LPIS)
+lpis_country_poland: Polen (LPIS)
+lpis_country_austria: Oostenrijk (INVEKOS)
+setting_saved: Opgeslagen
+setting_reset: Gereset
+dashboard_simple_mode_text: Gebruik de begeleide assistenten om complexe werkzaamheden snel af te ronden.
+dashboard_weather_setup_address: Het insteladres wordt gebruikt indien beschikbaar.
+no_sensor_weather: 'Geen sensor beschikbaar. '
+weather_no_site_for_observation: Geen plek beschikbaar voor observatie.
+resource_overview: Overzicht van water, energie, voorraden en personeel.
+resource_assignments_desc: Opdrachten worden afgeleid van taken en rollen.
+manage_requirements: Beheer wettelijke vereisten en certificeringen.
+next_audit_desc: De datum wordt ingevuld op basis van auditgegevens.
+certification_status_desc: Certificaten verschijnen nadat de auditgegevens zijn verbonden.
+compliance_no_site_for_checklist: Geen site beschikbaar voor een checklist.
+analytics_no_site_for_prediction: Geen site beschikbaar voor de voorspelling.
+analytics_no_site_for_calculation: Geen site beschikbaar voor de berekening.
+profitability_chart_placeholder: '[Grafiek: winstgevendheid per site]'
+wizard_explore: Selecteer een sectie die u stap voor stap wilt begeleiden.
+wizard_planting_desc: Plan de volgende aanplant op uw sites.
+wizard_protection_desc: Documenteer bemesting of gewasbescherming.
+wizard_harvest_desc: Recordoogsthoeveelheden en -kwaliteit.
+language_it: Italiano
+language_pl: Polski
+language_ro: Română
+language_uk: Українська
+language_nl: Nederlands
+my_tasks: Mijn Taken
+start: Start
+stop: Stop
+complete: Voltooien
+import_title: Data Import
+import_desc: Importeer sites van GeoJSON of Shapefile bestanden.
+import_geojson: GeoJSON importeren
+import_shapefile: Shapefile importeren
+upload_geojson: GeoJSON bestand uploaden
+upload_shapefile: Shapefile (ZIP) uploaden
+drag_drop_geojson: Sleep en zet GeoJSON bestand hier, of klik om te bladeren
+drag_drop_shapefile: Sleep en zet Shapefile (ZIP) hier, of klik om te bladeren
+skip_duplicates: Duplicaten negeren
+update_existing: Bestaande sites bijwerken
+validate_lpis: Valideren tegen LPIS (SIGPAC referentie)
+import_result: Importresultaat
+import_total: Totaal
+import_created: Aangemaakt
+import_updated: Bijgewerkt
+import_skipped: Overgeslagen
+import_errors: Fouten
+import_warnings: Waarschuwingen
+import_duplicate_ids: Dubbele IDs
+import_error: Fout
+import_warning: Waarschuwing
+validation_failed: Validatie mislukt
+select_file: Selecteer bestand
+browse_files: Blader door bestanden
+import_options: Importopties
+import_button: Importeren
+import_in_progress: Importeren in uitvoering...
+import_success: Import succesvol afgerond
+duplicate_detected: Dubbel gedetecteerd
+lpis_validation: LPIS validatie
+area_difference: Oppervlaktedifferentie
+boundary_difference: Randverschil
+validation_passed: Validatie geslaagd
+validation_failed_lpis: LPIS validatie mislukt
+parcel_detail: Parceldetails
+source_dataset: Dataset
+source_year: Bronjaar
+official_area: Officiële oppervlakte
+usage_code: Gebruikscode
+usage_description: Gebruiksbeschrijving
+nav_import: Import
+nav_sigpac: SIGPAC
+select_geojson: Selecteer GeoJSON bestand
+select_shapefile: Selecteer Shapefile bestand
+search_filter: Zoeken en Filteren
+search: Zoeken
+all_types: Alle Types
+in_usage: In Gebruik
+needs_maintenance: Onderhoud Nodig
+clear_filters: Filters Opschonen
+maintenance_hours: Operationele Uren
+next_maintenance: Volgende Onderhoud
+maintenance_due: Onderhoud Afwikkelen
+no_deadline: Geen deadline
+wrench: Onderhoud
+record_maintenance: Registreer Onderhoud
+hours: Uren
+note: Notitie
+performed_at: Uitgevoerd op
+total_cost: Totale Kosten (EUR)
+none: Geen
+true: Ja
+false: Nee
+equipment_detail: Apparatuurdetails
+basic_info: Basisinformatie
+maintenance_info: Onderhoudsinformatie
+maintenance_history: Onderhoudshistorie
+no_maintenance_records: Geen onderhoudsgegevens gevonden
+maintenance_recorded_success: Onderhoud succesvol vastgelegd
+invalid_equipment_id: Ongeldige apparatuur-ID
+equipment_not_found: Apparatuur niet gevonden
+maintenance_intervals: Onderhoudsintervallen
+days: Dagen
+cost_summary: Onderhoudskostenoverzicht
+parts_cost: Onderdelijkosten (EUR)
+labor_hours: Arbeidsuren
+downtime_hours: Stillstandstijd (uren)
+total_maintenance_count: Totale Onderhoudsacties
+cost_summary_loading: Kostenoverzicht laden...
+usage_logging: Gebruikslogboek
+usage_worker: Werker
+usage_task: Taak
+usage_operation: Operatie
+usage_started_at: Begin tijd
+usage_ended_at: Eind tijd
+usage_hours_operated: Bestuurde uren
+usage_recorded_at: Geregistreerd op
+record_usage: Registreer gebruik
+usage_total_hours: Totale uren
+usage_total_sessions: Totale sessies
+usage_avg_hours: Gemiddelde uren per sessie
+usage_first_used: Eerste gebruik
+usage_last_used: Laatste gebruik
+no_usage_records: Geen gebruiksrecords gevonden.
+usage_summary_loading: Gebruiksamenvatting laden...
+depreciation: Afschrijving
+depreciation_loading: AfSchrijving laden...
+cost_basis: Kostprijs
+salvage_value: Restwaarde
+accumulated_depreciation: Opgehoopte afschrijving
+net_book_value: Boekwaarde
+annual_depreciation: Jaarlijkse afschrijving
+useful_life_years: Gebruikslevensduur
+depreciation_year: Jaar
+depreciation_method: Methode
+no_depreciation_records: Geen afschrijvingrecords gevonden.
+tree_count: Aantal
+tree_label: Label
+tree_type: Type
+plot_id_field: Perceel-ID
+btn_add: Toevoegen
+btn_save: Opslaan
+btn_delete: Verwijderen
+btn_cancel: Annuleren
+no_records: Nog geen records
+field_required: Dit veld is verplicht
+invalid_uuid: Ongeldige UUID
+parent_group: Bovenliggende groep
+none_label: Geen
+delete_failed: Verwijderen mislukt
+save_failed: Opslaan mislukt
+cork_oak: Kurkeik
+olive: Olijf
+almond: Amandel
+other_label: Overig
+herd: Kudde
+grove_group: Boomgaard
+coop_group: Hennenweide
+barn_type: Schuur
+coop_type: Hennenweide
+other_building: Overig
+plot_subentity_title: Perceeloverzicht
+plot_choose: Perceel kiezen
+plot_choose_hint: Kies een perceel om de groepen, bomen en gebouwen te zien
+plot_subentity_kind: Soort
+kind_group: Groep
+kind_tree: Boom
+kind_building: Gebouw
+edit_label: Bewerken
+kind_animal: Dier
+animal_species: Soort
+animal_birth_date: Geboortedatum
+animal_identifier: Kenmerk
+animal_breed: Ras
+animal_status: Status
+goat: Geit
+sheep: Schaap
+cattle: Rundvee
+pig: Varken
+horse: Paard
+chicken: Kip
+duck: Eend
+turkey: Kalkoen
+goose: Gans
+grape: Druif
+crop_olive: Olijf
+apple: Appel
+citrus: Citrus
+vegetable: Groente
+nut: Noten
+crop_cork_oak: Kurkeik
+crop_almond: Amandel
+hazelnut: Hazelaar
+chestnut: Kastanje
+berry: Bes
+tropical: Tropisch
+poultry: Pluimvee
+livestock: Vee
+fallow: Braak
+forest: Bos
+pasture: Weide
+grain: Granen
+tool_nutrition_demand: Behoefte aan nutriënten
+tool_fertilizer_amount: Fosfaat hoeveelheid
+tool_nutrition_balance: Nutriëntenbalans
+tool_water_rate: Watertoepassingssnelheid
+tool_material: Gebruik hoeveelheid product
+tool_crown_volume: Kroonvolume
+tool_forage: Voedervraag
+tool_nitrogen: Stikstofvraag
+tool_difficulty: Moeilijkheidstoeslag
+tool_profitability: Rentabiliteit
+tool_harvest_estimation: Oogstschatting
+tool_workflow: Workflow opvolging
+tool_weather_fetch: Weer ophalen
+calc_section_general: Algemeen
+calc_section_nutrition: Voeding
+calc_section_water: Water
+calc_section_cost: Kosten
+calc_run: Berekenen
+calc_result: Resultaat
+avg_temperature: Gemiddelde temperatuur
+base_temperature: Basistemperatuur
+bbch_stage: BBCH-stadium
+current_stage: Huidig stadium
+target_stage: Geldig stadium
+steep_slope: Steile helling
+heavy_soil: Zware grond
+narrow_lanes: Smalle rijbanen
+material_method: Oppervlaktemethode
+speed_kmh: Snelheid (km/u)
+nozzle_flow: Mondtuitstroom (l/min)
+lane_width: Werkbaanbreedte (m)
+nozzle_count: Aantal mondstukken
+crown_diameter: Kroondiameter (m)
+tree_height: Boomhoogte (m)
+trees_per_ha: Bomen per hectare
+body_weight: Lichaamsgewicht (kg)
+demand_percent: Vraag (% van lichaamsgewicht)
+animal_count_field: Aantal dieren
+dose_per_ha: Dosis per hectare
+yield_amount: Opbrengst
+price_per_unit: Prijs per eenheid
+material_costs: Materiaalkosten
+labor_costs: Arbeidskosten
+machinery_costs: Machinekosten
+latitude_field: Breedtegraad
+longitude_field: Lengtegraad
+nav_calculators: Rekenmachines
+calc_tool: Gereedschap
+area_ha: Oppervlakte (ha)
+expected_yield: Verwachte opbrengst
+demand_per_ha: Vraag per hectare
+soil_n: Bodemstikstof (N)
+soil_p: Bodemfosfaat (P)
+soil_k: Bodemkalium (K)
+organic_matter: Organische stof (%)
+base_rate: Basistarief
+crop_type: Gewastype
+not_implemented: Bereikbaar via de API, nog niet aan dit formulier gekoppeld
+crop_grape: Druif
+crop_apple: Appel
+crop_citrus: Citrus
+crop_vegetable: Groente
+crop_nut: Noten
+crop_type_cork_oak: Kurkeik
+crop_type_olive_2: Olijf
+crop_type_almond: Amandel
+crop_hazelnut: Hazelaar
+crop_chestnut: Kastanje
+crop_berry: Bes
+crop_tropical: Tropisch
+crop_poultry: Pluimvee
+crop_livestock: Vee
+crop_fallow: Braak
+crop_forest: Bos
+crop_pasture: Weide
+crop_grain: Granen
+crop_other: Overig
+crop_unknown: Onbekend
+method_net_area: Netto-oppervlakte
+method_gross_area: Bruto-oppervlakte
+method_leaf_wall_measured: Bladerwand (gemeten)
+method_leaf_wall_gross: Bladerwand (bruto)
+method_ground_protection: Grondbescherming
+method_herbicide_protection: Onkruidbescherming
+method_tree_crown_volume: Kroonvolume
+calc_weather_providers: Weerleveranciers
+nav_work_logs: Werklogboeken
+nav_worker_locations: Posities van werknemers
+worker_id: Werknemer-ID
+log_date: Datum
+hours_worked: Gewerkte uren
+overtime_hours: Overtijd
+rest_hours: Rusturen
+task_description: Taakomschrijving
+breaks_taken: Pauzes
+night_shift: Nachtdienst
+report_own_position: Mijn positie melden
+timestamp_2: Tijdstempel
+weather_warnings: Weerwaarschuwingen
+frost_warning: Vorstwaarschuwing
+frost_warnings: Vorstwaarschuwingen
+active_frost_warnings: Actieve vorstwaarschuwingen
+no_active_warnings: Geen actieve waarschuwingen
+station_id: Station-ID
+threshold_temp: Drempel (°C)
+notify_email: Per e-mail melden
+notify_sms: Per SMS melden
+pest_risk: Pestrisico
+pest_risks: Pestrisico's
+risk_level: Risiconiveau
+risk_low: Laag
+risk_medium: Gemiddeld
+risk_high: Hoog
+risk_critical: Kritiek
+assessment_date: Beoordelingsdatum
+pest_type: Pestsoort
+confidence_2: Zekerheid
+recommended_action: Aanbevolen actie
+model_version: Modelversie
+applicator_licenses: Aanvragervergunningen
+license_type: Vergunningstype
+license_number: Vergunningsnummer
+license_basic: Basis
+license_advanced: Gevorderd
+license_professional: Professioneel
+issued_by: Uitgegeven door
+valid_from: Geldig vanaf
+valid_until: Geldig tot
+user_id: Gebruikers-ID
+nav_water: Water
+water_sources: Waterbronnen
+water_source_type: Brontype
+water_capacity: Capaciteit (m³)
+water_current_usage: Huidig verbruik
+water_usage: Waterverbruik
+water_source_id: Bron-ID
+water_volume: Volume (m³)
+irrigation_method: Irrigatiemethode
+efficiency_pct: Efficiëntie (%)
+usage_date: Gebruikdatum
+water_quotas: Waterquota
+quota_year: Jaar
+quota_allocated: Toegewezen (m³)
+quota_used: Gebruikt (m³)
+quota_remaining: Resterend (m³)
+water_source_well: Put
+water_source_reservoir: Reservoir
+water_source_river: Rivier
+water_source_canal: Kanaal
+water_source_comunidad: Irrigatiegemeenschap
+water_source_rainwater: Regenwateropvang
+water_source_desalination: Ontzouten
+irrigation_drip: Druppelirrigatie
+irrigation_sprinkler: Sprinkler
+irrigation_flood: Vloedirrigatie
+irrigation_pivot: Pivotsysteem
+irrigation_micro: Micro-sprinkler
+irrigation_subsurface: Ondergrondse irrigatie
+nav_harvest: Oogst
+harvest_seasons: Oogstseizoenen
+season_start: Startdatum
+season_end: Einddatum
+harvest_lots: Oogstpartijen
+season_id: Seizoen-ID
+lot_number: Partijnummer
+site_ids: Perceel-ID's (gescheiden door komma)
+lot_variety: Ras
+quality_target: Kwaliteitsdoel
+lot_status: Status
+lot_collecting: In oogst
+lot_processed: Verwerkt
+lot_shipped: Verzonden
+lot_stored: Opgeslagen
+harvest_deliveries: Leveringen
+lot_id: Partij-ID
+delivery_date: Leverdatum
+gross_weight: Brutogewicht (kg)
+tare_weight: Tara (kg)
+net_weight: Nettogewicht (kg)
+total_weight: Totaalgewicht (kg)
+carrier_name: Vervoerder
+vehicle_id: Voertuig-ID
+delivery_temperature: Temperatuur bij levering (°C)
+cold_chain: Koelketen
+sensor_id: Sensor-ID
+recorded_at: Vastgelegd op
+temperature_field: Temperatuur (°C)
+location_field: Locatie
+nav_agriculture: Gespecialiseerde gewassen
+olive_groves: Olijfboomgaarden
+olive_grove_id: Gaard-ID
+olive_oil_records: Olijfolieregisters
+olive_quantity: Hoeveelheid (kg)
+olive_yield: Olieopbrengst (kg)
+acidity_pct: Zuurgehalte (%)
+peroxide_value: Peroxidewaarde
+k232: K232
+k270: K270
+notes_field: Notities
+vineyards: Wijngaarden
+vineyard_id: Wijngaard-ID
+doc_area: DOC-oppervlakte
+vintage: Jaar
+grape_variety: Druivenras
+brix: Brix
+ph: pH
+acidity: Zuurgehalte
+yield_tons: Opbrengst (t)
+quality_grade: Kwaliteitsklasse
+grade_reserva: Reserva
+grade_grande_reserva: Grande Reserva
+grade_garrafeira: Garrafeira
+grade_superior: Superior
+grade_classic: Classic
+grade_late_harvest: Late oogst
+slope_percent: Helling (%)
+altitude_m: Hoogte (m)
+is_organic: Biologisch
+certification_body: Certificeringsinstantie
+certification_number: Certificaatnummer
+planting_year: Plantjaar
+spacing_m: Plantafstand (m)
+irrigation_type: Irrigatietype
+kelter_deliveries: Kelterleveringen
+kelter_name: Kelternaam
+transport_company: Transportbedrijf
+tool_fertilizer_amount_legacy: Fosfaat hoeveelheid (oude route)
+tool_profitability_specialized: Rentabiliteit (gespecialiseerde gewassen)
+add_equipment_btn: Apparatuur toevoegen
+add_worker: Werknemer toevoegen
+all_items: Alle Items
+analytics: Analyse
+available: Beschikbaar
+below_minimum: Onder Minimum
+btn_add_item: Item toevoegen
+category: Categorie
+category_equipment: Apparatuur
+category_feed: Voeder
+category_fertilizer: Meststof
+category_fuel: Brandstof
+category_herbicide: Onkruidvermoerder
+category_medicine: Geneesmiddel
+category_other: Anders
+category_pesticide: Pesticide
+category_seed: Zaad
+category_spare_part: Onderdeel
+clock_actions: Klokacties
+clock_in: Inchecken
+clock_out: Uitchecken
+code: Code
+common.close_detail: Sluiten
+common.n_a: NVT
+common.of: van
+common.page: Pagina
+common.refresh: Vernieuwen
+complete_order: Bestelling voltooien
+contract_type: Contracttype
+created_at: Gemaakt op
+current_stock: Huidige Voorraad
+customer_id: Klant-ID
+customer_management: Klantbeheer
+customer_number: Klantnummer
+customer_orders: Klantbestellingen
+deadline: Deadline
+equipment: Apparatuur
+equipment_type_harvester: Oogstmachine
+equipment_type_plow: Ploeg
+equipment_type_seeder: Zaaimachine
+equipment_type_sprayer: Spuitmachine
+equipment_type_tractor: Tractor
+equipment_type_trailer: Aanhangwagen
+finance: Financiën
+harvest_date: Oogstdatum
+hourly_rate: Uurtarief
+humidity_pct: Luchtvochtigheid (%)
+invalid_task_id: Ongeldige taak-ID
+inventory_method: Inventarisatiemethode
+item_name: Itemnaam
+items_below_minimum: Items onder minimum
+label: Label
+location_code: Locatiecode
+location_name: Locatienaam
+map_title: Kaart
+min_stock: Minimumvoorraad
+nav_workers: Werknemers
+no_customers_found: Geen klanten gevonden
+no_rate: Geen tarief
+no_tasks_assigned: Geen taken toegewezen
+no_tasks_desc: Er zijn nog geen taken aangemaakt.
+order_completed_success: Bestelling succesvol voltooid
+orders: Bestellingen
+order_started_success: Bestelling succesvol gestart
+planned_date: Geplande datum
+search_by_name: Zoeken op naam
+search_by_number: Zoeken op nummer
+search_customers: Klanten zoeken
+sigpac.aggregate: Aggregeren
+sigpac.area_hectares: Oppervlakte (hectare)
+sigpac.enclosure: Omheining
+sigpac.filters: Filters
+sigpac.latitude: Breedtegraad
+sigpac.longitude: Lengtegraad
+sigpac.municipality: Gemeente
+sigpac.no_results: Geen resultaten gevonden
+sigpac.official_area_ha: Officiële Oppervlakte (ha)
+sigpac.parcel: Perceel
+sigpac.parcel_detail: Perceelgegevens
+sigpac.per_page: Per Pagina
+sigpac.polygon: Polygon
+sigpac.province: Provincie
+sigpac.radius_meters: Straal (meters)
+sigpac.results: Resultaten
+sigpac.search_near_point: Zoeken nabij punt
+sigpac.sigpac_reference: SIGPAC-referentie
+sigpac.spatial_search: Ruimtelijke Zoekopdracht
+sigpac.subtitle: Grondperceelregister zoeken
+sigpac.title: Grondperceelregister
+sigpac.zone: Zone
+start_order: Bestelling starten
+start_task: Taak starten
+stop_task: Taak stoppen
+storage_locations: Opslaglocaties
+task_detail: Taakgegevens
+task_done: Taak Afgerond
+task_load_failed: Taken konden niet worden geladen
+task_pending: In afwachting
+task_started_success: Taak succesvol gestart
+task_stopped: Taak Gestopt
+task_stopped_success: Taak succesvol gestopt
+task_type: Taaktype
+tenant: Huurder
+unit: Eenheid
+updated_at: Bijgewerkt op
+view_details: Details weergeven
+view_orders: Bestellingen weergeven
+view_tasks: Taken weergeven
+worker_tasks_desc: Taken en toewijzingen van werknemers beheren
+filter_all: Alle
+no_results: Geen resultaten gevonden
+add: Toevoegen
+animal_species_gefluegel: Geflügel
+animal_species_goat: Goat
+animal_species_sheep: Sheep
+animal_species_cattle: Cattle
+animal_species_pig: Pig
+animal_species_horse: Horse
+animal_species_chicken: Chicken
+animal_species_duck: Duck
+animal_species_turkey: Turkey
+animal_species_goose: Goose
+site_type_corkOakMontado: Cork Oak Montado
+site_type_holmOakMontado: Holm Oak Montado
+site_type_oliveGrove: Olive Grove
+site_type_almondOrchard: Almond Orchard
+site_type_citrusGrove: Citrus Grove
+crop_type_apple: Apple
+crop_type_citrus: Citrus
+crop_type_nut: Nut
+crop_type_corkOak: Cork Oak
+crop_type_hazelnut: Hazelnut
+crop_type_chestnut: Chestnut
+crop_type_berry: Berry
+crop_type_tropical: Tropical
+crop_type_poultry: Poultry
+crop_type_livestock: Livestock
+crop_type_fallow: Fallow
+crop_type_forest: Forest
+crop_type_unknown: Unknown
+order_type_plantProtection: Plant Protection
+order_type_soilWork: Soil Work
+order_type_livestockFeeding: Livestock Feeding
+order_type_livestockWatering: Livestock Watering
+order_type_livestockRelocation: Livestock Relocation
+order_type_livestockHealthCheck: Livestock Health Check
+order_type_barnCleaning: Barn Cleaning
+order_type_eggCollection: Egg Collection
+order_type_salesOrder: Sales Order
+order_status_draft: Draft
+order_status_planned: Planned
+order_status_inProgress: In Progress
+order_status_completed: Completed
+order_status_cancelled: Cancelled
+equipment_type_mulcher: Mulcher
+equipment_type_tool: Tool
+building_type_chickenCoop: Chicken Coop
+building_type_goatStable: Goat Stable
+building_type_barn: Barn
+group_type_herd: Herd
+group_type_flock: Flock
+group_type_grove: Grove
+group_type_coop: Coop
+water_source_type_well: Well
+water_source_type_reservoir: Reservoir
+water_source_type_river: River
+water_source_type_canal: Canal
+water_source_type_comunidadDeRegantes: Comunidad De Regantes
+water_source_type_rainwaterHarvesting: Rainwater Harvesting
+water_source_type_desalination: Desalination
+irrigation_method_drip: Drip
+irrigation_method_sprinkler: Sprinkler
+irrigation_method_flood: Flood
+irrigation_method_pivot: Pivot
+irrigation_method_microSprinkler: Micro Sprinkler
+irrigation_method_subsurface: Subsurface
+animal_status_active: Active
+animal_status_inactive: Inactive
+animal_status_sold: Sold
+animal_status_deceased: Deceased
+weather_station_type_iot: IoT
+weather_station_type_manual: Manual
+weather_station_type_virtual: Virtual
+weather_station_type_externalApi: External API
+inventory_category_seed: Seed
+inventory_category_fertilizer: Fertilizer
+inventory_category_pesticide: Pesticide
+inventory_category_herbicide: Herbicide
+inventory_category_fuel: Fuel
+inventory_category_feed: Feed
+inventory_category_medicine: Medicine
+inventory_category_sparePart: Spare Part
+inventory_category_equipment: Equipment
+unit_of_measure_kg: Kilogram
+unit_of_measure_liter: Liter
+unit_of_measure_bag: Bag
+unit_of_measure_unit: Unit
+unit_of_measure_box: Box
+unit_of_measure_bale: Bale
+oil_grade_extraVirgin: Extra Virgin
+oil_grade_virgin: Virgin
+oil_grade_lampante: Lampante
+oil_grade_refined: Refined
+oil_grade_pomace: Pomace
+quality_grade_reserva: Reserva
+quality_grade_grandeReserva: Grande Reserva
+quality_grade_garrafeira: Garrafeira
+quality_grade_superior: Superior
+quality_grade_classic: Classic
+quality_grade_lateHarvest: Late Harvest
+doc_area_douro: Douro
+doc_area_alentejo: Alentejo
+doc_area_vinhoVerde: Vinho Verde
+doc_area_dao: Dão
+doc_area_bairrada: Bairrada
+doc_area_lisboa: Lisboa
+doc_area_peninsulaDeSetubal: Península de Setúbal
+doc_area_algarve: Algarve
+doc_area_tejo: Tejo
+doc_area_minho: Minho
+doc_area_trasmontes: Trasmontes
+bbch_stage_dormancy: Dormancy
+bbch_stage_budSwelling: Bud Swelling
+bbch_stage_woolStage: Wool Stage
+bbch_stage_budBreak: Bud Break
+bbch_stage_firstLeaf: First Leaf
+bbch_stage_leafDevelopment: Leaf Development
+bbch_stage_inflorescenceVisible: Inflorescence Visible
+bbch_stage_inflorescenceFullyDeveloped: Inflorescence Fully Developed
+bbch_stage_floweringBegins: Flowering Begins
+bbch_stage_floweringEnds: Flowering Ends
+bbch_stage_fruitSet: Fruit Set
+bbch_stage_peaSizeBerries: Pea Size Berries
+bbch_stage_berriesTouching: Berries Touching
+bbch_stage_veraisonBegins: Veraison Begins
+bbch_stage_berriesRipe: Berries Ripe
+bbch_stage_afterHarvest: After Harvest
+bbch_stage_winterDormancy: Winter Dormancy
+spatial_object_type_farm: Farm
+spatial_object_type_site: Site
+spatial_object_type_building: Building
+spatial_object_type_stable: Stable
+spatial_object_type_shed: Shed
+spatial_object_type_pen: Pen
+spatial_object_type_tree: Tree
+spatial_object_type_oliveTree: Olive Tree
+spatial_object_type_waterPoint: Water Point
+spatial_object_type_fence: Fence
+variety_category_vegetable: Vegetable
+checklist_type_gap: GAP
+checklist_type_organic: Organic
+checklist_type_globalGAP: GlobalGAP
+checklist_type_haccp: HACCP
+compliance_status_pending: Pending
+compliance_status_failed: Failed
+compliance_status_expired: Expired
+audit_action_created: Created
+audit_action_updated: Updated
+audit_action_deleted: Deleted
+audit_action_viewed: Viewed
+audit_action_exported: Exported
+audit_action_approved: Approved
+audit_action_rejected: Rejected
+pac_status_submitted: Submitted
+pac_status_inReview: In Review
+pac_status_paid: Paid
+cost_center_type_crop: Crop
+cost_center_type_activity: Activity
+cost_center_type_general: General
+financial_record_type_expense: Expense
+financial_record_type_income: Income
+financial_record_type_subsidy: Subsidy
+contract_type_permanent: Permanent
+contract_type_temporary: Temporary
+contract_type_seasonal: Seasonal
+contract_type_freelance: Freelance
+contract_type_apprenticeship: Apprenticeship
+clock_entry_type_clockIn: Clock In
+clock_entry_type_clockOut: Clock Out
+lot_status_collecting: Collecting
+lot_status_processed: Processed
+lot_status_shipped: Shipped
+lot_status_stored: Stored
+plant_protection_area_method_netArea: Net Area
+plant_protection_area_method_grossArea: Gross Area
+plant_protection_area_method_leafWallMeasured: Leaf Wall Measured
+plant_protection_area_method_leafWallGross: Leaf Wall Gross
+plant_protection_area_method_groundProtection: Ground Protection
+plant_protection_area_method_herbicideProtection: Herbicide Protection
+plant_protection_area_method_treeCrownVolume: Tree Crown Volume
+task_execution_mode_autoPresence: Auto Presence
+task_execution_mode_manualWithDefaultDuration: Manual with Default Duration
+recurrence_cadence_hourly: Hourly
+recurrence_cadence_daily: Daily
+recurrence_cadence_weekly: Weekly
+recurrence_cadence_monthly: Monthly
+recurrence_cadence_yearly: Yearly
+sub_task_status_new: New
+sub_task_status_started: Started
+sub_task_status_paused: Paused
+sub_task_status_stopped: Stopped
+sub_task_status_done: Done
+depreciation_method_straightLine: Straight Line
+depreciation_method_doubleDeclining: Double Declining
+inventory_method_fifo: FIFO
+inventory_method_fefo: FIFO (Expired First)
+transaction_type_stockIn: Stock In
+transaction_type_stockOut: Stock Out
+transaction_type_transfer: Transfer
+transaction_type_adjustment: Adjustment
+risk_level_low: Low
+risk_level_medium: Medium
+risk_level_high: High
+risk_level_critical: Critical
+iot_device_type_weatherStation: Weather Station
+iot_device_type_soilSensor: Soil Sensor
+iot_device_type_soilMoistureProbe: Soil Moisture Probe
+iot_device_type_irrigationValve: Irrigation Valve
+iot_device_type_generic: Generic
+setting_value_type_string: String
+setting_value_type_number: Number
+setting_value_type_boolean: Boolean
+setting_value_type_json: JSON
+setting_value_type_array: Array
+sync_entity_type_order: Order
+sync_entity_type_task: Task
+sync_entity_type_taskData: Task Data
+sync_entity_type_animal: Animal
+sync_entity_type_weatherData: Weather Data
+sync_entity_type_harvestSeason: Harvest Season
+sync_entity_type_harvestLot: Harvest Lot
+sync_entity_type_harvestDelivery: Harvest Delivery
+sync_entity_type_coldChainLog: Cold Chain Log
+sync_entity_type_kelterDelivery: Kelter Delivery
+sync_entity_type_oliveOilRecord: Olive Oil Record
+sync_entity_type_waterSource: Water Source
+sync_entity_type_waterUsage: Water Usage
+sync_entity_type_waterQuota: Water Quota
+sync_entity_type_plantProtectionRecord: Plant Protection Record
+sync_entity_type_applicatorLicense: Applicator License
+sync_entity_type_fertilizerRecord: Fertilizer Record
+sync_entity_type_complianceChecklist: Compliance Checklist
+sync_entity_type_complianceItem: Compliance Item
+sync_entity_type_auditLog: Audit Log
+sync_entity_type_pacApplication: PAC Application
+sync_entity_type_costCenter: Cost Center
+sync_entity_type_financialRecord: Financial Record
+sync_entity_type_user: User
+sync_entity_type_worker: Worker
+sync_entity_type_workerLocation: Worker Location
+sync_entity_type_workLog: Work Log
+sync_entity_type_workerTaskStatus: Worker Task Status
+sync_entity_type_phenologyRecord: Phenology Record
+sync_entity_type_typeCategory: Type Category
+sync_entity_type_typeEntry: Type Entry
+sync_operation_create: Create
+sync_operation_update: Update
+sync_operation_delete: Delete
+conflict_type_concurrentModification: Concurrent Modification
+conflict_type_updateAfterDelete: Update After Delete
+conflict_type_duplicateCreate: Duplicate Create
+conflict_type_versionMismatch: Version Mismatch
+conflict_resolution_lastWriterWins: Last Writer Wins
+conflict_resolution_serverWins: Server Wins
+conflict_resolution_clientWins: Client Wins
+conflict_resolution_merge: Merge
+crop_type_wheat: Wheat
+crop_type_corn: Corn
+crop_type_rice: Rice
+crop_type_vegetables: Vegetables
+crop_type_fruit: Fruit
+inventory_category_seeds: Seeds
+inventory_category_fertilizers: Fertilizers
+inventory_category_plant_protection: Plant Protection
+unit_of_measure_meters: Meters
+unit_of_measure_pieces: Pieces
+unit_of_measure_hectoliters: Hectoliters
+inventory_method_average_cost: Average Cost
+water_source_type_rainwater: Rainwater
+water_source_type_municipal: Municipal
+irrigation_method_center_pivot: Center Pivot
+checklist_type_safety: Safety
+checklist_type_environmental: Environmental
+checklist_type_quality: Quality
+checklist_type_regulatory: Regulatory
+checklist_type_custom: Custom
+compliance_status_overdue: Overdue
+cost_center_type_production: Production
+cost_center_type_administration: Administration
+cost_center_type_sales: Sales
+lot_status_processing: Processing
+worker_task_status_type_in_progress: In Progress
+worker_task_status_type_resumed: Resumed
+animal_status_transferred: Transferred
+task_execution_mode_automatic: Automatic
+task_execution_mode_semi_automatic: Semi Automatic
+license_type_basic: Basic
+license_type_advanced: Advanced
+license_type_drone: Drone
+bbch_stage_scale0: Scale 0
+bbch_stage_scale1: Scale 1
+bbch_stage_scale2: Scale 2
+bbch_stage_scale3: Scale 3
+bbch_stage_scale4: Scale 4
+bbch_stage_scale5: Scale 5
+bbch_stage_scale6: Scale 6
+bbch_stage_scale7: Scale 7
+bbch_stage_scale8: Scale 8
+bbch_stage_scale9: Scale 9
+animal_species_rindvieh: Rindvieh
+animal_species_schafe: Schafe
+animal_species_ziegen: Ziegen
+animal_species_schweine: Schweine
+animal_species_gefluegel_eu: Geflügel
+animal_species_pferde: Pferde
+animal_species_milchvieh: Milchvieh
+animal_species_mastvieh: Mastvieh
+animal_species_milchschafe: Milchschafe
+animal_species_wollschafe: Wollschafe
+animal_species_fleischschafe: Fleischschafe
+animal_species_milchziegen: Milchziegen
+animal_species_fleischziegen: Fleischziegen
+animal_species_sauen: Sauen
+animal_species_mastschweine: Mastschweine
+animal_species_huhn: Huhn
+animal_species_ente: Ente
+animal_species_gans: Gans
+animal_species_truthahn: Truthahn
+animal_species_reitpferd: Reitpferd
+animal_species_zugpferd: Zugpferd
+animal_species_pony: Pony
+animal_species_bienen: Bienen
+animal_species_kaninchen: Kaninchen
+animal_species_fische: Fische
+crop_type_weinrebe: Weinrebe
+crop_type_weizen: Weizen
+crop_type_mais: Mais
+crop_type_gemuese: Gemüse
+crop_type_obst: Obst
+crop_type_nuesse: Nüsse
+crop_type_energiepflanzen: Energiepflanzen
+crop_type_rotwein: Rotwein
+crop_type_weisswein: Weißwein
+crop_type_rose: Rosé
+crop_type_winterweizen: Winterweizen
+crop_type_sommerweizen: Sommerweizen
+crop_type_dinkel: Dinkel
+crop_type_silomais: Silomais
+crop_type_koernermais: Körnermais
+crop_type_suessmais: Süßmais
+crop_type_salat: Salat
+crop_type_tomaten: Tomaten
+crop_type_karotten: Karotten
+crop_type_zwiebeln: Zwiebeln
+crop_type_aepfel: Äpfel
+crop_type_birnen: Birnen
+crop_type_kirschen: Kirschen
+crop_type_beeren: Beeren
+crop_type_mandeln: Mandeln
+crop_type_haselnuesse: Haselnüsse
+crop_type_walnuesse: Walnüsse
+crop_type_raps: Raps
+crop_type_miscanthus: Miscanthus
+crop_type_roggen: Roggen
+crop_type_gerste: Gerste
+crop_type_hafer: Hafer
+crop_type_kartoffel: Kartoffel
+crop_type_zuckerruebe: Zuckerrübe
+crop_type_sonnenblume: Sonnenblume
+crop_type_soja: Soja
+crop_type_luzerne: Luzerne
+crop_type_gras: Gras
+crop_type_ackerbohnen: Ackerbohnen
+crop_type_erbse: Erbse
+crop_type_oliven: Oliven
+crop_type_hopfen: Hopfen
+crop_type_flachs: Flachs
+site_type_obstgarten: Obstgarten
+site_type_acker: Acker
+site_type_gruenland: Grünland
+site_type_apfelgarten: Apfelgarten
+site_type_birnengarten: Birnengarten
+site_type_kirschgarten: Kirschgarten
+site_type_beerenplantage: Beerenplantage
+site_type_getreideacker: Getreideacker
+site_type_gemueseacker: Gemüseacker
+site_type_maisacker: Maisacker
+site_type_weide: Weide
+site_type_wiese: Wiese
+site_type_weinberg: Weinberg
+site_type_gewaechshaus: Gewächshaus
+site_type_hopfenfeld: Hopfenfeld
+site_type_olivenhain: Olivenhain
+site_type_nussplantage: Nussplantage
+site_type_forst: Forst
+site_type_brache: Brache
+site_type_hof: Hof
+site_type_stall: Stall
+site_type_teich: Teich
+site_type_bienenstand: Bienenstand
+equipment_type_traktor_eu: Traktor
+equipment_type_spritze: Spritze
+equipment_type_maehdrescher: Mähdrescher
+equipment_type_ballenpresse: Ballenpresse
+equipment_type_saeemaschine: Sämaschine
+equipment_type_bewaesserungsanlage: Bewässerungsanlage
+equipment_type_drohne: Drohne
+equipment_type_werkzeug: Werkzeug
+equipment_type_maehwerk: Mähwerk
+equipment_type_kleintraktor: Kleintraktor
+equipment_type_mitteltraktor: Mitteltraktor
+equipment_type_grosstraktor: Großtraktor
+equipment_type_feldspritze: Feldspritze
+equipment_type_rebspritze: Rebspritze
+equipment_type_traegerspritze: Trägerspritze
+equipment_type_spritze_drohne: Spritze Drohne
+equipment_type_getreidemaehdrescher: Getreidemähdrescher
+equipment_type_ruebemaehdrescher: Rübenmähdrescher
+equipment_type_rundballen: Rundballen
+equipment_type_quadratballen: Quadratballen
+equipment_type_getreidesaeemaschine: Getreidesämaschine
+equipment_type_rapsaeemaschine: Rapsämaschine
+equipment_type_tropfbewaesserung: Tropfbewässerung
+equipment_type_spruehdrohne: Sprühdrohne
+equipment_type_aufklaerungsdrohne: Aufklärungsdrohne
+equipment_type_handwerkzeug: Handwerkzeug
+equipment_type_elektrowerkzeug: Elektrowerkzeug
+equipment_type_sichelmaehrer: Sichelmäher
+equipment_type_rotormaehrer: Rotormäher
+equipment_type_scheibenmaehrer: Scheibenmäher
+equipment_type_heckenschere: Heckenschere
+equipment_type_pflug: Pflug
+equipment_type_grubber: Grubber
+equipment_type_kultivator: Kultivator
+equipment_type_duengerstreuer: Düngerstreuer
+equipment_type_guelleausbringungsgeraet: Gülleausbringungsgerät
+equipment_type_erntehelfer: Erntehelfer
+equipment_type_anhaenger: Anhänger
+equipment_type_lkw: LKW
+equipment_type_gabelstapler: Gabelstapler
+equipment_type_generator: Generator
+equipment_type_melkmaschine: Melkmaschine
+equipment_type_fuetterungsroboter: Fütterungsroboter
+equipment_type_strohballenhandler: Strohballenhandler
+equipment_type_frontlader: Frontlader
+equipment_type_ruecklader: Rücklader
+equipment_type_bagger: Bagger
+equipment_type_planiermaschine: Planiermaschine
+equipment_type_walze: Walze
+equipment_type_heuwender: Heuwender
+building_type_stall_eu: Stall
+building_type_silo: Silo
+building_type_kuhstall: Kuhstall
+building_type_schafstall: Schafstall
+building_type_ziegenstall: Ziegenstall
+building_type_schweinestall: Schweinestall
+building_type_pferdestall: Pferdestall
+building_type_getreidesilo: Getreidesilo
+building_type_silagesilo: Silagesilo
+building_type_huehnerstall: Hühnerstall
+building_type_scheune: Scheune
+building_type_maschinenhalle: Maschinenhalle
+building_type_lagerhalle: Lagerhalle
+building_type_verarbeitungsgebaeude: Verarbeitungsgebäude
+building_type_kelterei: Kelterei
+building_type_weinkeller: Weinkeller
+building_type_bienenhaus: Bienenhaus
+building_type_gewaechshaus_building: Gewächshaus
+building_type_fischteich: Fischteich
+building_type_duengerlager: Düngerlager
+building_type_pflanzenschutzlager: Pflanzenschutzlager
+order_type_pflanzenschutz: Pflanzenschutz
+order_type_duengen: Düngen
+order_type_beschneiden: Beschneiden
+order_type_ernten: Ernten
+order_type_bienen_order: Bienen
+order_type_fischerei: Fischerei
+order_type_fungizid: Fungizid
+order_type_insektizid: Insektizid
+order_type_herbizid: Herbizid
+order_type_akarizid: Akarizid
+order_type_stickstoff: Stickstoff
+order_type_phosphor: Phosphor
+order_type_kalium: Kalium
+order_type_guelle: Gülle
+order_type_kompost: Kompost
+order_type_winterschnitt: Winterschnitt
+order_type_sommerschnitt: Sommerschnitt
+order_type_getreide_ernte: Getreide Ernte
+order_type_kartoffel_ernte: Kartoffel Ernte
+order_type_obst_ernte: Obst Ernte
+order_type_wein_ernte: Wein Ernte
+order_type_oliven_ernte: Oliven Ernte
+order_type_honig_ernten: Honig ernten
+order_type_varroa_behandeln: Varroa behandeln
+order_type_fisch_fuettern: Fisch füttern
+order_type_fisch_ernten: Fisch ernten
+order_type_wasser_pruefen: Wasser prüfen
+order_type_pfluegen: Pflügen
+order_type_grubbern: Grubbern
+order_type_kultivieren: Kultivieren
+order_type_saen: Säen
+order_type_ranken: Ranken
+order_type_pfluecken: Pflücken
+order_type_heuen: Heuen
+order_type_silieren: Silieren
+order_type_bewaessern: Bewässern
+order_type_fuettern: Füttern
+order_type_traenken: Tränken
+order_type_melken: Melken
+order_type_stall_reinigen: Stall reinigen
+order_type_eier_sammeln: Eier sammeln
+order_type_scheren: Scheren
+order_type_gesundheit_pruefen: Gesundheit prüfen
+order_type_besamen: Besamen
+order_type_umstellen: Umstellen
+order_type_monitoring_order: Monitoring
+order_type_wartung: Wartung
+order_type_reparatur: Reparatur
+order_type_verkauf: Verkauf
+order_type_lieferung: Lieferung
+order_type_inventur: Inventur
+variety_category_weinrebe_variety: Weinrebe
+variety_category_beeren_variety: Beeren
+variety_category_rotweinsorte: Rotweinsorte
+variety_category_weissweinsorte: Weißweinsorte
+variety_category_erdbeere: Erdbeere
+variety_category_himbeere: Himbeere
+variety_category_brombeere: Brombeere
+variety_category_heidelbeere: Heidelbeere
+variety_category_oliven_variety: Oliven
+variety_category_weizen_variety: Weizen
+variety_category_roggen_variety: Roggen
+variety_category_gerste_variety: Gerste
+variety_category_mais_variety: Mais
+variety_category_kartoffel_variety: Kartoffel
+variety_category_aepfel_variety: Äpfel
+variety_category_birnen_variety: Birnen
+variety_category_kirschen_variety: Kirschen
+variety_category_zitrusfruechte: Zitrusfrüchte
+variety_category_nuesse_variety: Nüsse
+variety_category_gemuese_variety: Gemüse
+variety_category_getreide_variety: Getreide
+variety_category_huelsenfruechte: Hülsenfrüchte
+variety_category_oelfruechte: Ölfrüchte
+variety_category_faserpflanzen: Faserpflanzen
+variety_category_heilpflanzen: Heilpflanzen
+species_rind: Rind
+species_schaf: Schaf
+species_ziege: Ziege
+species_schwein: Schwein
+species_huhn_species: Huhn
+species_pferd: Pferd
+species_kaninchen_species: Kaninchen
+species_biene: Biene
+species_fisch: Fisch
+inventory_category_duengemittel: Düngemittel
+inventory_category_pflanzenschutz_inv: Pflanzenschutz
+inventory_category_kraftstoff: Kraftstoff
+inventory_category_futter: Futter
+inventory_category_mineralduenger: Mineraldünger
+inventory_category_organische_duenger: Organische Dünger
+inventory_category_fungizide: Fungizide
+inventory_category_insektizide: Insektizide
+inventory_category_herbizide: Herbizide
+inventory_category_diesel: Diesel
+inventory_category_benzin: Benzin
+inventory_category_adblue: AdBlue
+inventory_category_kraftfutter: Kraftfutter
+inventory_category_raufutter: Raufutter
+inventory_category_mineralfutter: Mineralfutter
+inventory_category_saatgut: Saatgut
+inventory_category_tiermedizin: Tiermedizin
+inventory_category_ersatzteile: Ersatzteile
+inventory_category_betriebsmittel: Betriebsmittel
+inventory_category_verpackungsmaterial: Verpackungsmaterial
+inventory_category_elektroartikel: Elektroartikel
+inventory_category_werkzeuge_inv: Werkzeuge
+inventory_category_sonstiges: Sonstiges
+soil_type_sandboden: Sandboden
+soil_type_lehmboden: Lehmboden
+soil_type_tonboden: Tonboden
+soil_type_kiesboden: Kiesboden
+soil_type_humusboden: Humusboden
+soil_type_margelboden: Mergelboden
+fertilizer_type_stickstoffduenger: Stickstoffdünger
+fertilizer_type_phosphorduenger: Phosphordünger
+fertilizer_type_kaliumduenger: Kaliumdünger
+fertilizer_type_vollduenger: Volldünger
+fertilizer_type_guelle_fert: Gülle
+fertilizer_type_mist: Mist
+fertilizer_type_kompost_fert: Kompost
+fertilizer_type_mineralduenger_fert: Mineraldünger
+fertilizer_type_organischer_duenger: Organischer Dünger
+fertilizer_type_blattduenger: Blattdünger
+pest_type_insekt: Insekt
+pest_type_pilz: Pilz
+pest_type_saeugetier_pest: Säugetier
+pest_type_blattlaus: Blattlaus
+pest_type_raupen: Raupen
+pest_type_kaefer: Käfer
+pest_type_mehltau: Mehltau
+pest_type_rost: Rost
+pest_type_botrytis: Botrytis
+pest_type_hasen: Hasen
+pest_type_rehe: Rehe
+pest_type_bakterie: Bakterie
+pest_type_virus: Virus
+pest_type_unkraut: Unkraut
+pest_type_nematode: Nematode
+pest_type_vogel: Vogel
+weather_condition_sonnig: Sonnig
+weather_condition_bewolkt: Bewölkt
+weather_condition_regen: Regen
+weather_condition_schnee: Schnee
+weather_condition_hagel: Hagel
+weather_condition_sturm: Sturm
+weather_condition_nebel: Nebel
+weather_condition_frost: Frost
+weather_condition_trockenheit: Trockenheit
+contract_type_festanstellung: Festanstellung
+contract_type_zeitarbeitsvertrag: Zeitarbeitsvertrag
+contract_type_saisonarbeitsvertrag: Saisonarbeitsvertrag
+contract_type_minijob: Minijob
+contract_type_aushilfe: Aushilfe
+depreciation_method_linear: Linear
+depreciation_method_degressiv: Degressiv
+depreciation_method_doppelte_degressiv: Doppelte degressiv
+depreciation_method_leistungsbezogen: Leistungsbezogen
+water_source_type_brunnen: Brunnen
+water_source_type_teich_water: Teich
+water_source_type_fluss: Fluss
+water_source_type_kanal: Kanal
+water_source_type_regenwasser: Regenwasser
+water_source_type_leitungswasser: Leitungswasser
+water_source_type_grundwasser: Grundwasser
+water_source_type_see: See
+irrigation_method_tropfbewaesserung_irr: Tropfbewässerung
+irrigation_method_uerberstau: Überstau
+irrigation_method_unterflurbewaesserung: Unterflurbewässerung
+irrigation_method_beregnung: Beregnung
+weather_station_type_satellit: Satellit
+weather_station_type_modell: Modell
+site_type: Locatietype
+order_status: Taakstatus
+equipment_type: Uitrustingstype
+building_type: Gebouwttype
+soil_type: Bodembtype
+fertilizer_type: Meststofype
+weather_condition: Weersomstandigheid
+variety_category: Variëteitcategorie
+inventory_category: Voorraadcategorie
+unit_of_measure: Eenheid
+checklist_type: Controlelijsttype
+compliance_status: Nalevingsstatus
+task_execution_mode: Uitvoeringsmodus
+recurrence_cadence: Frequentie
+pac_status: PAC-status
+cost_center_type: Kostenplaatstype
+financial_record_type: Financieel recordtype
+worker_task_status: Taakstatus
+setting_value_type: Instellingstype
+transaction_type: Transactietype
+weather_station_type: Weerstationtype
+audit_action: Auditactie
+clock_entry_type: Tijdsregistratietype
+iot_device_type: IoT-apparaattype
+plant_protection_area_method: Oppervlaktemethode
+livestock_type: Veehouderijtype
+harvest_lot_status: Oogstlotstatus
+transaction_type_inventory: Voorraadtransactie
+oil_grade: Oliekwaliteit
+group_type: Groepstype
+spatial_object_type: Geometrietype
+sub_task_status: Subtaakstatus
+overall_task_status: Algemene status
+# Variety attribute labels
+variety_berry_colour: Beskleur
+variety_use_kind: Gebruik
+variety_registration_countries: Registratielanden
+variety_vivc_no: VIVC-nummer
+variety_synonyms: Synoniemen
+variety_source: Bron
+variety_origin: Oorsprong
+variety_category_label: Categorie
+# Breed attribute labels
+breed_origin: Oorsprong
+breed_use_kind: Gebruik
+breed_birth_weight: Geboortegewicht (kg)
+breed_mature_weight: Volwassen gewicht (kg)
+breed_eggs_per_year: Eieren/Jaar
+breed_wool_per_year: Wol/Jaar (kg)
+breed_wool_micron: Vezeldiameter (µm)
+breed_gestation_days: Draagtijd (dagen)
+breed_litter_size: Worpomvang
+breed_milk_per_year: Melk/Jaar (kg)
+breed_daily_gain: Dagelijkse toename (g)
+breed_productive_lifespan: Productieve levensduur (jaren)
+# Species labels
+species_common_name: Gemeenschappelijke naam
+species_scientific_name: Wetenschappelijke naam
+species_kingdom: Rijk
+# Crop species common names
+crop_species_vitis_vinifera: Wijnstok
+crop_species_olea_europaea: Olijfboom
+crop_species_bos_taurus: Rundvee
+crop_species_ovis_aries: Schaap
+crop_species_capra_hircus: Geit
+crop_species_sus_scrofa_domesticus: Varken
+crop_species_equus_caballus: Paard
+crop_species_gallus_gallus_domesticus: Kip
+
+# Type Moderation
+nav_type_moderation: Type-moderatie
+type_moderation: Type-moderatie
+no_pending_entries: Geen typen wachtend op goedkeuring
+created_by: Gemaakt door
+merge_type: Samenvoegen
+search_existing_type: Bestaand type zoeken
+type_approved: Type goedgekeurd
+type_rejected: Type afgewezen
+type_merged: Typen samengevoegd

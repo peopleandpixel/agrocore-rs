@@ -13,6 +13,9 @@ use validator::Validate;
 #[derive(Serialize, ToSchema)]
 pub struct SystemStatusResponse {
     pub initialized: bool,
+    pub demo_mode: bool,
+    pub demo_readonly: bool,
+    pub uptime_seconds: u64,
 }
 
 #[derive(Deserialize, Validate, ToSchema)]
@@ -37,6 +40,9 @@ pub async fn get_status(state: web::Data<AppState>) -> Result<HttpResponse, ApiE
     };
     Ok(HttpResponse::Ok().json(SystemStatusResponse {
         initialized: count > 0,
+        demo_mode: state.is_demo_mode,
+        demo_readonly: state.demo_readonly,
+        uptime_seconds: state.startup_time.elapsed().as_secs(),
     }))
 }
 

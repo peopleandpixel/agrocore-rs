@@ -385,7 +385,7 @@ impl From<CreateColdChainLogDto> for DomainCreateColdChainLogDto {
     }
 }
 
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
 pub struct UpdateColdChainLogDto {
     pub lot_id: Option<Uuid>,
     pub sensor_id: Option<String>,

@@ -113,8 +113,8 @@ pub async fn seed_demo(
 
     // Create Tenant
     let tenant = sqlx::query_as::<_, agrocore_domain::entities::tenant::Tenant>(
-        r#"INSERT INTO tenants (id, name, slug, config, is_active, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, true, NOW(), NOW())
+        r#"INSERT INTO tenants (id, name, slug, config, is_active, is_demo, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, true, true, NOW(), NOW())
            RETURNING *"#,
     )
     .bind(tenant_id)
@@ -717,4 +717,89 @@ pub async fn demo_summary(
         inventory_items_count: inventory_items_count as usize,
         animals_count: animals_count as usize,
     }))
+}
+
+/// Internal seed function that runs without HTTP context (called at startup when DEMO_MODE=1).
+/// Creates the demo tenant with is_demo=true and returns the tenant ID.
+pub async fn seed_demo_internal(db: &agrocore_infrastructure::Database) -> Result<Uuid, String> {
+    use agrocore_infrastructure::PostgresDb;
+
+    let pool = db.unscoped_pool();
+
+    // Check if demo tenant already exists
+    let existing: Option<Uuid> =
+        sqlx::query_scalar("SELECT id FROM tenants WHERE slug = 'demo' AND is_active = true")
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| format!("Query error: {}", e))?;
+
+    if let Some(id) = existing {
+        return Ok(id);
+    }
+
+    let tenant_id = Uuid::new_v4();
+    let user_id = Uuid::new_v4();
+
+    let mut tx = pool.begin().await.map_err(|e| format!("Begin error: {}", e))?;
+
+    // Create Tenant with is_demo=true
+    sqlx::query_as::<_, agrocore_domain::entities::tenant::Tenant>(
+        r#"INSERT INTO tenants (id, name, slug, config, is_active, is_demo, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, true, true, NOW(), NOW())
+           RETURNING *"#,
+    )
+    .bind(tenant_id)
+    .bind("Demo Farm")
+    .bind("demo")
+    .bind(serde_json::json!({
+        "default_language": "en",
+        "supported_languages": ["de", "en", "es", "fr", "pt"],
+        "timezone": "Europe/Lisbon",
+        "enabled_modules": [
+            "field_management", "PlantProtection", "Fertilization", "Harvest",
+            "WorkLog", "CostTracking", "Maps", "Reports", "Inventory", "Livestock", "Equipment"
+        ],
+        "custom_field_schemas": {}
+    }))
+    .fetch_one(&mut *tx)
+    .await
+    .map_err(PostgresDb::map_db_error)
+    .map_err(|e| format!("Tenant insert: {}", e))?;
+
+    // Pin tenant for the rest of the transaction
+    sqlx::query("SELECT set_config('app.current_tenant_id', $1, true)")
+        .bind(tenant_id.to_string())
+        .execute(&mut *tx)
+        .await
+        .map_err(PostgresDb::map_db_error)
+        .map_err(|e| format!("Pin tenant: {}", e))?;
+
+    // Create Admin User
+    let demo_password = std::env::var("DEMO_ADMIN_PASSWORD").unwrap_or_else(|_| {
+        DEMO_DEFAULT_PASSWORD.to_string()
+    });
+    let password_hash = agrocore_infrastructure::password::hash_password(demo_password)
+        .await
+        .map_err(|_| "Hashing error".to_string())?;
+
+    let roles = vec![UserRole::Admin];
+    sqlx::query(
+        r#"INSERT INTO users (id, tenant_id, firstname, lastname, email, password_hash, roles, is_active, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, true, NOW(), NOW())"#
+    )
+    .bind(user_id)
+    .bind(tenant_id)
+    .bind("Demo")
+    .bind("Admin")
+    .bind("demo@agrocore.local")
+    .bind(password_hash)
+    .bind(serde_json::to_value(&roles).unwrap())
+    .execute(&mut *tx)
+    .await
+    .map_err(PostgresDb::map_db_error)
+    .map_err(|e| format!("User insert: {}", e))?;
+
+    tx.commit().await.map_err(|e| format!("Commit error: {}", e))?;
+
+    Ok(tenant_id)
 }

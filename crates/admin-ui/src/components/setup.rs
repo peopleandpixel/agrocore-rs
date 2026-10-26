@@ -5,10 +5,10 @@ use crate::components::form::{
 use crate::components::toast::{ToastContext, ToastType};
 use crate::i18n::LANGUAGE_OPTIONS;
 use crate::i18n::{I18n, Language};
-use icondata::*;
+use icondata_lu::*;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, PartialOrd, Ord)]
 enum SetupStep {
@@ -643,7 +643,7 @@ pub fn SetupAssistant() -> impl IntoView {
                                             {move || if is_submitting.get() {
                                                 view! { <span class="loading loading-spinner loading-sm"></span> }.into_any()
                                             } else {
-                                                view! { <Icon icon=LuCircleCheck width="20" height="20" /> }.into_any()
+                                                view! { <Icon icon=&LuCircleCheck width="20" height="20" /> }.into_any()
                                             }}
                                             {move || finish_label()}
                                         </button>
@@ -658,7 +658,7 @@ pub fn SetupAssistant() -> impl IntoView {
                                         }.into_any(),
                                         Some(Err(msg)) => view! {
                                             <div class="alert alert-error shadow-lg border-error/20">
-                                                <Icon icon=LuCircleAlert width="20" height="20" />
+                                                <Icon icon=&LuCircleAlert width="20" height="20" />
                                                 <span>{msg}</span>
                                             </div>
                                         }.into_any(),
@@ -681,7 +681,7 @@ pub fn SetupAssistant() -> impl IntoView {
 
                     {move || setup_error.get().map(|err| view! {
                         <div class="alert alert-error shadow-lg">
-                            <Icon icon=LuTriangleAlert width="20" height="20" />
+                            <Icon icon=&LuTriangleAlert width="20" height="20" />
                             <span>{err}</span>
                         </div>
                     })}

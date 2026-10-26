@@ -310,6 +310,61 @@ pub fn clear_user_role() {
     }
 }
 
+// Impersonation helpers
+const USER_ID_KEY: &str = "agrocore.user_id";
+const IMPERSONATOR_ID_KEY: &str = "agrocore.impersonator_id";
+const IMPERSONATED_USER_NAME_KEY: &str = "agrocore.impersonated_user_name";
+
+pub fn set_user_id(id: &uuid::Uuid) {
+    if let Some(storage) = storage() {
+        let _ = storage.set_item(USER_ID_KEY, &id.to_string());
+    }
+}
+
+pub fn user_id() -> Option<uuid::Uuid> {
+    storage()
+        .and_then(|s| s.get_item(USER_ID_KEY).ok().flatten())
+        .and_then(|v| v.parse().ok())
+}
+
+pub fn clear_user_id() {
+    if let Some(storage) = storage() {
+        let _ = storage.remove_item(USER_ID_KEY);
+    }
+}
+
+pub fn set_impersonator_id(id: &uuid::Uuid) {
+    if let Some(storage) = storage() {
+        let _ = storage.set_item(IMPERSONATOR_ID_KEY, &id.to_string());
+    }
+}
+
+pub fn impersonator_id() -> Option<uuid::Uuid> {
+    storage()
+        .and_then(|s| s.get_item(IMPERSONATOR_ID_KEY).ok().flatten())
+        .and_then(|v| v.parse().ok())
+}
+
+pub fn is_impersonating() -> bool {
+    impersonator_id().is_some()
+}
+
+pub fn clear_impersonator_id() {
+    if let Some(storage) = storage() {
+        let _ = storage.remove_item(IMPERSONATOR_ID_KEY);
+    }
+}
+
+pub fn set_impersonated_user_name(name: &str) {
+    if let Some(storage) = storage() {
+        let _ = storage.set_item(IMPERSONATED_USER_NAME_KEY, name);
+    }
+}
+
+pub fn impersonated_user_name() -> Option<String> {
+    storage()?.get_item(IMPERSONATED_USER_NAME_KEY).ok().flatten()
+}
+
 fn with_auth(req: RequestBuilder) -> RequestBuilder {
     if let Some(token) = auth_token() {
         req.header("Authorization", &format!("Bearer {}", token))
@@ -381,6 +436,8 @@ pub struct AuthResponse {
     pub firstname: String,
     pub lastname: String,
     pub roles: Vec<String>,
+    #[serde(default)]
+    pub impersonator_id: Option<uuid::Uuid>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

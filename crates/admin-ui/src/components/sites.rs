@@ -1,10 +1,10 @@
 use crate::api;
 use crate::components::map::FieldPolygonEditor;
 use crate::components::toast::{ToastContext, ToastType};
-use icondata::*;
+use icondata_lu::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 #[component]
 pub fn SiteManagement() -> impl IntoView {
@@ -109,7 +109,7 @@ pub fn SiteManagement() -> impl IntoView {
                     <p class="text-base-content/60">{move || t("manage_sites_desc").to_string()}</p>
                 </div>
                 <button class="btn btn-primary" on:click=move |_| set_show_add_modal.set(true)>
-                    <Icon icon=LuPlus width="20" height="20" />
+                    <Icon icon=&LuPlus width="20" height="20" />
                     {move || t("add_site_btn").to_string()}
                 </button>
             </div>
@@ -161,7 +161,7 @@ pub fn SiteManagement() -> impl IntoView {
                                                 class="btn btn-ghost btn-xs text-error"
                                                 on:click=move |_| on_delete(site_id)
                                             >
-                                                <Icon icon=LuTrash width="16" height="16" />
+                                                <Icon icon=&LuTrash width="16" height="16" />
                                             </button>
                                         </td>
                                     </tr>

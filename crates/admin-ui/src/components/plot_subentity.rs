@@ -11,9 +11,9 @@
 //! look alike.
 
 use crate::api;
-use icondata::LuMap;
+use icondata_lu::LuMap;
 use leptos::prelude::*;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 /// One row in the overview, whichever entity it came from.
 ///
@@ -137,7 +137,7 @@ pub fn PlotSubEntityLayout() -> impl IntoView {
                 if plot.is_none() {
                     return view! {
                         <div class="alert">
-                            <Icon icon=LuMap width="16" height="16" />
+                            <Icon icon=&LuMap width="16" height="16" />
                             {crate::t!(t, "plot_choose_hint")}
                         </div>
                     }

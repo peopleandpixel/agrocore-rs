@@ -1,8 +1,8 @@
 use crate::api;
-use icondata::*;
+use icondata_lu::*;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 #[component]
 pub fn EquipmentManagement() -> impl IntoView {
@@ -130,7 +130,7 @@ pub fn EquipmentManagement() -> impl IntoView {
                     <h1 class="text-3xl font-bold">{crate::t!(t, "nav_equipment")}</h1>
                 </div>
                 <button class="btn btn-primary" on:click=move |_| set_show_add_modal.set(true)>
-                    <Icon icon=LuPlus width="20" height="20" />
+                    <Icon icon=&LuPlus width="20" height="20" />
                     {crate::t!(t, "add_equipment_btn")}
                 </button>
             </div>
@@ -199,7 +199,7 @@ pub fn EquipmentManagement() -> impl IntoView {
 
                     <div class="card-actions justify-end mt-4">
                         <button class="btn btn-sm" on:click=clear_filters>
-                            <Icon icon=LuRefreshCw width="16" height="16" />
+                            <Icon icon=&LuRefreshCw width="16" height="16" />
                             {crate::t!(t, "clear_filters")}
                         </button>
                     </div>
@@ -265,11 +265,11 @@ pub fn EquipmentManagement() -> impl IntoView {
                                             <td>
                                                 <div class="flex gap-2 justify-end">
                                                     <button class="btn btn-sm btn-ghost" on:click=move |_| on_record_maintenance(id, e_label.clone())>
-                                                        <Icon icon=LuWrench width="16" height="16" />
+                                                        <Icon icon=&LuWrench width="16" height="16" />
                                                         <span class="hidden sm:inline">Wartung</span>
                                                     </button>
                                                     <button class="btn btn-sm btn-ghost text-error" on:click=move |_| on_delete(id)>
-                                                        <Icon icon=LuTrash2 width="16" height="16" />
+                                                        <Icon icon=&LuTrash2 width="16" height="16" />
                                                     </button>
                                                 </div>
                                             </td>

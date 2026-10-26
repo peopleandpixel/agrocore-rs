@@ -14,6 +14,7 @@ use agrocore_domain::entities::plant_protection::{
 };
 use agrocore_shared::{Pagination, SharedError};
 use uuid::Uuid;
+use validator::Validate;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -129,6 +130,7 @@ pub async fn create_checklist(
     auth: AuthUser,
     dto: web::Json<CreateComplianceChecklistDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let checklist = state
         .db
         .compliance_checklist_repo()
@@ -161,6 +163,7 @@ pub async fn update_checklist(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateComplianceChecklistDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let checklist = state
         .db
         .compliance_checklist_repo()
@@ -291,6 +294,7 @@ pub async fn update_fertilizer_record(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateFertilizerRecordDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let record = state
         .db
         .fertilizer_record_repo()
@@ -412,6 +416,7 @@ pub async fn create_applicator_license(
     auth: AuthUser,
     dto: web::Json<CreateApplicatorLicenseDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let domain_dto: DomainCreateApplicatorLicenseDto = dto.into_inner().into();
     let license = state
         .db
@@ -440,6 +445,7 @@ pub async fn update_applicator_license(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateApplicatorLicenseDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let domain_dto: DomainUpdateApplicatorLicenseDto = dto.into_inner().into();
     let license = state
         .db
@@ -485,6 +491,7 @@ pub async fn create_plant_protection_record(
     auth: AuthUser,
     dto: web::Json<CreatePlantProtectionDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let record = state
         .db
         .plant_protection_record_repo()
@@ -517,6 +524,7 @@ pub async fn update_plant_protection_record(
     id: web::Path<Uuid>,
     dto: web::Json<UpdatePlantProtectionDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let record = state
         .db
         .plant_protection_record_repo()

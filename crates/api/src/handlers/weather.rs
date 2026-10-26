@@ -12,6 +12,7 @@ use agrocore_domain::entities::weather::{
 };
 use agrocore_shared::SharedError;
 use uuid::Uuid;
+use validator::Validate;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -141,6 +142,7 @@ pub async fn update_station(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateWeatherStationDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let station = state
         .db
         .weather_station_repo()
@@ -188,6 +190,7 @@ pub async fn create_station(
     auth: AuthUser,
     dto: web::Json<CreateWeatherStationDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let station = state
         .db
         .weather_station_repo()
@@ -245,6 +248,7 @@ pub async fn create_weather_data(
     auth: AuthUser,
     dto: web::Json<CreateWeatherDataDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let wd = state
         .db
         .weather_data_repo()
@@ -276,6 +280,7 @@ pub async fn update_weather_data(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateWeatherDataDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let data = state
         .db
         .weather_data_repo()
@@ -351,6 +356,7 @@ pub async fn create_phenology(
     auth: AuthUser,
     dto: web::Json<CreatePhenologyRecordDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let pr = state
         .db
         .phenology_record_repo()
@@ -383,6 +389,7 @@ pub async fn update_phenology(
     id: web::Path<Uuid>,
     dto: web::Json<UpdatePhenologyRecordDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let record = state
         .db
         .phenology_record_repo()
@@ -444,6 +451,7 @@ pub async fn create_frost_warning(
     auth: AuthUser,
     dto: web::Json<crate::dto::CreateFrostWarningDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let fw = state
         .db
         .frost_warning_repo()
@@ -476,6 +484,7 @@ pub async fn update_frost_warning(
     id: web::Path<Uuid>,
     dto: web::Json<crate::dto::UpdateFrostWarningDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let fw = state
         .db
         .frost_warning_repo()
@@ -558,6 +567,7 @@ pub async fn create_gdd(
     auth: AuthUser,
     dto: web::Json<crate::dto::CreateGrowingDegreeDayDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let gdd = state
         .db
         .growing_degree_day_repo()
@@ -626,6 +636,7 @@ pub async fn create_pest_risk(
     auth: AuthUser,
     dto: web::Json<crate::dto::CreatePestRiskDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let pr = state
         .db
         .pest_risk_repo()

@@ -1,13 +1,11 @@
 use crate::api;
 use crate::api::UserDto;
 use crate::components::form::{RequiredLabel, is_valid_email};
-use crate::components::list::{ColumnDef, DataList, FilterOption};
 use chrono::{DateTime, Utc};
-use icondata::*;
+use icondata_lu::*;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
-use std::sync::Arc;
+use crate::icon::Icon;
 use uuid::Uuid;
 
 /// Format a datetime string as a localized relative "time ago" display.
@@ -350,242 +348,166 @@ pub fn UserManagement() -> impl IntoView {
         });
     };
 
-    // Column definitions for the DataList
-    let columns = vec![
-        ColumnDef {
-            key: "name",
-            label: t("name"),
-            sortable: true,
-        },
-        ColumnDef {
-            key: "email",
-            label: t("email"),
-            sortable: true,
-        },
-        ColumnDef {
-            key: "role",
-            label: t("role"),
-            sortable: true,
-        },
-        ColumnDef {
-            key: "status",
-            label: t("status"),
-            sortable: false,
-        },
-        ColumnDef {
-            key: "last_login",
-            label: t("last_login"),
-            sortable: true,
-        },
-    ];
-
-    // Filter options
-    let filters = vec![
-        FilterOption {
-            key: "active",
-            label: t("active"),
-        },
-        FilterOption {
-            key: "inactive",
-            label: t("inactive"),
-        },
-    ];
-
-    // Filter function
-    let filter_fn = |items: &[UserDto], filter: Option<&str>| -> Vec<UserDto> {
-        match filter {
-            Some("active") => items.iter().filter(|u| u.is_active).cloned().collect(),
-            Some("inactive") => items.iter().filter(|u| !u.is_active).cloned().collect(),
-            _ => items.to_vec(),
-        }
-    };
-
-    // Search config
-    let search_config =
-        |u: &UserDto| -> String { format!("{} {} {}", u.firstname, u.lastname, u.email) };
-
-    // Sort extractor - extracts the sort key for a given column
-    let sort_extractor = |u: &UserDto, key: &str| -> String {
-        match key {
-            "name" => format!("{} {}", u.firstname, u.lastname),
-            "email" => u.email.clone(),
-            "role" => u.roles.first().cloned().unwrap_or_default(),
-            "status" => {
-                if u.is_active {
-                    "active".to_string()
-                } else {
-                    "inactive".to_string()
-                }
-            }
-            "last_login" => u.last_login.clone().unwrap_or_default(),
-            _ => String::new(),
-        }
-    };
-
-    // Header buttons
-    let header_buttons: Option<Arc<dyn Fn() -> AnyView + Send + Sync>> = {
-        let is_impersonating = is_impersonating;
-        let on_stop_impersonation = on_stop_impersonation;
-        let set_show_permissions_modal = set_show_permissions_modal;
-        let t = t;
-
-        if is_impersonating {
-            Some(Arc::new(move || {
-                let on_stop = on_stop_impersonation;
-                let t = t;
-                view! {
-                    <button class="btn btn-warning" on:click=on_stop>
-                        <Icon icon=LuLogOut width="20" height="20" />
-                        {crate::t!(t, "stop_impersonation")}
-                    </button>
-                }
-                .into_any()
-            }))
-        } else {
-            Some(Arc::new(move || {
-                let set_show = set_show_permissions_modal;
-                let t = t;
-                view! {
-                    <button class="btn btn-outline" on:click=move |_| set_show.set(true)>
-                        <Icon icon=LuShield width="20" height="20" />
-                        {crate::t!(t, "role_permissions")}
-                    </button>
-                }
-                .into_any()
-            }))
-        }
-    };
-
-    // Add button
-    let add_button: Option<(String, Arc<dyn Fn() + Send + Sync>)> =
-        Some((t("user"), Arc::new(move || set_show_add_modal.set(true))));
-
     view! {
         <div class="flex flex-col gap-6">
-            <DataList
-            item_name_plural=t("users")
-            description=t("users_desc")
-            items=users
-            key_fn=|u: &UserDto| u.id.to_string()
-            columns=columns
-            filters=filters
-            filter_fn=filter_fn
-            search_config=search_config
-            sort_extractor=sort_extractor
-            show_search=true
-            header_buttons=header_buttons
-            add_button=add_button
-            row=move |user: &UserDto| {
-                let user_id = user.id;
-                let email_for_view = user.email.clone();
-                let email_for_edit = email_for_view.clone();
-                let firstname = user.firstname.clone();
-                let lastname = user.lastname.clone();
-                let name = format!("{} {}", firstname, lastname);
-                let role = user.roles.first().cloned().unwrap_or_else(|| String::from("Worker"));
-                let roles_for_edit = user.roles.clone();
-                let last_login_raw = user.last_login.clone();
-                let (last_login_human, last_login_title) = last_login_raw.as_deref()
-                    .map(|s| format_time_ago(s, t))
-                    .unwrap_or_else(|| (String::from("-"), String::from("-")));
-                let is_active = user.is_active;
-                let is_admin = user.roles.iter().any(|r| r == "Admin");
-
-                // Determine if this is the current user
-                let is_current_user = current_user_id.as_ref().map(|uid| *uid == user_id).unwrap_or(false);
-
-                // Count admins to determine if this is the last admin
-                let all_users = users.get();
-                let admin_count = all_users.iter().filter(|u| u.roles.iter().any(|r| r == "Admin")).count();
-                let is_last_admin = is_admin && admin_count <= 1;
-
-                // Hide delete if it's the current user or the last admin
-                let can_delete = !is_current_user && !is_last_admin;
-
-                let edit_click = move |_| {
-                    set_edit_user_id.set(Some(user_id));
-                    set_edit_firstname.set(firstname.clone());
-                    set_edit_lastname.set(lastname.clone());
-                    set_edit_email.set(email_for_edit.clone());
-                    set_edit_role.set(roles_for_edit.first().cloned().unwrap_or_default());
-                    set_edit_is_active.set(is_active);
-                    set_show_edit_modal.set(true);
-                };
-
-                let delete_click = move |_| {
-                    on_delete(user_id);
-                };
-
-                let impersonate_click = move |_| {
-                    on_impersonate(user_id);
-                };
-
-                let can_toggle_status = can_manage_users && !is_current_user;
-
-                view! {
-                    <tr>
-                        <td>{name}</td>
-                        <td>{email_for_view}</td>
-                        <td><div class="badge badge-primary">{role}</div></td>
-                        <td>
-                            <Show when=move || can_toggle_status>
-                                <label class="swap swap-flip">
-                                    <input type="checkbox" checked=is_active on:change=move |ev| {
-                                        let checked = event_target_checked(&ev);
-                                        on_toggle_status(user_id, checked);
-                                    } />
-                                    <div class="swap-on badge badge-success gap-2">
-                                        <span class="inline-block w-2 h-2 rounded-full bg-green-400"></span>
-                                        {t("active")}
-                                    </div>
-                                    <div class="swap-off badge badge-error gap-2">
-                                        <span class="inline-block w-2 h-2 rounded-full bg-red-400"></span>
-                                        {t("inactive")}
-                                    </div>
-                                </label>
-                            </Show>
-                            <Show when=move || !can_toggle_status>
-                                <span class={if is_active { "badge badge-success gap-2" } else { "badge badge-warning gap-2" }}>
-                                    <span class={if is_active { "inline-block w-2 h-2 rounded-full bg-green-400" } else { "inline-block w-2 h-2 rounded-full bg-orange-400" }}></span>
-                                    {if is_active { t("active") } else { t("inactive") }}
-                                </span>
-                            </Show>
-                        </td>
-                        <td title={last_login_title}>{last_login_human}</td>
-                        <td>
-                            <div class="flex gap-2 justify-end">
-                                <Show when=move || can_impersonate && !is_current_user && !is_impersonating>
-                                    <button class="btn btn-sm btn-ghost" on:click=impersonate_click title=move || t("impersonate")>
-                                        <Icon icon=LuCircleUser width="16" height="16" />
-                                    </button>
-                                </Show>
-                                <Show when=move || !(can_impersonate && !is_current_user && !is_impersonating)>
-                                    <span class="btn btn-sm btn-ghost text-base-content/30 cursor-not-allowed pointer-events-none" title=move || t("impersonate")>
-                                        <Icon icon=LuCircleUser width="16" height="16" />
-                                    </span>
-                                </Show>
-                                <button class="btn btn-sm btn-ghost" on:click=edit_click>
-                                    <Icon icon=LuPencil width="16" height="16" />
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold">{t("users")}</h1>
+                    <p class="text-base-content/60">{t("users_desc")}</p>
+                </div>
+                <div class="flex gap-2">
+                    {move || {
+                        if is_impersonating {
+                            Some(view! {
+                                <button class="btn btn-warning" on:click=on_stop_impersonation>
+                                    <Icon icon=&LuLogOut width="20" height="20" />
+                                    {crate::t!(t, "stop_impersonation")}
                                 </button>
-                                <Show when=move || can_delete>
-                                    <button class="btn btn-sm btn-ghost text-error" on:click=delete_click>
-                                        <Icon icon=LuTrash2 width="16" height="16" />
-                                    </button>
-                                </Show>
-                                <Show when=move || !can_delete>
-                                    <span class="btn btn-sm btn-ghost text-base-content/30 cursor-not-allowed pointer-events-none">
-                                        <Icon icon=LuTrash2 width="16" height="16" />
-                                    </span>
-                                </Show>
-                            </div>
-                        </td>
-                    </tr>
-                }.into_any()
-            }
-        />
+                            }.into_any())
+                        } else {
+                            Some(view! {
+                                <button class="btn btn-outline" on:click=move |_| set_show_permissions_modal.set(true)>
+                                    <Icon icon=&LuShield width="20" height="20" />
+                                    {crate::t!(t, "role_permissions")}
+                                </button>
+                            }.into_any())
+                        }
+                    }}
+                    <button class="btn btn-primary" on:click=move |_| set_show_add_modal.set(true)>
+                        <Icon icon=&LuPlus width="20" height="20" />
+                        {t("add")} " " {t("user")}
+                    </button>
+                </div>
+            </div>
 
-        // Add User Modal
-        <Show when=move || show_add_modal.get()>
+            <div class="card bg-base-100 shadow">
+                <div class="overflow-x-auto">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>{t("name")}</th>
+                                <th>{t("email")}</th>
+                                <th>{t("role")}</th>
+                                <th>{t("status")}</th>
+                                <th>{t("last_login")}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <For
+                                each=move || {
+                                    users.get().into_iter().map(|u| (u.id.to_string(), u)).collect::<Vec<_>>()
+                                }
+                                key=|u| u.0.clone()
+                                children=move |(key, user)| {
+                                    let user_id = user.id;
+                                    let firstname = user.firstname.clone();
+                                    let lastname = user.lastname.clone();
+                                    let name = format!("{} {}", firstname, lastname);
+                                    let role = user.roles.first().cloned().unwrap_or_else(|| String::from("Worker"));
+                                    let roles_for_edit = user.roles.clone();
+                                    let last_login_raw = user.last_login.clone();
+                                    let (last_login_human, last_login_title) = last_login_raw.as_deref()
+                                        .map(|s| format_time_ago(s, t))
+                                        .unwrap_or_else(|| (String::from("-"), String::from("-")));
+                                    let is_active = user.is_active;
+                                    let is_admin = user.roles.iter().any(|r| r == "Admin");
+                                    let is_current_user = current_user_id.as_ref().map(|uid| *uid == user_id).unwrap_or(false);
+                                    let all_users = users.get();
+                                    let admin_count = all_users.iter().filter(|u| u.roles.iter().any(|r| r == "Admin")).count();
+                                    let is_last_admin = is_admin && admin_count <= 1;
+                                    let can_delete = !is_current_user && !is_last_admin;
+                                    let email_for_view = user.email.clone();
+                                    let email_for_edit = email_for_view.clone();
+
+                                    let edit_click = move |_| {
+                                        set_edit_user_id.set(Some(user_id));
+                                        set_edit_firstname.set(firstname.clone());
+                                        set_edit_lastname.set(lastname.clone());
+                                        set_edit_email.set(email_for_edit.clone());
+                                        set_edit_role.set(roles_for_edit.first().cloned().unwrap_or_default());
+                                        set_edit_is_active.set(is_active);
+                                        set_show_edit_modal.set(true);
+                                    };
+
+                                    let delete_click = move |_| {
+                                        on_delete(user_id);
+                                    };
+
+                                    let impersonate_click = move |_| {
+                                        on_impersonate(user_id);
+                                    };
+
+                                    let can_toggle_status = can_manage_users && !is_current_user;
+
+                                    view! {
+                                        <tr>
+                                            <td>{name}</td>
+                                            <td>{email_for_view}</td>
+                                            <td><div class="badge badge-primary">{role}</div></td>
+                                            <td>
+                                                <Show when=move || can_toggle_status>
+                                                    <label class="swap swap-flip">
+                                                        <input type="checkbox" checked=is_active on:change=move |ev| {
+                                                            let checked = event_target_checked(&ev);
+                                                            on_toggle_status(user_id, checked);
+                                                        } />
+                                                        <div class="swap-on badge badge-success gap-2">
+                                                            <span class="inline-block w-2 h-2 rounded-full bg-green-400"></span>
+                                                            {t("active")}
+                                                        </div>
+                                                        <div class="swap-off badge badge-error gap-2">
+                                                            <span class="inline-block w-2 h-2 rounded-full bg-red-400"></span>
+                                                            {t("inactive")}
+                                                        </div>
+                                                    </label>
+                                                </Show>
+                                                <Show when=move || !can_toggle_status>
+                                                    <span class={if is_active { "badge badge-success gap-2" } else { "badge badge-warning gap-2" }}>
+                                                        <span class={if is_active { "inline-block w-2 h-2 rounded-full bg-green-400" } else { "inline-block w-2 h-2 rounded-full bg-orange-400" }}></span>
+                                                        {if is_active { t("active") } else { t("inactive") }}
+                                                    </span>
+                                                </Show>
+                                            </td>
+                                            <td title={last_login_title}>{last_login_human}</td>
+                                            <td>
+                                                <div class="flex gap-2 justify-end">
+                                                    <Show when=move || can_impersonate && !is_current_user && !is_impersonating>
+                                                        <button class="btn btn-sm btn-ghost" on:click=impersonate_click title=move || t("impersonate")>
+                                                            <Icon icon=&LuCircleUser width="16" height="16" />
+                                                        </button>
+                                                    </Show>
+                                                    <Show when=move || !(can_impersonate && !is_current_user && !is_impersonating)>
+                                                        <span class="btn btn-sm btn-ghost text-base-content/30 cursor-not-allowed pointer-events-none" title=move || t("impersonate")>
+                                                            <Icon icon=&LuCircleUser width="16" height="16" />
+                                                        </span>
+                                                    </Show>
+                                                    <button class="btn btn-sm btn-ghost" on:click=edit_click>
+                                                        <Icon icon=&LuPencil width="16" height="16" />
+                                                    </button>
+                                                    <Show when=move || can_delete>
+                                                        <button class="btn btn-sm btn-ghost text-error" on:click=delete_click>
+                                                            <Icon icon=&LuTrash2 width="16" height="16" />
+                                                        </button>
+                                                    </Show>
+                                                    <Show when=move || !can_delete>
+                                                        <span class="btn btn-sm btn-ghost text-base-content/30 cursor-not-allowed pointer-events-none">
+                                                            <Icon icon=&LuTrash2 width="16" height="16" />
+                                                        </span>
+                                                    </Show>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            />
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            // Add User Modal
+            <Show when=move || show_add_modal.get()>
                 <div class="modal modal-open">
                     <div class="modal-box max-w-2xl">
                         <h3 class="font-bold text-lg">{crate::t!(t, "invite_user")}</h3>

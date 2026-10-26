@@ -32,40 +32,33 @@ use agrocore_logging::{error, warn};
 ///
 /// They live under the same `/settings` scope as the key/value API, so a client
 /// already talking to `/api/v1/settings` finds them next to it.
-///
-/// Register the group resources.
-///
-/// Added to the existing `/settings` scope rather than opening a second one:
-/// actix resolves two scopes with the same prefix to the first one only, so a
-/// separate scope here would silently drop the key/value routes.
-pub fn configure(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::resource("/lpis/providers").route(web::get().to(list_lpis_providers)))
-        .service(web::resource("/groups").route(web::get().to(list_setting_groups)))
-        .service(
-            web::resource("/backup")
-                .route(web::get().to(get_backup_group))
-                .route(web::put().to(update_backup_group)),
-        )
-        .service(
-            web::resource("/notification")
-                .route(web::get().to(get_notification_group))
-                .route(web::put().to(update_notification_group)),
-        )
-        .service(
-            web::resource("/weather")
-                .route(web::get().to(get_weather_group))
-                .route(web::put().to(update_weather_group)),
-        )
-        .service(
-            web::resource("/locale")
-                .route(web::get().to(get_locale_group))
-                .route(web::put().to(update_locale_group)),
-        )
-        .service(
-            web::resource("/company")
-                .route(web::get().to(get_company_group))
-                .route(web::put().to(update_company_group)),
-        );
+pub fn configure_groups(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::resource("/backup")
+            .route(web::get().to(get_backup_group))
+            .route(web::put().to(update_backup_group)),
+    )
+    .service(
+        web::resource("/notification")
+            .route(web::get().to(get_notification_group))
+            .route(web::put().to(update_notification_group)),
+    )
+    .service(
+        web::resource("/weather")
+            .route(web::get().to(get_weather_group))
+            .route(web::put().to(update_weather_group)),
+    )
+    .service(
+        web::resource("/locale")
+            .route(web::get().to(get_locale_group))
+            .route(web::put().to(update_locale_group)),
+    )
+    .service(
+        web::resource("/company")
+            .route(web::get().to(get_company_group))
+            .route(web::put().to(update_company_group)),
+    )
+    .service(web::resource("/groups").route(web::get().to(list_setting_groups)));
 }
 
 /// Namespaces this module serves, with the fields each one owns.
@@ -111,52 +104,24 @@ const BACKUP_GROUP: &[(&str, &str, FieldType)] = &[
     ("schedule_config", "backup.schedule_config", FieldType::Str),
     ("timezone", "backup.timezone", FieldType::Str),
     ("retention_daily", "backup.retention.daily", FieldType::Num),
-    (
-        "retention_weekly",
-        "backup.retention.weekly",
-        FieldType::Num,
-    ),
-    (
-        "retention_monthly",
-        "backup.retention.monthly",
-        FieldType::Num,
-    ),
-    (
-        "retention_yearly",
-        "backup.retention.yearly",
-        FieldType::Num,
-    ),
-    (
-        "verification_enabled",
-        "backup.verification_enabled",
-        FieldType::Bool,
-    ),
+    ("retention_weekly", "backup.retention.weekly", FieldType::Num),
+    ("retention_monthly", "backup.retention.monthly", FieldType::Num),
+    ("retention_yearly", "backup.retention.yearly", FieldType::Num),
+    ("verification_enabled", "backup.verification_enabled", FieldType::Bool),
 ];
 
 const NOTIFICATION_GROUP: &[(&str, &str, FieldType)] = &[
-    (
-        "email_enabled",
-        "notification.email.enabled",
-        FieldType::Bool,
-    ),
+    ("email_enabled", "notification.email.enabled", FieldType::Bool),
     ("push_enabled", "notification.push.enabled", FieldType::Bool),
 ];
 
 const WEATHER_GROUP: &[(&str, &str, FieldType)] = &[
     ("provider", "weather.provider", FieldType::Str),
-    (
-        "cache_ttl_seconds",
-        "weather.cache_ttl_seconds",
-        FieldType::Num,
-    ),
+    ("cache_ttl_seconds", "weather.cache_ttl_seconds", FieldType::Num),
 ];
 
 const LOCALE_GROUP: &[(&str, &str, FieldType)] = &[
-    (
-        "default_language",
-        "locale.default_language",
-        FieldType::Str,
-    ),
+    ("default_language", "locale.default_language", FieldType::Str),
     (
         "supported_languages",
         "locale.supported_languages",
@@ -369,6 +334,17 @@ macro_rules! group_dto {
                     .unwrap_or_default()
             }
         }
+
+        paste_group_const!($name, $namespace);
+    };
+}
+
+/// Emits the namespace constant for a group DTO.
+macro_rules! paste_group_const {
+    ($name:ident, $namespace:literal) => {
+        impl $name {
+            const NAMESPACE: &'static str = $namespace;
+        }
     };
 }
 
@@ -529,12 +505,9 @@ macro_rules! group_handlers {
         pub async fn $put_fn(
             state: web::Data<AppState>,
             auth: AuthExtractor,
-            body: web::Json<$dto>,
+            body: web::Json<serde_json::Map<String, serde_json::Value>>,
         ) -> Result<HttpResponse, ApiError> {
             auth.require_admin()?;
-
-            body.validate()
-                .map_err(|e| ApiError::validation(e.to_string()))?;
 
             let spec = spec_for($namespace).ok_or_else(|| {
                 ApiError::internal("Settings group is not registered")
@@ -545,7 +518,7 @@ macro_rules! group_handlers {
                 TenantId(auth.0.tenant_id),
                 auth.0.user_id,
                 spec,
-                body.to_body(),
+                body.into_inner(),
             )
             .await?;
 
@@ -568,18 +541,8 @@ group_handlers!(
     NotificationGroupDto,
     "notification"
 );
-group_handlers!(
-    get_weather_group,
-    update_weather_group,
-    WeatherGroupDto,
-    "weather"
-);
-group_handlers!(
-    get_locale_group,
-    update_locale_group,
-    LocaleGroupDto,
-    "locale"
-);
+group_handlers!(get_weather_group, update_weather_group, WeatherGroupDto, "weather");
+group_handlers!(get_locale_group, update_locale_group, LocaleGroupDto, "locale");
 group_handlers!(
     get_company_group,
     update_company_group,
@@ -628,7 +591,9 @@ pub async fn list_lpis_providers(
                 enabled: cfg.enabled,
                 // Recorded so the UI can tell a configured provider from a
                 // built-in default without comparing URLs.
-                configured: Some(country),
+                configured: Some(country.to_string()),
+                has_credentials: cfg.auth.is_some(),
+                auth: None, // Never return credentials
             }
         })
         .collect();

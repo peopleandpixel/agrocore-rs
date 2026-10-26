@@ -63,6 +63,11 @@ fn state() -> AppState {
         metrics_registry: Arc::new(metrics_registry),
         backup_service: None,
         demo_endpoints_enabled: false,
+        startup_time: std::time::Instant::now(),
+        is_demo_mode: false,
+        demo_tenant_id: None,
+        demo_readonly: false,
+        demo_reset_hours: None,
     }
 }
 

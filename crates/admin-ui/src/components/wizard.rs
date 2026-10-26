@@ -1,7 +1,7 @@
 use crate::i18n::{I18n, Language};
-use icondata::*;
+use icondata_lu::*;
 use leptos::prelude::*;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 #[component]
 pub fn WizardView() -> impl IntoView {
@@ -32,7 +32,7 @@ pub fn WizardView() -> impl IntoView {
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-4xl">
                 <WizardCard
                     title=task_planting.clone()
-                    icon=LuSprout
+                    icon=&LuSprout
                     color="bg-success"
                     description=planting_desc.clone()
                     action_label=wizard_start.clone()
@@ -40,7 +40,7 @@ pub fn WizardView() -> impl IntoView {
                 />
                 <WizardCard
                     title=task_protection.clone()
-                    icon=LuDroplets
+                    icon=&LuDroplets
                     color="bg-info"
                     description=protection_desc.clone()
                     action_label=wizard_start.clone()
@@ -48,15 +48,15 @@ pub fn WizardView() -> impl IntoView {
                 />
                 <WizardCard
                     title=task_harvest.clone()
-                    icon=LuWheat
+                    icon=&LuWheat
                     color="bg-warning"
                     description=harvest_desc.clone()
                     action_label=wizard_start.clone()
                     href="/tasks"
                 />
-                <WizardCard title=wizard_livestock.clone() icon=LuSyringe color="bg-error" description=livestock_desc.clone() action_label=wizard_start.clone() href="/livestock" />
-                <WizardCard title=wizard_finance.clone() icon=LuWallet color="bg-accent" description=finance_desc.clone() action_label=wizard_start.clone() href="/finance" />
-                <WizardCard title=wizard_bbch.clone() icon=LuEye color="bg-info" description=bbch_desc.clone() action_label=wizard_start.clone() href="/weather" />
+                <WizardCard title=wizard_livestock.clone() icon=&LuSyringe color="bg-error" description=livestock_desc.clone() action_label=wizard_start.clone() href="/livestock" />
+                <WizardCard title=wizard_finance.clone() icon=&LuWallet color="bg-accent" description=finance_desc.clone() action_label=wizard_start.clone() href="/finance" />
+                <WizardCard title=wizard_bbch.clone() icon=&LuEye color="bg-info" description=bbch_desc.clone() action_label=wizard_start.clone() href="/weather" />
             </div>
 
             <div class="mt-12 p-6 bg-base-200 rounded-2xl border-2 border-dashed border-base-300 w-full max-w-2xl text-center">
@@ -72,7 +72,7 @@ fn WizardCard(
     title: String,
     description: String,
     action_label: String,
-    icon: icondata::Icon,
+    icon: &'static icondata_core::IconData,
     color: &'static str,
     href: &'static str,
 ) -> impl IntoView

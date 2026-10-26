@@ -1,5 +1,6 @@
 mod api;
 mod components;
+mod icon;
 mod i18n;
 
 #[cfg(test)]
@@ -39,15 +40,16 @@ use crate::components::wizard::WizardView;
 use crate::components::worker_tasks::WorkerTasksPage;
 use crate::components::workers::WorkersPage;
 use crate::components::workforce_logs::{WorkforceLocations, WorkforceLogs};
+use icondata_lu as I;
+use icondata_im::ImMagicWand;
 use I::{
-    ImMagicWand, LuBeef, LuBox, LuBriefcase, LuCalculator, LuChartBar, LuChartNoAxesColumn,
+    LuBeef, LuBox, LuBriefcase, LuCalculator, LuChartBar, LuChartNoAxesColumn,
     LuCircleUser, LuClipboardList, LuCloudSun, LuDatabase, LuFileDown, LuHistory,
     LuLayoutDashboard, LuLogOut, LuMap, LuMapPin, LuMenu, LuSettings, LuSquareCheck, LuSun,
     LuTractor, LuUsers, LuWallet,
 };
-use icondata as I;
 use leptos::prelude::*;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 use leptos_router::{components::*, path};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, serde::Serialize, serde::Deserialize)]
@@ -169,7 +171,7 @@ fn AuthenticatedShell(
                 <div class="navbar bg-base-100 lg:hidden w-full">
                     <div class="flex-none">
                         <label for="my-drawer-2" class="btn btn-square btn-ghost">
-                            <Icon icon=LuMenu width="24" height="24" />
+                            <Icon icon=&LuMenu width="24" height="24" />
                         </label>
                     </div>
                     <div class="flex-1">
@@ -182,7 +184,7 @@ fn AuthenticatedShell(
                         if api::auth_token().map(|t| t.contains("impersonate")).unwrap_or(false) {
                             Some(view! {
                                 <div class="alert alert-warning shadow-lg mb-4">
-                                    <Icon icon=LuCircleUser width="24" height="24" />
+                                    <Icon icon=&LuCircleUser width="24" height="24" />
                                     <div>
                                         <h3 class="font-bold">{crate::t!(t, "impersonating_as")}</h3>
                                         <div class="text-xs">"Admin Control Active"</div>
@@ -257,86 +259,86 @@ fn AuthenticatedShell(
                 <label for="my-drawer-2" aria-label="close sidebar" class="drawer-overlay"></label>
                 <ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content flex flex-col">
                     <li class="mb-4 text-2xl font-bold p-4">{crate::t!(t, "app_title")}</li>
-                    <li><a href="/"><Icon icon=LuLayoutDashboard width="20" height="20" />{crate::t!(t, "nav_dashboard")}</a></li>
+                    <li><a href="/"><Icon icon=&LuLayoutDashboard width="20" height="20" />{crate::t!(t, "nav_dashboard")}</a></li>
                     <li class=move || if user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager { "" } else { "hidden" }>
-                        <a href="/users"><Icon icon=LuUsers width="20" height="20" />{crate::t!(t, "nav_users")}</a>
+                        <a href="/users"><Icon icon=&LuUsers width="20" height="20" />{crate::t!(t, "nav_users")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Simple { "" } else { "hidden" }>
-                        <a href="/wizard" class="bg-primary text-primary-content font-bold"><Icon icon=ImMagicWand width="20" height="20" />{crate::t!(t, "nav_wizard")}</a>
+                        <a href="/wizard" class="bg-primary text-primary-content font-bold"><Icon icon=&ImMagicWand width="20" height="20" />{crate::t!(t, "nav_wizard")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full { "" } else { "hidden" }>
-                        <a href="/import"><Icon icon=LuFileDown width="20" height="20" />{crate::t!(t, "nav_import")}</a>
+                        <a href="/import"><Icon icon=&LuFileDown width="20" height="20" />{crate::t!(t, "nav_import")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full { "" } else { "hidden" }>
-                        <a href="/sigpac"><Icon icon=LuMap width="20" height="20" />{crate::t!(t, "nav_sigpac")}</a>
+                        <a href="/sigpac"><Icon icon=&LuMap width="20" height="20" />{crate::t!(t, "nav_sigpac")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full { "" } else { "hidden" }>
-                        <a href="/sites"><Icon icon=LuMap width="20" height="20" />{crate::t!(t, "nav_sites")}</a>
+                        <a href="/sites"><Icon icon=&LuMap width="20" height="20" />{crate::t!(t, "nav_sites")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full { "" } else { "hidden" }>
-                        <a href="/tasks"><Icon icon=LuSquareCheck width="20" height="20" />{crate::t!(t, "nav_tasks")}</a>
+                        <a href="/tasks"><Icon icon=&LuSquareCheck width="20" height="20" />{crate::t!(t, "nav_tasks")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full { "" } else { "hidden" }>
-                        <a href="/map"><Icon icon=LuMapPin width="20" height="20" />{crate::t!(t, "nav_map")}</a>
+                        <a href="/map"><Icon icon=&LuMapPin width="20" height="20" />{crate::t!(t, "nav_map")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full { "" } else { "hidden" }>
-                        <a href="/groups"><Icon icon=LuUsers width="20" height="20" />{crate::t!(t, "nav_groups")}</a>
+                        <a href="/groups"><Icon icon=&LuUsers width="20" height="20" />{crate::t!(t, "nav_groups")}</a>
                     </li>
                     <li>
-                        <a href="/trees"><Icon icon=LuMapPin width="20" height="20" />{crate::t!(t, "nav_trees")}</a>
+                        <a href="/trees"><Icon icon=&LuMapPin width="20" height="20" />{crate::t!(t, "nav_trees")}</a>
                     </li>
                     <li>
-                        <a href="/buildings"><Icon icon=LuBox width="20" height="20" />{crate::t!(t, "nav_buildings")}</a>
+                        <a href="/buildings"><Icon icon=&LuBox width="20" height="20" />{crate::t!(t, "nav_buildings")}</a>
                     </li>
                     <li>
-                        <a href="/plot/entities"><Icon icon=LuClipboardList width="20" height="20" />{crate::t!(t, "nav_plot_entities")}</a>
+                        <a href="/plot/entities"><Icon icon=&LuClipboardList width="20" height="20" />{crate::t!(t, "nav_plot_entities")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full { "" } else { "hidden" }>
-                        <a href="/livestock"><Icon icon=LuBeef width="20" height="20" />{crate::t!(t, "nav_livestock")}</a>
+                        <a href="/livestock"><Icon icon=&LuBeef width="20" height="20" />{crate::t!(t, "nav_livestock")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full { "" } else { "hidden" }>
-                        <a href="/weather"><Icon icon=LuCloudSun width="20" height="20" />{crate::t!(t, "nav_weather")}</a>
+                        <a href="/weather"><Icon icon=&LuCloudSun width="20" height="20" />{crate::t!(t, "nav_weather")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
-                        <a href="/resources"><Icon icon=LuBriefcase width="20" height="20" />{crate::t!(t, "nav_resources")}</a>
+                        <a href="/resources"><Icon icon=&LuBriefcase width="20" height="20" />{crate::t!(t, "nav_resources")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
-                        <a href="/equipment"><Icon icon=LuTractor width="20" height="20" />{crate::t!(t, "nav_equipment")}</a>
+                        <a href="/equipment"><Icon icon=&LuTractor width="20" height="20" />{crate::t!(t, "nav_equipment")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
-                        <a href="/finance"><Icon icon=LuWallet width="20" height="20" />{crate::t!(t, "nav_finance")}</a>
+                        <a href="/finance"><Icon icon=&LuWallet width="20" height="20" />{crate::t!(t, "nav_finance")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
-                        <a href="/calculators"><Icon icon=LuCalculator width="20" height="20" />{crate::t!(t, "nav_calculators")}</a>
-                            <a href="/analytics"><Icon icon=LuChartBar width="20" height="20" />{crate::t!(t, "nav_analytics")}</a>
+                        <a href="/calculators"><Icon icon=&LuCalculator width="20" height="20" />{crate::t!(t, "nav_calculators")}</a>
+                            <a href="/analytics"><Icon icon=&LuChartBar width="20" height="20" />{crate::t!(t, "nav_analytics")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
-                        <a href="/inventory"><Icon icon=LuBox width="20" height="20" />{crate::t!(t, "nav_inventory")}</a>
+                        <a href="/inventory"><Icon icon=&LuBox width="20" height="20" />{crate::t!(t, "nav_inventory")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin) { "" } else { "hidden" }>
-                        <a href="/audit"><Icon icon=LuHistory width="20" height="20" />{crate::t!(t, "nav_audit")}</a>
+                        <a href="/audit"><Icon icon=&LuHistory width="20" height="20" />{crate::t!(t, "nav_audit")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
-                        <a href="/compliance"><Icon icon=LuChartNoAxesColumn width="20" height="20" />{crate::t!(t, "nav_compliance")}</a>
+                        <a href="/compliance"><Icon icon=&LuChartNoAxesColumn width="20" height="20" />{crate::t!(t, "nav_compliance")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && user_role.get() == UserRole::Admin { "" } else { "hidden" }>
-                        <a href="/backups"><Icon icon=LuDatabase width="20" height="20" />"Backups"</a>
+                        <a href="/backups"><Icon icon=&LuDatabase width="20" height="20" />"Backups"</a>
                     </li>
-                    <li><a href="/settings"><Icon icon=LuSettings width="20" height="20" />{crate::t!(t, "nav_settings")}</a></li>
+                    <li><a href="/settings"><Icon icon=&LuSettings width="20" height="20" />{crate::t!(t, "nav_settings")}</a></li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
-                        <a href="/workers"><Icon icon=LuUsers width="20" height="20" />{crate::t!(t, "nav_workers")}</a>
+                        <a href="/workers"><Icon icon=&LuUsers width="20" height="20" />{crate::t!(t, "nav_workers")}</a>
                     </li>
                     // Worker-only navigation
                     <li class=move || if user_role.get() == UserRole::Worker { "" } else { "hidden" }>
-                        <a href="/worker/tasks"><Icon icon=LuClipboardList width="20" height="20" />{crate::t!(t, "nav_my_tasks")}</a>
+                        <a href="/worker/tasks"><Icon icon=&LuClipboardList width="20" height="20" />{crate::t!(t, "nav_my_tasks")}</a>
                     </li>
-                    <li><a href="http://localhost:3001" target="_blank"><Icon icon=LuLayoutDashboard width="20" height="20" />{crate::t!(t, "nav_grafana")}</a></li>
+                    <li><a href="http://localhost:3001" target="_blank"><Icon icon=&LuLayoutDashboard width="20" height="20" />{crate::t!(t, "nav_grafana")}</a></li>
                     <div class="mt-auto">
                         <div class="divider"></div>
                         <li>
                             <div class="flex justify-between items-center p-4">
                                 <div class="flex gap-2 text-base-content/70">
-                                    <Icon icon=ImMagicWand width="20" height="20" />
+                                    <Icon icon=&ImMagicWand width="20" height="20" />
                                     {move || if view_mode.get() == ViewMode::Full { t("mode_simple") } else { t("mode_full") }}
                                 </div>
                                 <input
@@ -354,7 +356,7 @@ fn AuthenticatedShell(
                                 set_theme.set(if theme.get() == Theme::Light { Theme::Dark } else { Theme::Light });
                             }>
                                 <div class="flex gap-2 text-base-content/70">
-                                    <Icon icon=LuSun width="20" height="20" />
+                                    <Icon icon=&LuSun width="20" height="20" />
                                     {crate::t!(t, "theme")}
                                 </div>
                                 <input type="checkbox" class="toggle toggle-sm" checked=move || theme.get() == Theme::Dark />
@@ -366,7 +368,7 @@ fn AuthenticatedShell(
                             api::clear_user_role();
                             let _ = window().location().reload();
                         }>
-                                <Icon icon=LuLogOut width="20" height="20" />
+                                <Icon icon=&LuLogOut width="20" height="20" />
                                 {crate::t!(t, "logout")}
                             </a>
                         </li>

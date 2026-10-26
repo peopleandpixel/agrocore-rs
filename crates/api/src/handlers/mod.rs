@@ -3,7 +3,6 @@ use actix_web::web;
 pub mod agriculture;
 pub mod auth;
 pub mod backup;
-pub mod breed;
 pub mod building;
 pub mod calculation;
 pub mod compliance;
@@ -30,8 +29,8 @@ pub mod specialized;
 pub mod system;
 pub mod tasks;
 pub mod tree;
+pub mod type_system;
 pub mod users;
-pub mod variety;
 pub mod water;
 pub mod weather;
 pub mod workforce;
@@ -273,6 +272,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route(web::post().to(inventory::create_inventory_location)),
             )
             .configure(settings::configure)
+            .configure(settings_groups::configure_groups)
             .configure(compliance::configure)
             .configure(customers::configure)
             .configure(specialized::configure)
@@ -289,8 +289,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .configure(group::configure)
             .configure(tree::configure)
             .configure(livestock_new::configure)
-            .configure(variety::configure)
-            .configure(breed::configure)
+            .configure(type_system::configure)
             .configure(backup::configure)
             .configure(calculation::configure)
             .configure(demo::configure)
@@ -305,6 +304,13 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     );
 }
 
-async fn health() -> impl actix_web::Responder {
-    actix_web::HttpResponse::Ok().json(serde_json::json!({"status": "ok"}))
+async fn health(state: web::Data<crate::AppState>) -> impl actix_web::Responder {
+    let uptime = state.startup_time.elapsed().as_secs();
+    actix_web::HttpResponse::Ok().json(serde_json::json!({
+        "status": "ok",
+        "version": env!("CARGO_PKG_VERSION"),
+        "demo_mode": state.is_demo_mode,
+        "demo_readonly": state.demo_readonly,
+        "uptime_seconds": uptime,
+    }))
 }

@@ -10,10 +10,10 @@
 //! send the variant names.
 
 use crate::api;
-use icondata::LuPlus;
+use icondata_lu::LuPlus;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 /// The source types `WaterSourceType` accepts. `Custom(String)` carries caller
 /// text and is not offered.
@@ -304,7 +304,7 @@ pub fn WaterManagement() -> impl IntoView {
                         )}
                     </div>
                     <button type="submit" class="btn btn-primary mt-3">
-                        <Icon icon=LuPlus width="16" height="16" />
+                        <Icon icon=&LuPlus width="16" height="16" />
                         {crate::t!(t, "btn_add")}
                     </button>
                 </form>
@@ -356,7 +356,7 @@ pub fn WaterManagement() -> impl IntoView {
                         )}
                     </div>
                     <button type="submit" class="btn btn-primary mt-3">
-                        <Icon icon=LuPlus width="16" height="16" />
+                        <Icon icon=&LuPlus width="16" height="16" />
                         {crate::t!(t, "btn_add")}
                     </button>
                 </form>
@@ -386,7 +386,7 @@ pub fn WaterManagement() -> impl IntoView {
                         )}
                     </div>
                     <button type="submit" class="btn btn-primary mt-3">
-                        <Icon icon=LuPlus width="16" height="16" />
+                        <Icon icon=&LuPlus width="16" height="16" />
                         {crate::t!(t, "btn_add")}
                     </button>
                 </form>

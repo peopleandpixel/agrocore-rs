@@ -5,6 +5,7 @@ use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
 use agrocore_shared::SharedError;
 use uuid::Uuid;
+use validator::Validate;
 
 #[utoipa::path(
     get,
@@ -55,6 +56,7 @@ pub async fn create_tree(
     auth: AuthUser,
     dto: web::Json<CreateTreeDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let tree = state
         .db
         .tree_repo()
@@ -106,6 +108,7 @@ pub async fn update_tree(
     path: web::Path<Uuid>,
     dto: web::Json<UpdateTreeDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let tree = state
         .db
         .tree_repo()

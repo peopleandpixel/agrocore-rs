@@ -23,6 +23,7 @@ use chrono::Utc;
 use serde::Deserialize;
 use std::collections::HashSet;
 use uuid::Uuid;
+use validator::Validate;
 
 #[derive(Debug, Deserialize)]
 pub struct ClockSessionQuery {
@@ -136,6 +137,7 @@ pub async fn create_worker(
     auth: AuthUser,
     dto: web::Json<CreateWorkerDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let worker = state
         .db
         .worker_repo()
@@ -174,6 +176,7 @@ pub async fn update_worker(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateWorkerDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let worker = state
         .db
         .worker_repo()
@@ -235,6 +238,7 @@ pub async fn create_work_log(
     auth: AuthUser,
     dto: web::Json<CreateWorkLogDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let log = state
         .db
         .work_log_repo()
@@ -273,6 +277,7 @@ pub async fn update_work_log(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateWorkLogDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
     let log = state
         .db
         .work_log_repo()

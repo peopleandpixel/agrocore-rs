@@ -1,3 +1,5 @@
 /target
 /crates/admin-ui/dist/*
 /.env.dev
+/logs/*
+/crates/api/logs/*

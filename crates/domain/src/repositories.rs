@@ -1665,12 +1665,10 @@ pub trait InventoryLocationRepo: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
-use crate::entities::{Breed, CreateBreedDto, Species, UpdateBreedDto};
 use crate::entities::{Building, CreateBuildingDto, UpdateBuildingDto};
 use crate::entities::{CreateGroupDto, Group, UpdateGroupDto};
 use crate::entities::{CreateLivestockDto, Livestock, UpdateLivestockDto};
 use crate::entities::{CreateTreeDto, Tree, UpdateTreeDto};
-use crate::entities::{CreateVarietyDto, UpdateVarietyDto, Variety, VarietyCategory};
 
 #[cfg_attr(feature = "mocks", automock)]
 pub trait BuildingRepository: Send + Sync {
@@ -1773,44 +1771,73 @@ pub trait LivestockRepository: Send + Sync {
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
 }
 
+use crate::entities::type_system::{
+    CreateTypeCategoryDto, CreateTypeEntryDto, PendingTypeEntryDto, TypeCategory, TypeEntry,
+    TypeEntryUsage, UpdateTypeCategoryDto, UpdateTypeEntryDto,
+};
+
 #[cfg_attr(feature = "mocks", automock)]
-pub trait VarietyRepository: Send + Sync {
-    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Variety>>;
-    fn find_all(
-        &self,
-        tid: TenantId,
-        p: Pagination,
-    ) -> RepositoryFuture<PaginatedResponse<Variety>>;
-    fn find_by_category(
-        &self,
-        tid: TenantId,
-        category: VarietyCategory,
-    ) -> RepositoryFuture<Vec<Variety>>;
-    fn create(&self, tid: TenantId, dto: CreateVarietyDto, by: Uuid) -> RepositoryFuture<Variety>;
+pub trait TypeCategoryRepository: Send + Sync {
+    fn find_by_id(&self, id: Uuid) -> RepositoryFuture<Option<TypeCategory>>;
+    fn find_all(&self) -> RepositoryFuture<Vec<TypeCategory>>;
+    fn find_by_name(&self, name: &str) -> RepositoryFuture<Option<TypeCategory>>;
+    fn create(&self, dto: CreateTypeCategoryDto) -> RepositoryFuture<TypeCategory>;
     fn update(
         &self,
-        tid: TenantId,
         id: Uuid,
-        dto: UpdateVarietyDto,
-        by: Uuid,
-    ) -> RepositoryFuture<Option<Variety>>;
-    fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+        dto: UpdateTypeCategoryDto,
+    ) -> RepositoryFuture<Option<TypeCategory>>;
 }
 
 #[cfg_attr(feature = "mocks", automock)]
-pub trait BreedRepository: Send + Sync {
-    fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Breed>>;
-    fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Breed>>;
-    fn find_by_species(&self, tid: TenantId, species: Species) -> RepositoryFuture<Vec<Breed>>;
-    fn create(&self, tid: TenantId, dto: CreateBreedDto, by: Uuid) -> RepositoryFuture<Breed>;
+pub trait TypeEntryRepository: Send + Sync {
+    fn find_by_id(&self, id: Uuid) -> RepositoryFuture<Option<TypeEntry>>;
+    fn find_by_ids(&self, ids: &[Uuid]) -> RepositoryFuture<Vec<TypeEntry>>;
+    fn find_by_category(
+        &self,
+        tid: TenantId,
+        category_id: Uuid,
+    ) -> RepositoryFuture<Vec<TypeEntry>>;
+    fn find_by_category_and_code(
+        &self,
+        tid: TenantId,
+        category_id: Uuid,
+        code: &str,
+    ) -> RepositoryFuture<Option<TypeEntry>>;
+    fn find_children(
+        &self,
+        tid: TenantId,
+        parent_id: Uuid,
+    ) -> RepositoryFuture<Vec<TypeEntry>>;
+    fn find_root_entries(
+        &self,
+        tid: TenantId,
+        category_id: Uuid,
+    ) -> RepositoryFuture<Vec<TypeEntry>>;
+    fn create(&self, tid: TenantId, dto: CreateTypeEntryDto) -> RepositoryFuture<TypeEntry>;
     fn update(
         &self,
         tid: TenantId,
         id: Uuid,
-        dto: UpdateBreedDto,
-        by: Uuid,
-    ) -> RepositoryFuture<Option<Breed>>;
+        dto: UpdateTypeEntryDto,
+    ) -> RepositoryFuture<Option<TypeEntry>>;
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+    fn soft_delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool>;
+    fn create_with_user_id(
+        &self,
+        tid: TenantId,
+        dto: CreateTypeEntryDto,
+        user_id: Uuid,
+    ) -> RepositoryFuture<TypeEntry>;
+    fn find_pending_review(&self) -> RepositoryFuture<Vec<PendingTypeEntryDto>>;
+    fn approve_entry(&self, entry_id: Uuid) -> RepositoryFuture<Option<TypeEntry>>;
+    fn merge_entry(
+        &self,
+        tid: TenantId,
+        old_entry_id: Uuid,
+        new_entry_id: Uuid,
+    ) -> RepositoryFuture<Vec<TypeEntryUsage>>;
+    fn find_usages(&self, entry_id: Uuid) -> RepositoryFuture<Vec<TypeEntryUsage>>;
 }
 
 // --- Settings Repository ---

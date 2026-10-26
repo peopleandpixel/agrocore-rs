@@ -1,6 +1,6 @@
 use crate::AppState;
+use actix_web::{web, Error, FromRequest, HttpRequest, HttpMessage};
 use actix_web::{
-    Error, FromRequest, HttpRequest,
     dev::{Service, ServiceRequest, ServiceResponse, Transform},
 };
 use agrocore_logging::debug;
@@ -10,6 +10,7 @@ use jsonwebtoken::{Algorithm, Validation, decode};
 use redis::AsyncCommands;
 use serde::Deserialize;
 use std::future::{Future, Ready, ready};
+use futures_util::future::LocalBoxFuture;
 use std::net::IpAddr;
 use std::sync::Arc;
 use std::task::{Context, Poll};
@@ -133,6 +134,8 @@ pub struct Claims {
     pub roles: Vec<String>,
     pub exp: usize,
     pub jti: String,
+    #[serde(default)]
+    pub impersonator_id: Option<String>,
 }
 
 #[derive(Clone)]
@@ -141,6 +144,7 @@ pub struct AuthenticatedUser {
     pub tenant_id: uuid::Uuid,
     pub roles: Vec<String>,
     pub jti: String,
+    pub impersonator_id: Option<uuid::Uuid>,
 }
 
 pub struct AuthExtractor(pub AuthenticatedUser);
@@ -206,11 +210,17 @@ async fn authenticate_request(
         return Err(actix_web::error::ErrorUnauthorized("Token revoked"));
     }
 
+    let impersonator_id = token_data
+        .claims
+        .impersonator_id
+        .and_then(|s| uuid::Uuid::parse_str(&s).ok());
+
     Ok(AuthExtractor(AuthenticatedUser {
         user_id,
         tenant_id,
         roles: token_data.claims.roles,
         jti: token_data.claims.jti,
+        impersonator_id,
     }))
 }
 
@@ -220,6 +230,7 @@ impl AuthExtractor {
             .roles
             .iter()
             .map(|r| match r.as_str() {
+                "SuperAdmin" => agrocore_domain::entities::user::UserRole::Admin,
                 "Admin" => agrocore_domain::entities::user::UserRole::Admin,
                 "Manager" => agrocore_domain::entities::user::UserRole::Manager,
                 "Worker" => agrocore_domain::entities::user::UserRole::Worker,
@@ -228,12 +239,22 @@ impl AuthExtractor {
             .collect()
     }
 
+    pub fn is_super_admin(&self) -> bool {
+        self.0.roles.iter().any(|r| r == "SuperAdmin")
+    }
+
     pub fn is_admin(&self) -> bool {
-        self.0.roles.iter().any(|r| r == "Admin")
+        self.0
+            .roles
+            .iter()
+            .any(|r| r == "Admin" || r == "SuperAdmin")
     }
 
     pub fn is_manager(&self) -> bool {
-        self.0.roles.iter().any(|r| r == "Admin" || r == "Manager")
+        self.0
+            .roles
+            .iter()
+            .any(|r| r == "Admin" || r == "SuperAdmin" || r == "Manager")
     }
 
     pub fn require_admin(&self) -> agrocore_shared::Result<()> {
@@ -327,6 +348,147 @@ where
         }
         self.service.call(req)
     }
+}
+
+// ── Demo Read-Only Middleware (G3 - Option C) ─────────────────────────────
+/// Blocks write operations on the demo tenant when `DEMO_READONLY=1`.
+///
+/// Inspects the authenticated user's tenant_id from the JWT claim. If it
+/// matches the demo tenant ID and the request method is POST/PUT/DELETE,
+/// returns 403 Forbidden immediately.
+pub struct DemoReadOnlyMiddleware;
+
+impl<S, B> Transform<S, ServiceRequest> for DemoReadOnlyMiddleware
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    S::Future: 'static,
+    B: 'static,
+{
+    type Response = ServiceResponse<B>;
+    type Error = Error;
+    type InitError = ();
+    type Transform = DemoReadOnlyMiddlewareService<S>;
+    type Future = Ready<Result<Self::Transform, Self::InitError>>;
+
+    fn new_transform(&self, service: S) -> Self::Future {
+        ready(Ok(DemoReadOnlyMiddlewareService { service }))
+    }
+}
+
+pub struct DemoReadOnlyMiddlewareService<S> {
+    service: S,
+}
+
+impl<S, B> Service<ServiceRequest> for DemoReadOnlyMiddlewareService<S>
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    S::Future: 'static,
+    B: 'static,
+{
+    type Response = ServiceResponse<B>;
+    type Error = Error;
+    type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
+
+    fn poll_ready(&self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.service.poll_ready(cx)
+    }
+
+    fn call(&self, req: ServiceRequest) -> Self::Future {
+        let state = req.app_data::<web::Data<AppState>>().cloned();
+
+        let is_write = matches!(
+            *req.method(),
+            actix_web::http::Method::POST
+                | actix_web::http::Method::PUT
+                | actix_web::http::Method::DELETE
+        );
+
+        // Allow all requests through if not in read-only mode or not a write
+        if !is_write {
+            let fut = self.service.call(req);
+            return Box::pin(async move { Ok(fut.await?) });
+        }
+
+        match state {
+            Some(state) if state.demo_readonly => {
+                // Check if the request targets the demo tenant
+                if let Some(auth) = req.extensions().get::<AuthExtractor>() {
+                    if Some(auth.0.tenant_id) == state.demo_tenant_id {
+                        agrocore_logging::warn!(
+                            "Blocked write on demo tenant (user: {}, method: {}, path: {})",
+                            auth.0.user_id,
+                            req.method(),
+                            req.path()
+                        );
+                        let err = actix_web::error::ErrorForbidden(
+                            "Demo tenant is in read-only mode. Writes are not allowed."
+                        );
+                        return Box::pin(async move { Err(err) });
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        let fut = self.service.call(req);
+        Box::pin(async move { Ok(fut.await?) })
+    }
+}
+
+// ── Demo Auto-Reset Background Task ────────────────────────────────────────
+/// Spawned once at startup when `DEMO_RESET_HOURS` is set. Periodically
+/// checks whether the demo data age exceeds the configured threshold and
+/// triggers a reset via the demo reset endpoint.
+pub async fn spawn_demo_auto_reset(state: Arc<AppState>) {
+    let hours = match state.demo_reset_hours {
+        Some(h) if h > 0 => h,
+        _ => return,
+    };
+
+    let check_interval = std::time::Duration::from_secs(hours as u64 * 3600 / 4); // Check every quarter of the interval
+    let db = state.db.clone();
+
+    agrocore_logging::info!(
+        "Demo auto-reset: checking every {:?} for {}-hour threshold",
+        check_interval,
+        hours
+    );
+
+    actix_web::rt::spawn(async move {
+        loop {
+            tokio::time::sleep(check_interval).await;
+
+            let pool = db.unscoped_pool();
+
+            // Check when the demo tenant was last created/updated
+            let created_at: Option<chrono::DateTime<chrono::Utc>> = sqlx::query_scalar(
+                "SELECT created_at FROM tenants WHERE is_demo = true LIMIT 1",
+            )
+            .fetch_optional(&pool)
+            .await
+            .unwrap_or(None);
+
+            if let Some(created) = created_at {
+                let age_hours = (chrono::Utc::now() - created).num_hours();
+                if age_hours >= hours as i64 {
+                    agrocore_logging::info!(
+                        "Demo data is {} hours old (threshold: {} hours) — triggering reset",
+                        age_hours,
+                        hours
+                    );
+
+                    // Trigger reset by calling the internal seed function
+                    use crate::handlers::demo::seed_demo_internal;
+
+                    if let Ok(_) = seed_demo_internal(&db).await {
+                        agrocore_logging::info!("Demo data reset completed");
+                    } else {
+                        agrocore_logging::error!("Demo data reset failed");
+                    }
+                }
+            }
+        }
+    });
 }
 
 #[cfg(test)]
@@ -432,6 +594,7 @@ mod tests {
             tenant_id: uuid::Uuid::new_v4(),
             roles: vec![String::from("Admin")],
             jti: uuid::Uuid::new_v4().to_string(),
+            impersonator_id: None,
         });
         assert!(admin.require_admin().is_ok());
         assert!(admin.require_manager().is_ok());
@@ -441,6 +604,7 @@ mod tests {
             tenant_id: uuid::Uuid::new_v4(),
             roles: vec![String::from("Manager")],
             jti: uuid::Uuid::new_v4().to_string(),
+            impersonator_id: None,
         });
         assert!(manager.require_admin().is_err());
         assert!(manager.require_manager().is_ok());
@@ -450,6 +614,7 @@ mod tests {
             tenant_id: uuid::Uuid::new_v4(),
             roles: vec![String::from("Viewer"), String::from("Unknown")],
             jti: uuid::Uuid::new_v4().to_string(),
+            impersonator_id: None,
         });
         assert!(!viewer.is_admin());
         assert!(!viewer.is_manager());

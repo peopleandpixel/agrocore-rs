@@ -10,10 +10,10 @@
 //! (`"Basic"`, `"Professional"`), not the snake-case form. The select sends those.
 
 use crate::api;
-use icondata::{LuPlus, LuTrash2};
+use icondata_lu::{LuPlus, LuTrash2};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_icons::Icon;
+use crate::icon::Icon;
 
 /// The license types `LicenseType` accepts, with the serde wire value.
 ///
@@ -178,7 +178,7 @@ pub fn ApplicatorLicenses() -> impl IntoView {
                     )}
                 </div>
                 <button type="submit" class="btn btn-primary mt-3">
-                    <Icon icon=LuPlus width="16" height="16" />
+                    <Icon icon=&LuPlus width="16" height="16" />
                     {crate::t!(t, "btn_add")}
                 </button>
             </form>
@@ -227,7 +227,7 @@ pub fn ApplicatorLicenses() -> impl IntoView {
                                                                 on:click=move |_| on_delete(id)
                                                             >
                                                                 <Icon
-                                                                    icon=LuTrash2
+                                                                    icon=&LuTrash2
                                                                     width="14"
                                                                     height="14"
                                                                 />

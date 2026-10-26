@@ -86,6 +86,9 @@ argon2 = { workspace = true }
 password-hash = { workspace = true }
 rand = { workspace = true }
 base64 = "0.22"
+aes-gcm = "0.10"
+rand_core = { version = "0.6", features = ["getrandom"] }
+sha2 = "0.10"
 geo = { workspace = true }
 # tokio with net for server targets — not pulled in for wasm builds
 tokio = { workspace = true, features = ["net", "rt-multi-thread", "io-std"] }
