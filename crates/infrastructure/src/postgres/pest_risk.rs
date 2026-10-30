@@ -13,7 +13,7 @@ impl PestRiskRepo for PgPestRiskRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, PestRisk>(
-                "SELECT * FROM pest_risks WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, site_id, assessment_date, risk_level, affected_area_ha, pest_type, recommended_action, model_version, created_at FROM pest_risks WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -45,7 +45,7 @@ impl PestRiskRepo for PgPestRiskRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<PestRisk> = sqlx::query_as(
-                "SELECT * FROM pest_risks WHERE tenant_id = $1 AND site_id = $2 ORDER BY assessment_date DESC LIMIT $3 OFFSET $4",
+                "SELECT id, tenant_id, site_id, assessment_date, risk_level, affected_area_ha, pest_type, recommended_action, model_version, created_at FROM pest_risks WHERE tenant_id = $1 AND site_id = $2 ORDER BY assessment_date DESC LIMIT $3 OFFSET $4",
             )
             .bind(tid)
             .bind(site_id)

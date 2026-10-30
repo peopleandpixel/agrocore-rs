@@ -17,7 +17,7 @@ impl ClockEntryRepo for PgClockEntryRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, ClockEntry>(
-                "SELECT * FROM clock_entries WHERE tenant_id = $1 AND id = $2",
+                "SELECT id, tenant_id, worker_id, entry_type, timestamp, lat, lng, task_id, notes, created_at, updated_at FROM clock_entries WHERE tenant_id = $1 AND id = $2",
             )
             .bind(tid)
             .bind(id)
@@ -45,7 +45,7 @@ impl ClockEntryRepo for PgClockEntryRepo {
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<ClockEntry> =
-                sqlx::query_as("SELECT * FROM clock_entries WHERE tenant_id = $1 ORDER BY timestamp DESC LIMIT $2 OFFSET $3")
+                sqlx::query_as("SELECT id, tenant_id, worker_id, entry_type, timestamp, lat, lng, task_id, notes, created_at, updated_at FROM clock_entries WHERE tenant_id = $1 ORDER BY timestamp DESC LIMIT $2 OFFSET $3")
                     .bind(tid)
                     .bind(per_page as i32)
                     .bind(offset as i32)
@@ -89,7 +89,7 @@ impl ClockEntryRepo for PgClockEntryRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<ClockEntry> = sqlx::query_as(
-                "SELECT * FROM clock_entries WHERE tenant_id = $1 AND worker_id = $2 ORDER BY timestamp DESC LIMIT $3 OFFSET $4",
+                "SELECT id, tenant_id, worker_id, entry_type, timestamp, lat, lng, task_id, notes, created_at, updated_at FROM clock_entries WHERE tenant_id = $1 AND worker_id = $2 ORDER BY timestamp DESC LIMIT $3 OFFSET $4",
             )
             .bind(tid)
             .bind(worker_id)
@@ -151,7 +151,7 @@ impl ClockEntryRepo for PgClockEntryRepo {
         Box::pin(async move {
             // Fetch all clock-in entries within the date range
             let clock_ins: Vec<ClockEntry> = sqlx::query_as::<_, ClockEntry>(
-                "SELECT * FROM clock_entries WHERE tenant_id = $1 AND worker_id = $2 AND entry_type = 'ClockIn' AND timestamp BETWEEN $3 AND $4 ORDER BY timestamp ASC",
+                "SELECT id, tenant_id, worker_id, entry_type, timestamp, lat, lng, task_id, notes, created_at, updated_at FROM clock_entries WHERE tenant_id = $1 AND worker_id = $2 AND entry_type = 'ClockIn' AND timestamp BETWEEN $3 AND $4 ORDER BY timestamp ASC",
             )
             .bind(tid)
             .bind(worker_id)
@@ -165,7 +165,7 @@ impl ClockEntryRepo for PgClockEntryRepo {
             for clock_in in clock_ins {
                 // Find the next clock-out after this clock-in
                 let clock_out: Option<ClockEntry> = sqlx::query_as::<_, ClockEntry>(
-                    "SELECT * FROM clock_entries WHERE tenant_id = $1 AND worker_id = $2 AND entry_type = 'ClockOut' AND timestamp > $3 ORDER BY timestamp ASC LIMIT 1",
+                    "SELECT id, tenant_id, worker_id, entry_type, timestamp, lat, lng, task_id, notes, created_at, updated_at FROM clock_entries WHERE tenant_id = $1 AND worker_id = $2 AND entry_type = 'ClockOut' AND timestamp > $3 ORDER BY timestamp ASC LIMIT 1",
                 )
                 .bind(tid)
                 .bind(worker_id)
@@ -268,7 +268,7 @@ impl ClockEntryRepo for PgClockEntryRepo {
         Box::pin(async move {
             // Inline the session query to avoid borrowing self in async block
             let clock_ins: Vec<ClockEntry> = sqlx::query_as::<_, ClockEntry>(
-                "SELECT * FROM clock_entries WHERE tenant_id = $1 AND worker_id = $2 AND entry_type = 'ClockIn' AND timestamp BETWEEN $3 AND $4 ORDER BY timestamp ASC",
+                "SELECT id, tenant_id, worker_id, entry_type, timestamp, lat, lng, task_id, notes, created_at, updated_at FROM clock_entries WHERE tenant_id = $1 AND worker_id = $2 AND entry_type = 'ClockIn' AND timestamp BETWEEN $3 AND $4 ORDER BY timestamp ASC",
             )
             .bind(tid)
             .bind(worker_id)
@@ -281,7 +281,7 @@ impl ClockEntryRepo for PgClockEntryRepo {
             let mut total = 0.0;
             for clock_in in clock_ins {
                 let clock_out: Option<ClockEntry> = sqlx::query_as::<_, ClockEntry>(
-                    "SELECT * FROM clock_entries WHERE tenant_id = $1 AND worker_id = $2 AND entry_type = 'ClockOut' AND timestamp > $3 ORDER BY timestamp ASC LIMIT 1",
+                    "SELECT id, tenant_id, worker_id, entry_type, timestamp, lat, lng, task_id, notes, created_at, updated_at FROM clock_entries WHERE tenant_id = $1 AND worker_id = $2 AND entry_type = 'ClockOut' AND timestamp > $3 ORDER BY timestamp ASC LIMIT 1",
                 )
                 .bind(tid)
                 .bind(worker_id)

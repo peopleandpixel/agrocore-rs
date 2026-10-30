@@ -13,7 +13,7 @@ impl GrowingDegreeDayRepo for PgGrowingDegreeDayRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, GrowingDegreeDay>(
-                "SELECT * FROM growing_degree_days WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, site_id, station_id, date, min_temp_c, max_temp_c, avg_temp_c, gdd_base_10, gdd_base_5, created_at, updated_at FROM growing_degree_days WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -45,7 +45,7 @@ impl GrowingDegreeDayRepo for PgGrowingDegreeDayRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<GrowingDegreeDay> = sqlx::query_as(
-                "SELECT * FROM growing_degree_days WHERE tenant_id = $1 AND site_id = $2 ORDER BY date DESC LIMIT $3 OFFSET $4",
+                "SELECT id, tenant_id, site_id, station_id, date, min_temp_c, max_temp_c, avg_temp_c, gdd_base_10, gdd_base_5, created_at, updated_at FROM growing_degree_days WHERE tenant_id = $1 AND site_id = $2 ORDER BY date DESC LIMIT $3 OFFSET $4",
             )
             .bind(tid)
             .bind(site_id)

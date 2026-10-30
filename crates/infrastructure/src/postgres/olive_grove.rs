@@ -15,7 +15,7 @@ impl OliveGroveRepo for PgOliveGroveRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, OliveGrove>(
-                "SELECT * FROM olive_groves WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, site_id, label, variety, tree_count, planting_year, area_ha, spacing_m, irrigation_type, is_organic, certification_body, certification_number, created_at, updated_at FROM olive_groves WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -44,7 +44,7 @@ impl OliveGroveRepo for PgOliveGroveRepo {
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<OliveGrove> = sqlx::query_as(
-                "SELECT * FROM olive_groves WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
+                "SELECT id, tenant_id, site_id, label, variety, tree_count, planting_year, area_ha, spacing_m, irrigation_type, is_organic, certification_body, certification_number, created_at, updated_at FROM olive_groves WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
             )
             .bind(tid)
             .bind(per_page as i32)
@@ -90,7 +90,7 @@ impl OliveGroveRepo for PgOliveGroveRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<OliveGrove> = sqlx::query_as("SELECT * FROM olive_groves WHERE tenant_id = $1 AND site_id = $2 LIMIT $3 OFFSET $4")
+            let data: Vec<OliveGrove> = sqlx::query_as("SELECT id, tenant_id, site_id, label, variety, tree_count, planting_year, area_ha, spacing_m, irrigation_type, is_organic, certification_body, certification_number, created_at, updated_at FROM olive_groves WHERE tenant_id = $1 AND site_id = $2 LIMIT $3 OFFSET $4")
                 .bind(tid)
                 .bind(site_id)
                 .bind(per_page as i32)

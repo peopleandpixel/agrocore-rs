@@ -16,7 +16,7 @@ impl OrderRepository for PgOrderRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Order>> {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
-            sqlx::query_as::<_, Order>("SELECT * FROM orders WHERE id = $1 AND tenant_id = $2")
+            sqlx::query_as::<_, Order>("SELECT id, tenant_id, label, title, description, priority, status, order_type, assigned_to, assigned_worker_ids, site_ids, scheduled_start, scheduled_end, actual_start AS started_at, actual_end AS completed_at, deadline_date, planned_date, recurrence, last_completed_at, execution_policy, automation_state, articles, quantities, results, weather, custom_fields, parent_order_id, workflow_config, cost_center_id, customer_id, created_by, updated_by, is_active, created_at, updated_at FROM orders WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
                 .bind(tid)
                 .fetch_optional(&pool)
@@ -38,7 +38,7 @@ impl OrderRepository for PgOrderRepo {
             let can_see_all =
                 roles_vec.contains(&UserRole::Admin) || roles_vec.contains(&UserRole::Manager);
             if can_see_all {
-                sqlx::query_as::<_, Order>("SELECT * FROM orders WHERE id = $1 AND tenant_id = $2")
+                sqlx::query_as::<_, Order>("SELECT id, tenant_id, label, title, description, priority, status, order_type, assigned_to, assigned_worker_ids, site_ids, scheduled_start, scheduled_end, actual_start AS started_at, actual_end AS completed_at, deadline_date, planned_date, recurrence, last_completed_at, execution_policy, automation_state, articles, quantities, results, weather, custom_fields, parent_order_id, workflow_config, cost_center_id, customer_id, created_by, updated_by, is_active, created_at, updated_at FROM orders WHERE id = $1 AND tenant_id = $2")
                     .bind(id)
                     .bind(tid)
                     .fetch_optional(&pool)
@@ -47,7 +47,7 @@ impl OrderRepository for PgOrderRepo {
             } else {
                 // Workers only see orders assigned to them
                 sqlx::query_as::<_, Order>(
-                    "SELECT * FROM orders WHERE id = $1 AND tenant_id = $2 AND assigned_to = $3",
+                    "SELECT id, tenant_id, label, title, description, priority, status, order_type, assigned_to, assigned_worker_ids, site_ids, scheduled_start, scheduled_end, actual_start AS started_at, actual_end AS completed_at, deadline_date, planned_date, recurrence, last_completed_at, execution_policy, automation_state, articles, quantities, results, weather, custom_fields, parent_order_id, workflow_config, cost_center_id, customer_id, created_by, updated_by, is_active, created_at, updated_at FROM orders WHERE id = $1 AND tenant_id = $2 AND assigned_to = $3",
                 )
                 .bind(id)
                 .bind(tid)
@@ -72,7 +72,7 @@ impl OrderRepository for PgOrderRepo {
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<Order> = sqlx::query_as("SELECT * FROM orders WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3")
+            let data: Vec<Order> = sqlx::query_as("SELECT id, tenant_id, label, title, description, priority, status, order_type, assigned_to, assigned_worker_ids, site_ids, scheduled_start, scheduled_end, actual_start AS started_at, actual_end AS completed_at, deadline_date, planned_date, recurrence, last_completed_at, execution_policy, automation_state, articles, quantities, results, weather, custom_fields, parent_order_id, workflow_config, cost_center_id, customer_id, created_by, updated_by, is_active, created_at, updated_at FROM orders WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3")
                 .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
@@ -109,7 +109,7 @@ impl OrderRepository for PgOrderRepo {
     fn find_my_tasks(&self, tid: TenantId, user_id: Uuid) -> RepositoryFuture<Vec<Order>> {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
-            sqlx::query_as::<_, Order>("SELECT * FROM orders WHERE tenant_id = $1 AND assigned_to = $2 AND is_active = true")
+            sqlx::query_as::<_, Order>("SELECT id, tenant_id, label, title, description, priority, status, order_type, assigned_to, assigned_worker_ids, site_ids, scheduled_start, scheduled_end, actual_start AS started_at, actual_end AS completed_at, deadline_date, planned_date, recurrence, last_completed_at, execution_policy, automation_state, articles, quantities, results, weather, custom_fields, parent_order_id, workflow_config, cost_center_id, customer_id, created_by, updated_by, is_active, created_at, updated_at FROM orders WHERE tenant_id = $1 AND assigned_to = $2 AND is_active = true")
                 .bind(tid)
                 .bind(user_id)
                 .fetch_all(&pool)
@@ -170,7 +170,7 @@ impl OrderRepository for PgOrderRepo {
         Box::pin(async move {
             // Get old value for audit
             let old_order =
-                sqlx::query_as::<_, Order>("SELECT * FROM orders WHERE id = $1 AND tenant_id = $2")
+                sqlx::query_as::<_, Order>("SELECT id, tenant_id, label, title, description, priority, status, order_type, assigned_to, assigned_worker_ids, site_ids, scheduled_start, scheduled_end, actual_start AS started_at, actual_end AS completed_at, deadline_date, planned_date, recurrence, last_completed_at, execution_policy, automation_state, articles, quantities, results, weather, custom_fields, parent_order_id, workflow_config, cost_center_id, customer_id, created_by, updated_by, is_active, created_at, updated_at FROM orders WHERE id = $1 AND tenant_id = $2")
                     .bind(id)
                     .bind(tid)
                     .fetch_optional(&pool)
@@ -237,7 +237,7 @@ impl OrderRepository for PgOrderRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Order>(
-                "SELECT * FROM orders WHERE tenant_id = $1 AND assigned_to = $2",
+                "SELECT id, tenant_id, label, title, description, priority, status, order_type, assigned_to, assigned_worker_ids, site_ids, scheduled_start, scheduled_end, actual_start AS started_at, actual_end AS completed_at, deadline_date, planned_date, recurrence, last_completed_at, execution_policy, automation_state, articles, quantities, results, weather, custom_fields, parent_order_id, workflow_config, cost_center_id, customer_id, created_by, updated_by, is_active, created_at, updated_at FROM orders WHERE tenant_id = $1 AND assigned_to = $2",
             )
             .bind(tid)
             .bind(worker_id)
@@ -269,7 +269,7 @@ impl OrderRepository for PgOrderRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Order> = sqlx::query_as(
-                "SELECT * FROM orders WHERE tenant_id = $1 AND customer_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
+                "SELECT id, tenant_id, label, title, description, priority, status, order_type, assigned_to, assigned_worker_ids, site_ids, scheduled_start, scheduled_end, actual_start AS started_at, actual_end AS completed_at, deadline_date, planned_date, recurrence, last_completed_at, execution_policy, automation_state, articles, quantities, results, weather, custom_fields, parent_order_id, workflow_config, cost_center_id, customer_id, created_by, updated_by, is_active, created_at, updated_at FROM orders WHERE tenant_id = $1 AND customer_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
             )
             .bind(tid)
             .bind(customer_id)

@@ -20,7 +20,7 @@ impl LivestockRepository for PgLivestockRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Livestock>(
-                "SELECT * FROM livestock WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, plot_id, herd_id, livestock_type, count, label, created_at, updated_at FROM livestock WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -50,7 +50,7 @@ impl LivestockRepository for PgLivestockRepo {
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Livestock> = sqlx::query_as(
-                "SELECT * FROM livestock WHERE tenant_id = $1 ORDER BY label LIMIT $2 OFFSET $3",
+                "SELECT id, tenant_id, plot_id, herd_id, livestock_type, count, label, created_at, updated_at FROM livestock WHERE tenant_id = $1 ORDER BY label LIMIT $2 OFFSET $3",
             )
             .bind(tid)
             .bind(per_page as i32)
@@ -98,7 +98,7 @@ impl LivestockRepository for PgLivestockRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Livestock> = sqlx::query_as(
-                "SELECT * FROM livestock WHERE tenant_id = $1 AND plot_id = $2 ORDER BY label LIMIT $3 OFFSET $4",
+                "SELECT id, tenant_id, plot_id, herd_id, livestock_type, count, label, created_at, updated_at FROM livestock WHERE tenant_id = $1 AND plot_id = $2 ORDER BY label LIMIT $3 OFFSET $4",
             )
             .bind(tid)
             .bind(plot_id)
@@ -128,7 +128,7 @@ impl LivestockRepository for PgLivestockRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Livestock>(
-                "SELECT * FROM livestock WHERE tenant_id = $1 AND herd_id = $2 ORDER BY label",
+                "SELECT id, tenant_id, plot_id, herd_id, livestock_type, count, label, created_at, updated_at FROM livestock WHERE tenant_id = $1 AND herd_id = $2 ORDER BY label",
             )
             .bind(tid)
             .bind(herd_id)
@@ -189,7 +189,7 @@ impl LivestockRepository for PgLivestockRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let existing = sqlx::query_as::<_, Livestock>(
-                "SELECT * FROM livestock WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, plot_id, herd_id, livestock_type, count, label, created_at, updated_at FROM livestock WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)

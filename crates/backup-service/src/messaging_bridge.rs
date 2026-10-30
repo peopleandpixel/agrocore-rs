@@ -51,15 +51,7 @@ async fn main() -> BackupResult<()> {
         .map_err(|e| BackupError::Anyhow(anyhow::anyhow!("Failed to create MQTT Bridge: {}", e)))?;
 
     // Create Scheduler
-    let scheduler_config = SchedulerConfig {
-        enabled: true,
-        timezone: "UTC".to_string(),
-        default_job_timeout_seconds: 3600,
-        max_concurrent_jobs: 10,
-        retry_failed_jobs: true,
-        max_retries: 3,
-        retry_delay_seconds: 60,
-    };
+    let scheduler_config = SchedulerConfig::default();
 
     let scheduler = Arc::new(
         SchedulerService::new(scheduler_config, Some(nats_client.inner().clone()))

@@ -17,7 +17,7 @@ impl HarvestSeasonRepo for PgHarvestSeasonRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, HarvestSeason>(
-                "SELECT * FROM harvest_seasons WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, year, label, start_date, end_date, is_active, created_at, updated_at FROM harvest_seasons WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -45,7 +45,7 @@ impl HarvestSeasonRepo for PgHarvestSeasonRepo {
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<HarvestSeason> = sqlx::query_as("SELECT * FROM harvest_seasons WHERE tenant_id = $1 ORDER BY year DESC, start_date DESC LIMIT $2 OFFSET $3")
+            let data: Vec<HarvestSeason> = sqlx::query_as("SELECT id, tenant_id, year, label, start_date, end_date, is_active, created_at, updated_at FROM harvest_seasons WHERE tenant_id = $1 ORDER BY year DESC, start_date DESC LIMIT $2 OFFSET $3")
                 .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)

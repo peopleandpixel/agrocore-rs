@@ -143,6 +143,7 @@ pub async fn calculate_fertilizer_amount(
                 k: fi.potassium_percent,
                 mg: 0.0,
             },
+            price_per_kg_eur: fi.price_per_kg_eur,
         })
         .collect();
 
@@ -203,6 +204,7 @@ pub async fn calculate_nutrition_balance(
             k: dto.fertilizer.potassium_percent,
             mg: 0.0,
         },
+        price_per_kg_eur: dto.fertilizer.price_per_kg_eur,
     };
 
     let area_ha = dto.demand.area_ha;

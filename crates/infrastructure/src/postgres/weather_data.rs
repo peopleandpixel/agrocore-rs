@@ -37,7 +37,7 @@ impl WeatherDataRepo for PgWeatherDataRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WeatherData>(
-                "SELECT * FROM weather_data WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, station_id, tenant_id, timestamp, temperature_c, humidity_percent, precipitation_mm, wind_speed_kmh, created_at FROM weather_data WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -65,7 +65,7 @@ impl WeatherDataRepo for PgWeatherDataRepo {
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<WeatherData> = sqlx::query_as("SELECT * FROM weather_data WHERE tenant_id = $1 ORDER BY timestamp DESC LIMIT $2 OFFSET $3")
+            let data: Vec<WeatherData> = sqlx::query_as("SELECT id, station_id, tenant_id, timestamp, temperature_c, humidity_percent, precipitation_mm, wind_speed_kmh, created_at FROM weather_data WHERE tenant_id = $1 ORDER BY timestamp DESC LIMIT $2 OFFSET $3")
                 .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
@@ -110,7 +110,7 @@ impl WeatherDataRepo for PgWeatherDataRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<WeatherData> = sqlx::query_as("SELECT * FROM weather_data WHERE tenant_id = $1 AND station_id = $2 ORDER BY timestamp DESC LIMIT $3 OFFSET $4")
+            let data: Vec<WeatherData> = sqlx::query_as("SELECT id, station_id, tenant_id, timestamp, temperature_c, humidity_percent, precipitation_mm, wind_speed_kmh, created_at FROM weather_data WHERE tenant_id = $1 AND station_id = $2 ORDER BY timestamp DESC LIMIT $3 OFFSET $4")
                 .bind(tid)
                 .bind(station_id)
                 .bind(per_page as i32)

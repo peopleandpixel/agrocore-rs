@@ -35,15 +35,7 @@ async fn main() -> anyhow::Result<()> {
     let _config = AgroCoreConfig::init_global(AgroCoreConfig::from_env());
 
     // Create Scheduler
-    let scheduler_config = SchedulerConfig {
-        enabled: true,
-        timezone: "UTC".to_string(),
-        default_job_timeout_seconds: 3600,
-        max_concurrent_jobs: 10,
-        retry_failed_jobs: true,
-        max_retries: 3,
-        retry_delay_seconds: 60,
-    };
+    let scheduler_config = SchedulerConfig::default();
 
     let nats_client = agrocore_messaging::MessagingClient::connect(&nats_url).await?;
     let scheduler =

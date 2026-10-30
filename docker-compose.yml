@@ -110,6 +110,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: agrocore-notification-service
     image: agrocore-service
     container_name: agrocore-notification-service
     environment:

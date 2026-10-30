@@ -350,6 +350,8 @@ pub async fn run_server(
             .wrap(security_headers)
             .wrap(Governor::new(&gov_conf))
             .wrap(cors)
+            // I15: Compress responses — ~70-85% fewer bytes for GeoJSON, Excel, SIGPAC
+            .wrap(actix_web::middleware::Compress::default())
             .wrap(crate::middleware::DemoReadOnlyMiddleware)
             .wrap(crate::middleware::MetricsMiddleware)
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").url(

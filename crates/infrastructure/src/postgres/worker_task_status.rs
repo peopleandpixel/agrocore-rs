@@ -19,7 +19,7 @@ impl WorkerTaskStatusRepository for PgWorkerTaskStatusRepo {
     ) -> RepositoryFuture<Option<WorkerTaskStatus>> {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
-            sqlx::query_as::<_, WorkerTaskStatus>("SELECT * FROM worker_task_statuses WHERE task_id = $1 AND worker_id = $2 AND tenant_id = $3")
+            sqlx::query_as::<_, WorkerTaskStatus>("SELECT id, tenant_id, task_id, worker_id, status, started_at, completed_at, created_at FROM worker_task_statuses WHERE task_id = $1 AND worker_id = $2 AND tenant_id = $3")
                 .bind(task_id)
                 .bind(worker_id)
                 .bind(tid)
@@ -37,7 +37,7 @@ impl WorkerTaskStatusRepository for PgWorkerTaskStatusRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WorkerTaskStatus>(
-                "SELECT * FROM worker_task_statuses WHERE task_id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, task_id, worker_id, status, started_at, completed_at, created_at FROM worker_task_statuses WHERE task_id = $1 AND tenant_id = $2",
             )
             .bind(task_id)
             .bind(tid)

@@ -13,6 +13,8 @@ pub struct SchedulerConfig {
     pub retry_failed_jobs: bool,
     pub max_retries: u32,
     pub retry_delay_seconds: u64,
+    /// J14: Maximum seconds to wait for graceful shutdown
+    pub shutdown_timeout_secs: u64,
 }
 
 impl Default for SchedulerConfig {
@@ -25,6 +27,7 @@ impl Default for SchedulerConfig {
             retry_failed_jobs: true,
             max_retries: 3,
             retry_delay_seconds: 60,
+            shutdown_timeout_secs: 30,
         }
     }
 }

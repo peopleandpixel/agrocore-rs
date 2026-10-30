@@ -17,7 +17,7 @@ impl HarvestLotRepo for PgHarvestLotRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, HarvestLot>(
-                "SELECT * FROM harvest_lots WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, season_id, lot_number, crop_type, variety, quality_target, total_weight_kg, status, created_at, updated_at FROM harvest_lots WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -41,7 +41,7 @@ impl HarvestLotRepo for PgHarvestLotRepo {
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<HarvestLot> = sqlx::query_as("SELECT * FROM harvest_lots WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3")
+            let data: Vec<HarvestLot> = sqlx::query_as("SELECT id, tenant_id, season_id, lot_number, crop_type, variety, quality_target, total_weight_kg, status, created_at, updated_at FROM harvest_lots WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3")
                 .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
@@ -86,7 +86,7 @@ impl HarvestLotRepo for PgHarvestLotRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<HarvestLot> = sqlx::query_as("SELECT * FROM harvest_lots WHERE tenant_id = $1 AND season_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4")
+            let data: Vec<HarvestLot> = sqlx::query_as("SELECT id, tenant_id, season_id, lot_number, crop_type, variety, quality_target, total_weight_kg, status, created_at, updated_at FROM harvest_lots WHERE tenant_id = $1 AND season_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4")
                 .bind(tid)
                 .bind(season_id)
                 .bind(per_page as i32)

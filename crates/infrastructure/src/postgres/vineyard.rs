@@ -15,7 +15,7 @@ impl VineyardRepo for PgVineyardRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Vineyard>(
-                "SELECT * FROM vineyards WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, site_id, doc_area, vintage, grape_variety, brix_at_harvest, ph_at_harvest, acidity, yield_tons, quality_grade, slope_percent, altitude_m, is_organic, certification_body, certification_number, is_active, created_at, updated_at FROM vineyards WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -44,7 +44,7 @@ impl VineyardRepo for PgVineyardRepo {
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Vineyard> =
-                sqlx::query_as("SELECT * FROM vineyards WHERE tenant_id = $1 LIMIT $2 OFFSET $3")
+                sqlx::query_as("SELECT id, tenant_id, site_id, doc_area, vintage, grape_variety, brix_at_harvest, ph_at_harvest, acidity, yield_tons, quality_grade, slope_percent, altitude_m, is_organic, certification_body, certification_number, is_active, created_at, updated_at FROM vineyards WHERE tenant_id = $1 LIMIT $2 OFFSET $3")
                     .bind(tid)
                     .bind(per_page as i32)
                     .bind(offset as i32)
@@ -84,7 +84,7 @@ impl VineyardRepo for PgVineyardRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Vineyard> = sqlx::query_as(
-                "SELECT * FROM vineyards WHERE tenant_id = $1 AND site_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
+                "SELECT id, tenant_id, site_id, doc_area, vintage, grape_variety, brix_at_harvest, ph_at_harvest, acidity, yield_tons, quality_grade, slope_percent, altitude_m, is_organic, certification_body, certification_number, is_active, created_at, updated_at FROM vineyards WHERE tenant_id = $1 AND site_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
             )
             .bind(tid)
             .bind(site_id)

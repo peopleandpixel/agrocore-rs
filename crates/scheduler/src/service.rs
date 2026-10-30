@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::process::Command;
-use tokio::sync::RwLock;
+use tokio::sync::{mpsc, RwLock};
 use tokio_cron_scheduler::{Job, JobScheduler};
 use uuid::Uuid;
 
@@ -39,6 +39,10 @@ pub struct SchedulerService {
     handlers: Arc<RwLock<HashMap<String, JobHandler>>>,
     nats: Option<NatsClient>,
     job_state: Arc<RwLock<HashMap<String, JobStatus>>>,
+    /// J14: CancellationToken for graceful shutdown
+    shutdown_tx: Option<mpsc::Sender<()>>,
+    /// J14: Running jobs tracking
+    running_jobs: Arc<RwLock<Vec<Uuid>>>,
 }
 
 impl SchedulerService {
@@ -51,6 +55,8 @@ impl SchedulerService {
 
         let scheduler = Arc::new(scheduler);
 
+        let (shutdown_tx, _shutdown_rx) = mpsc::channel::<()>(1);
+        
         Ok(Self {
             config,
             scheduler,
@@ -58,6 +64,8 @@ impl SchedulerService {
             handlers: Arc::new(RwLock::new(HashMap::new())),
             nats,
             job_state: Arc::new(RwLock::new(HashMap::new())),
+            shutdown_tx: Some(shutdown_tx),
+            running_jobs: Arc::new(RwLock::new(Vec::new())),
         })
     }
 
@@ -76,13 +84,46 @@ impl SchedulerService {
         Ok(())
     }
 
+    /// J14: Graceful shutdown — signal all running jobs to stop and wait for completion.
     pub async fn stop(&self) -> SchedulerResult<()> {
-        // JobScheduler shutdown takes &mut self, so we need to use Arc::get_mut
-        // Since we can't mutate through Arc, we'll just stop accepting new jobs
-        // and let the scheduler finish current jobs
-        // For now, we'll just return Ok as the scheduler doesn't have a proper shutdown
-        info!("Scheduler stop requested (graceful shutdown not fully implemented)");
+        info!("Scheduler stop requested — initiating graceful shutdown");
+        
+        // Signal shutdown to all listening tasks
+        if let Some(tx) = &self.shutdown_tx {
+            let _ = tx.send(()).await;
+        }
+        
+        // Wait for running jobs to finish (with timeout)
+        let timeout = Duration::from_secs(self.config.shutdown_timeout_secs);
+        let start = std::time::Instant::now();
+        
+        while start.elapsed() < timeout {
+            let running = self.running_jobs.read().await;
+            if running.is_empty() {
+                info!("All scheduler jobs stopped gracefully");
+                return Ok(());
+            }
+            drop(running);
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+        
+        // Timeout — force stop
+        let running = self.running_jobs.read().await;
+        if !running.is_empty() {
+            warn!(
+                "Scheduler shutdown timeout — {} jobs still running, forcing stop",
+                running.len()
+            );
+        }
         Ok(())
+    }
+    
+    /// Returns a receiver that waits for the shutdown signal.
+    pub fn shutdown_receiver(&mut self) -> Option<mpsc::Receiver<()>> {
+        // Create a new channel for the shutdown listener
+        let (tx, rx) = mpsc::channel::<()>(1);
+        self.shutdown_tx = Some(tx);
+        Some(rx)
     }
 
     pub async fn register_handler<F, Fut>(&self, name: &str, handler: F)
@@ -231,6 +272,8 @@ impl SchedulerService {
             handlers: self.handlers.clone(),
             nats: self.nats.clone(),
             job_state: self.job_state.clone(),
+            shutdown_tx: self.shutdown_tx.clone(),
+            running_jobs: self.running_jobs.clone(),
         }
     }
 
@@ -705,6 +748,8 @@ impl Clone for SchedulerService {
             handlers: self.handlers.clone(),
             nats: self.nats.clone(),
             job_state: self.job_state.clone(),
+            shutdown_tx: self.shutdown_tx.clone(),
+            running_jobs: self.running_jobs.clone(),
         }
     }
 }

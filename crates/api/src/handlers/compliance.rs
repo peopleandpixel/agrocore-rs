@@ -211,29 +211,23 @@ pub async fn delete_checklist(
     ),
     security(("bearer_auth" = []))
 )]
+/// J15: Use SQL-filtered find_by_site instead of loading entire table and filtering in Rust
 pub async fn find_checklists_by_site(
     state: web::Data<AppState>,
     auth: AuthUser,
     site_id: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
-    // Note: This endpoint would require a find_by_site method in ComplianceChecklistRepo
-    // For now, we filter from find_all
     let result = state
         .db
         .compliance_checklist_repo()
-        .find_all(
+        .find_by_site(
             agrocore_domain::TenantId(auth.0.tenant_id),
+            *site_id,
             agrocore_shared::Pagination::default(),
         )
         .await?;
 
-    let filtered: Vec<agrocore_domain::entities::compliance::ComplianceChecklist> = result
-        .data
-        .into_iter()
-        .filter(|c| c.site_id == *site_id)
-        .collect();
-
-    Ok(HttpResponse::Ok().json(filtered))
+    Ok(HttpResponse::Ok().json(result.data))
 }
 
 #[utoipa::path(
@@ -248,30 +242,24 @@ pub async fn find_checklists_by_site(
     ),
     security(("bearer_auth" = []))
 )]
+/// J15: Use SQL-filtered find_by_type instead of loading entire table and filtering in Rust
 pub async fn find_checklists_by_type(
     state: web::Data<AppState>,
     auth: AuthUser,
     checklist_type: web::Path<agrocore_domain::entities::compliance::ChecklistType>,
 ) -> Result<HttpResponse, ApiError> {
-    // Note: This endpoint would require a find_by_type method in ComplianceChecklistRepo
-    // For now, we filter from find_all
+    let checklist_type_value = checklist_type.into_inner();
     let result = state
         .db
         .compliance_checklist_repo()
-        .find_all(
+        .find_by_type(
             agrocore_domain::TenantId(auth.0.tenant_id),
+            checklist_type_value,
             agrocore_shared::Pagination::default(),
         )
         .await?;
 
-    let checklist_type_value = checklist_type.into_inner();
-    let filtered: Vec<agrocore_domain::entities::compliance::ComplianceChecklist> = result
-        .data
-        .into_iter()
-        .filter(|c| c.checklist_type == checklist_type_value)
-        .collect();
-
-    Ok(HttpResponse::Ok().json(filtered))
+    Ok(HttpResponse::Ok().json(result.data))
 }
 
 pub async fn get_fertilizer_record(

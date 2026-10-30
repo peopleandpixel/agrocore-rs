@@ -17,7 +17,7 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, HarvestDelivery>(
-                "SELECT * FROM harvest_deliveries WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, lot_id, delivery_date, gross_weight_kg, tare_weight_kg, net_weight_kg, carrier_name, vehicle_id, quality_notes, temperature_at_delivery, created_at FROM harvest_deliveries WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -41,7 +41,7 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<HarvestDelivery> = sqlx::query_as("SELECT * FROM harvest_deliveries WHERE tenant_id = $1 ORDER BY delivery_date DESC LIMIT $2 OFFSET $3")
+            let data: Vec<HarvestDelivery> = sqlx::query_as("SELECT id, tenant_id, lot_id, delivery_date, gross_weight_kg, tare_weight_kg, net_weight_kg, carrier_name, vehicle_id, quality_notes, temperature_at_delivery, created_at FROM harvest_deliveries WHERE tenant_id = $1 ORDER BY delivery_date DESC LIMIT $2 OFFSET $3")
                 .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
@@ -86,7 +86,7 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<HarvestDelivery> = sqlx::query_as("SELECT * FROM harvest_deliveries WHERE tenant_id = $1 AND lot_id = $2 ORDER BY delivery_date DESC LIMIT $3 OFFSET $4")
+            let data: Vec<HarvestDelivery> = sqlx::query_as("SELECT id, tenant_id, lot_id, delivery_date, gross_weight_kg, tare_weight_kg, net_weight_kg, carrier_name, vehicle_id, quality_notes, temperature_at_delivery, created_at FROM harvest_deliveries WHERE tenant_id = $1 AND lot_id = $2 ORDER BY delivery_date DESC LIMIT $3 OFFSET $4")
                 .bind(tid)
                 .bind(lot_id)
                 .bind(per_page as i32)
@@ -153,7 +153,7 @@ impl HarvestDeliveryRepo for PgHarvestDeliveryRepo {
         Box::pin(async move {
             // Need to handle net_weight calculation if gross or tare changes
             let current = sqlx::query_as::<_, HarvestDelivery>(
-                "SELECT * FROM harvest_deliveries WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, lot_id, delivery_date, gross_weight_kg, tare_weight_kg, net_weight_kg, carrier_name, vehicle_id, quality_notes, temperature_at_delivery, created_at FROM harvest_deliveries WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)

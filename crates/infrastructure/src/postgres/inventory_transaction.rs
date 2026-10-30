@@ -23,7 +23,7 @@ impl InventoryTransactionRepo for PgInventoryTransactionRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, InventoryTransaction>(
-                "SELECT * FROM inventory_transactions WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, item_id, transaction_type, quantity, unit_cost, total_cost, batch_number, expiration_date, location, notes, reference_id, created_by, created_at FROM inventory_transactions WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -56,7 +56,7 @@ impl InventoryTransactionRepo for PgInventoryTransactionRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let items: Vec<InventoryTransaction> = sqlx::query_as(
-                "SELECT * FROM inventory_transactions WHERE item_id = $1 AND tenant_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
+                "SELECT id, tenant_id, item_id, transaction_type, quantity, unit_cost, total_cost, batch_number, expiration_date, location, notes, reference_id, created_by, created_at FROM inventory_transactions WHERE item_id = $1 AND tenant_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
             )
             .bind(item_id)
             .bind(tid)
@@ -90,7 +90,7 @@ impl InventoryTransactionRepo for PgInventoryTransactionRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, InventoryTransaction>(
-                "SELECT * FROM inventory_transactions WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2",
+                "SELECT id, tenant_id, item_id, transaction_type, quantity, unit_cost, total_cost, batch_number, expiration_date, location, notes, reference_id, created_by, created_at FROM inventory_transactions WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2",
             )
             .bind(tid)
             .bind(limit as i64)

@@ -13,7 +13,7 @@ impl SoilMoistureReadingRepo for PgSoilMoistureReadingRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, SoilMoistureReading>(
-                "SELECT * FROM soil_moisture_readings WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, station_id, site_id, device_id, ts, timestamp, moisture_percent, soil_temperature_c, soil_depth_cm, battery_level, signal_strength, created_at FROM soil_moisture_readings WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -45,7 +45,7 @@ impl SoilMoistureReadingRepo for PgSoilMoistureReadingRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<SoilMoistureReading> = sqlx::query_as(
-                "SELECT * FROM soil_moisture_readings WHERE tenant_id = $1 AND station_id = $2 ORDER BY timestamp DESC LIMIT $3 OFFSET $4",
+                "SELECT id, tenant_id, station_id, site_id, device_id, ts, timestamp, moisture_percent, soil_temperature_c, soil_depth_cm, battery_level, signal_strength, created_at FROM soil_moisture_readings WHERE tenant_id = $1 AND station_id = $2 ORDER BY timestamp DESC LIMIT $3 OFFSET $4",
             )
             .bind(tid)
             .bind(station_id)
@@ -80,7 +80,7 @@ impl SoilMoistureReadingRepo for PgSoilMoistureReadingRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, SoilMoistureReading>(
-                "SELECT * FROM soil_moisture_readings WHERE tenant_id = $1 AND station_id = $2 ORDER BY timestamp DESC LIMIT $3",
+                "SELECT id, tenant_id, station_id, site_id, device_id, ts, timestamp, moisture_percent, soil_temperature_c, soil_depth_cm, battery_level, signal_strength, created_at FROM soil_moisture_readings WHERE tenant_id = $1 AND station_id = $2 ORDER BY timestamp DESC LIMIT $3",
             )
             .bind(tid)
             .bind(station_id)

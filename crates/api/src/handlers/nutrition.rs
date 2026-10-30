@@ -94,6 +94,7 @@ pub async fn calculate_fertilizer_amount(
                 k: fi.potassium_percent,
                 mg: 0.0,
             },
+            price_per_kg_eur: fi.price_per_kg_eur,
         })
         .collect();
 

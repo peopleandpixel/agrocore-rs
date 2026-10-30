@@ -22,7 +22,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, PlantProtectionRecord>(
-                "SELECT * FROM plant_protection_records WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, site_id, order_id, applicator_id, product_name, active_substance, concentration, dosage_per_ha, area_ha, application_date, pre_harvest_interval_days, re_entry_interval_days, weather_conditions, notes, created_at, updated_at FROM plant_protection_records WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -51,7 +51,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<PlantProtectionRecord> = sqlx::query_as("SELECT * FROM plant_protection_records WHERE tenant_id = $1 ORDER BY application_date DESC LIMIT $2 OFFSET $3")
+            let data: Vec<PlantProtectionRecord> = sqlx::query_as("SELECT id, tenant_id, site_id, order_id, applicator_id, product_name, active_substance, concentration, dosage_per_ha, area_ha, application_date, pre_harvest_interval_days, re_entry_interval_days, weather_conditions, notes, created_at, updated_at FROM plant_protection_records WHERE tenant_id = $1 ORDER BY application_date DESC LIMIT $2 OFFSET $3")
                 .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
@@ -151,7 +151,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, ApplicatorLicense>(
-                "SELECT * FROM applicator_licenses WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, user_id, license_type, license_number, issued_by, valid_from, valid_until, is_active, created_at FROM applicator_licenses WHERE id = $1 AND tenant_id = $2",
             )
             .bind(user_id)
             .bind(tid)
@@ -168,7 +168,7 @@ impl PlantProtectionRecordRepo for PgPlantProtectionRecordRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, ApplicatorLicense>(
-                "SELECT * FROM applicator_licenses WHERE tenant_id = $1 ORDER BY created_at DESC",
+                "SELECT id, tenant_id, user_id, license_type, license_number, issued_by, valid_from, valid_until, is_active, created_at FROM applicator_licenses WHERE tenant_id = $1 ORDER BY created_at DESC",
             )
             .bind(tid)
             .fetch_all(&pool)

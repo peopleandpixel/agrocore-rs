@@ -21,7 +21,7 @@ impl InventoryItemRepository for PgInventoryItemRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, InventoryItem>(
-                "SELECT * FROM inventory_items WHERE id = $1 AND tenant_id = $2 AND is_active IS DISTINCT FROM false",
+                "SELECT id, tenant_id, category, name, sku, description, unit, minimum_stock, inventory_method, is_active, created_at, updated_at FROM inventory_items WHERE id = $1 AND tenant_id = $2 AND is_active IS DISTINCT FROM false",
             )
             .bind(id)
             .bind(tid)
@@ -36,7 +36,7 @@ impl InventoryItemRepository for PgInventoryItemRepo {
         let sku = sku.to_string();
         Box::pin(async move {
             sqlx::query_as::<_, InventoryItem>(
-                "SELECT * FROM inventory_items WHERE sku = $1 AND tenant_id = $2 AND is_active IS DISTINCT FROM false",
+                "SELECT id, tenant_id, category, name, sku, description, unit, minimum_stock, inventory_method, is_active, created_at, updated_at FROM inventory_items WHERE sku = $1 AND tenant_id = $2 AND is_active IS DISTINCT FROM false",
             )
             .bind(&sku)
             .bind(tid)
@@ -67,7 +67,7 @@ impl InventoryItemRepository for PgInventoryItemRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let items: Vec<InventoryItem> = sqlx::query_as(
-                "SELECT * FROM inventory_items WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY name LIMIT $2 OFFSET $3",
+                "SELECT id, tenant_id, category, name, sku, description, unit, minimum_stock, inventory_method, is_active, created_at, updated_at FROM inventory_items WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY name LIMIT $2 OFFSET $3",
             )
             .bind(tid)
             .bind(per_page as i32)
@@ -96,7 +96,7 @@ impl InventoryItemRepository for PgInventoryItemRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let items: Vec<InventoryItem> = sqlx::query_as(
-                "SELECT * FROM inventory_items WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true)",
+                "SELECT id, tenant_id, category, name, sku, description, unit, minimum_stock, inventory_method, is_active, created_at, updated_at FROM inventory_items WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true)",
             )
             .bind(tid)
             .fetch_all(&pool)
@@ -148,7 +148,7 @@ impl InventoryItemRepository for PgInventoryItemRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let items: Vec<InventoryItem> = sqlx::query_as(
-                "SELECT * FROM inventory_items WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true)",
+                "SELECT id, tenant_id, category, name, sku, description, unit, minimum_stock, inventory_method, is_active, created_at, updated_at FROM inventory_items WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true)",
             )
             .bind(tid)
             .fetch_all(&pool)
@@ -203,7 +203,7 @@ impl InventoryItemRepository for PgInventoryItemRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let item: Option<InventoryItem> = sqlx::query_as(
-                "SELECT * FROM inventory_items WHERE id = $1 AND tenant_id = $2 AND (is_active IS NULL OR is_active = true)",
+                "SELECT id, tenant_id, category, name, sku, description, unit, minimum_stock, inventory_method, is_active, created_at, updated_at FROM inventory_items WHERE id = $1 AND tenant_id = $2 AND (is_active IS NULL OR is_active = true)",
             )
             .bind(item_id)
             .bind(tid)
@@ -216,7 +216,7 @@ impl InventoryItemRepository for PgInventoryItemRepo {
             };
 
             let recent: Vec<agrocore_domain::entities::inventory::InventoryTransaction> = sqlx::query_as(
-                "SELECT * FROM inventory_transactions WHERE item_id = $1 AND tenant_id = $2 ORDER BY created_at DESC LIMIT 10",
+                "SELECT id, tenant_id, item_id, location_id, quantity, unit, transaction_type, reference_id, performed_by, note, created_at, updated_at, created_by FROM inventory_transactions WHERE item_id = $1 AND tenant_id = $2 ORDER BY created_at DESC LIMIT 10",
             )
             .bind(item.id)
             .bind(tid)

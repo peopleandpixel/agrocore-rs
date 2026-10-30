@@ -26,8 +26,6 @@ static CONFIG: OnceLock<AgroCoreConfig> = OnceLock::new();
 /// - `DATABASE_ACQUIRE_TIMEOUT_SECS` — Connection acquire timeout (default: 30)
 /// - `DATABASE_CONNECT_TIMEOUT_SECS` — TCP connect timeout (default: 10)
 /// - `NATS_URL` — NATS server URL (default: nats://localhost:4222)
-/// - `MQTT_BROKER` — MQTT broker URL (default: mqtt://localhost:1883)
-/// - `RUST_LOG` — Log level filter (default: info)
 #[derive(Debug, Clone, Deserialize)]
 pub struct AgroCoreConfig {
     /// JWT secret for signing/verifying tokens
@@ -60,12 +58,6 @@ pub struct AgroCoreConfig {
     /// NATS server URL
     #[serde(default = "default_nats_url")]
     pub nats_url: String,
-    /// MQTT broker URL
-    #[serde(default = "default_mqtt_broker")]
-    pub mqtt_broker: String,
-    /// Log level filter
-    #[serde(default = "default_rust_log")]
-    pub rust_log: String,
 }
 
 fn default_token_blacklist_ttl() -> u64 {
@@ -92,12 +84,6 @@ fn default_connect_timeout() -> u64 {
 fn default_nats_url() -> String {
     "nats://localhost:4222".to_string()
 }
-fn default_mqtt_broker() -> String {
-    "mqtt://localhost:1883".to_string()
-}
-fn default_rust_log() -> String {
-    "info".to_string()
-}
 
 impl Default for AgroCoreConfig {
     fn default() -> Self {
@@ -113,8 +99,6 @@ impl Default for AgroCoreConfig {
             database_acquire_timeout_secs: 30,
             database_connect_timeout_secs: 10,
             nats_url: "nats://localhost:4222".to_string(),
-            mqtt_broker: "mqtt://localhost:1883".to_string(),
-            rust_log: "info".to_string(),
         }
     }
 }
@@ -165,10 +149,6 @@ impl AgroCoreConfig {
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(defaults.database_connect_timeout_secs),
             nats_url: std::env::var("NATS_URL").ok().unwrap_or(defaults.nats_url),
-            mqtt_broker: std::env::var("MQTT_BROKER")
-                .ok()
-                .unwrap_or(defaults.mqtt_broker),
-            rust_log: std::env::var("RUST_LOG").ok().unwrap_or(defaults.rust_log),
         }
     }
 

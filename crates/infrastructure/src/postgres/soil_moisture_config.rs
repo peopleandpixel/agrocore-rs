@@ -13,7 +13,7 @@ impl SoilMoistureConfigRepo for PgSoilMoistureConfigRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, SoilMoistureConfig>(
-                "SELECT * FROM soil_moisture_configs WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, station_id, site_id, moisture_threshold_percent, min_interval_minutes, irrigation_duration_minutes, notify_email, notify_sms, is_active, created_at, updated_at FROM soil_moisture_configs WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -31,7 +31,7 @@ impl SoilMoistureConfigRepo for PgSoilMoistureConfigRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, SoilMoistureConfig>(
-                "SELECT * FROM soil_moisture_configs WHERE tenant_id = $1 AND station_id = $2 AND is_active = true",
+                "SELECT id, tenant_id, station_id, site_id, moisture_threshold_percent, min_interval_minutes, irrigation_duration_minutes, notify_email, notify_sms, is_active, created_at, updated_at FROM soil_moisture_configs WHERE tenant_id = $1 AND station_id = $2 AND is_active = true",
             )
             .bind(tid)
             .bind(station_id)
@@ -63,7 +63,7 @@ impl SoilMoistureConfigRepo for PgSoilMoistureConfigRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<SoilMoistureConfig> = sqlx::query_as(
-                "SELECT * FROM soil_moisture_configs WHERE tenant_id = $1 AND site_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
+                "SELECT id, tenant_id, station_id, site_id, moisture_threshold_percent, min_interval_minutes, irrigation_duration_minutes, notify_email, notify_sms, is_active, created_at, updated_at FROM soil_moisture_configs WHERE tenant_id = $1 AND site_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
             )
             .bind(tid)
             .bind(site_id)

@@ -20,7 +20,7 @@ impl AnimalRepository for PgAnimalRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> Fut<Option<Animal>> {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
-            sqlx::query_as::<_, Animal>("SELECT * FROM animals WHERE id = $1 AND tenant_id = $2")
+            sqlx::query_as::<_, Animal>("SELECT id, tenant_id, tag_number, species, breed, birth_date, gender, current_site_id, mother_id, father_id, is_active, created_at, updated_at FROM animals WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
                 .bind(tid)
                 .fetch_optional(&pool)
@@ -44,7 +44,7 @@ impl AnimalRepository for PgAnimalRepo {
 
             if can_see_all {
                 sqlx::query_as::<_, Animal>(
-                    "SELECT * FROM animals WHERE id = $1 AND tenant_id = $2",
+                    "SELECT id, tenant_id, tag_number, species, breed, birth_date, gender, current_site_id, mother_id, father_id, is_active, created_at, updated_at FROM animals WHERE id = $1 AND tenant_id = $2",
                 )
                 .bind(id)
                 .bind(tid)
@@ -53,7 +53,7 @@ impl AnimalRepository for PgAnimalRepo {
                 .map_err(|e| SharedError::Database(e.to_string()))
             } else {
                 sqlx::query_as::<_, Animal>(
-                    "SELECT * FROM animals WHERE id = $1 AND tenant_id = $2 AND id = $3",
+                    "SELECT id, tenant_id, tag_number, species, breed, birth_date, gender, current_site_id, mother_id, father_id, is_active, created_at, updated_at FROM animals WHERE id = $1 AND tenant_id = $2 AND id = $3",
                 )
                 .bind(id)
                 .bind(tid)
@@ -78,7 +78,7 @@ impl AnimalRepository for PgAnimalRepo {
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<Animal> = sqlx::query_as("SELECT * FROM animals WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY created_at DESC LIMIT $2 OFFSET $3")
+            let data: Vec<Animal> = sqlx::query_as("SELECT id, tenant_id, tag_number, species, breed, birth_date, gender, current_site_id, mother_id, father_id, is_active, created_at, updated_at FROM animals WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY created_at DESC LIMIT $2 OFFSET $3")
                 .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
@@ -222,6 +222,37 @@ impl AnimalRepository for PgAnimalRepo {
             .await
             .map(|v| if v.is_empty() { None } else { Some(v) })
             .map_err(|e| SharedError::Database(e.to_string()))
+        })
+    }
+
+    /// I9: Batch-load treatments for multiple animals in one query
+    fn find_treatments_by_animals(
+        &self,
+        tid: TenantId,
+        animal_ids: Vec<Uuid>,
+    ) -> Fut<Vec<(Uuid, Vec<TreatmentRecord>)>> {
+        let pool = TenantPool::new(&self.pool, tid.0);
+        Box::pin(async move {
+            if animal_ids.is_empty() {
+                return Ok(Vec::new());
+            }
+            let treatments: Vec<TreatmentRecord> = sqlx::query_as::<_, TreatmentRecord>(
+                r#"SELECT id, animal_id, treatment_type, date, medication, dosage, veterinarian, withdrawal_days, notes, created_at
+                   FROM treatment_records
+                   WHERE tenant_id = $1 AND animal_id = ANY($2)
+                   ORDER BY animal_id, date DESC"#,
+            )
+            .bind(tid)
+            .bind(&animal_ids)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+            let mut map = std::collections::HashMap::new();
+            for t in treatments {
+                map.entry(t.animal_id).or_insert_with(Vec::new).push(t);
+            }
+            Ok(map.into_iter().collect())
         })
     }
 

@@ -20,7 +20,7 @@ impl BuildingRepository for PgBuildingRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Building>(
-                "SELECT * FROM buildings WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, plot_id, building_type, label, geometry, created_at, updated_at FROM buildings WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -50,7 +50,7 @@ impl BuildingRepository for PgBuildingRepo {
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Building> = sqlx::query_as(
-                "SELECT * FROM buildings WHERE tenant_id = $1 ORDER BY label LIMIT $2 OFFSET $3",
+                "SELECT id, tenant_id, plot_id, building_type, label, geometry, created_at, updated_at FROM buildings WHERE tenant_id = $1 ORDER BY label LIMIT $2 OFFSET $3",
             )
             .bind(tid)
             .bind(per_page as i32)
@@ -98,7 +98,7 @@ impl BuildingRepository for PgBuildingRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Building> = sqlx::query_as(
-                "SELECT * FROM buildings WHERE tenant_id = $1 AND plot_id = $2 ORDER BY label LIMIT $3 OFFSET $4",
+                "SELECT id, tenant_id, plot_id, building_type, label, geometry, created_at, updated_at FROM buildings WHERE tenant_id = $1 AND plot_id = $2 ORDER BY label LIMIT $3 OFFSET $4",
             )
             .bind(tid)
             .bind(plot_id)
@@ -170,7 +170,7 @@ impl BuildingRepository for PgBuildingRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let existing = sqlx::query_as::<_, Building>(
-                "SELECT * FROM buildings WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, plot_id, building_type, label, geometry, created_at, updated_at FROM buildings WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)

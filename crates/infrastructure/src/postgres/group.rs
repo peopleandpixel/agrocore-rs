@@ -19,7 +19,7 @@ impl GroupRepository for PgGroupRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Group>> {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
-            sqlx::query_as::<_, Group>("SELECT * FROM groups WHERE id = $1 AND tenant_id = $2")
+            sqlx::query_as::<_, Group>("SELECT id, tenant_id, plot_id, parent_group_id, group_type, label, created_at, updated_at FROM groups WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
                 .bind(tid)
                 .fetch_optional(&pool)
@@ -43,7 +43,7 @@ impl GroupRepository for PgGroupRepo {
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Group> = sqlx::query_as(
-                "SELECT * FROM groups WHERE tenant_id = $1 ORDER BY label LIMIT $2 OFFSET $3",
+                "SELECT id, tenant_id, plot_id, parent_group_id, group_type, label, created_at, updated_at FROM groups WHERE tenant_id = $1 ORDER BY label LIMIT $2 OFFSET $3",
             )
             .bind(tid)
             .bind(per_page as i32)
@@ -91,7 +91,7 @@ impl GroupRepository for PgGroupRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Group> = sqlx::query_as(
-                "SELECT * FROM groups WHERE tenant_id = $1 AND plot_id = $2 ORDER BY label LIMIT $3 OFFSET $4",
+                "SELECT id, tenant_id, plot_id, parent_group_id, group_type, label, created_at, updated_at FROM groups WHERE tenant_id = $1 AND plot_id = $2 ORDER BY label LIMIT $3 OFFSET $4",
             )
             .bind(tid)
             .bind(plot_id)
@@ -121,7 +121,7 @@ impl GroupRepository for PgGroupRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Group>(
-                "SELECT * FROM groups WHERE tenant_id = $1 AND parent_group_id = $2 ORDER BY label",
+                "SELECT id, tenant_id, plot_id, parent_group_id, group_type, label, created_at, updated_at FROM groups WHERE tenant_id = $1 AND parent_group_id = $2 ORDER BY label",
             )
             .bind(tid)
             .bind(parent_id)
@@ -174,7 +174,7 @@ impl GroupRepository for PgGroupRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let existing =
-                sqlx::query_as::<_, Group>("SELECT * FROM groups WHERE id = $1 AND tenant_id = $2")
+                sqlx::query_as::<_, Group>("SELECT id, tenant_id, plot_id, parent_group_id, group_type, label, created_at, updated_at FROM groups WHERE id = $1 AND tenant_id = $2")
                     .bind(id)
                     .bind(tid)
                     .fetch_optional(&pool)

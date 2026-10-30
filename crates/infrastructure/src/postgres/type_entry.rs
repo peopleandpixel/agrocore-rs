@@ -14,7 +14,7 @@ impl TypeEntryRepository for PgTypeEntryRepo {
     fn find_by_id(&self, id: Uuid) -> RepositoryFuture<Option<TypeEntry>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, TypeEntry>("SELECT * FROM type_entries WHERE id = $1")
+            sqlx::query_as::<_, TypeEntry>("SELECT id, category_id, parent_id, tenant_id, name, code, description, is_active, sort_order, created_at, updated_at FROM type_entries WHERE id = $1")
                 .bind(id)
                 .fetch_optional(&pool)
                 .await
@@ -30,7 +30,7 @@ impl TypeEntryRepository for PgTypeEntryRepo {
                 return Ok(Vec::new());
             }
             sqlx::query_as::<_, TypeEntry>(
-                "SELECT * FROM type_entries WHERE id = ANY($1) AND is_active = true",
+                "SELECT id, category_id, parent_id, tenant_id, name, code, description, is_active, sort_order, created_at, updated_at FROM type_entries WHERE id = ANY($1) AND is_active = true",
             )
             .bind(&ids_vec)
             .fetch_all(&pool)
@@ -48,7 +48,7 @@ impl TypeEntryRepository for PgTypeEntryRepo {
         Box::pin(async move {
             // Return global entries (tenant_id IS NULL) + tenant-specific entries
             sqlx::query_as::<_, TypeEntry>(
-                "SELECT * FROM type_entries
+                "SELECT id, category_id, parent_id, tenant_id, name, code, description, is_active, sort_order, created_at, updated_at FROM type_entries
                  WHERE category_id = $1 AND is_active = true
                    AND (tenant_id IS NULL OR tenant_id = $2)
                  ORDER BY sort_order, name",
@@ -72,7 +72,7 @@ impl TypeEntryRepository for PgTypeEntryRepo {
         Box::pin(async move {
             // Prefer tenant-specific over global
             sqlx::query_as::<_, TypeEntry>(
-                "SELECT * FROM type_entries
+                "SELECT id, category_id, parent_id, tenant_id, name, code, description, is_active, sort_order, created_at, updated_at FROM type_entries
                  WHERE category_id = $1 AND code = $2 AND is_active = true
                    AND (tenant_id IS NULL OR tenant_id = $3)
                  ORDER BY tenant_id IS NULL
@@ -95,7 +95,7 @@ impl TypeEntryRepository for PgTypeEntryRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, TypeEntry>(
-                "SELECT * FROM type_entries
+                "SELECT id, category_id, parent_id, tenant_id, name, code, description, is_active, sort_order, created_at, updated_at FROM type_entries
                  WHERE parent_id = $1 AND is_active = true
                    AND (tenant_id IS NULL OR tenant_id = $2)
                  ORDER BY sort_order, name",
@@ -116,7 +116,7 @@ impl TypeEntryRepository for PgTypeEntryRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, TypeEntry>(
-                "SELECT * FROM type_entries
+                "SELECT id, category_id, parent_id, tenant_id, name, code, description, is_active, sort_order, created_at, updated_at FROM type_entries
                  WHERE category_id = $1 AND parent_id IS NULL AND is_active = true
                    AND (tenant_id IS NULL OR tenant_id = $2)
                  ORDER BY sort_order, name",
@@ -194,7 +194,7 @@ impl TypeEntryRepository for PgTypeEntryRepo {
 
             if parts.is_empty() {
                 return sqlx::query_as::<_, TypeEntry>(
-                    "SELECT * FROM type_entries WHERE id = $1",
+                    "SELECT id, category_id, parent_id, tenant_id, name, code, description, is_active, sort_order, created_at, updated_at FROM type_entries WHERE id = $1",
                 )
                 .bind(id)
                 .fetch_optional(&pool)

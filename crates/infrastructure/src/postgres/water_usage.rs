@@ -15,7 +15,7 @@ impl WaterUsageRepo for PgWaterUsageRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WaterUsage>(
-                "SELECT * FROM water_usages WHERE tenant_id = $1 AND id = $2",
+                "SELECT id, tenant_id, source_id, site_id, usage_date, volume_liters, purpose, note, created_at, updated_at FROM water_usages WHERE tenant_id = $1 AND id = $2",
             )
             .bind(tid)
             .bind(id)
@@ -41,7 +41,7 @@ impl WaterUsageRepo for PgWaterUsageRepo {
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<WaterUsage> = sqlx::query_as("SELECT * FROM water_usages WHERE tenant_id = $1 ORDER BY usage_date DESC, created_at DESC LIMIT $2 OFFSET $3")
+            let data: Vec<WaterUsage> = sqlx::query_as("SELECT id, tenant_id, source_id, site_id, usage_date, volume_liters, purpose, note, created_at, updated_at FROM water_usages WHERE tenant_id = $1 ORDER BY usage_date DESC, created_at DESC LIMIT $2 OFFSET $3")
                 .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
@@ -191,7 +191,7 @@ impl WaterUsageRepo for PgWaterUsageRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<WaterUsage> = sqlx::query_as("SELECT * FROM water_usages WHERE tenant_id = $1 AND source_id = $2 ORDER BY usage_date DESC, created_at DESC LIMIT $3 OFFSET $4")
+            let data: Vec<WaterUsage> = sqlx::query_as("SELECT id, tenant_id, source_id, site_id, usage_date, volume_liters, purpose, note, created_at, updated_at FROM water_usages WHERE tenant_id = $1 AND source_id = $2 ORDER BY usage_date DESC, created_at DESC LIMIT $3 OFFSET $4")
                 .bind(tid)
                 .bind(source_id)
                 .bind(per_page as i32)
@@ -234,7 +234,7 @@ impl WaterUsageRepo for PgWaterUsageRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<WaterUsage> = sqlx::query_as("SELECT * FROM water_usages WHERE tenant_id = $1 AND site_id = $2 ORDER BY usage_date DESC, created_at DESC LIMIT $3 OFFSET $4")
+            let data: Vec<WaterUsage> = sqlx::query_as("SELECT id, tenant_id, source_id, site_id, usage_date, volume_liters, purpose, note, created_at, updated_at FROM water_usages WHERE tenant_id = $1 AND site_id = $2 ORDER BY usage_date DESC, created_at DESC LIMIT $3 OFFSET $4")
                 .bind(tid)
                 .bind(site_id)
                 .bind(per_page as i32)

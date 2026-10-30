@@ -12,7 +12,7 @@ impl TypeCategoryRepository for PgTypeCategoryRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, TypeCategory>(
-                "SELECT * FROM type_categories WHERE id = $1",
+                "SELECT id, name, label, description, is_hierarchical FROM type_categories WHERE id = $1",
             )
             .bind(id)
             .fetch_optional(&pool)
@@ -25,7 +25,7 @@ impl TypeCategoryRepository for PgTypeCategoryRepo {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, TypeCategory>(
-                "SELECT * FROM type_categories ORDER BY name",
+                "SELECT id, name, label, description, is_hierarchical FROM type_categories ORDER BY name",
             )
             .fetch_all(&pool)
             .await
@@ -38,7 +38,7 @@ impl TypeCategoryRepository for PgTypeCategoryRepo {
         let name = name.to_string();
         Box::pin(async move {
             sqlx::query_as::<_, TypeCategory>(
-                "SELECT * FROM type_categories WHERE name = $1",
+                "SELECT id, name, label, description, is_hierarchical FROM type_categories WHERE name = $1",
             )
             .bind(&name)
             .fetch_optional(&pool)
@@ -93,7 +93,7 @@ impl TypeCategoryRepository for PgTypeCategoryRepo {
 
             if parts.is_empty() {
                 return sqlx::query_as::<_, TypeCategory>(
-                    "SELECT * FROM type_categories WHERE id = $1",
+                    "SELECT id, name, label, description, is_hierarchical FROM type_categories WHERE id = $1",
                 )
                 .bind(id)
                 .fetch_optional(&pool)

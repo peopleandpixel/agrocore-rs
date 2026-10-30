@@ -442,13 +442,16 @@ impl Default for WebhookRetryPolicy {
 }
 
 /// Webhook-Event-Handler mit exponentiellem Retry-Backoff (max 3 Versuche).
+/// J14: url und secret werden aus der WebhookSubscription gelesen.
 pub async fn handle_webhook_event(
     event: &WebhookDeliveryAttempt,
     policy: &WebhookRetryPolicy,
+    url: &str,
+    secret: Option<&str>,
 ) -> anyhow::Result<()> {
     let max_attempts = policy.max_attempts.min(3);
     for attempt in 1..=max_attempts {
-        match try_deliver(event).await {
+        match try_deliver(event, url, secret).await {
             Ok(_) => return Ok(()),
             Err(e) => {
                 if attempt == max_attempts {
@@ -472,9 +475,57 @@ pub async fn handle_webhook_event(
     Ok(())
 }
 
-async fn try_deliver(_event: &WebhookDeliveryAttempt) -> anyhow::Result<()> {
-    // Delivery-Logik hier einfügen; als Stub Ok
-    Ok(())
+/// J14: Actual webhook delivery via HTTP POST with HMAC signature verification.
+async fn try_deliver(
+    event: &WebhookDeliveryAttempt,
+    url: &str,
+    secret: Option<&str>,
+) -> anyhow::Result<()> {
+    let client = reqwest::Client::new();
+    
+    let mut req = client
+        .post(url)
+        .header("Content-Type", "application/json")
+        .header("X-Webhook-Event", &event.event_type)
+        .header("X-Webhook-Id", event.id.to_string())
+        .body(serde_json::to_string(&event.payload)?);
+    
+    // Add HMAC signature if secret is configured
+    if let Some(secret) = secret {
+        let payload_str = event.payload.to_string();
+        let mac = hmac_sha256(&payload_str, secret);
+        req = req.header("X-Webhook-Signature", mac);
+    }
+    
+    let resp = req.send().await
+        .map_err(|e| anyhow::anyhow!("Webhook HTTP request failed: {}", e))?;
+    
+    let status_code = resp.status().as_u16();
+    let is_success = resp.status().is_success();
+    let body = resp.text().await
+        .unwrap_or_default();
+    
+    if is_success {
+        agrocore_logging::info!("Webhook delivered successfully to {} (status {})", url, status_code);
+        Ok(())
+    } else {
+        Err(anyhow::anyhow!(
+            "Webhook delivery failed with status {}: {}",
+            status_code,
+            body.chars().take(200).collect::<String>()
+        ))
+    }
+}
+
+/// Compute HMAC-SHA256 signature for webhook payload verification.
+fn hmac_sha256(payload: &str, secret: &str) -> String {
+    use hmac::{Hmac, Mac};
+    type HmacSha256 = Hmac<sha2::Sha256>;
+    
+    let mut mac = HmacSha256::new_from_slice(secret.as_bytes())
+        .expect("HMAC can take keys of any size");
+    mac.update(payload.as_bytes());
+    format!("sha256={}", hex::encode(mac.finalize().into_bytes()))
 }
 
 // ============================================================

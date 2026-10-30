@@ -26,7 +26,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Equipment>(
-                "SELECT * FROM equipment WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, label, code, equipment_type, in_usage, maintenance_intervals, next_maintenance_date, last_maintenance_hours, is_active, created_at, updated_at FROM equipment WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -51,7 +51,7 @@ impl EquipmentRepository for PgEquipmentRepo {
 
             if can_see_all {
                 sqlx::query_as::<_, Equipment>(
-                    "SELECT * FROM equipment WHERE id = $1 AND tenant_id = $2",
+                    "SELECT id, tenant_id, label, code, equipment_type, in_usage, maintenance_intervals, next_maintenance_date, last_maintenance_hours, is_active, created_at, updated_at FROM equipment WHERE id = $1 AND tenant_id = $2",
                 )
                 .bind(id)
                 .bind(tid)
@@ -60,7 +60,7 @@ impl EquipmentRepository for PgEquipmentRepo {
                 .map_err(|e| SharedError::Database(e.to_string()))
             } else {
                 sqlx::query_as::<_, Equipment>(
-                    "SELECT * FROM equipment WHERE id = $1 AND tenant_id = $2 AND assigned_to = $3",
+                    "SELECT id, tenant_id, label, code, equipment_type, in_usage, maintenance_intervals, next_maintenance_date, last_maintenance_hours, is_active, created_at, updated_at FROM equipment WHERE id = $1 AND tenant_id = $2 AND assigned_to = $3",
                 )
                 .bind(id)
                 .bind(tid)
@@ -90,7 +90,7 @@ impl EquipmentRepository for PgEquipmentRepo {
                 .await
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let items: Vec<Equipment> = sqlx::query_as("SELECT * FROM equipment WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY label LIMIT $2 OFFSET $3")
+            let items: Vec<Equipment> = sqlx::query_as("SELECT id, tenant_id, label, code, equipment_type, in_usage, maintenance_intervals, next_maintenance_date, last_maintenance_hours, is_active, created_at, updated_at FROM equipment WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY label LIMIT $2 OFFSET $3")
                 .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
@@ -181,7 +181,7 @@ impl EquipmentRepository for PgEquipmentRepo {
 
             let count_sql = format!("SELECT COUNT(*) FROM equipment {}", count_where);
             let items_sql = format!(
-                "SELECT * FROM equipment {} ORDER BY label LIMIT ${} OFFSET ${}",
+                "SELECT id, tenant_id, label, code, equipment_type, in_usage, maintenance_intervals, next_maintenance_date, last_maintenance_hours, is_active, created_at, updated_at FROM equipment {} ORDER BY label LIMIT ${} OFFSET ${}",
                 where_clause,
                 bind_idx,
                 bind_idx + 1
@@ -277,7 +277,7 @@ impl EquipmentRepository for PgEquipmentRepo {
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-                let items: Vec<Equipment> = sqlx::query_as("SELECT * FROM equipment WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY label LIMIT $2 OFFSET $3")
+                let items: Vec<Equipment> = sqlx::query_as("SELECT id, tenant_id, label, code, equipment_type, in_usage, maintenance_intervals, next_maintenance_date, last_maintenance_hours, is_active, created_at, updated_at FROM equipment WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY label LIMIT $2 OFFSET $3")
                     .bind(tid)
                     .bind(per_page as i32)
                     .bind(offset as i32)
@@ -305,7 +305,7 @@ impl EquipmentRepository for PgEquipmentRepo {
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-                let items: Vec<Equipment> = sqlx::query_as("SELECT * FROM equipment WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY label LIMIT $2 OFFSET $3")
+                let items: Vec<Equipment> = sqlx::query_as("SELECT id, tenant_id, label, code, equipment_type, in_usage, maintenance_intervals, next_maintenance_date, last_maintenance_hours, is_active, created_at, updated_at FROM equipment WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY label LIMIT $2 OFFSET $3")
                     .bind(tid)
                     .bind(per_page as i32)
                     .bind(offset as i32)
@@ -456,7 +456,7 @@ impl EquipmentRepository for PgEquipmentRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let items: Vec<Equipment> = sqlx::query_as::<_, Equipment>(
-                "SELECT * FROM equipment \
+                "SELECT id, tenant_id, label, code, equipment_type, in_usage, maintenance_intervals, next_maintenance_date, last_maintenance_hours, is_active, created_at, updated_at FROM equipment \
                  WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) \
                  AND (next_maintenance_date IS NULL OR next_maintenance_date <= $2) \
                  ORDER BY next_maintenance_date ASC NULLS LAST, label \
@@ -503,7 +503,7 @@ impl EquipmentRepository for PgEquipmentRepo {
 
             // Get current equipment to calculate next_maintenance_date
             let current: Option<Equipment> = sqlx::query_as::<_, Equipment>(
-                "SELECT * FROM equipment WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, label, code, equipment_type, in_usage, maintenance_intervals, next_maintenance_date, last_maintenance_hours, is_active, created_at, updated_at FROM equipment WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -751,7 +751,7 @@ impl EquipmentRepository for PgEquipmentRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let records: Vec<UsageLogDto> = sqlx::query_as::<_, UsageLogDto>(
-                r#"SELECT * FROM equipment_usage_log
+                r#"SELECT id, tenant_id, label, code, equipment_type, in_usage, maintenance_intervals, next_maintenance_date, last_maintenance_hours, is_active, created_at, updated_at FROM equipment_usage_log
                    WHERE equipment_id = $1 AND tenant_id = $2
                    ORDER BY started_at DESC"#,
             )

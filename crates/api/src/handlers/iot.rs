@@ -3,16 +3,22 @@
 use crate::AppState;
 use crate::dto::{
     CommandStatus, CreateIoTDeviceDto, DeviceStatusDto, HaDiscoveryConfigResponse,
-    IoTCapabilityType, IoTCommandRequestDto, IoTCommandResponseDto, IoTDeviceListResponse,
-    IoTDeviceResponse, IoTDeviceTelemetryResponse, UpdateIoTDeviceDto,
+    IoTCapabilityDto, IoTCapabilityType, IoTCommandRequestDto, IoTCommandResponseDto,
+    IoTDeviceListResponse, IoTDeviceResponse, IoTDeviceTelemetryResponse, IoTMeasurementDto,
+    UpdateIoTDeviceDto,
 };
 use crate::error::ApiError;
 use actix_web::{HttpResponse, web};
 use agrocore_logging::info;
-use agrocore_messaging::{IoTDeviceConfig, IoTMeasurement, generate_ha_discovery_configs};
+use agrocore_messaging::{
+    IoTCommandEvent, IoTDeviceConfig, IoTMeasurement, IoTTelemetryEvent,
+    generate_ha_discovery_configs, NATS_SUBJECT_COMMANDS_BRIDGE, NATS_SUBJECT_TELEMETRY,
+};
 use agrocore_shared::SharedError;
+use serde::{Deserialize, Serialize};
 use sqlx::Row;
 use std::collections::HashMap;
+use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -40,6 +46,10 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(
                 web::resource("/devices/{device_id}/ha-discovery")
                     .route(web::get().to(get_ha_discovery)),
+            )
+            .service(
+                // J8: Telemetry ingestion endpoint — devices report measurements here
+                web::resource("/telemetry").route(web::post().to(ingest_telemetry)),
             ),
     );
 }
@@ -401,23 +411,82 @@ pub async fn get_device_telemetry(
     state: web::Data<AppState>,
     auth: crate::middleware::AuthExtractor,
     path: web::Path<String>,
-    _query: web::Query<HashMap<String, String>>,
+    query: web::Query<HashMap<String, String>>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_any_role(vec!["admin", "manager", "viewer"])?;
 
     let device_id = path.into_inner();
 
-    // Existence check only: `find_device` is tenant-scoped, so a device of
-    // another tenant is not found. The previous version also compared
-    // `device.tenant_id != auth.0.tenant_id && !auth.is_admin()`, which could
-    // never be true after the role check above it.
+    // Existence check
     find_device(&state, auth.0.tenant_id, &device_id)
         .await?
         .ok_or_else(|| ApiError::not_found("Device not found"))?;
 
+    // Parse query parameters
+    let limit: i64 = query
+        .get("limit")
+        .and_then(|l| l.parse().ok())
+        .unwrap_or(50)
+        .min(500);
+
+    let since = query.get("since").and_then(|s| {
+        chrono::DateTime::parse_from_rfc3339(s)
+            .ok()
+            .map(|dt| dt.with_timezone(&chrono::Utc))
+    });
+
+    // J8: Query real telemetry from iot_telemetry table
+    let pool = state.db.tenant_pool(auth.0.tenant_id);
+    let rows: Vec<(String, f64, String, Option<String>, chrono::DateTime<chrono::Utc>)> =
+        if let Some(since) = since {
+            sqlx::query_as(
+                r#"SELECT capability, value, unit, quality, received_at
+                   FROM iot_telemetry
+                   WHERE device_id = $1 AND received_at >= $2
+                   ORDER BY received_at DESC
+                   LIMIT $3"#,
+            )
+            .bind(&device_id)
+            .bind(since)
+            .bind(limit as i32)
+            .fetch_all(pool)
+            .await
+            .map_err(|e| ApiError(SharedError::Database(e.to_string())))?
+        } else {
+            sqlx::query_as(
+                r#"SELECT capability, value, unit, quality, received_at
+                   FROM iot_telemetry
+                   WHERE device_id = $1
+                   ORDER BY received_at DESC
+                   LIMIT $2"#,
+            )
+            .bind(&device_id)
+            .bind(limit as i32)
+            .fetch_all(pool)
+            .await
+            .map_err(|e| ApiError(SharedError::Database(e.to_string())))?
+        };
+
+    let measurements: Vec<IoTMeasurementDto> = rows
+        .into_iter()
+        .map(|(capability, value, unit, quality, received_at)| IoTMeasurementDto {
+            capability: IoTCapabilityDto {
+                capability_type: IoTCapabilityType::Custom(capability),
+                unit: None,
+                min_value: None,
+                max_value: None,
+                precision: None,
+            },
+            value,
+            unit,
+            quality,
+            timestamp: received_at,
+        })
+        .collect();
+
     let response = IoTDeviceTelemetryResponse {
-        device_id: device_id.clone(),
-        measurements: vec![],
+        device_id,
+        measurements,
         timestamp: chrono::Utc::now(),
     };
 
@@ -455,32 +524,67 @@ pub async fn send_command(
     dto.validate()
         .map_err(|e| ApiError::validation(e.to_string()))?;
 
-    if let Some(device) = find_device(&state, auth.0.tenant_id, &device_id).await? {
-        if device.status != DeviceStatusDto::Online {
-            return Err(ApiError::bad_request("Device is not online"));
-        }
+    let device = find_device(&state, auth.0.tenant_id, &device_id)
+        .await?
+        .ok_or_else(|| ApiError::not_found("Device not found"))?;
 
-        let command_id = Uuid::new_v4();
-        let now = chrono::Utc::now();
-
-        // In a real implementation, this would publish to MQTT
-        // For now, return a mock response
-        let response = IoTCommandResponseDto {
-            command_id,
-            device_id: device_id.clone(),
-            command_type: dto.command_type.clone(),
-            status: CommandStatus::Sent,
-            response_payload: None,
-            requested_at: now,
-            completed_at: None,
-        };
-
-        info!("Command sent to device {}: {}", device_id, dto.command_type);
-
-        Ok(HttpResponse::Ok().json(response))
-    } else {
-        Err(ApiError::not_found("Device not found"))
+    if device.status != DeviceStatusDto::Online {
+        return Err(ApiError::bad_request("Device is not online"));
     }
+
+    let command_id = Uuid::new_v4();
+    let now = chrono::Utc::now();
+
+    // J8: Persist the command in iot_commands table
+    let pool = state.db.tenant_pool(auth.0.tenant_id);
+    sqlx::query(
+        r#"INSERT INTO iot_commands 
+           (id, tenant_id, device_id, command_type, payload, status, requested_at, timeout_seconds)
+           VALUES ($1, $2, $3, $4, $5, 'Sent', $6, $7)"#,
+    )
+    .bind(command_id)
+    .bind(auth.0.tenant_id)
+    .bind(&device_id)
+    .bind(&dto.command_type)
+    .bind(&dto.payload)
+    .bind(now)
+    .bind(dto.timeout_seconds.map(|s| s as i32))
+    .execute(pool)
+    .await
+    .map_err(|e| ApiError(SharedError::Database(e.to_string())))?;
+
+    // J8: Publish command to NATS so the MQTT bridge can forward it
+    let command_event = IoTCommandEvent {
+        device_id: device_id.clone(),
+        command_id,
+        command_type: dto.command_type.clone(),
+        payload: dto.payload,
+        requested_at: now,
+        timeout_seconds: dto.timeout_seconds,
+    };
+
+    if let Some(ref messaging) = state.messaging {
+        let _ = messaging
+            .publish(NATS_SUBJECT_COMMANDS_BRIDGE.to_string(), &command_event)
+            .await;
+    }
+
+    info!(
+        "Command {} sent to device {}: {}",
+        command_id, device_id, command_event.command_type
+    );
+
+    let response = IoTCommandResponseDto {
+        command_id,
+        device_id,
+        command_type: command_event.command_type,
+        status: CommandStatus::Sent,
+        response_payload: None,
+        requested_at: now,
+        completed_at: None,
+    };
+
+    Ok(HttpResponse::Ok().json(response))
 }
 
 /// Get Home Assistant discovery configuration for a device
@@ -622,4 +726,117 @@ pub async fn get_ha_discovery(
     } else {
         Err(ApiError::not_found("Device not found"))
     }
+}
+
+/// J8: Ingest telemetry measurements from IoT devices
+///
+/// This endpoint accepts telemetry data from devices and stores it in the
+/// iot_telemetry table. It also publishes to NATS so the MQTT bridge can
+/// forward it to subscribed clients.
+#[utoipa::path(
+    post,
+    path = "/api/v1/iot/telemetry",
+    request_body = IoTTelemetryIngestDto,
+    responses(
+        (status = 201, description = "Telemetry ingested"),
+        (status = 400, description = "Validation failed"),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "iot",
+    security(("bearer_auth" = []))
+)]
+pub async fn ingest_telemetry(
+    state: web::Data<AppState>,
+    auth: crate::middleware::AuthExtractor,
+    dto: web::Json<IoTTelemetryIngestDto>,
+) -> Result<HttpResponse, ApiError> {
+    auth.require_any_role(vec!["admin", "manager"])?;
+
+    let dto = dto.0;
+    dto.validate()
+        .map_err(|e| ApiError::validation(e.to_string()))?;
+
+    let tenant_id = auth.0.tenant_id;
+
+    // Verify device exists
+    find_device(&state, tenant_id, &dto.device_id)
+        .await?
+        .ok_or_else(|| ApiError::not_found("Device not found"))?;
+
+    // J8: Store each measurement in iot_telemetry table
+    let now = chrono::Utc::now();
+    let metadata_ref = dto.metadata.as_ref();
+    for m in &dto.measurements {
+        let pool = state.db.tenant_pool(tenant_id);
+        sqlx::query(
+            r#"INSERT INTO iot_telemetry 
+               (tenant_id, device_id, capability, value, unit, quality, metadata, received_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"#,
+        )
+        .bind(tenant_id)
+        .bind(&dto.device_id)
+        .bind(&m.capability)
+        .bind(m.value)
+        .bind(&m.unit)
+        .bind(m.quality.as_deref())
+        .bind(metadata_ref.map(|v| v as &serde_json::Value))
+        .bind(now)
+        .execute(pool)
+        .await
+        .map_err(|e| ApiError(SharedError::Database(e.to_string())))?;
+    }
+
+    // J8: Publish to NATS so MQTT bridge can forward to Home Assistant, etc.
+    let event = IoTTelemetryEvent {
+        device_id: dto.device_id.clone(),
+        tenant_id,
+        site_id: None,
+        timestamp: now,
+        measurements: dto
+            .measurements
+            .iter()
+            .map(|m| IoTMeasurement {
+                capability: agrocore_messaging::IoTCapability::Custom(m.capability.clone()),
+                value: m.value,
+                unit: m.unit.clone(),
+                quality: m.quality.clone(),
+            })
+            .collect(),
+        metadata: dto.metadata.clone(),
+    };
+
+    if let Some(ref messaging) = state.messaging {
+        let _ = messaging
+            .publish(NATS_SUBJECT_TELEMETRY.to_string(), &event)
+            .await;
+    }
+
+    info!(
+        "Telemetry ingested for device {}: {} measurements",
+        event.device_id,
+        event.measurements.len()
+    );
+
+    Ok(HttpResponse::Created().finish())
+}
+
+/// Request body for telemetry ingestion
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Validate)]
+struct IoTTelemetryIngestDto {
+    #[validate(length(min = 1, max = 100))]
+    device_id: String,
+    #[validate(length(min = 1))]
+    measurements: Vec<IoTTelemetryMeasurementDto>,
+    metadata: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Validate)]
+struct IoTTelemetryMeasurementDto {
+    #[validate(length(min = 1, max = 50))]
+    capability: String,
+    value: f64,
+    #[validate(length(min = 1, max = 20))]
+    unit: String,
+    quality: Option<String>,
 }

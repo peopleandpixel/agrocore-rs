@@ -131,37 +131,42 @@ impl ReportingService {
             .await?
             .data;
 
-        let mut workbook = Workbook::new();
-        let worksheet = workbook.add_worksheet();
-        let header_format = Format::new().set_bold();
+        // I16: rust_xlsxwriter is synchronous — run in spawn_blocking to avoid blocking async runtime
+        let buffer = tokio::task::spawn_blocking(move || {
+            let mut workbook = Workbook::new();
+            let worksheet = workbook.add_worksheet();
+            let header_format = Format::new().set_bold();
 
-        worksheet.write_with_format(0, 0, "Provincia", &header_format)?;
-        worksheet.write_with_format(0, 1, "Municipio", &header_format)?;
-        worksheet.write_with_format(0, 2, "Agregado", &header_format)?;
-        worksheet.write_with_format(0, 3, "Zona", &header_format)?;
-        worksheet.write_with_format(0, 4, "Poligono", &header_format)?;
-        worksheet.write_with_format(0, 5, "Parcela", &header_format)?;
-        worksheet.write_with_format(0, 6, "Recinto", &header_format)?;
-        worksheet.write_with_format(0, 7, "Uso", &header_format)?;
-        worksheet.write_with_format(0, 8, "Superficie (ha)", &header_format)?;
+            worksheet.write_with_format(0, 0, "Provincia", &header_format)?;
+            worksheet.write_with_format(0, 1, "Municipio", &header_format)?;
+            worksheet.write_with_format(0, 2, "Agregado", &header_format)?;
+            worksheet.write_with_format(0, 3, "Zona", &header_format)?;
+            worksheet.write_with_format(0, 4, "Poligono", &header_format)?;
+            worksheet.write_with_format(0, 5, "Parcela", &header_format)?;
+            worksheet.write_with_format(0, 6, "Recinto", &header_format)?;
+            worksheet.write_with_format(0, 7, "Uso", &header_format)?;
+            worksheet.write_with_format(0, 8, "Superficie (ha)", &header_format)?;
 
-        let mut row = 1;
-        for site in sites {
-            if let Some(sigpac) = site.sigpac_data {
-                worksheet.write(row, 0, sigpac.province as u32)?;
-                worksheet.write(row, 1, sigpac.municipality as u32)?;
-                worksheet.write(row, 2, sigpac.aggregate as u32)?;
-                worksheet.write(row, 3, sigpac.zone as u32)?;
-                worksheet.write(row, 4, sigpac.polygon as u32)?;
-                worksheet.write(row, 5, sigpac.parcel as u32)?;
-                worksheet.write(row, 6, sigpac.enclosure as u32)?;
-                worksheet.write(row, 7, sigpac.usage_code.unwrap_or_default())?;
-                worksheet.write(row, 8, site.area)?;
-                row += 1;
+            let mut row = 1;
+            for site in sites {
+                if let Some(sigpac) = site.sigpac_data {
+                    worksheet.write(row, 0, sigpac.province as u32)?;
+                    worksheet.write(row, 1, sigpac.municipality as u32)?;
+                    worksheet.write(row, 2, sigpac.aggregate as u32)?;
+                    worksheet.write(row, 3, sigpac.zone as u32)?;
+                    worksheet.write(row, 4, sigpac.polygon as u32)?;
+                    worksheet.write(row, 5, sigpac.parcel as u32)?;
+                    worksheet.write(row, 6, sigpac.enclosure as u32)?;
+                    worksheet.write(row, 7, sigpac.usage_code.unwrap_or_default())?;
+                    worksheet.write(row, 8, site.area)?;
+                    row += 1;
+                }
             }
-        }
 
-        let buffer = workbook.save_to_buffer()?;
+            workbook.save_to_buffer()
+        })
+        .await??;
+
         Ok(buffer)
     }
 
@@ -177,38 +182,54 @@ impl ReportingService {
             .await?
             .data;
 
-        let mut workbook = Workbook::new();
-        let worksheet = workbook.add_worksheet();
-        let header_format = Format::new().set_bold();
-
-        worksheet.write_with_format(0, 0, "Tier-ID", &header_format)?;
-        worksheet.write_with_format(0, 1, "Art", &header_format)?;
-        worksheet.write_with_format(0, 2, "Datum", &header_format)?;
-        worksheet.write_with_format(0, 3, "Behandlung", &header_format)?;
-        worksheet.write_with_format(0, 4, "Medikament", &header_format)?;
-        worksheet.write_with_format(0, 5, "Wartezeit (Tage)", &header_format)?;
-
-        let mut row = 1;
-        for animal in animals {
-            // Fetch treatments separately (pre-existing code referenced non-existent field)
-            let treatments = self
-                .db
+        // I9: Fetch all treatments in a single query instead of N+1 roundtrips
+        let animal_ids: Vec<uuid::Uuid> = animals.iter().map(|a| a.id).collect();
+        let all_treatments = if animal_ids.is_empty() {
+            Vec::new()
+        } else {
+            self.db
                 .animal_repo()
-                .find_treatments_by_animal(TenantId(tenant_id), animal.id)
+                .find_treatments_by_animals(TenantId(tenant_id), animal_ids)
                 .await?
-                .unwrap_or_default();
-            for treatment in treatments {
-                worksheet.write(row, 0, &animal.identifier)?;
-                worksheet.write(row, 1, format!("{:?}", animal.species))?;
-                worksheet.write(row, 2, treatment.date.to_rfc3339())?;
-                worksheet.write(row, 3, &treatment.treatment_type)?;
-                worksheet.write(row, 4, &treatment.medication)?;
-                worksheet.write(row, 5, treatment.withdrawal_days.unwrap_or(0))?;
-                row += 1;
-            }
-        }
+        };
 
-        let buffer = workbook.save_to_buffer()?;
+        // Build a map from animal_id to treatments for fast lookup
+        let treatments_map: std::collections::HashMap<uuid::Uuid, Vec<_>> = all_treatments
+            .into_iter()
+            .map(|(aid, treatments)| (aid, treatments))
+            .collect();
+
+        // I16: rust_xlsxwriter is synchronous — run in spawn_blocking to avoid blocking async runtime
+        let buffer = tokio::task::spawn_blocking(move || {
+            let mut workbook = Workbook::new();
+            let worksheet = workbook.add_worksheet();
+            let header_format = Format::new().set_bold();
+
+            worksheet.write_with_format(0, 0, "Tier-ID", &header_format)?;
+            worksheet.write_with_format(0, 1, "Art", &header_format)?;
+            worksheet.write_with_format(0, 2, "Datum", &header_format)?;
+            worksheet.write_with_format(0, 3, "Behandlung", &header_format)?;
+            worksheet.write_with_format(0, 4, "Medikament", &header_format)?;
+            worksheet.write_with_format(0, 5, "Wartezeit (Tage)", &header_format)?;
+
+            let mut row = 1;
+            for animal in &animals {
+                let treatments = treatments_map.get(&animal.id).cloned().unwrap_or_default();
+                for treatment in treatments {
+                    worksheet.write(row, 0, &animal.identifier)?;
+                    worksheet.write(row, 1, format!("{:?}", animal.species))?;
+                    worksheet.write(row, 2, treatment.date.to_rfc3339())?;
+                    worksheet.write(row, 3, &treatment.treatment_type)?;
+                    worksheet.write(row, 4, &treatment.medication)?;
+                    worksheet.write(row, 5, treatment.withdrawal_days.unwrap_or(0))?;
+                    row += 1;
+                }
+            }
+
+            workbook.save_to_buffer()
+        })
+        .await??;
+
         Ok(buffer)
     }
 }

@@ -3,7 +3,7 @@
 [![Rust](https://img.shields.io/badge/rust-2024-orange.svg)](https://www.rust-lang.org/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Rust CI](https://github.com/peopleandpixel/agrocore-rs/actions/workflows/ci-cd.yml/badge.svg?branch=main)](https://github.com/peopleandpixel/agrocore-rs/actions/workflows/ci-cd.yml)
-[![Version](https://img.shields.io/badge/version-0.60.0-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.61.0-green.svg)](CHANGELOG.md)
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/peopleandpixel/agrocore-rs)](https://github.com/peopleandpixel/agrocore-rs/commits/main)
 [![Tests](https://img.shields.io/badge/tests-153%2B-brightgreen.svg)](https://github.com/peopleandpixel/agrocore-rs/actions/workflows/ci-cd.yml)
 [![Crates](https://img.shields.io/badge/crates-15-blue.svg)](#repository-layout)
@@ -74,7 +74,7 @@ All providers share a unified **BaseClient** with caching (Memory/Redis), rate l
 | **Language** | Rust 2024 Edition |
 | **API** | Actix Web 4, JWT (30 min), Argon2, Governor rate limiting (120 req/min) |
 | **Frontend** | Leptos 0.9.0-rc0 (WASM), reactive, SSR-ready, Tailwind CSS, native SVG icons |
-| **Database** | PostgreSQL 16 + PostGIS, 44+ migrations (71+ tables), sqlx compile-time checked |
+| **Database** | PostgreSQL 16 + PostGIS, 46+ migrations (73+ tables), sqlx compile-time checked |
 | **Messaging** | NATS 2.10 + JetStream, request-reply, pub/sub |
 | **Infrastructure** | Docker Compose (prod-ready), systemd units, K8s manifests |
 | **Observability** | Prometheus metrics, structured logging (`agrocore-logging`), OTLP-ready |

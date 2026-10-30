@@ -323,6 +323,12 @@ pub trait AnimalRepository: Send + Sync {
         tid: TenantId,
         animal_id: Uuid,
     ) -> RepositoryFuture<Option<Vec<crate::entities::livestock::TreatmentRecord>>>;
+    /// I9: Batch fetch treatments for multiple animals in a single query
+    fn find_treatments_by_animals(
+        &self,
+        tid: TenantId,
+        animal_ids: Vec<Uuid>,
+    ) -> RepositoryFuture<Vec<(Uuid, Vec<crate::entities::livestock::TreatmentRecord>)>>;
     fn add_grazing_record(
         &self,
         tid: TenantId,
@@ -594,6 +600,20 @@ pub trait ComplianceChecklistRepo: Send + Sync {
     fn find_all(
         &self,
         tid: TenantId,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<ComplianceChecklist>>;
+    /// J15: Find checklists filtered by site_id using SQL WHERE clause
+    fn find_by_site(
+        &self,
+        tid: TenantId,
+        site_id: Uuid,
+        p: Pagination,
+    ) -> RepositoryFuture<PaginatedResponse<ComplianceChecklist>>;
+    /// J15: Find checklists filtered by checklist_type using SQL WHERE clause
+    fn find_by_type(
+        &self,
+        tid: TenantId,
+        checklist_type: crate::entities::compliance::ChecklistType,
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<ComplianceChecklist>>;
     fn create(

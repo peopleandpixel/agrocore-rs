@@ -17,7 +17,7 @@ impl OliveOilRecordRepo for PgOliveOilRecordRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, OliveOilRecord>(
-                "SELECT * FROM olive_oil_records WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, olive_grove_id, harvest_year, harvest_date, quantity_kg, oil_yield_kg, oil_yield_pct, oil_grade, acidity_pct, peroxide_value, k232, k270, sensory_score, liters_produced, mill_name, lot_number, quality_grade, notes, created_at, updated_at FROM olive_oil_records WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -46,7 +46,7 @@ impl OliveOilRecordRepo for PgOliveOilRecordRepo {
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<OliveOilRecord> = sqlx::query_as(
-                "SELECT * FROM olive_oil_records WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
+                "SELECT id, tenant_id, olive_grove_id, harvest_year, harvest_date, quantity_kg, oil_yield_kg, oil_yield_pct, oil_grade, acidity_pct, peroxide_value, k232, k270, sensory_score, liters_produced, mill_name, lot_number, quality_grade, notes, created_at, updated_at FROM olive_oil_records WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
             )
             .bind(tid)
             .bind(per_page as i32)
@@ -92,7 +92,7 @@ impl OliveOilRecordRepo for PgOliveOilRecordRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<OliveOilRecord> = sqlx::query_as("SELECT * FROM olive_oil_records WHERE tenant_id = $1 AND grove_id = $2 LIMIT $3 OFFSET $4")
+            let data: Vec<OliveOilRecord> = sqlx::query_as("SELECT id, tenant_id, olive_grove_id, harvest_year, harvest_date, quantity_kg, oil_yield_kg, oil_yield_pct, oil_grade, acidity_pct, peroxide_value, k232, k270, sensory_score, liters_produced, mill_name, lot_number, quality_grade, notes, created_at, updated_at FROM olive_oil_records WHERE tenant_id = $1 AND grove_id = $2 LIMIT $3 OFFSET $4")
                 .bind(tid)
                 .bind(grove_id)
                 .bind(per_page as i32)

@@ -14,7 +14,7 @@ impl WaterQuotaRepo for PgWaterQuotaRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WaterQuota>> {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
-            let row = sqlx::query_as("SELECT * FROM water_quotas WHERE id = $1 AND tenant_id = $2")
+            let row = sqlx::query_as("SELECT id, tenant_id, source_id, site_id, year, allocated_m3, used_m3, remaining_m3, comunidad_id, created_at, updated_at FROM water_quotas WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
                 .bind(tid)
                 .fetch_optional(&pool)
@@ -40,7 +40,7 @@ impl WaterQuotaRepo for PgWaterQuotaRepo {
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
             let data: Vec<WaterQuota> = sqlx::query_as(
-                "SELECT * FROM water_quotas WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
+                "SELECT id, tenant_id, source_id, site_id, year, allocated_m3, used_m3, remaining_m3, comunidad_id, created_at, updated_at FROM water_quotas WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
             )
             .bind(tid)
             .bind(per_page as i32)
@@ -105,7 +105,7 @@ impl WaterQuotaRepo for PgWaterQuotaRepo {
             .fetch_one(&pool)
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
-            let data = sqlx::query_as("SELECT * FROM water_quotas WHERE tenant_id = $1 AND source_id = $2 ORDER BY year DESC LIMIT $3 OFFSET $4")
+            let data = sqlx::query_as("SELECT id, tenant_id, source_id, site_id, year, allocated_m3, used_m3, remaining_m3, comunidad_id, created_at, updated_at FROM water_quotas WHERE tenant_id = $1 AND source_id = $2 ORDER BY year DESC LIMIT $3 OFFSET $4")
                 .bind(tid).bind(source_id).bind(per_page as i32).bind(offset as i32).fetch_all(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
             Ok(PaginatedResponse {
                 data,

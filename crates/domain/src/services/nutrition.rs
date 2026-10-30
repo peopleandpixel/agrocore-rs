@@ -19,6 +19,8 @@ impl NutrientValues {
 pub struct Fertilizer {
     pub name: String,
     pub nutrient_content_percent: NutrientValues, // Gehalt in % oder kg/100kg
+    /// J16: Price per kg in EUR. If None, cost will be estimated at 0.5 EUR/kg.
+    pub price_per_kg_eur: Option<f64>,
 }
 
 pub struct NutritionService;
@@ -90,6 +92,8 @@ impl NutritionService {
             let k_supplied = (total_amount * fertilizer.nutrient_content_percent.k) / 100.0;
             let mg_supplied = (total_amount * fertilizer.nutrient_content_percent.mg) / 100.0;
 
+            // J16: Calculate cost from fertilizer price_per_kg_eur; fallback to 0.5 EUR/kg estimate
+            let price_per_kg = fertilizer.price_per_kg_eur.unwrap_or(0.5);
             recommendations.push(FertilizerRecommendation {
                 fertilizer_name: fertilizer.name.clone(),
                 amount_kg_per_ha: amount_per_ha,
@@ -98,7 +102,7 @@ impl NutritionService {
                 phosphorus_supplied_kg: p_supplied,
                 potassium_supplied_kg: k_supplied,
                 magnesium_supplied_kg: mg_supplied,
-                cost_eur: total_amount * 0.5, // Placeholder cost
+                cost_eur: total_amount * price_per_kg,
             });
 
             // Update remaining demand

@@ -58,6 +58,8 @@ pub struct FertilizerInputDto {
     pub phosphorus_percent: f64,
     pub potassium_percent: f64,
     pub cost_per_ton_eur: f64,
+    /// J16: Price per kg in EUR (optional, derived from cost_per_ton_eur if not set)
+    pub price_per_kg_eur: Option<f64>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]

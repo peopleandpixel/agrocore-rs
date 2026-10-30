@@ -18,7 +18,7 @@ impl TaskDataRepository for PgTaskDataRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, TaskData>(
-                "SELECT * FROM task_data WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, task_id, worker_id, order_id, site_id, description, started_at, completed_at, status, notes, paused_at, resume_at, duration_minutes, machine_id, machine_hours, cost_center_id, area_covered, materials_used, observations, gps_track, photo_urls, pause_resume_cycles, created_at, updated_at FROM task_data WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -47,7 +47,7 @@ impl TaskDataRepository for PgTaskDataRepo {
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<TaskData> =
-                sqlx::query_as("SELECT * FROM task_data WHERE tenant_id = $1 LIMIT $2 OFFSET $3")
+                sqlx::query_as("SELECT id, tenant_id, task_id, worker_id, order_id, site_id, description, started_at, completed_at, status, notes, paused_at, resume_at, duration_minutes, machine_id, machine_hours, cost_center_id, area_covered, materials_used, observations, gps_track, photo_urls, pause_resume_cycles, created_at, updated_at FROM task_data WHERE tenant_id = $1 LIMIT $2 OFFSET $3")
                     .bind(tid)
                     .bind(per_page as i32)
                     .bind(offset as i32)
@@ -87,7 +87,7 @@ impl TaskDataRepository for PgTaskDataRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<TaskData> = sqlx::query_as(
-                "SELECT * FROM task_data WHERE tenant_id = $1 AND order_id = $2 LIMIT $3 OFFSET $4",
+                "SELECT id, tenant_id, task_id, worker_id, order_id, site_id, description, started_at, completed_at, status, notes, paused_at, resume_at, duration_minutes, machine_id, machine_hours, cost_center_id, area_covered, materials_used, observations, gps_track, photo_urls, pause_resume_cycles, created_at, updated_at FROM task_data WHERE tenant_id = $1 AND order_id = $2 LIMIT $3 OFFSET $4",
             )
             .bind(tid)
             .bind(task_id)
@@ -128,7 +128,7 @@ impl TaskDataRepository for PgTaskDataRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<TaskData> = sqlx::query_as("SELECT * FROM task_data WHERE tenant_id = $1 AND worker_id = $2 LIMIT $3 OFFSET $4")
+            let data: Vec<TaskData> = sqlx::query_as("SELECT id, tenant_id, task_id, worker_id, order_id, site_id, description, started_at, completed_at, status, notes, paused_at, resume_at, duration_minutes, machine_id, machine_hours, cost_center_id, area_covered, materials_used, observations, gps_track, photo_urls, pause_resume_cycles, created_at, updated_at FROM task_data WHERE tenant_id = $1 AND worker_id = $2 LIMIT $3 OFFSET $4")
                 .bind(tid)
                 .bind(worker_id)
                 .bind(per_page as i32)

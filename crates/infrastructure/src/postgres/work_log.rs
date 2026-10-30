@@ -12,7 +12,7 @@ impl WorkLogRepo for PgWorkLogRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<WorkLog>> {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
-            sqlx::query_as::<_, WorkLog>("SELECT * FROM work_logs WHERE tenant_id = $1 AND id = $2")
+            sqlx::query_as::<_, WorkLog>("SELECT id, tenant_id, task_id, worker_id, started_at, ended_at, duration_minutes, notes, created_at, updated_at FROM work_logs WHERE tenant_id = $1 AND id = $2")
                 .bind(tid)
                 .bind(id)
                 .fetch_optional(&pool)
@@ -47,7 +47,7 @@ impl WorkLogRepo for PgWorkLogRepo {
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<WorkLog> = sqlx::query_as("SELECT * FROM work_logs WHERE tenant_id = $1 ORDER BY date DESC, created_at DESC LIMIT $2 OFFSET $3")
+            let data: Vec<WorkLog> = sqlx::query_as("SELECT id, tenant_id, task_id, worker_id, started_at, ended_at, duration_minutes, notes, created_at, updated_at FROM work_logs WHERE tenant_id = $1 ORDER BY date DESC, created_at DESC LIMIT $2 OFFSET $3")
                 .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
@@ -219,7 +219,7 @@ impl WorkLogRepo for PgWorkLogRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<WorkLog> = sqlx::query_as("SELECT * FROM work_logs WHERE tenant_id = $1 AND worker_id = $2 ORDER BY date DESC, created_at DESC LIMIT $3 OFFSET $4")
+            let data: Vec<WorkLog> = sqlx::query_as("SELECT id, tenant_id, task_id, worker_id, started_at, ended_at, duration_minutes, notes, created_at, updated_at FROM work_logs WHERE tenant_id = $1 AND worker_id = $2 ORDER BY date DESC, created_at DESC LIMIT $3 OFFSET $4")
                 .bind(tid)
                 .bind(worker_id)
                 .bind(per_page as i32)

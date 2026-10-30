@@ -13,7 +13,7 @@ impl TenantRepository for PgTenantRepo {
     fn find_by_id(&self, id: Uuid) -> RepositoryFuture<Option<Tenant>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, Tenant>("SELECT * FROM tenants WHERE id = $1")
+            sqlx::query_as::<_, Tenant>("SELECT id, slug, label, is_demo, is_active, created_at, updated_at FROM tenants WHERE id = $1")
                 .bind(id)
                 .fetch_optional(&pool)
                 .await
@@ -35,7 +35,7 @@ impl TenantRepository for PgTenantRepo {
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Tenant> =
-                sqlx::query_as("SELECT * FROM tenants WHERE is_active = true LIMIT $1 OFFSET $2")
+                sqlx::query_as("SELECT id, slug, label, is_demo, is_active, created_at, updated_at FROM tenants WHERE is_active = true LIMIT $1 OFFSET $2")
                     .bind(per_page as i32)
                     .bind(offset as i32)
                     .fetch_all(&pool)

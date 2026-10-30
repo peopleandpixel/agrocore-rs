@@ -19,7 +19,7 @@ impl InventoryLocationRepo for PgInventoryLocationRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, InventoryLocation>(
-                "SELECT * FROM inventory_locations WHERE id = $1 AND tenant_id = $2 AND (is_active IS NULL OR is_active = true)",
+                "SELECT id, tenant_id, name, code, description, is_active, created_at, updated_at FROM inventory_locations WHERE id = $1 AND tenant_id = $2 AND (is_active IS NULL OR is_active = true)",
             )
             .bind(id)
             .bind(tid)
@@ -50,7 +50,7 @@ impl InventoryLocationRepo for PgInventoryLocationRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let items: Vec<InventoryLocation> = sqlx::query_as(
-                "SELECT * FROM inventory_locations WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY name LIMIT $2 OFFSET $3",
+                "SELECT id, tenant_id, name, code, description, is_active, created_at, updated_at FROM inventory_locations WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY name LIMIT $2 OFFSET $3",
             )
             .bind(tid)
             .bind(per_page as i32)
@@ -84,7 +84,7 @@ impl InventoryLocationRepo for PgInventoryLocationRepo {
         let code = code.to_string();
         Box::pin(async move {
             sqlx::query_as::<_, InventoryLocation>(
-                "SELECT * FROM inventory_locations WHERE code = $1 AND tenant_id = $2 AND (is_active IS NULL OR is_active = true)",
+                "SELECT id, tenant_id, name, code, description, is_active, created_at, updated_at FROM inventory_locations WHERE code = $1 AND tenant_id = $2 AND (is_active IS NULL OR is_active = true)",
             )
             .bind(&code)
             .bind(tid)

@@ -13,7 +13,7 @@ impl SoilMoistureAlertRepo for PgSoilMoistureAlertRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, SoilMoistureAlert>(
-                "SELECT * FROM soil_moisture_alerts WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, config_id, alert_time, moisture_percent, threshold_percent, action_taken, is_resolved, resolved_at, created_at, updated_at FROM soil_moisture_alerts WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)

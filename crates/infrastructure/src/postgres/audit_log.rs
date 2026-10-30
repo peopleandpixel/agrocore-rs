@@ -15,7 +15,7 @@ impl AuditLogRepo for PgAuditLogRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, AuditLog>(
-                "SELECT * FROM audit_logs WHERE tenant_id = $1 AND id = $2",
+                "SELECT id, tenant_id, user_id, action, entity_type, entity_id, old_value, new_value, changed_fields, ip_address, user_agent, request_id, session_id, created_at FROM audit_logs WHERE tenant_id = $1 AND id = $2",
             )
             .bind(tid)
             .bind(id)
@@ -42,7 +42,7 @@ impl AuditLogRepo for PgAuditLogRepo {
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<AuditLog> = sqlx::query_as("SELECT * FROM audit_logs WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3")
+            let data: Vec<AuditLog> = sqlx::query_as("SELECT id, tenant_id, user_id, action, entity_type, entity_id, old_value, new_value, changed_fields, ip_address, user_agent, request_id, session_id, created_at FROM audit_logs WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3")
                 .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)

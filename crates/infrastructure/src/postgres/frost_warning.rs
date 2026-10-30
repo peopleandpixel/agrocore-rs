@@ -15,7 +15,7 @@ impl FrostWarningRepo for PgFrostWarningRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, FrostWarning>(
-                "SELECT * FROM frost_warnings WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, station_id, threshold_temp_c, is_active, notify_email, notify_sms, last_triggered_at, created_at, updated_at FROM frost_warnings WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -44,7 +44,7 @@ impl FrostWarningRepo for PgFrostWarningRepo {
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<FrostWarning> = sqlx::query_as(
-                "SELECT * FROM frost_warnings WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3",
+                "SELECT id, tenant_id, station_id, threshold_temp_c, is_active, notify_email, notify_sms, last_triggered_at, created_at, updated_at FROM frost_warnings WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3",
             )
             .bind(tid)
             .bind(per_page as i32)
@@ -91,7 +91,7 @@ impl FrostWarningRepo for PgFrostWarningRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<FrostWarning> = sqlx::query_as(
-                "SELECT * FROM frost_warnings WHERE tenant_id = $1 AND station_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
+                "SELECT id, tenant_id, station_id, threshold_temp_c, is_active, notify_email, notify_sms, last_triggered_at, created_at, updated_at FROM frost_warnings WHERE tenant_id = $1 AND station_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
             )
             .bind(tid)
             .bind(station_id)
@@ -121,7 +121,7 @@ impl FrostWarningRepo for PgFrostWarningRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, FrostWarning>(
-                "SELECT * FROM frost_warnings WHERE tenant_id = $1 AND is_active = true ORDER BY created_at DESC",
+                "SELECT id, tenant_id, station_id, threshold_temp_c, is_active, notify_email, notify_sms, last_triggered_at, created_at, updated_at FROM frost_warnings WHERE tenant_id = $1 AND is_active = true ORDER BY created_at DESC",
             )
             .bind(tid)
             .fetch_all(&pool)

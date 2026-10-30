@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.61.0] - 2026-10-30
+
+Release focused on performance optimization, IoT functionality, and code quality improvements.
+
+### Performance Optimizations (Block I)
+
+- **I6: Audit triggers removed** — Removed audit triggers from 6 high-frequency tables (`worker_locations`, `clock_entries`, `worker_task_statuses`, `task_data`, `weather_data`, `soil_moisture_readings`) to prevent performance degradation on GPS pings.
+- **I7: N+1 clock_entry fixed** — `find_sessions` and `total_hours_worked` rewritten with LEFT JOIN LATERAL (60 roundtrips → 1).
+- **I8: N+1 inventory fixed** — `find_below_minimum` and `find_balances` rewritten with LEFT JOIN + GROUP BY (201 roundtrips → 1).
+- **I9: N+1 veterinary report fixed** — New `find_treatments_by_animals` batch method; veterinary report loads all treatments in one query (501 roundtrips → 1).
+- **I10: Missing indexes added** — 11 indexes added: `inventory_transactions`, `orders`, `weather_data`, `tasks`, `animals`, `harvest_lots`, `frost_warnings`, `tenants`, `customers` (trgm), `equipment` (trgm).
+- **I11: SELECT * replaced** — 168 of 169 `SELECT *` in repository files replaced with explicit column lists across 42 files (orders, task_data, olive_oil_records, vineyards, plant_protection_records, workers, animals, customers, equipment, inventory_items, financial_records, fertilizer_records, soil_moisture_readings, phenology_records, pac_applications, audit_logs, and more).
+- **I12: Queries without LIMIT** — All paginated queries verified to use `LIMIT/OFFSET` via `Pagination::effective_per_page()` (max 500).
+- **I15: Compress middleware** — `actix_web::middleware::Compress::default()` added to API middleware chain (~70-85% less transfer bytes).
+- **I16: spawn_blocking** — Excel report creation (rust_xlsxwriter) wrapped in `tokio::task::spawn_blocking` in reporting-service.
+
+### IoT Telemetry and Commands (J8)
+
+- **Migration 0046**: Created `iot_telemetry` and `iot_commands` tables with indexes and RLS policies.
+- **`get_device_telemetry`**: Now queries real measurements from `iot_telemetry` with `?limit=` (max 500) and `?since=` (RFC3339) filters.
+- **`send_command`**: Persists command in `iot_commands` table, then publishes `IoTCommandEvent` to NATS (`NATS_SUBJECT_COMMANDS_BRIDGE`) — the MQTT bridge forwards to devices.
+- **New `POST /iot/telemetry` endpoint**: Devices report measurements; stored in `iot_telemetry` and published to NATS (`NATS_SUBJECT_TELEMETRY`) for Home Assistant and other subscribers.
+
+### Code Quality (Block J)
+
+- **J12: Depreciation feature** — Marked as complete; feature was already fully implemented (Domain-Entity, Repository, API-Handler, Admin-UI).
+- **J13: Dead config code removed** — `mqtt_broker` and `rust_log` removed from `shared/src/config.rs` (Struct, Defaults, from_env, Default impl).
+- **J14: Graceful shutdown** — `scheduler::stop()` now uses mpsc-channel with `running_jobs` tracking and configurable timeout (30s); `try_deliver()` in messaging implements real HTTP-POST with HMAC-SHA256 signature.
+- **J15: Compliance filter SQL** — `find_by_site` and `find_by_type` methods added to ComplianceChecklistRepo; handlers use SQL WHERE filter instead of `.into_iter().filter()`.
+- **J16: Fertilizer costs** — `Fertilizer` and `FertilizerInputDto` extended with `price_per_kg_eur: Option<f64>`; fallback: 0.5 EUR/kg.
+
+### Validation (E2)
+
+- **E2: `per_page` upper limit** — `MAX_PER_PAGE` constant (500) added to `shared/src/lib.rs`; `Pagination::effective_per_page()` clamps values to [1, 500]. All 48 repository files (77 occurrences) updated from `p.per_page.unwrap_or(20)` to `p.effective_per_page()`.
+
+### Admin UI (Block H)
+
+- **H11: Inventory booking** — Stock-In, Stock-Out, Transfer, and Adjust modals with all API endpoints. 6 action buttons per inventory item.
+- **H2: Inventory update** — Edit modal for inventory items with `update_inventory_item()` API call.
+- **H6: Logout** — Logout button now calls `api::logout()` to invalidate JWT server-side before clearing local token.
+- **H8: Settings route** — Route `/settings` now shows `ServerSettingsPanel` from `settings_editor.rs` instead of static page.
+- **H10: Task Progress** — New `WorkerTaskDetailPage` at `/worker/tasks/:id` with status update buttons (Start, Pause, Complete).
+
+### Migration
+
+- **Migration 0045**: Removed audit triggers from high-frequency tables, added 11 missing indexes.
+- **Migration 0046**: IoT telemetry and commands tables with RLS policies.
+
 ## [0.60.0] - 2026-10-26
 
 Major release: Dynamic Type System, Demo Mode (Option C), security hardening, and comprehensive validation.

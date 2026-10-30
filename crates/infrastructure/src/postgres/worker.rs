@@ -16,7 +16,7 @@ impl WorkerRepo for PgWorkerRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Worker>(
-                "SELECT * FROM workers WHERE id = $1 AND tenant_id = $2 AND is_active = true",
+                "SELECT id, tenant_id, user_id, employee_id, firstname, lastname, email, phone, role_in_company, hourly_rate, social_security_number, bank_account, is_active, created_at, updated_at FROM workers WHERE id = $1 AND tenant_id = $2 AND is_active = true",
             )
             .bind(id)
             .bind(tid)
@@ -42,7 +42,7 @@ impl WorkerRepo for PgWorkerRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Worker>(
-                "SELECT * FROM workers WHERE user_id = $1 AND tenant_id = $2 AND is_active = true",
+                "SELECT id, tenant_id, user_id, employee_id, firstname, lastname, email, phone, role_in_company, hourly_rate, social_security_number, bank_account, is_active, created_at, updated_at FROM workers WHERE user_id = $1 AND tenant_id = $2 AND is_active = true",
             )
             .bind(user_id)
             .bind(tid)
@@ -71,7 +71,7 @@ impl WorkerRepo for PgWorkerRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<Worker> = sqlx::query_as("SELECT * FROM workers WHERE tenant_id = $1 AND is_active = true LIMIT $2 OFFSET $3")
+            let data: Vec<Worker> = sqlx::query_as("SELECT id, tenant_id, user_id, employee_id, firstname, lastname, email, phone, role_in_company, hourly_rate, social_security_number, bank_account, is_active, created_at, updated_at FROM workers WHERE tenant_id = $1 AND is_active = true LIMIT $2 OFFSET $3")
                 .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
@@ -149,7 +149,7 @@ impl WorkerRepo for PgWorkerRepo {
         let audit_repo = PgAuditLogRepo::new(self.pool.clone());
         Box::pin(async move {
             let old_val = sqlx::query_as::<_, Worker>(
-                "SELECT * FROM workers WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, user_id, employee_id, firstname, lastname, email, phone, role_in_company, hourly_rate, social_security_number, bank_account, is_active, created_at, updated_at FROM workers WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)

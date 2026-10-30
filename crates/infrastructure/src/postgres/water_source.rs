@@ -15,7 +15,7 @@ impl WaterSourceRepo for PgWaterSourceRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let row =
-                sqlx::query_as("SELECT * FROM water_sources WHERE id = $1 AND tenant_id = $2")
+                sqlx::query_as("SELECT id, tenant_id, site_id, source_type, name, capacity_m3, current_level_m3, license_number, license_expiry, is_active, created_at, updated_at FROM water_sources WHERE id = $1 AND tenant_id = $2")
                     .bind(id)
                     .bind(tid)
                     .fetch_optional(&pool)
@@ -41,7 +41,7 @@ impl WaterSourceRepo for PgWaterSourceRepo {
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
             let data: Vec<WaterSource> = sqlx::query_as(
-                "SELECT * FROM water_sources WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
+                "SELECT id, tenant_id, site_id, source_type, name, capacity_m3, current_level_m3, license_number, license_expiry, is_active, created_at, updated_at FROM water_sources WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
             )
             .bind(tid)
             .bind(per_page as i32)
@@ -111,7 +111,7 @@ impl WaterSourceRepo for PgWaterSourceRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
             let data = sqlx::query_as(
-                "SELECT * FROM water_sources WHERE tenant_id = $1 AND site_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
+                "SELECT id, tenant_id, site_id, source_type, name, capacity_m3, current_level_m3, license_number, license_expiry, is_active, created_at, updated_at FROM water_sources WHERE tenant_id = $1 AND site_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
             )
             .bind(tid).bind(site_id).bind(per_page as i32).bind(offset as i32)
             .fetch_all(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;

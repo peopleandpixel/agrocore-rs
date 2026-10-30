@@ -16,7 +16,7 @@ impl CustomerRepository for PgCustomerRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Customer>(
-                "SELECT * FROM customers WHERE id = $1 AND tenant_id = $2 AND is_active = true",
+                "SELECT id, tenant_id, name, email, phone, address, company, customer_number, vat_rate, payment_terms, preferred_delivery_location, preferences, is_active, created_at, updated_at FROM customers WHERE id = $1 AND tenant_id = $2 AND is_active = true",
             )
             .bind(id)
             .bind(tid.0)
@@ -41,7 +41,7 @@ impl CustomerRepository for PgCustomerRepo {
                 roles_vec.contains(&UserRole::Admin) || roles_vec.contains(&UserRole::Manager);
             if can_see_all {
                 sqlx::query_as::<_, Customer>(
-                    "SELECT * FROM customers WHERE id = $1 AND tenant_id = $2 AND is_active = true",
+                    "SELECT id, tenant_id, name, email, phone, address, company, customer_number, vat_rate, payment_terms, preferred_delivery_location, preferences, is_active, created_at, updated_at FROM customers WHERE id = $1 AND tenant_id = $2 AND is_active = true",
                 )
                 .bind(id)
                 .bind(tid.0)
@@ -50,7 +50,7 @@ impl CustomerRepository for PgCustomerRepo {
                 .map_err(|e| SharedError::Database(e.to_string()))
             } else {
                 sqlx::query_as::<_, Customer>(
-                    "SELECT * FROM customers WHERE id = $1 AND tenant_id = $2 AND is_active = true",
+                    "SELECT id, tenant_id, name, email, phone, address, company, customer_number, vat_rate, payment_terms, preferred_delivery_location, preferences, is_active, created_at, updated_at FROM customers WHERE id = $1 AND tenant_id = $2 AND is_active = true",
                 )
                 .bind(id)
                 .bind(tid.0)
@@ -81,7 +81,7 @@ impl CustomerRepository for PgCustomerRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Customer> = sqlx::query_as(
-                "SELECT * FROM customers WHERE tenant_id = $1 AND is_active = true ORDER BY created_at DESC LIMIT $2 OFFSET $3",
+                "SELECT id, tenant_id, name, email, phone, address, company, customer_number, vat_rate, payment_terms, preferred_delivery_location, preferences, is_active, created_at, updated_at FROM customers WHERE tenant_id = $1 AND is_active = true ORDER BY created_at DESC LIMIT $2 OFFSET $3",
             )
             .bind(tid.0)
             .bind(per_page as i32)
@@ -125,7 +125,7 @@ impl CustomerRepository for PgCustomerRepo {
         let number_owned = number.to_owned();
         Box::pin(async move {
             sqlx::query_as::<_, Customer>(
-                "SELECT * FROM customers WHERE customer_number = $1 AND tenant_id = $2 AND is_active = true",
+                "SELECT id, tenant_id, name, email, phone, address, company, customer_number, vat_rate, payment_terms, preferred_delivery_location, preferences, is_active, created_at, updated_at FROM customers WHERE customer_number = $1 AND tenant_id = $2 AND is_active = true",
             )
             .bind(&number_owned)
             .bind(tid.0)
@@ -242,7 +242,7 @@ impl CustomerRepository for PgCustomerRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Customer> = sqlx::query_as(
-                "SELECT * FROM customers WHERE tenant_id = $1 AND is_active = true \
+                "SELECT id, tenant_id, name, email, phone, address, company, customer_number, vat_rate, payment_terms, preferred_delivery_location, preferences, is_active, created_at, updated_at FROM customers WHERE tenant_id = $1 AND is_active = true \
                  AND (name ILIKE $2 OR email ILIKE $2 OR company ILIKE $2 OR customer_number ILIKE $2) \
                  ORDER BY created_at DESC LIMIT $3 OFFSET $4",
             )

@@ -5,19 +5,14 @@ use crate::api;
 use crate::i18n;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_router::params::Params;
-use leptos_router::hooks::use_params;
+use leptos_router::hooks::use_params_map;
 
 #[component]
 pub fn WorkerTaskDetailPage() -> impl IntoView {
     let t = i18n::use_i18n();
-    let params = use_params();
+    let params = use_params_map();
     let task_id_str = Memo::new(move |_| {
-        let params = match params.get() {
-            Ok(p) => p,
-            Err(_) => return String::new(),
-        };
-        params.get("id").cloned().unwrap_or_default()
+        params.get().get("id").map(|s| s.to_string()).unwrap_or_default()
     });
 
     let (task, set_task) = signal(None::<api::OrderDto>);

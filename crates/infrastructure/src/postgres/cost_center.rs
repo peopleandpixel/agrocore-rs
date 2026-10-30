@@ -15,7 +15,7 @@ impl CostCenterRepo for PgCostCenterRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, CostCenter>(
-                "SELECT * FROM cost_centers WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, parent_id, code, label, description, budget_eur, is_active, created_at, updated_at FROM cost_centers WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -51,7 +51,7 @@ impl CostCenterRepo for PgCostCenterRepo {
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
             let data: Vec<CostCenter> = sqlx::query_as(
-                "SELECT * FROM cost_centers WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
+                "SELECT id, tenant_id, parent_id, code, label, description, budget_eur, is_active, created_at, updated_at FROM cost_centers WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
             )
             .bind(tid)
             .bind(per_page as i32)

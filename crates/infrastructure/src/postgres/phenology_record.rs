@@ -17,7 +17,7 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, PhenologyRecord>(
-                "SELECT * FROM phenology_records WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, site_id, observation_date, observer_id, stage, description, notes, photo_url, forecast_next_stage_date, bbch_stage, created_at, updated_at FROM phenology_records WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -45,7 +45,7 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
                     .await
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<PhenologyRecord> = sqlx::query_as("SELECT * FROM phenology_records WHERE tenant_id = $1 ORDER BY observation_date DESC LIMIT $2 OFFSET $3")
+            let data: Vec<PhenologyRecord> = sqlx::query_as("SELECT id, tenant_id, site_id, observation_date, observer_id, stage, description, notes, photo_url, forecast_next_stage_date, bbch_stage, created_at, updated_at FROM phenology_records WHERE tenant_id = $1 ORDER BY observation_date DESC LIMIT $2 OFFSET $3")
                 .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
@@ -90,7 +90,7 @@ impl PhenologyRecordRepo for PgPhenologyRecordRepo {
             .await
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
-            let data: Vec<PhenologyRecord> = sqlx::query_as("SELECT * FROM phenology_records WHERE tenant_id = $1 AND site_id = $2 ORDER BY observation_date DESC LIMIT $3 OFFSET $4")
+            let data: Vec<PhenologyRecord> = sqlx::query_as("SELECT id, tenant_id, site_id, observation_date, observer_id, stage, description, notes, photo_url, forecast_next_stage_date, bbch_stage, created_at, updated_at FROM phenology_records WHERE tenant_id = $1 AND site_id = $2 ORDER BY observation_date DESC LIMIT $3 OFFSET $4")
                 .bind(tid)
                 .bind(site_id)
                 .bind(per_page as i32)

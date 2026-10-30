@@ -167,15 +167,9 @@ impl BackupService {
         &mut self,
         mut bridge: agrocore_messaging::MqttBridge,
     ) -> BackupResult<()> {
-        let scheduler_config = SchedulerConfig {
-            enabled: self.config.enabled,
-            timezone: self.config.timezone.clone(),
-            default_job_timeout_seconds: 3600,
-            max_concurrent_jobs: 10,
-            retry_failed_jobs: true,
-            max_retries: 3,
-            retry_delay_seconds: 60,
-        };
+        let mut scheduler_config = SchedulerConfig::default();
+        scheduler_config.enabled = self.config.enabled;
+        scheduler_config.timezone = self.config.timezone.clone();
 
         let nats_client = self.nats.clone();
         let scheduler = Arc::new(

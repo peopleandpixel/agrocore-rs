@@ -19,7 +19,7 @@ impl TreeRepository for PgTreeRepo {
     fn find_by_id(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<Option<Tree>> {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
-            sqlx::query_as::<_, Tree>("SELECT * FROM trees WHERE id = $1 AND tenant_id = $2")
+            sqlx::query_as::<_, Tree>("SELECT id, tenant_id, plot_id, group_id, tree_type, count, label, created_at, updated_at FROM trees WHERE id = $1 AND tenant_id = $2")
                 .bind(id)
                 .bind(tid)
                 .fetch_optional(&pool)
@@ -43,7 +43,7 @@ impl TreeRepository for PgTreeRepo {
                 .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Tree> = sqlx::query_as(
-                "SELECT * FROM trees WHERE tenant_id = $1 ORDER BY label LIMIT $2 OFFSET $3",
+                "SELECT id, tenant_id, plot_id, group_id, tree_type, count, label, created_at, updated_at FROM trees WHERE tenant_id = $1 ORDER BY label LIMIT $2 OFFSET $3",
             )
             .bind(tid)
             .bind(per_page as i32)
@@ -91,7 +91,7 @@ impl TreeRepository for PgTreeRepo {
             .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<Tree> = sqlx::query_as(
-                "SELECT * FROM trees WHERE tenant_id = $1 AND plot_id = $2 ORDER BY label LIMIT $3 OFFSET $4",
+                "SELECT id, tenant_id, plot_id, group_id, tree_type, count, label, created_at, updated_at FROM trees WHERE tenant_id = $1 AND plot_id = $2 ORDER BY label LIMIT $3 OFFSET $4",
             )
             .bind(tid)
             .bind(plot_id)
@@ -121,7 +121,7 @@ impl TreeRepository for PgTreeRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, Tree>(
-                "SELECT * FROM trees WHERE tenant_id = $1 AND group_id = $2 ORDER BY label",
+                "SELECT id, tenant_id, plot_id, group_id, tree_type, count, label, created_at, updated_at FROM trees WHERE tenant_id = $1 AND group_id = $2 ORDER BY label",
             )
             .bind(tid)
             .bind(group_id.to_string())
@@ -176,7 +176,7 @@ impl TreeRepository for PgTreeRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             let existing =
-                sqlx::query_as::<_, Tree>("SELECT * FROM trees WHERE id = $1 AND tenant_id = $2")
+                sqlx::query_as::<_, Tree>("SELECT id, tenant_id, plot_id, group_id, tree_type, count, label, created_at, updated_at FROM trees WHERE id = $1 AND tenant_id = $2")
                     .bind(id)
                     .bind(tid)
                     .fetch_optional(&pool)

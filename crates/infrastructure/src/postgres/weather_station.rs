@@ -17,7 +17,7 @@ impl WeatherStationRepo for PgWeatherStationRepo {
         let pool = TenantPool::new(&self.pool, tid.0);
         Box::pin(async move {
             sqlx::query_as::<_, WeatherStation>(
-                "SELECT * FROM weather_stations WHERE id = $1 AND tenant_id = $2",
+                "SELECT id, tenant_id, label, station_type, location, is_active, created_at, updated_at FROM weather_stations WHERE id = $1 AND tenant_id = $2",
             )
             .bind(id)
             .bind(tid)
@@ -46,7 +46,7 @@ impl WeatherStationRepo for PgWeatherStationRepo {
                     .map_err(|e| SharedError::Database(e.to_string()))?;
 
             let data: Vec<WeatherStation> = sqlx::query_as(
-                "SELECT * FROM weather_stations WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
+                "SELECT id, tenant_id, label, station_type, location, is_active, created_at, updated_at FROM weather_stations WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
             )
             .bind(tid)
             .bind(per_page as i32)
