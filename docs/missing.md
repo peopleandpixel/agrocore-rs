@@ -52,7 +52,7 @@ Generiert am 25.10.2026, aktualisiert am 26.10.2026 für v0.60.0 Release.
 ### Block E — Validierung
 
 - [x] **E1** 132 POST/PUT-Routen, nur 36 `.validate()` Aufrufe — ✓ Behoben (26.10.2026): Alle ~60 POST/PUT Handler validieren jetzt DTOs. 15 Handler-Dateien und 20+ DTO-Dateien aktualisiert.
-- [ ] **E2** `per_page` ohne Obergrenze, Memory-DoS
+- [x] **E2** `per_page` ohne Obergrenze, Memory-DoS — ✓ Behoben (27.10.2026): `MAX_PER_PAGE` Konstante (500) in `shared/src/lib.rs` hinzugefügt; `Pagination::effective_per_page()` clampet den Wert auf [1, 500]; alle 48 Repository-Dateien (77 Vorkommen) von `p.per_page.unwrap_or(20)` auf `p.effective_per_page()` umgestellt. Ein Angreifer kann jetzt maximal 500 Zeilen pro Request anfordern.
 
 ### Block H — Admin UI erreicht große Teile des Backends nicht
 

@@ -67,12 +67,30 @@ pub struct Audit {
     pub updated_by: Option<Id>,
 }
 
+/// Maximum number of items per page to prevent Memory-DoS attacks.
+pub const MAX_PER_PAGE: u64 = 500;
+
 #[derive(Debug, Clone, Deserialize, Validate, ToSchema)]
 pub struct Pagination {
     #[validate(range(min = 0))]
     pub page: Option<u64>,
-    #[validate(range(min = 1, max = 500))]
+    #[validate(range(min = 1, max = MAX_PER_PAGE))]
     pub per_page: Option<u64>,
+}
+
+impl Pagination {
+    /// Returns the effective page number, clamped to a safe minimum of 0.
+    pub fn effective_page(&self) -> u64 {
+        self.page.unwrap_or(0)
+    }
+
+    /// Returns the effective per_page value, clamped to [1, MAX_PER_PAGE].
+    /// This prevents Memory-DoS attacks where a malicious client requests
+    /// millions of rows in a single query.
+    pub fn effective_per_page(&self) -> u64 {
+        let raw = self.per_page.unwrap_or(20);
+        raw.clamp(1, MAX_PER_PAGE)
+    }
 }
 
 impl Default for Pagination {

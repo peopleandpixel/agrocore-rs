@@ -131,7 +131,7 @@ created records would have been unfindable. Fixed.
 ### Block E — Missing validation (P1)
 
 - [ ] **E1 — 132 POST/PUT routes, only 36 `.validate()` calls** — without any `validate()`: `agriculture.rs` (8), `weather.rs` (10), `workforce.rs` (9), `harvest.rs` (8), `compliance.rs` (7), `finance.rs` (6), `water.rs` (6), `livestock.rs` (4), `breed/building/group/tree/variety/livestock_new.rs` (2 each), `nutrition.rs` (2). `validator::Validate` with length, range and enum constraints on all command DTOs; `require_manager()` as a minimum on all writing routes.
-- [ ] **E2 — `per_page` without a cap, memory DoS** — `shared` pagination is passed through without an upper bound (`postgres/user.rs:128`, `equipment.rs:128`); only `sigpac.rs:92` limits with `.min(200)`. Cap in the deserializer at 200 maximum, limit `page` as well.
+- [x] **E2 — `per_page` without a cap, memory DoS** — ✓ Fixed (27.10.2026): `MAX_PER_PAGE` constant (500) added to `shared/src/lib.rs`; `Pagination::effective_per_page()` clamps to [1, 500]; all 48 repository files (77 occurrences) updated from `p.per_page.unwrap_or(20)` to `p.effective_per_page()`.
 
 ### Block F — Configuration is not persistable (P0, prerequisite for the target state)
 

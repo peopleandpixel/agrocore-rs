@@ -78,8 +78,8 @@ impl EquipmentRepository for PgEquipmentRepo {
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Equipment>> {
         let pool = TenantPool::new(&self.pool, tid.0);
-        let page = p.page.unwrap_or(0);
-        let per_page = p.per_page.unwrap_or(20);
+        let page = p.effective_page();
+        let per_page = p.effective_per_page();
 
         Box::pin(async move {
             let offset = page * per_page;
@@ -126,8 +126,8 @@ impl EquipmentRepository for PgEquipmentRepo {
         location_filter: Option<&str>,
     ) -> RepositoryFuture<PaginatedResponse<Equipment>> {
         let pool = TenantPool::new(&self.pool, tid.0);
-        let page = p.page.unwrap_or(0);
-        let per_page = p.per_page.unwrap_or(20);
+        let page = p.effective_page();
+        let per_page = p.effective_per_page();
         let offset = page * per_page;
         let search_owned = search.map(|s| s.to_lowercase());
         let eq_type_owned = equipment_type.map(|s| s.to_lowercase());
@@ -261,8 +261,8 @@ impl EquipmentRepository for PgEquipmentRepo {
         roles: &[UserRole],
     ) -> RepositoryFuture<PaginatedResponse<Equipment>> {
         let pool = TenantPool::new(&self.pool, tid.0);
-        let page = p.page.unwrap_or(0);
-        let per_page = p.per_page.unwrap_or(20);
+        let page = p.effective_page();
+        let per_page = p.effective_per_page();
         let offset = page * per_page;
         let roles_vec = roles.to_vec();
 
@@ -439,8 +439,8 @@ impl EquipmentRepository for PgEquipmentRepo {
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Equipment>> {
         let pool = TenantPool::new(&self.pool, tid.0);
-        let page = p.page.unwrap_or(0);
-        let per_page = p.per_page.unwrap_or(20);
+        let page = p.effective_page();
+        let per_page = p.effective_per_page();
         let offset = page * per_page;
 
         Box::pin(async move {

@@ -40,6 +40,7 @@ pub mod weather;
 pub mod weather_warnings;
 pub mod wizard;
 pub mod worker_tasks;
+pub mod worker_task_detail;
 pub mod workers;
 pub mod workforce_logs;
 pub mod roles;

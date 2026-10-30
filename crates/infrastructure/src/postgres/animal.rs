@@ -67,8 +67,8 @@ impl AnimalRepository for PgAnimalRepo {
 
     fn find_all(&self, tid: TenantId, p: Pagination) -> Fut<PaginatedResponse<Animal>> {
         let pool = TenantPool::new(&self.pool, tid.0);
-        let page = p.page.unwrap_or(0);
-        let per_page = p.per_page.unwrap_or(20);
+        let page = p.effective_page();
+        let per_page = p.effective_per_page();
         let offset = page * per_page;
 
         Box::pin(async move {

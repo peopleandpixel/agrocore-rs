@@ -41,8 +41,8 @@ impl FinancialRecordRepo for PgFinancialRecordRepo {
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<FinancialRecord>> {
         let pool = TenantPool::new(&self.pool, tid.0);
-        let page = p.page.unwrap_or(0);
-        let per_page = p.per_page.unwrap_or(20);
+        let page = p.effective_page();
+        let per_page = p.effective_per_page();
         let offset = page * per_page;
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM financial_records WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true)").bind(tid).fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
@@ -68,8 +68,8 @@ impl FinancialRecordRepo for PgFinancialRecordRepo {
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<FinancialRecord>> {
         let pool = TenantPool::new(&self.pool, tid.0);
-        let page = p.page.unwrap_or(0);
-        let per_page = p.per_page.unwrap_or(20);
+        let page = p.effective_page();
+        let per_page = p.effective_per_page();
         let offset = page * per_page;
         Box::pin(async move {
             let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM financial_records WHERE tenant_id = $1 AND cost_center_id = $2")

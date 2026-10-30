@@ -30,8 +30,8 @@ impl GroupRepository for PgGroupRepo {
 
     fn find_all(&self, tid: TenantId, p: Pagination) -> RepositoryFuture<PaginatedResponse<Group>> {
         let pool = TenantPool::new(&self.pool, tid.0);
-        let page = p.page.unwrap_or(0);
-        let per_page = p.per_page.unwrap_or(20);
+        let page = p.effective_page();
+        let per_page = p.effective_per_page();
 
         Box::pin(async move {
             let offset = page * per_page;
@@ -75,8 +75,8 @@ impl GroupRepository for PgGroupRepo {
         p: Pagination,
     ) -> RepositoryFuture<PaginatedResponse<Group>> {
         let pool = TenantPool::new(&self.pool, tid.0);
-        let page = p.page.unwrap_or(0);
-        let per_page = p.per_page.unwrap_or(20);
+        let page = p.effective_page();
+        let per_page = p.effective_per_page();
 
         Box::pin(async move {
             let offset = page * per_page;

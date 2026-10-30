@@ -27,7 +27,7 @@ use crate::components::map::MapView;
 use crate::components::orders::OrderList;
 use crate::components::plot_subentity::PlotSubEntityLayout;
 use crate::components::resources::ResourcesPage;
-use crate::components::settings::SettingsPage;
+use crate::components::settings_editor::ServerSettingsPanel;
 use crate::components::sites::SiteManagement;
 use crate::components::task_detail::TaskDetailPage;
 use crate::components::toast::{ToastContainer, provide_toast_context};
@@ -38,6 +38,7 @@ use crate::components::weather::WeatherManagement;
 use crate::components::weather_warnings::WeatherWarnings;
 use crate::components::wizard::WizardView;
 use crate::components::worker_tasks::WorkerTasksPage;
+use crate::components::worker_task_detail::WorkerTaskDetailPage;
 use crate::components::workers::WorkersPage;
 use crate::components::workforce_logs::{WorkforceLocations, WorkforceLogs};
 use icondata_lu as I;
@@ -49,6 +50,7 @@ use I::{
     LuTractor, LuUsers, LuWallet,
 };
 use leptos::prelude::*;
+use leptos::task::spawn_local;
 use crate::icon::Icon;
 use leptos_router::{components::*, path};
 
@@ -245,10 +247,11 @@ fn AuthenticatedShell(
                             <Route path=path!("/resources") view=|| view! { <ResourcesPage /> } />
                             <Route path=path!("/compliance") view=|| view! { <CompliancePage /> } />
                             <Route path=path!("/users") view=|| view! { <UserManagement /> } />
-                            <Route path=path!("/settings") view=|| view! { <SettingsPage /> } />
+                            <Route path=path!("/settings") view=|| view! { <ServerSettingsPanel /> } />
                             <Route path=path!("/backups") view=|| view! { <components::backup::BackupManagement /> } />
                             <Route path=path!("/wizard") view=|| view! { <WizardView /> } />
                             <Route path=path!("/worker/tasks") view=|| view! { <WorkerTasksPage /> } />
+                            <Route path=path!("/worker/tasks/:id") view=|| view! { <WorkerTaskDetailPage /> } />
                             <Route path=path!("/workers") view=|| view! { <WorkersPage /> } />
                         </Routes>
                     </Router>
@@ -364,9 +367,13 @@ fn AuthenticatedShell(
                         </li>
                         <li>
                             <a class="text-error" on:click=move |_| {
-                            api::clear_auth_token();
-                            api::clear_user_role();
-                            let _ = window().location().reload();
+                            // H6: Notify server to invalidate JWT, then clear local state
+                            spawn_local(async move {
+                                let _ = api::logout().await;
+                                api::clear_auth_token();
+                                api::clear_user_role();
+                                let _ = window().location().reload();
+                            });
                         }>
                                 <Icon icon=&LuLogOut width="20" height="20" />
                                 {crate::t!(t, "logout")}

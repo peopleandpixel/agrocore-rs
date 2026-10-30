@@ -23,8 +23,8 @@ impl TenantRepository for PgTenantRepo {
 
     fn find_all(&self, p: Pagination) -> RepositoryFuture<PaginatedResponse<Tenant>> {
         let pool = self.pool.clone();
-        let page = p.page.unwrap_or(0);
-        let per_page = p.per_page.unwrap_or(20);
+        let page = p.effective_page();
+        let per_page = p.effective_per_page();
         let offset = page * per_page;
 
         Box::pin(async move {
