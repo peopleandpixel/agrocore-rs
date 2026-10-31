@@ -1,7 +1,7 @@
 use crate::AppState;
 use crate::dto::{
     ErrorResponse, PaginatedPhenologyResponse, PaginatedResponseDto, PaginatedWeatherDataResponse,
-    PaginatedWeatherStationResponse,
+    PaginatedWeatherStationResponse, WeatherFetchResultDto,
 };
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
@@ -10,6 +10,9 @@ use agrocore_domain::entities::weather::{
     CreatePhenologyRecordDto, CreateWeatherDataDto, CreateWeatherStationDto,
     UpdatePhenologyRecordDto, UpdateWeatherDataDto, UpdateWeatherStationDto,
 };
+use agrocore_domain::WeatherDataProvider;
+use agrocore_logging::warn;
+use agrocore_weather_service::providers::OpenMeteoProvider;
 use agrocore_shared::SharedError;
 use uuid::Uuid;
 use validator::Validate;
@@ -75,6 +78,10 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                 web::resource("/pest-risks")
                     .route(web::get().to(list_pest_risks))
                     .route(web::post().to(create_pest_risk)),
+            )
+            .service(
+                web::resource("/current-with-fallback")
+                    .route(web::get().to(get_current_weather_with_fallback)),
             ),
     );
 }
@@ -646,4 +653,126 @@ pub async fn create_pest_risk(
         )
         .await?;
     Ok(HttpResponse::Created().json(crate::dto::PestRiskDto::from(pr)))
+}
+
+/// Returns current weather data for the tenant's company location.
+///
+/// If the tenant has configured weather stations with recent data, returns the
+/// latest reading. If no stations exist or no recent data is available, falls
+/// back to fetching weather from Open-Meteo using the company coordinates stored
+/// in the tenant configuration.
+#[utoipa::path(
+    get,
+    path = "/api/v1/weather/current-with-fallback",
+    responses(
+        (status = 200, description = "Current weather data with fallback", body = WeatherFetchResultDto),
+        (status = 400, description = "No coordinates configured", body = ErrorResponse)
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
+pub async fn get_current_weather_with_fallback(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+) -> Result<HttpResponse, ApiError> {
+    let tenant_id = auth.0.tenant_id;
+
+    // Step 1: Try to get weather data from configured stations
+    let tenant = state
+        .db
+        .tenant_repo()
+        .find_by_id(tenant_id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Tenant not found".into()))?;
+
+    // Check if there are any active weather stations with recent data
+    let stations = state
+        .db
+        .weather_station_repo()
+        .find_all(agrocore_domain::TenantId(tenant_id), agrocore_shared::Pagination::default())
+        .await?;
+
+    let has_active_stations = stations.data.iter().any(|s| s.is_active);
+
+    if has_active_stations {
+        // Try to get the most recent weather data from stations
+        let weather_data = state
+            .db
+            .weather_data_repo()
+            .find_all(agrocore_domain::TenantId(tenant_id), agrocore_shared::Pagination::default())
+            .await?;
+
+        if let Some(latest) = weather_data.data.first() {
+            // Return sensor data if available
+            return Ok(HttpResponse::Ok().json(WeatherFetchResultDto {
+                temperature_c: latest.temperature_c,
+                humidity_percent: latest.humidity_percent,
+                precipitation_mm: latest.precipitation_mm,
+                wind_speed_kmh: latest.wind_speed_kmh,
+                wind_direction_deg: latest.wind_direction_deg,
+                solar_radiation_wm2: latest.solar_radiation_wm2,
+                pressure_hpa: latest.pressure_hpa,
+                soil_temperature_c: latest.soil_temperature_c,
+                soil_moisture_percent: latest.soil_moisture_percent,
+                leaf_wetness: latest.leaf_wetness,
+                timestamp: latest.timestamp,
+                provider: "sensor".to_string(),
+            }));
+        }
+    }
+
+    // Step 2: Fallback to Open-Meteo using company coordinates
+    let (lat, lon) = match &tenant.config.company_profile {
+        Some(profile) => match &profile.coordinates {
+            Some(coords) => (coords.lat, coords.lng),
+            None => {
+                warn!(
+                    "Tenant {} has no company coordinates configured for weather fallback",
+                    tenant_id
+                );
+                return Err(SharedError::Internal(
+                    "No company coordinates configured. Please set your company location on the map first."
+                        .to_string(),
+                )
+                .into());
+            }
+        },
+        None => {
+            warn!(
+                "Tenant {} has no company profile configured for weather fallback",
+                tenant_id
+            );
+            return Err(SharedError::Internal(
+                "No company profile configured. Please complete your company setup first."
+                    .to_string(),
+            )
+            .into());
+        }
+    };
+
+    // Fetch from Open-Meteo (free, no API key required)
+    let provider = OpenMeteoProvider;
+    let result = provider
+        .fetch_current(lat, lon, None)
+        .await
+        .map_err(|e| {
+            warn!("Open-Meteo fallback failed: {}", e);
+            SharedError::Internal(format!("Weather service unavailable: {}", e))
+        })?;
+
+    Ok(HttpResponse::Ok().json(WeatherFetchResultDto {
+        temperature_c: result.temperature_c,
+        humidity_percent: result.humidity_percent,
+        precipitation_mm: result.precipitation_mm,
+        wind_speed_kmh: result.wind_speed_kmh,
+        wind_direction_deg: result.wind_direction_deg,
+        solar_radiation_wm2: result.solar_radiation_wm2,
+        pressure_hpa: result.pressure_hpa,
+        soil_temperature_c: result.soil_temperature_c,
+        soil_moisture_percent: result.soil_moisture_percent,
+        leaf_wetness: result.leaf_wetness,
+        timestamp: result.timestamp,
+        provider: "openmeteo-fallback".to_string(),
+    }))
 }

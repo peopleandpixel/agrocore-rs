@@ -2,6 +2,7 @@ use crate::api;
 use crate::components::form::{
     PHONE_PREFIXES, RequiredLabel, country_flag, is_valid_email, language_flag, normalize_phone,
 };
+// use crate::components::map_picker::MapPicker; // TODO: fix Leptos 0.9
 use crate::components::toast::{ToastContext, ToastType};
 use crate::i18n::LANGUAGE_OPTIONS;
 use crate::i18n::{I18n, Language};
@@ -83,6 +84,8 @@ fn submit_setup(
     company_email: String,
     company_phone_prefix: String,
     company_phone_local: String,
+    company_latitude: Option<f64>,
+    company_longitude: Option<f64>,
     set_setup_status: WriteSignal<Option<Result<(), String>>>,
     set_setup_error: WriteSignal<Option<String>>,
     toast_context: crate::components::toast::ToastContext,
@@ -151,9 +154,18 @@ fn submit_setup(
             Some(company_email.clone())
         },
         phone: company_phone.clone(),
+        mobile: None,
+        fax: None,
         address: Some(company_address.clone()),
+        city: None,
+        postal_code: None,
+        state: None,
         website: None,
         country: Some(company_country.clone()),
+        vat_id: None,
+        registration_number: None,
+        latitude: company_latitude,
+        longitude: company_longitude,
     };
 
     set_setup_error.set(None);
@@ -174,13 +186,15 @@ fn submit_setup(
                 "supported_languages": ["de", "en", "es", "fr", "pt"],
                 "timezone": "Europe/Lisbon",
                 "enabled_modules": ["field_management", "PlantProtection", "Fertilization", "Harvest", "WorkLog", "CostTracking", "Maps", "Reports"],
-                "custom_field_schemas": {
-                    "company_profile": {
-                        "name": company_name,
-                        "address": company_address,
-                        "country": company_country,
-                        "email": company_email,
-                        "phone": company_phone
+                "company_profile": {
+                    "name": company_name,
+                    "address": company_address,
+                    "country": company_country,
+                    "email": company_email,
+                    "phone": company_phone,
+                    "coordinates": {
+                        "lat": company_latitude,
+                        "lng": company_longitude
                     }
                 }
             }
@@ -267,6 +281,22 @@ pub fn SetupAssistant() -> impl IntoView {
     let (company_email, set_company_email) = signal(String::new());
     let (company_phone_prefix, set_company_phone_prefix) = signal(String::from("+351"));
     let (company_phone_local, set_company_phone_local) = signal(String::new());
+
+    // Company location coordinates (selected on map)
+    let (company_latitude, set_company_latitude) = signal::<Option<f64>>(None);
+    let (company_longitude, set_company_longitude) = signal::<Option<f64>>(None);
+    let (company_location, set_company_location) = signal::<(f64, f64)>((38.7223, -9.1393));
+    Effect::new({
+        let set_company_latitude = set_company_latitude.clone();
+        let set_company_longitude = set_company_longitude.clone();
+        move |_| {
+            {
+                let (lat, lng) = company_location.get();
+                set_company_latitude.set(Some(lat));
+                set_company_longitude.set(Some(lng));
+            }
+        }
+    });
 
     let toast_context = use_context::<ToastContext>().expect("ToastContext not provided");
 
@@ -543,6 +573,11 @@ pub fn SetupAssistant() -> impl IntoView {
                                         </div>
                                     </div>
 
+                                    // MapPicker disabled - TODO: fix Leptos 0.9 compatibility
+                                    <div class="alert alert-info">
+                                        <span>"Map picker temporarily unavailable"</span>
+                                    </div>
+
                                     <div class="grid gap-4 md:grid-cols-2">
                                         <div class="form-control w-full">
                                             <label class="label flex items-center justify-between">
@@ -633,6 +668,8 @@ pub fn SetupAssistant() -> impl IntoView {
                                                     company_email.get(),
                                                     company_phone_prefix.get(),
                                                     company_phone_local.get(),
+                                                    company_latitude.get(),
+                                                    company_longitude.get(),
                                                     set_setup_status,
                                                     set_setup_error,
                                                     toast_context,

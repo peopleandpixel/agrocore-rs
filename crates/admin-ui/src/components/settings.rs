@@ -3,6 +3,7 @@ use crate::components::form::{
     PHONE_PREFIXES, RequiredLabel, country_flag, is_valid_email, language_flag, normalize_phone,
     split_phone,
 };
+// use crate::components::map_picker::MapPicker; // TODO: fix Leptos 0.9
 use crate::i18n::{I18n, LANGUAGE_OPTIONS, Language};
 use agrocore_shared::lpis::LpisCountry;
 use icondata_lu::*;
@@ -22,9 +23,17 @@ pub fn SettingsPage() -> impl IntoView {
     let tax_id_label = i18n.t(lang.get().as_str(), "tax_id");
     let office_email_label = i18n.t(lang.get().as_str(), "office_email");
     let international_phone = i18n.t(lang.get().as_str(), "international_phone");
+    let mobile_phone_label = i18n.t(lang.get().as_str(), "mobile_phone");
+    let fax_label = i18n.t(lang.get().as_str(), "fax");
     let address_label = i18n.t(lang.get().as_str(), "address");
+    let city_label = i18n.t(lang.get().as_str(), "city");
+    let postal_code_label = i18n.t(lang.get().as_str(), "postal_code");
+    let state_label = i18n.t(lang.get().as_str(), "state_province");
     let website_label = i18n.t(lang.get().as_str(), "website");
     let country_label = i18n.t(lang.get().as_str(), "country");
+    let vat_id_label = i18n.t(lang.get().as_str(), "vat_id");
+    let registration_number_label = i18n.t(lang.get().as_str(), "registration_number");
+    let company_location_map_label = i18n.t(lang.get().as_str(), "company_location_map");
     let update_profile = i18n.t(lang.get().as_str(), "update_profile");
     let display_and_language = i18n.t(lang.get().as_str(), "display_and_language");
     let system_language = i18n.t(lang.get().as_str(), "system_language");
@@ -64,6 +73,15 @@ pub fn SettingsPage() -> impl IntoView {
     let (address, set_address) = signal(initial_profile.address.unwrap_or_default());
     let (website, set_website) = signal(initial_profile.website.unwrap_or_default());
     let (country, set_country) = signal(initial_profile.country.unwrap_or_default());
+    let (latitude, set_latitude) = signal(initial_profile.latitude);
+    let (longitude, set_longitude) = signal(initial_profile.longitude);
+    let (mobile, set_mobile) = signal(initial_profile.mobile.unwrap_or_default());
+    let (fax, set_fax) = signal(initial_profile.fax.unwrap_or_default());
+    let (city, set_city) = signal(initial_profile.city.unwrap_or_default());
+    let (postal_code, set_postal_code) = signal(initial_profile.postal_code.unwrap_or_default());
+    let (state, set_state) = signal(initial_profile.state.unwrap_or_default());
+    let (vat_id, set_vat_id) = signal(initial_profile.vat_id.unwrap_or_default());
+    let (registration_number, set_registration_number) = signal(initial_profile.registration_number.unwrap_or_default());
     let (status_message, set_status_message) = signal(None::<String>);
 
     let blank_to_none = |value: String| {
@@ -113,28 +131,23 @@ pub fn SettingsPage() -> impl IntoView {
             tax_id: blank_to_none(tax_id.get()),
             office_email: blank_to_none(office_email_value),
             phone,
+            mobile: blank_to_none(mobile.get()),
+            fax: blank_to_none(fax.get()),
             address: blank_to_none(address_value),
+            city: blank_to_none(city.get()),
+            postal_code: blank_to_none(postal_code.get()),
+            state: blank_to_none(state.get()),
             website: blank_to_none(website.get()),
             country: blank_to_none(country_value),
+            vat_id: blank_to_none(vat_id.get()),
+            registration_number: blank_to_none(registration_number.get()),
+            latitude: latitude.get(),
+            longitude: longitude.get(),
         };
-        api::save_company_profile(&profile);
-
-        // Keep the browser copy for the export header, but persist through the
-        // API too. Before this the page reported "saved" while only writing
-        // localStorage, which is per-device.
-        let mut values = serde_json::Map::new();
-        let text = |v: Option<String>| serde_json::Value::String(v.unwrap_or_default());
-        values.insert("company.name".into(), text(profile.company_name.clone()));
-        values.insert("company.tax_id".into(), text(profile.tax_id.clone()));
-        values.insert("company.email".into(), text(profile.office_email.clone()));
-        values.insert("company.phone".into(), text(profile.phone.clone()));
-        values.insert("company.address".into(), text(profile.address.clone()));
-        values.insert("company.website".into(), text(profile.website.clone()));
-        values.insert("company.country".into(), text(profile.country.clone()));
 
         let saved_label = profile_saved.clone();
         spawn_local(async move {
-            match api::save_settings(values).await {
+            match api::save_company_profile_api(&profile).await {
                 Ok(_) => set_status_message.set(Some(saved_label)),
                 Err(e) => set_status_message.set(Some(format!("Speichern fehlgeschlagen: {e}"))),
             }
@@ -268,9 +281,37 @@ pub fn SettingsPage() -> impl IntoView {
                                     <label class="label"><RequiredLabel required=true>{address_label}</RequiredLabel></label>
                                     <input type="text" class="input input-bordered w-full" required prop:value=move || address.get() on:input=move |ev| set_address.set(event_target_value(&ev)) />
                                 </div>
+                                <div class="form-control w-full">
+                                    <label class="label"><span class="label-text">{city_label}</span></label>
+                                    <input type="text" class="input input-bordered w-full" prop:value=move || city.get() on:input=move |ev| set_city.set(event_target_value(&ev)) />
+                                </div>
+                                <div class="form-control w-full">
+                                    <label class="label"><span class="label-text">{postal_code_label}</span></label>
+                                    <input type="text" class="input input-bordered w-full" prop:value=move || postal_code.get() on:input=move |ev| set_postal_code.set(event_target_value(&ev)) />
+                                </div>
+                                <div class="form-control w-full md:col-span-2">
+                                    <label class="label"><span class="label-text">{state_label}</span></label>
+                                    <input type="text" class="input input-bordered w-full" prop:value=move || state.get() on:input=move |ev| set_state.set(event_target_value(&ev)) />
+                                </div>
+                                <div class="form-control w-full">
+                                    <label class="label"><span class="label-text">{mobile_phone_label}</span></label>
+                                    <input type="tel" class="input input-bordered w-full" prop:value=move || mobile.get() on:input=move |ev| set_mobile.set(event_target_value(&ev)) />
+                                </div>
+                                <div class="form-control w-full">
+                                    <label class="label"><span class="label-text">{fax_label}</span></label>
+                                    <input type="tel" class="input input-bordered w-full" prop:value=move || fax.get() on:input=move |ev| set_fax.set(event_target_value(&ev)) />
+                                </div>
                                 <div class="form-control w-full md:col-span-2">
                                     <label class="label"><span class="label-text">{website_label}</span></label>
                                     <input type="url" class="input input-bordered w-full" prop:value=move || website.get() on:input=move |ev| set_website.set(event_target_value(&ev)) />
+                                </div>
+                                <div class="form-control w-full">
+                                    <label class="label"><span class="label-text">{vat_id_label}</span></label>
+                                    <input type="text" class="input input-bordered w-full" prop:value=move || vat_id.get() on:input=move |ev| set_vat_id.set(event_target_value(&ev)) />
+                                </div>
+                                <div class="form-control w-full">
+                                    <label class="label"><span class="label-text">{registration_number_label}</span></label>
+                                    <input type="text" class="input input-bordered w-full" prop:value=move || registration_number.get() on:input=move |ev| set_registration_number.set(event_target_value(&ev)) />
                                 </div>
                                 <div class="form-control w-full md:col-span-2">
                                     <label class="label flex items-center justify-between">
@@ -279,6 +320,24 @@ pub fn SettingsPage() -> impl IntoView {
                                     </label>
                                     <input type="text" class="input input-bordered w-full" required prop:value=move || country.get() on:input=move |ev| set_country.set(event_target_value(&ev)) />
                                 </div>
+                            </div>
+                            // Map picker for company location
+                            <div class="mt-4">
+                                {move || {
+                                    let center = if let (Some(lat), Some(lng)) = (latitude.get(), longitude.get()) {
+                                        Some((lat, lng))
+                                    } else {
+                                        None
+                                    };
+                                    let selected = center;
+                                    let label = company_location_map_label.clone();
+                                    // MapPicker disabled - TODO: fix Leptos 0.9 compatibility
+                                    view! {
+                                        <div class="alert alert-info">
+                                            <span>"Map picker temporarily unavailable"</span>
+                                        </div>
+                                    }
+                                }}
                             </div>
                             <div class="card-actions justify-end mt-4">
                                 <button class="btn btn-primary" on:click=on_update_profile>{update_profile}</button>

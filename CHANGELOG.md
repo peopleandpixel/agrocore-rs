@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.62.0] - 2026-10-31
+
+Release focused on Admin UI compatibility with Leptos 0.9.0-rc0, MapLibre GL JS integration, and build stability.
+
+### Admin UI — Leptos 0.9.0-rc0 Compatibility
+
+- **Leptos upgrade**: Admin-UI now targets `leptos = "0.9.0-rc0"`, `leptos_meta = "0.9.0-rc0"`, `leptos_router = "0.9.0-rc0"`.
+- **Native SVG icons**: Replaced `leptos_icons`/`icondata` with native `icon.rs` SVG component using `icondata_core` + `icondata_lu` + `icondata_im`.
+- **Callback API**: All `Callback::new()` replaced with `move |_|` closures throughout iot.rs, form.rs, and other components.
+- **Component signatures**: `impl Fn() + Clone + 'static` replaced with `Callback<()>` patterns where needed.
+- **MapLibre GL JS integration**: `map_picker.rs` and `maplibre_map.rs` rewritten to use `js_sys::Reflect` for MapLibre construction instead of `wasm_bindgen` extern blocks.
+- **DataList hooks**: Generic `list.rs` rewritten with hook-based design (`use_list_state`, `use_sortable_list_state`) compatible with Leptos 0.9.
+- **Temporarily disabled**: IoT devices page, MapPicker, and MapLibreView are commented out with TODO markers pending full Leptos 0.9 stabilization.
+
+### API Client Fixes
+
+- **`get_json` visibility**: Changed to `pub(crate)` for use by maplibre_map.rs.
+- **`save_company_profile_api`**: Fixed `Request::put()` chain with proper `.body()` and `.send().await` pattern.
+- **Auth token**: Fixed `get_auth_token` → `auth_token()` reference.
+
+### Documentation
+
+- **README**: Updated version badge to 0.62.0.
+- **docs/missing.md**: Updated with current status of open items.
+
 ## [0.61.0] - 2026-10-30
 
 Release focused on performance optimization, IoT functionality, and code quality improvements.

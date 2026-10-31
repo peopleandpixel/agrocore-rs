@@ -67,9 +67,20 @@ pub struct CompanyProfile {
     pub tax_id: Option<String>,
     pub office_email: Option<String>,
     pub phone: Option<String>,
+    pub mobile: Option<String>,
+    pub fax: Option<String>,
     pub address: Option<String>,
+    pub city: Option<String>,
+    pub postal_code: Option<String>,
+    pub state: Option<String>,
     pub website: Option<String>,
     pub country: Option<String>,
+    pub vat_id: Option<String>,
+    pub registration_number: Option<String>,
+    /// Latitude of the company location (selected on map)
+    pub latitude: Option<f64>,
+    /// Longitude of the company location (selected on map)
+    pub longitude: Option<f64>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -137,6 +148,49 @@ pub fn save_company_profile(profile: &CompanyProfile) {
             &serde_json::to_string(profile).unwrap_or_default(),
         );
     }
+}
+
+/// Save company profile to the backend API and update localStorage.
+pub async fn save_company_profile_api(profile: &CompanyProfile) -> Result<(), String> {
+    let url = api_url("api/v1/system/company-profile");
+    let body = serde_json::json!({
+        "name": profile.company_name,
+        "address": profile.address,
+        "city": profile.city,
+        "postal_code": profile.postal_code,
+        "state": profile.state,
+        "country": profile.country,
+        "email": profile.office_email,
+        "phone": profile.phone,
+        "mobile": profile.mobile,
+        "fax": profile.fax,
+        "website": profile.website,
+        "tax_id": profile.tax_id,
+        "vat_id": profile.vat_id,
+        "registration_number": profile.registration_number,
+        "latitude": profile.latitude,
+        "longitude": profile.longitude,
+    });
+
+    let req = Request::put(&url);
+    let req = with_auth(req);
+    let resp = req
+        .json(&body)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if !resp.ok() {
+        return Err(format!(
+            "Failed to save company profile: {}",
+            resp.status()
+        ));
+    }
+
+    // Also update localStorage
+    save_company_profile(profile);
+    Ok(())
 }
 
 pub async fn geocode_location(query: &str) -> Result<Option<OpenMeteoGeocodingLocation>, String> {
@@ -373,7 +427,7 @@ fn with_auth(req: RequestBuilder) -> RequestBuilder {
     }
 }
 
-async fn get_json<T: DeserializeOwned>(path: &str, auth: bool) -> Result<T, String> {
+pub(crate) async fn get_json<T: DeserializeOwned>(path: &str, auth: bool) -> Result<T, String> {
     let req = Request::get(&api_url(path));
     let req = if auth { with_auth(req) } else { req };
     let resp = req.send().await.map_err(|e| e.to_string())?;
@@ -2297,20 +2351,130 @@ pub async fn fetch_animal_grazing(
     get_json(&path, true).await
 }
 
-/// POST /api/v1/devices/{device_id}/command — send command to a device
-pub async fn send_device_command(
-    device_id: uuid::Uuid,
-    command: serde_json::Value,
-) -> Result<serde_json::Value, String> {
-    post_json(
-        &format!("/api/v1/iot/devices/{}/command", device_id),
-        &command,
-        true,
-    )
-    .await
+/// GET /api/v1/iot/devices — list all IoT devices
+pub async fn fetch_iot_devices() -> Result<Vec<IoTDeviceDto>, String> {
+    let resp: serde_json::Value = get_json("/api/v1/iot/devices", true).await?;
+    let empty: Vec<serde_json::Value> = vec![];
+    let devices = resp["devices"].as_array().unwrap_or(&empty);
+    devices.iter().filter_map(|d| serde_json::from_value(d.clone()).ok()).collect()
+}
+
+/// GET /api/v1/iot/devices/{id} — get single device
+pub async fn fetch_iot_device(device_id: &str) -> Result<IoTDeviceDto, String> {
+    get_json(&format!("/api/v1/iot/devices/{}", device_id), true).await
+}
+
+/// POST /api/v1/iot/devices — create a new device
+pub async fn create_iot_device(req: &CreateIoTDeviceRequest) -> Result<IoTDeviceDto, String> {
+    post_json("/api/v1/iot/devices", req, true).await
+}
+
+/// PUT /api/v1/iot/devices/{id} — update a device
+pub async fn update_iot_device(device_id: &str, req: &UpdateIoTDeviceRequest) -> Result<IoTDeviceDto, String> {
+    put_json(&format!("/api/v1/iot/devices/{}", device_id), req, true).await
+}
+
+/// DELETE /api/v1/iot/devices/{id} — delete a device
+pub async fn delete_iot_device(device_id: &str) -> Result<(), String> {
+    delete_json(&format!("/api/v1/iot/devices/{}", device_id), true).await
+}
+
+/// GET /api/v1/iot/devices/{id}/telemetry — get device telemetry
+pub async fn fetch_iot_device_telemetry(device_id: &str) -> Result<Vec<IoTMeasurementDto>, String> {
+    let resp: serde_json::Value =
+        get_json(&format!("/api/v1/iot/devices/{}/telemetry", device_id), true).await?;
+    let empty: Vec<serde_json::Value> = vec![];
+    let measurements = resp["measurements"].as_array().unwrap_or(&empty);
+    measurements.iter().filter_map(|m| serde_json::from_value(m.clone()).ok()).collect()
+}
+
+/// POST /api/v1/iot/devices/{id}/command — send command to a device
+pub async fn send_iot_device_command(
+    device_id: &str,
+    req: &IoTCommandRequest,
+) -> Result<IoTCommandResponseDto, String> {
+    post_json(&format!("/api/v1/iot/devices/{}/command", device_id), req, true).await
+}
+
+/// GET /api/v1/iot/devices/{id}/ha-discovery — Home Assistant discovery config
+pub async fn fetch_iot_ha_discovery(device_id: &str) -> Result<serde_json::Value, String> {
+    get_json(&format!("/api/v1/iot/devices/{}/ha-discovery", device_id), true).await
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct IoTDeviceDto {
+    pub device_id: String,
+    pub device_type: String,
+    pub tenant_id: uuid::Uuid,
+    pub site_id: Option<uuid::Uuid>,
+    pub capabilities: Vec<IoTCapabilityDto>,
+    pub metadata: serde_json::Value,
+    pub status: String,
+    pub firmware_version: Option<String>,
+    pub battery_level: Option<f64>,
+    pub signal_strength: Option<i32>,
+    pub error_message: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+    pub last_seen: Option<String>,
+    pub topic_prefix: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct IoTCapabilityDto {
+    #[serde(rename = "type")]
+    pub capability_type: String,
+    pub unit: Option<String>,
+    pub min_value: Option<f64>,
+    pub max_value: Option<f64>,
+    pub precision: Option<u8>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct IoTMeasurementDto {
+    pub capability: IoTCapabilityDto,
+    pub value: f64,
+    pub unit: String,
+    pub quality: Option<String>,
+    pub timestamp: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateIoTDeviceRequest {
+    pub device_id: String,
+    pub device_type: String,
+    pub site_id: Option<uuid::Uuid>,
+    pub capabilities: Vec<String>,
+    pub topic_prefix: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateIoTDeviceRequest {
+    pub device_type: Option<String>,
+    pub site_id: Option<uuid::Uuid>,
+    pub topic_prefix: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct IoTCommandRequest {
+    pub command_type: String,
+    pub payload: serde_json::Value,
+    pub timeout_seconds: Option<u64>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct IoTCommandResponseDto {
+    pub command_id: uuid::Uuid,
+    pub device_id: String,
+    pub command_type: String,
+    pub status: String,
+    pub response_payload: Option<serde_json::Value>,
+    pub requested_at: String,
+    pub completed_at: Option<String>,
 }
 
 // DTOs for the new API callers above
+
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct ParcelDto {
     pub id: uuid::Uuid,

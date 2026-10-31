@@ -251,8 +251,38 @@ export class MapLibreMap {
         this.map.flyTo({ center, zoom, ...options });
     }
 
+    // Click callback for map picker - allows selecting a location on the map
+    setClickCallback(callback) {
+        if (!this.isInitialized) return;
+        this.map.on('click', (e) => {
+            callback(e.lngLat.lat, e.lngLat.lng);
+        });
+    }
+
+    // Set a marker at the given location (for map picker)
+    setMarker(lat, lng) {
+        if (!this.isInitialized) return;
+        
+        // Remove existing marker if any
+        if (this._pickerMarker) {
+            this._pickerMarker.remove();
+        }
+
+        const maplibregl = window.maplibregl;
+        const el = document.createElement('div');
+        el.style.cssText = 'width: 20px; height: 20px; background: #ef4444; border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.3);';
+        
+        this._pickerMarker = new maplibregl.Marker(el)
+            .setLngLat([lng, lat])
+            .addTo(this.map);
+    }
+
     // Cleanup
     destroy() {
+        if (this._pickerMarker) {
+            this._pickerMarker.remove();
+            this._pickerMarker = null;
+        }
         this.workerMarkers.forEach(({ marker }) => marker.remove());
         this.taskLayers.forEach(({ layerId, sourceId }) => {
             if (this.map.getLayer(layerId)) this.map.removeLayer(layerId);

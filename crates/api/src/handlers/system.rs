@@ -2,7 +2,7 @@ use crate::AppState;
 use crate::dto::user::CreateUserDto;
 use crate::error::ApiError;
 use actix_web::{HttpResponse, web};
-use agrocore_domain::entities::tenant::CreateTenantDto;
+use agrocore_domain::entities::tenant::{CompanyProfile, CreateTenantDto, GeoCoordinates};
 use agrocore_logging::{error, info, warn};
 use agrocore_shared::SharedError;
 use serde::{Deserialize, Serialize};
@@ -197,6 +197,165 @@ pub async fn delete_tenant(
     } else {
         Err(SharedError::NotFound("Tenant not found".into()).into())
     }
+}
+
+/// DTO for updating the company profile of the current tenant.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct UpdateCompanyProfileDto {
+    pub name: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub postal_code: Option<String>,
+    pub state: Option<String>,
+    pub country: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub mobile: Option<String>,
+    pub fax: Option<String>,
+    pub website: Option<String>,
+    pub tax_id: Option<String>,
+    pub vat_id: Option<String>,
+    pub registration_number: Option<String>,
+    /// Latitude of the company location (from map picker)
+    pub latitude: Option<f64>,
+    /// Longitude of the company location (from map picker)
+    pub longitude: Option<f64>,
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/v1/system/company-profile",
+    request_body = UpdateCompanyProfileDto,
+    responses(
+        (status = 200, description = "Company profile updated", body = CompanyProfile),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Tenant not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "system"
+)]
+pub async fn update_company_profile(
+    state: web::Data<AppState>,
+    auth: crate::middleware::AuthExtractor,
+    dto: web::Json<UpdateCompanyProfileDto>,
+) -> Result<HttpResponse, ApiError> {
+    let tenant_id = auth.0.tenant_id;
+    info!("Updating company profile for tenant {}", tenant_id);
+
+    // Fetch current tenant
+    let tenant = state
+        .db
+        .tenant_repo()
+        .find_by_id(tenant_id)
+        .await?
+        .ok_or_else(|| SharedError::NotFound("Tenant not found".into()))?;
+
+    // Build updated company profile from current config + DTO overrides
+    let current_profile = tenant.config.company_profile.clone();
+    let profile = match current_profile {
+        Some(mut profile) => {
+            if let Some(name) = &dto.name {
+                profile.name = name.clone();
+            }
+            if let Some(address) = &dto.address {
+                profile.address = address.clone();
+            }
+            if let Some(city) = &dto.city {
+                profile.city = Some(city.clone());
+            }
+            if let Some(postal_code) = &dto.postal_code {
+                profile.postal_code = Some(postal_code.clone());
+            }
+            if let Some(state) = &dto.state {
+                profile.state = Some(state.clone());
+            }
+            if let Some(country) = &dto.country {
+                profile.country = country.clone();
+            }
+            if let Some(email) = &dto.email {
+                profile.email = email.clone();
+            }
+            if let Some(phone) = &dto.phone {
+                profile.phone = phone.clone();
+            }
+            if let Some(mobile) = &dto.mobile {
+                profile.mobile = Some(mobile.clone());
+            }
+            if let Some(fax) = &dto.fax {
+                profile.fax = Some(fax.clone());
+            }
+            if let Some(website) = &dto.website {
+                profile.website = Some(website.clone());
+            }
+            if let Some(tax_id) = &dto.tax_id {
+                profile.tax_id = Some(tax_id.clone());
+            }
+            if let Some(vat_id) = &dto.vat_id {
+                profile.vat_id = Some(vat_id.clone());
+            }
+            if let Some(registration_number) = &dto.registration_number {
+                profile.registration_number = Some(registration_number.clone());
+            }
+            // Update coordinates from map picker
+            if dto.latitude.is_some() || dto.longitude.is_some() {
+                profile.coordinates = Some(GeoCoordinates {
+                    lat: dto.latitude.unwrap_or(profile.coordinates.as_ref().map(|c| c.lat).unwrap_or(0.0)),
+                    lng: dto.longitude.unwrap_or(profile.coordinates.as_ref().map(|c| c.lng).unwrap_or(0.0)),
+                });
+            }
+            profile
+        }
+        None => {
+            // Create new profile if none exists
+            CompanyProfile {
+                name: dto.name.clone().unwrap_or_default(),
+                address: dto.address.clone().unwrap_or_default(),
+                city: dto.city.clone(),
+                postal_code: dto.postal_code.clone(),
+                state: dto.state.clone(),
+                country: dto.country.clone().unwrap_or_default(),
+                email: dto.email.clone().unwrap_or_default(),
+                phone: dto.phone.clone().unwrap_or_default(),
+                mobile: dto.mobile.clone(),
+                fax: dto.fax.clone(),
+                website: dto.website.clone(),
+                tax_id: dto.tax_id.clone(),
+                vat_id: dto.vat_id.clone(),
+                registration_number: dto.registration_number.clone(),
+                coordinates: if dto.latitude.is_some() && dto.longitude.is_some() {
+                    Some(GeoCoordinates {
+                        lat: dto.latitude.unwrap_or(0.0),
+                        lng: dto.longitude.unwrap_or(0.0),
+                    })
+                } else {
+                    None
+                },
+            }
+        }
+    };
+
+    // Update tenant config with new company profile
+    let mut config = tenant.config.clone();
+    config.company_profile = Some(profile.clone());
+
+    // Persist via SQL (RLS-aware)
+    sqlx::query(
+        "UPDATE tenants SET config = jsonb_set(config, '{company_profile}', $1) WHERE id = $2"
+    )
+    .bind(serde_json::to_value(&profile).map_err(|e| {
+        error!("Failed to serialize company profile: {}", e);
+        SharedError::Internal("Failed to serialize company profile".to_string())
+    })?)
+    .bind(tenant_id)
+    .execute(&*state.db.pool())
+    .await
+    .map_err(|e| {
+        error!("Failed to update company profile: {}", e);
+        agrocore_infrastructure::PostgresDb::map_db_error(e)
+    })?;
+
+    info!("Company profile updated successfully for tenant {}", tenant_id);
+    Ok(HttpResponse::Ok().json(profile))
 }
 
 #[cfg(test)]

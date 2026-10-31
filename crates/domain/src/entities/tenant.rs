@@ -46,7 +46,34 @@ pub struct CompanyProfile {
     pub email: String,
     #[validate(length(min = 5, max = 30))]
     pub phone: String,
-    // Filled by reverse geocoding after validation
+    /// Mobile phone number
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mobile: Option<String>,
+    /// Fax number
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fax: Option<String>,
+    /// Company website URL
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub website: Option<String>,
+    /// Tax ID / NIF (Portugal), CIF (Spain), VAT ID, etc.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tax_id: Option<String>,
+    /// VAT identification number (EU format)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub vat_id: Option<String>,
+    /// Commercial registry / registration number
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub registration_number: Option<String>,
+    /// City
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
+    /// Postal code / ZIP
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub postal_code: Option<String>,
+    /// State / Province
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+    // Filled by reverse geocoding after validation or map picker
     #[serde(skip_serializing_if = "Option::is_none")]
     pub coordinates: Option<GeoCoordinates>,
 }

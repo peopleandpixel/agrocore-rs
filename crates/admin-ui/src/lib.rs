@@ -21,6 +21,7 @@ use crate::components::groups::GroupManagement;
 use crate::components::harvest::HarvestManagement;
 use crate::components::import::DataImport;
 use crate::components::inventory::InventoryManagement;
+// use crate::components::iot::IotDevicesPage; // TODO: fix Leptos 0.9
 use crate::components::livestock::LivestockManagement;
 use crate::components::login::LoginView;
 use crate::components::map::MapView;
@@ -45,7 +46,7 @@ use icondata_lu as I;
 use icondata_im::ImMagicWand;
 use I::{
     LuBeef, LuBox, LuBriefcase, LuCalculator, LuChartBar, LuChartNoAxesColumn,
-    LuCircleUser, LuClipboardList, LuCloudSun, LuDatabase, LuFileDown, LuHistory,
+    LuCircleUser, LuClipboardList, LuCloudSun, LuCpu, LuDatabase, LuFileDown, LuHistory,
     LuLayoutDashboard, LuLogOut, LuMap, LuMapPin, LuMenu, LuSettings, LuSquareCheck, LuSun,
     LuTractor, LuUsers, LuWallet,
 };
@@ -234,6 +235,7 @@ fn AuthenticatedShell(
                             <Route path=path!("/equipment") view=|| view! { <EquipmentManagement /> } />
                             <Route path=path!("/equipment/:id") view=|| view! { <EquipmentDetailPage /> } />
                             <Route path=path!("/inventory") view=|| view! { <InventoryManagement /> } />
+                            // <Route path=path!("/iot") view=|| view! { <IotDevicesPage /> } /> // TODO
                             <Route path=path!("/calculators") view=|| view! { <CalculatorsPage />} />
                             <Route path=path!("/water") view=|| view! { <WaterManagement /> } />
                             <Route path=path!("/harvest") view=|| view! { <HarvestManagement /> } />
@@ -317,6 +319,9 @@ fn AuthenticatedShell(
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
                         <a href="/inventory"><Icon icon=&LuBox width="20" height="20" />{crate::t!(t, "nav_inventory")}</a>
+                    </li>
+                    <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
+                        <a href="/iot"><Icon icon=&LuCpu width="20" height="20" />"IoT Devices"</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin) { "" } else { "hidden" }>
                         <a href="/audit"><Icon icon=&LuHistory width="20" height="20" />{crate::t!(t, "nav_audit")}</a>

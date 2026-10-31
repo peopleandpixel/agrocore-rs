@@ -1618,6 +1618,94 @@ company_phone:
   ro: Telefonul companiei
   uk: Службовий телефон
   nl: Bedrijfstelefoon
+company_location_map:
+  en: Select company location on map
+  de: Firmenstandort auf der Karte auswählen
+  es: Seleccionar ubicación de la empresa en el mapa
+  fr: Sélectionner l'emplacement de l'entreprise sur la carte
+  pt: Selecionar localização da empresa no mapa
+  it: Seleziona posizione dell'azienda sulla mappa
+  pl: Wybierz lokalizację firmy na mapie
+  ro: Selectați locația companiei pe hartă
+  uk: Виберіть розташування компанії на карті
+  nl: Bedrijfslocatie op de kaart selecteren
+mobile_phone:
+  en: Mobile phone
+  de: Mobiltelefon
+  es: Teléfono móvil
+  fr: Téléphone portable
+  pt: Telemóvel
+  it: Telefono cellulare
+  pl: Telefon komórkowy
+  ro: Telefon mobil
+  uk: Мобільний телефон
+  nl: Mobiele telefoon
+fax:
+  en: Fax
+  de: Fax
+  es: Fax
+  fr: Fax
+  pt: Fax
+  it: Fax
+  pl: Faks
+  ro: Fax
+  uk: Факс
+  nl: Fax
+city:
+  en: City
+  de: Stadt
+  es: Ciudad
+  fr: Ville
+  pt: Cidade
+  it: Città
+  pl: Miasto
+  ro: Oraș
+  uk: Місто
+  nl: Stad
+postal_code:
+  en: Postal code
+  de: Postleitzahl
+  es: Código postal
+  fr: Code postal
+  pt: Código postal
+  it: CAP
+  pl: Kod pocztowy
+  ro: Cod poștal
+  uk: Поштовий індекс
+  nl: Postcode
+state_province:
+  en: State / Province
+  de: Bundesland / Provinz
+  es: Estado / Provincia
+  fr: État / Province
+  pt: Estado / Província
+  it: Stato / Provincia
+  pl: Województwo / Prowincja
+  ro: Județ / Provincie
+  uk: Область / Провінція
+  nl: Staat / Provincie
+vat_id:
+  en: VAT ID
+  de: USt-IdNr.
+  es: ID de IVA
+  fr: N° TVA
+  pt: NIF / IVA
+  it: Partita IVA
+  pl: NIP
+  ro: Cod TVA
+  uk: ІДН ПДВ
+  nl: BTW-nummer
+registration_number:
+  en: Registration number
+  de: Registernummer
+  es: Número de registro
+  fr: Numéro d'enregistrement
+  pt: Número de registo
+  it: Numero di registrazione
+  pl: Numer rejestracyjny
+  ro: Număr de înregistrare
+  uk: Реєстраційний номер
+  nl: Registratienummer
 setup_resources_title:
   en: Initial Resources
   de: Erste Ressourcen
