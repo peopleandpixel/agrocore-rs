@@ -18,14 +18,14 @@ pub mod groups;
 pub mod harvest;
 pub mod import;
 pub mod inventory;
-// pub mod iot; // TODO: fix Leptos 0.9 compatibility
+pub mod iot;
 pub mod list;
 pub mod loading;
 pub mod livestock;
 pub mod login;
 pub mod map;
-// pub mod map_picker; // TODO: fix Leptos 0.9 compatibility
-// pub mod maplibre_map; // TODO: fix Leptos 0.9 compatibility
+pub mod map_picker;
+pub mod maplibre_map;
 pub mod orders;
 pub mod plot_subentity;
 pub mod resources;

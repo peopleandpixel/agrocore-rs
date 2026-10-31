@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.63.0] - 2026-10-31
+
+Release focused on reactivating IoT Devices, MapPicker, and MapLibreView components for Leptos 0.9.0-rc0 compatibility.
+
+### Admin UI — IoT, MapPicker, MapLibreView Reactivated
+
+- **IoT Devices page** (`/iot`): Fully functional with device grid, create modal, detail modal with telemetry and command sending. `For` component adapted to Leptos 0.9 `children` prop pattern.
+- **MapPicker component**: Company location selection via MapLibre GL JS click interaction. Uses `js_sys::Reflect` for MapLibre construction (no `wasm_bindgen` extern blocks). Integrated in Settings (Company Profile) and Setup Wizard.
+- **MapLibreView component** (`/map`): Real-time worker locations, task layers, and site overlays via JS wrapper methods. All `wasm_bindgen` extern blocks replaced with `js_sys::Reflect::get` + `dyn_into::<js_sys::Function>()`.
+- **Arc<RefCell> for map instances**: Replaced `Rc<RefCell>` with `Arc<RefCell>` for thread safety in Leptos 0.9.
+- **Cleanup**: Removed `on_cleanup` from map components (MapLibre cleans up on DOM unmount).
+
+### Build
+
+- **cargo check --workspace**: 0 errors, 23 warnings.
+- **Quality gates**: error_disclosure 8/8, payload_limit 5/5.
+
 ## [0.62.0] - 2026-10-31
 
 Release focused on Admin UI compatibility with Leptos 0.9.0-rc0, MapLibre GL JS integration, and build stability.

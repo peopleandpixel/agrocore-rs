@@ -21,7 +21,7 @@ use crate::components::groups::GroupManagement;
 use crate::components::harvest::HarvestManagement;
 use crate::components::import::DataImport;
 use crate::components::inventory::InventoryManagement;
-// use crate::components::iot::IotDevicesPage; // TODO: fix Leptos 0.9
+use crate::components::iot::IotDevicesPage;
 use crate::components::livestock::LivestockManagement;
 use crate::components::login::LoginView;
 use crate::components::map::MapView;
@@ -235,7 +235,7 @@ fn AuthenticatedShell(
                             <Route path=path!("/equipment") view=|| view! { <EquipmentManagement /> } />
                             <Route path=path!("/equipment/:id") view=|| view! { <EquipmentDetailPage /> } />
                             <Route path=path!("/inventory") view=|| view! { <InventoryManagement /> } />
-                            // <Route path=path!("/iot") view=|| view! { <IotDevicesPage /> } /> // TODO
+                            <Route path=path!("/iot") view=|| view! { <IotDevicesPage /> } />
                             <Route path=path!("/calculators") view=|| view! { <CalculatorsPage />} />
                             <Route path=path!("/water") view=|| view! { <WaterManagement /> } />
                             <Route path=path!("/harvest") view=|| view! { <HarvestManagement /> } />

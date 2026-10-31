@@ -41,7 +41,7 @@ pub fn MapLibreView(
 ) -> impl IntoView {
     let t = crate::i18n::use_i18n();
     let map_ref = NodeRef::<leptos::html::Div>::new();
-    let map_instance = std::rc::Rc::new(std::cell::RefCell::new(None::<JsValue>));
+    let map_instance = std::sync::Arc::new(std::cell::RefCell::new(None::<JsValue>));
 
     // State for reactive data
     let (worker_locations, set_worker_locations) = signal(Vec::<WorkerLocation>::new());
@@ -53,6 +53,8 @@ pub fn MapLibreView(
     let show_sites = show_sites.unwrap_or(true);
 
     // Initialize map via JS
+    let init_center = initial_center.map(|c| vec![c.lng, c.lat]).unwrap_or(vec![-9.1393, 38.7223]);
+    let init_zoom = initial_zoom.unwrap_or(13.0);
     Effect::new({
         let map_ref = map_ref.clone();
         let map_instance = map_instance.clone();
@@ -66,18 +68,20 @@ pub fn MapLibreView(
                     Some(m) => m,
                     None => return,
                 };
-                let constructor = match js_sys::Reflect::get(&maplibregl, &"Map".into()) {
-                    Ok(c) => c,
-                    Err(_) => return,
+                let constructor = match js_sys::Reflect::get(&maplibregl, &"Map".into())
+                    .ok()
+                    .and_then(|v| v.dyn_into::<js_sys::Function>().ok())
+                {
+                    Some(c) => c,
+                    None => return,
                 };
 
                 let map_options = js_sys::Object::new();
                 js_sys::Reflect::set(&map_options, &"container".into(), &"map-container".into()).ok();
                 js_sys::Reflect::set(&map_options, &"style".into(), &"https://demotiles.maplibre.org/style.json".into()).ok();
-                let center = initial_center.map(|c| vec![c.lng, c.lat]).unwrap_or(vec![-9.1393, 38.7223]);
-                let center_arr = js_sys::Array::of2(&JsValue::from_f64(center[0]), &JsValue::from_f64(center[1]));
+                let center_arr = js_sys::Array::of2(&JsValue::from_f64(init_center[0]), &JsValue::from_f64(init_center[1]));
                 js_sys::Reflect::set(&map_options, &"center".into(), &center_arr).ok();
-                js_sys::Reflect::set(&map_options, &"zoom".into(), &JsValue::from_f64(initial_zoom.unwrap_or(13.0))).ok();
+                js_sys::Reflect::set(&map_options, &"zoom".into(), &JsValue::from_f64(init_zoom)).ok();
 
                 let map = match js_sys::Reflect::construct(&constructor, &js_sys::Array::of1(&map_options)) {
                     Ok(m) => m,
@@ -200,20 +204,6 @@ pub fn MapLibreView(
         }
     });
 
-    // Cleanup on unmount
-    on_cleanup({
-        let map_instance = map_instance.clone();
-        move || {
-            if let Some(map) = map_instance.borrow_mut().take() {
-                if let Some(destroy_fn) = js_sys::Reflect::get(&map, &"remove".into())
-                    .ok()
-                    .and_then(|v| v.dyn_into::<js_sys::Function>().ok())
-                {
-                    let _ = destroy_fn.call0(&map);
-                }
-            }
-        }
-    });
 
     view! {
         <div class="flex flex-col gap-4 h-full">

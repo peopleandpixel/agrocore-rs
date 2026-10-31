@@ -20,7 +20,7 @@ pub fn MapPicker(
     #[prop(optional)] label: Option<String>,
 ) -> impl IntoView {
     let map_ref = NodeRef::<leptos::html::Div>::new();
-    let map_instance = std::rc::Rc::new(std::cell::RefCell::new(None::<JsValue>));
+    let map_instance = std::sync::Arc::new(std::cell::RefCell::new(None::<JsValue>));
     let (loading, set_loading) = signal(true);
 
     // Initialize map
@@ -45,8 +45,14 @@ pub fn MapPicker(
                 // Create map via JS: new maplibregl.Map({container, style, center, zoom})
                 let window = web_sys::window().unwrap();
                 let maplibregl = window.get("maplibregl").unwrap();
-                let constructor = js_sys::Reflect::get(&maplibregl, &"Map".into()).unwrap();
-                
+                let constructor = match js_sys::Reflect::get(&maplibregl, &"Map".into())
+                    .ok()
+                    .and_then(|v| v.dyn_into::<js_sys::Function>().ok())
+                {
+                    Some(c) => c,
+                    None => return,
+                };
+
                 let map_options = js_sys::Object::new();
                 js_sys::Reflect::set(&map_options, &"container".into(), &"map-picker-container".into()).ok();
                 js_sys::Reflect::set(&map_options, &"style".into(), &"https://demotiles.maplibre.org/style.json".into()).ok();
@@ -70,7 +76,6 @@ pub fn MapPicker(
                     .and_then(|v| v.dyn_into::<js_sys::Function>().ok())
                 {
                     let inner_cb = Closure::wrap(Box::new(move |e: JsValue| {
-                        // e is a MapLibre MouseEvent with lngLat property
                         if let Some(lng_lat) = js_sys::Reflect::get(&e, &"lngLat".into()).ok() {
                             if let Some(lat_lng) = js_sys::Reflect::get(&lng_lat, &"lat".into()).ok()
                                 .and_then(|v| v.as_f64())
@@ -83,9 +88,9 @@ pub fn MapPicker(
                             }
                         }
                     }) as Box<dyn FnMut(JsValue)>);
-                    inner_cb.forget(); // Keep alive
 
                     let _ = add_listener.call2(&map_clone, &"click".into(), inner_cb.as_ref().as_ref());
+                    inner_cb.forget(); // Keep alive
                 }
 
                 let map_instance2 = map_instance.clone();
@@ -103,25 +108,18 @@ pub fn MapPicker(
         move |_| {
             if let Some((lat, lng)) = selected_location {
                 if let Some(map) = map_instance.borrow().as_ref() {
-                    // Set marker via JS
-                    let marker = js_sys::Reflect::get(map, &"setMarker".into()).ok();
-                    if let Some(set_marker_fn) = marker.and_then(|f| f.dyn_ref::<js_sys::Function>()) {
-                        set_marker_fn.call3(map, &JsValue::NULL, &JsValue::from(lat), &JsValue::from(lng)).ok();
+                    // Set marker via JS wrapper
+                    if let Some(set_marker) = js_sys::Reflect::get(map, &"setMarker".into())
+                        .ok()
+                        .and_then(|v| v.dyn_into::<js_sys::Function>().ok())
+                    {
+                        let _ = set_marker.call3(map, &JsValue::NULL, &JsValue::from_f64(lat), &JsValue::from_f64(lng));
                     }
                 }
             }
         }
     });
 
-    // Cleanup on unmount
-    on_cleanup({
-        let map_instance = map_instance.clone();
-        move || {
-            if let Some(map) = map_instance.borrow_mut().take() {
-                let _ = js_sys::Reflect::get(&map, &"remove".into());
-            }
-        }
-    });
 
     view! {
         <div class="space-y-2">

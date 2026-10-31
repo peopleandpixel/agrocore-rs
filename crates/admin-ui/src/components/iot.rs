@@ -73,11 +73,15 @@ fn IotDeviceGrid(
                     </div>
                 }.into_any()
             } else {
-                let devs_for = devs.clone();
+                let set_sel = set_selected_device.clone();
+                let set_det = set_show_detail.clone();
+                let children = move |device: api::IoTDeviceDto| {
+                    let sel = set_sel.clone();
+                    let det = set_det.clone();
+                    render_device_card(device, sel, det)
+                };
                 view! {
-                    <For each=move || devs_for.clone() key=|d| d.device_id.clone()>
-                        {move |device: api::IoTDeviceDto| render_device_card(device, set_selected_device.clone(), set_show_detail.clone())}
-                    </For>
+                    <For each=move || devs.clone() key=|d| d.device_id.clone() children=children />
                 }.into_any()
             }
         }}
@@ -89,6 +93,7 @@ fn render_device_card(
     set_selected_device: WriteSignal<Option<api::IoTDeviceDto>>,
     set_show_detail: WriteSignal<bool>,
 ) -> impl IntoView {
+    let device_id_for_delete = device.device_id.clone();
     let status_badge = match device.status.as_str() {
         "Online" => "badge-success",
         "Offline" => "badge-ghost",
@@ -105,7 +110,7 @@ fn render_device_card(
                         <h3 class="card-title text-lg">{device.device_id.clone()}</h3>
                         <p class="text-sm opacity-70">{device.device_type.clone()}</p>
                     </div>
-                    <div class=move || format!("badge {}", status_badge)>{device.status.clone()}</div>
+                    <span class=move || format!("badge {}", status_badge)>{device.status.clone()}</span>
                 </div>
 
                 <div class="flex flex-wrap gap-2 mt-2">
@@ -141,7 +146,7 @@ fn render_device_card(
                     <button
                         class="btn btn-sm btn-ghost text-error"
                         on:click=move |_| {
-                            let device_id = device_id_str.clone();
+                            let device_id = device_id_for_delete.clone();
                             spawn_local(async move {
                                 if let Err(e) = api::delete_iot_device(&device_id).await {
                                     eprintln!("Failed to delete device: {}", e);
@@ -249,14 +254,15 @@ fn DeviceDetailModal(device: api::IoTDeviceDto, on_close: impl Fn() + Clone + 's
     let device_id_str = device.device_id.clone();
     let device_type_str = device.device_type.clone();
     let device_status = device.status.clone();
-    let firmware = device.firmware_version.clone();
+    let firmware = device.firmware_version.clone().unwrap_or_else(|| "—".to_string());
     let battery = device.battery_level;
     let signal_strength = device.signal_strength;
-    let topic = device.topic_prefix.clone();
-    let last_seen = device.last_seen.clone();
+    let topic = device.topic_prefix.clone().unwrap_or_else(|| "—".to_string());
+    let last_seen = device.last_seen.clone().unwrap_or_else(|| "—".to_string());
 
+    let device_id_for_telemetry = device_id_str.clone();
     let measurements = LocalResource::new(move || {
-        let device_id = device_id_str.clone();
+        let device_id = device_id_for_telemetry.clone();
         async move { api::fetch_iot_device_telemetry(&device_id).await.ok() }
     });
 
@@ -379,11 +385,11 @@ fn DeviceDetailModal(device: api::IoTDeviceDto, on_close: impl Fn() + Clone + 's
                 <h3 class="font-bold">"Device Info"</h3>
                 <div class="grid grid-cols-2 gap-2 text-sm">
                     <div><span class="opacity-60">"Status: "</span> {device_status}</div>
-                    <div><span class="opacity-60">"Firmware: "</span> {firmware.as_deref().unwrap_or("—")}</div>
+                    <div><span class="opacity-60">"Firmware: "</span> {firmware}</div>
                     <div><span class="opacity-60">"Battery: "</span> {battery.map(|b| format!("{:.0}%", b)).unwrap_or_else(|| "—".to_string())}</div>
                     <div><span class="opacity-60">"Signal: "</span> {move || signal_strength.map(|s| format!("{} dBm", s)).unwrap_or_else(|| "—".to_string())}</div>
-                    <div><span class="opacity-60">"Topic: "</span> {topic.as_deref().unwrap_or("—")}</div>
-                    <div><span class="opacity-60">"Last seen: "</span> {last_seen.as_deref().unwrap_or("—")}</div>
+                    <div><span class="opacity-60">"Topic: "</span> {topic}</div>
+                    <div><span class="opacity-60">"Last seen: "</span> {last_seen}</div>
                 </div>
             </div>
         </div>

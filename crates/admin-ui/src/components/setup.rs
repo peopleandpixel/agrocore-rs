@@ -2,7 +2,7 @@ use crate::api;
 use crate::components::form::{
     PHONE_PREFIXES, RequiredLabel, country_flag, is_valid_email, language_flag, normalize_phone,
 };
-// use crate::components::map_picker::MapPicker; // TODO: fix Leptos 0.9
+use crate::components::map_picker::MapPicker;
 use crate::components::toast::{ToastContext, ToastType};
 use crate::i18n::LANGUAGE_OPTIONS;
 use crate::i18n::{I18n, Language};
@@ -573,10 +573,29 @@ pub fn SetupAssistant() -> impl IntoView {
                                         </div>
                                     </div>
 
-                                    // MapPicker disabled - TODO: fix Leptos 0.9 compatibility
-                                    <div class="alert alert-info">
-                                        <span>"Map picker temporarily unavailable"</span>
-                                    </div>
+                                    {move || {
+                                        let (loc_signal, set_loc_signal) = signal((38.7223, -9.1393));
+                                        view! {
+                                            <MapPicker
+                                                on_location_selected=set_loc_signal
+                                            />
+                                            <Show when=move || {
+                                                let l = loc_signal.get();
+                                                l.0 != 38.7223 || l.1 != -9.1393
+                                            }>
+                                                {move || {
+                                                    let l = loc_signal.get();
+                                                    set_company_latitude.set(Some(l.0));
+                                                    set_company_longitude.set(Some(l.1));
+                                                    view! {
+                                                        <div class="text-xs text-success mt-1">
+                                                            "Standort gespeichert: " {format!("{:.6}, {:.6}", l.0, l.1)}
+                                                        </div>
+                                                    }
+                                                }}
+                                            </Show>
+                                        }
+                                    }}
 
                                     <div class="grid gap-4 md:grid-cols-2">
                                         <div class="form-control w-full">

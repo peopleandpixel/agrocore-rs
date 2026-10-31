@@ -3,7 +3,7 @@ use crate::components::form::{
     PHONE_PREFIXES, RequiredLabel, country_flag, is_valid_email, language_flag, normalize_phone,
     split_phone,
 };
-// use crate::components::map_picker::MapPicker; // TODO: fix Leptos 0.9
+use crate::components::map_picker::MapPicker;
 use crate::i18n::{I18n, LANGUAGE_OPTIONS, Language};
 use agrocore_shared::lpis::LpisCountry;
 use icondata_lu::*;
@@ -329,13 +329,33 @@ pub fn SettingsPage() -> impl IntoView {
                                     } else {
                                         None
                                     };
-                                    let selected = center;
+                                    let selected = center.unwrap_or((38.7223, -9.1393));
                                     let label = company_location_map_label.clone();
-                                    // MapPicker disabled - TODO: fix Leptos 0.9 compatibility
+                                    let set_lat = set_latitude.clone();
+                                    let set_lng = set_longitude.clone();
+                                    let (loc_signal, set_loc_signal) = signal(selected);
                                     view! {
-                                        <div class="alert alert-info">
-                                            <span>"Map picker temporarily unavailable"</span>
-                                        </div>
+                                        <label class="label"><span class="label-text">{label}</span></label>
+                                        <MapPicker
+                                            initial_center=selected
+                                            on_location_selected=set_loc_signal
+                                            selected_location=selected
+                                        />
+                                        <Show when=move || {
+                                            let l = loc_signal.get();
+                                            (l.0 != selected.0 || l.1 != selected.1)
+                                        }>
+                                            {move || {
+                                                let l = loc_signal.get();
+                                                set_lat.set(Some(l.0));
+                                                set_lng.set(Some(l.1));
+                                                view! {
+                                                    <div class="text-xs text-success mt-1">
+                                                        "Standort gespeichert: " {format!("{:.6}, {:.6}", l.0, l.1)}
+                                                    </div>
+                                                }
+                                            }}
+                                        </Show>
                                     }
                                 }}
                             </div>
