@@ -38,6 +38,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.65.0] — 2026-11-01
+
+### Bug Fixes
+
+- **Health endpoint without AppState** — `health()` handler no longer requires `AppState` injection; `startup_time` is stored in a `OnceLock<Instant>`, and `demo_mode`/`demo_readonly` are read from environment variables. This fixes the integration test that builds the app without a database connection.
+- **`/api/v1/settings/lpis/providers` route registered** — The `list_lpis_providers` handler existed but was never wired to a route. Added `web::resource("/lpis/providers")` to `configure_groups` in `settings_groups.rs`.
+- **Test assertions updated** — `test_health_endpoint` and `test_app_health_endpoint` now parse the JSON response and assert `status == "ok"` instead of comparing the full body, so they are resilient to new fields.
+
+### Documentation
+
+- **tasks.md updated** — Marked J9 (fetch_weather), J10 (list_lpis_providers), P0 Notification Channels, and P0 Backup Service as completed with dates and implementation details.
+
 ## [Unreleased]
 
 ## [0.63.0] - 2026-10-31

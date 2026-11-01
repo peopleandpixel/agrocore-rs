@@ -22,7 +22,8 @@ async fn test_app_health_endpoint() {
 
     assert_eq!(resp.status(), StatusCode::OK);
     let body = test::read_body(resp).await;
-    assert_eq!(body.as_ref(), br#"{"status":"ok"}"#);
+    let json: serde_json::Value = serde_json::from_slice(&body).expect("valid JSON");
+    assert_eq!(json["status"], "ok");
 }
 
 /// Test that metrics endpoint is accessible

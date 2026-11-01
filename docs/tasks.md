@@ -248,8 +248,8 @@ they have gone unnoticed so far.
 
 - [x] **J7 — `delete_backup` deletes nothing but returns success** — `handlers/backup.rs:239-267`. The function only checks `get_job_status` and answers 200 with "deleted", without removing an object from storage. Together with F2 and H3 one of three places where the backup API pretends success.
 - [x] **J8 — `get_device_telemetry` always returns empty, `send_command` lies about the status** — done (2026-10-31): Migration 0046 creates `iot_telemetry` and `iot_commands` tables with indexes and RLS. `get_device_telemetry` queries real measurements with `?limit=` and `?since=` filters. `send_command` persists the command and publishes via NATS (`NATS_SUBJECT_COMMANDS_BRIDGE`) — the MQTT bridge forwards to devices. New endpoint `POST /iot/telemetry` for device telemetry ingestion with NATS publish (`NATS_SUBJECT_TELEMETRY`).
-- [ ] **J9 — `fetch_weather` returns hardcoded values** — `handlers/calculation.rs:514-524` returns `temperature_c: Some(20.5)`, `humidity: 65.0`, `pressure: 1013.25`. The parsed provider is discarded in `_service_type` (`:508-512`). The three real providers already exist in `crates/weather-service/src/providers/`. Hook up to `agrocore_weather::WeatherAggregator` or remove the handler.
-- [x] **J10 — `list_lpis_providers` invents base URLs** — `handlers/settings.rs:236-246` returns `https://{country}.example.com/wfs` instead of the real `ProviderConfig::default()` values. Placeholder domains that look like configuration.
+- [x] **J9 — `fetch_weather` returns hardcoded values** — done (2026-10-31): `handlers/calculation.rs` now dispatches to real providers (OpenMeteo, OpenWeather, WeatherUnderground) based on the `provider` parameter. No more hardcoded 20.5°C / 65% / 1013.25 hPa.
+- [x] **J10 — `list_lpis_providers` invents base URLs** — done (2026-10-31): Reads real `ProviderConfig` values from the database settings instead of placeholder `example.com` domains.
 
 #### J-D Dead code and features that cannot be enabled (P1)
 
@@ -285,24 +285,24 @@ they have gone unnoticed so far.
 
 ### Complete the notification channels
 
-From phase 8 section 3. The dispatcher is productive, but the channel list is incomplete.
+From phase 8 section 3. Done (2026-11-01, v0.64.0).
 
-- [ ] Push channels: Firebase (FCM), APNs, WebPush (`crates/messaging/src/notification/channel.rs`)
-- [ ] Inbound webhooks for receiving (WhatsApp, Telegram, email reply)
-- [ ] Additional email and SMS providers: Postmark, Vonage, Plivo, Sms77
-- [ ] Tenant user preferences (which channel for whom, quiet hours, escalation)
+- [x] Push channels: Firebase (FCM), APNs, WebPush — implemented in `crates/messaging/src/notification/channel.rs` with config types and channel factory
+- [x] Inbound webhooks for receiving (WhatsApp, Telegram, email reply) — implemented in `crates/messaging/src/inbound_webhook.rs` with unified `InboundMessage` type
+- [x] Additional email and SMS providers: Postmark, Vonage, Plivo, Sms77 — implemented in `crates/messaging/src/notification/channel.rs`
+- [x] Tenant user preferences (which channel for whom, quiet hours, escalation) — implemented in `crates/messaging/src/notification/preferences.rs` with per-user channel enable/disable, quiet hours, escalation rules, severity filtering, digest mode
 
 ### Finish the backup service
 
-From phase 8 section 4. Affects `crates/backup-service/`.
+From phase 8 section 4. Done (2026-11-01, v0.64.0).
 
-- [ ] SFTP host key pinning against a `known_hosts` file — `check_server_key` currently accepts any key (`sftp_backend.rs`), that is an open MITM risk
-- [ ] Make cloud downloads memory-efficient — `object_store` 0.11 provides no async byte stream, `GetResult::bytes()` loads the object completely. Affects S3, Azure and GCS; Local, SFTP and WebDAV already stream
-- [ ] Integration tests against real cloud instances (S3/MinIO, Azure Blob, GCS) in CI
-- [ ] Integration tests against real SFTP and WebDAV servers
-- [ ] Secure the NATS progress events (0–100 %) with integration tests
-- [ ] Age and KMS encryption — currently only AES-256-GCM (`encryption.rs`)
-- [ ] Disaster recovery runbook: RTO < 15 min for a 50 GB database, single tenant
+- [x] SFTP host key pinning against a `known_hosts` file — `check_server_key` now compares server public key against configured fingerprint or known_hosts file (`sftp_backend.rs`)
+- [x] Make cloud downloads memory-efficient — S3, Azure, GCS now stream via `into_stream()` instead of `bytes()` (`storage.rs`)
+- [ ] Integration tests against real cloud instances (S3/MinIO, Azure Blob, GCS) in CI — deferred
+- [ ] Integration tests against real SFTP and WebDAV servers — deferred
+- [ ] Secure the NATS progress events (0–100 %) with integration tests — deferred
+- [x] Age and KMS encryption — Age (x25519 recipients) and KMS (AWS, Azure, GCP envelope encryption) implemented (`encryption.rs`)
+- [x] Disaster recovery runbook: RTO < 15 min for a 50 GB database — `docs/DISASTER_RECOVERY.md` created
 
 ---
 

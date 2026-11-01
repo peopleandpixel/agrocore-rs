@@ -308,13 +308,39 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     );
 }
 
-async fn health(state: web::Data<crate::AppState>) -> impl actix_web::Responder {
-    let uptime = state.startup_time.elapsed().as_secs();
+/// Global startup instant for the health endpoint.
+///
+/// Kept outside `AppState` so the health endpoint works even when the
+/// application is built without a database connection (integration tests).
+use std::sync::OnceLock;
+use std::time::Instant;
+
+fn startup_instant() -> Instant {
+    static STARTUP: OnceLock<Instant> = OnceLock::new();
+    *STARTUP.get_or_init(Instant::now)
+}
+
+fn is_demo_mode() -> bool {
+    matches!(
+        std::env::var("DEMO_MODE").ok().as_deref(),
+        Some("1" | "true" | "yes")
+    )
+}
+
+fn demo_readonly() -> bool {
+    matches!(
+        std::env::var("DEMO_READONLY").ok().as_deref(),
+        Some("1" | "true" | "yes")
+    )
+}
+
+async fn health() -> impl actix_web::Responder {
+    let uptime = startup_instant().elapsed().as_secs();
     actix_web::HttpResponse::Ok().json(serde_json::json!({
         "status": "ok",
         "version": env!("CARGO_PKG_VERSION"),
-        "demo_mode": state.is_demo_mode,
-        "demo_readonly": state.demo_readonly,
+        "demo_mode": is_demo_mode(),
+        "demo_readonly": demo_readonly(),
         "uptime_seconds": uptime,
     }))
 }
