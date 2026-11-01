@@ -321,7 +321,7 @@ fn AuthenticatedShell(
                         <a href="/inventory"><Icon icon=&LuBox width="20" height="20" />{crate::t!(t, "nav_inventory")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
-                        <a href="/iot"><Icon icon=&LuCpu width="20" height="20" />"IoT Devices"</a>
+                        <a href="/iot"><Icon icon=&LuCpu width="20" height="20" />{crate::t!(t, "nav_iot_devices")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin) { "" } else { "hidden" }>
                         <a href="/audit"><Icon icon=&LuHistory width="20" height="20" />{crate::t!(t, "nav_audit")}</a>
@@ -330,7 +330,7 @@ fn AuthenticatedShell(
                         <a href="/compliance"><Icon icon=&LuChartNoAxesColumn width="20" height="20" />{crate::t!(t, "nav_compliance")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && user_role.get() == UserRole::Admin { "" } else { "hidden" }>
-                        <a href="/backups"><Icon icon=&LuDatabase width="20" height="20" />"Backups"</a>
+                        <a href="/backups"><Icon icon=&LuDatabase width="20" height="20" />{crate::t!(t, "backups_title")}</a>
                     </li>
                     <li><a href="/settings"><Icon icon=&LuSettings width="20" height="20" />{crate::t!(t, "nav_settings")}</a></li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>

@@ -745,6 +745,9 @@ pub async fn create_worker_task_status(
     path: web::Path<Uuid>,
     dto: web::Json<crate::dto::CreateWorkerTaskStatusDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let task_id = *path;
     let tenant_id = agrocore_domain::TenantId(auth.0.tenant_id);
 
@@ -786,6 +789,9 @@ pub async fn update_worker_task_status(
     path: web::Path<(Uuid, Uuid)>,
     dto: web::Json<crate::dto::UpdateWorkerTaskStatusDto>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let (task_id, worker_id) = path.into_inner();
     let tenant_id = agrocore_domain::TenantId(auth.0.tenant_id);
 
@@ -875,6 +881,9 @@ pub async fn create_clock_entry(
     auth: AuthUser,
     dto: web::Json<crate::dto::CreateClockEntryRequest>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let dto = dto.into_inner();
     let timestamp = dto
         .timestamp
@@ -925,6 +934,9 @@ pub async fn update_clock_entry(
     id: web::Path<Uuid>,
     dto: web::Json<crate::dto::UpdateClockEntryRequest>,
 ) -> Result<HttpResponse, ApiError> {
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let domain_dto = UpdateClockEntryDto {
         lat: dto.lat,
         lng: dto.lng,

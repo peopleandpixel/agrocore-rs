@@ -151,6 +151,9 @@ pub async fn update_customer(
     dto: web::Json<UpdateCustomerDto>,
 ) -> Result<HttpResponse, ApiError> {
     auth.require_manager()?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let customer_id = *path;
     let customer = state
         .db

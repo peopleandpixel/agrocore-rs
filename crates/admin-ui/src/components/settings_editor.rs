@@ -11,6 +11,7 @@ use leptos::task::spawn_local;
 
 use crate::api::SettingDto;
 use crate::components::toast::{ToastContext, ToastType};
+use crate::i18n::use_i18n;
 
 fn toast_ok(msg: String) {
     use_context::<ToastContext>()
@@ -40,6 +41,7 @@ fn SettingField(
     description: Option<String>,
     is_default: bool,
 ) -> impl IntoView {
+    let t = use_i18n();
     let as_text = match &value {
         serde_json::Value::String(s) => s.clone(),
         serde_json::Value::Null => String::new(),
@@ -56,7 +58,7 @@ fn SettingField(
         let key = save_key.clone();
         spawn_local(async move {
             match crate::api::save_setting(&key, val).await {
-                Ok(_) => toast_ok(format!("{} gespeichert", key)),
+                Ok(_) => toast_ok(format!("{} {}", t("setting_saved"), key)),
                 Err(e) => toast_err(format!("{}: {}", key, e)),
             }
         });
@@ -94,7 +96,7 @@ fn SettingField(
             let key = key.clone();
             spawn_local(async move {
                 match crate::api::reset_setting(&key).await {
-                    Ok(_) => toast_ok(format!("{} zurückgesetzt", key)),
+                    Ok(_) => toast_ok(format!("{} {}", t("setting_reset"), key)),
                     Err(e) => toast_err(format!("{}: {}", key, e)),
                 }
             });
@@ -135,7 +137,7 @@ fn SettingField(
                     {label.clone()}
                     <Show when=move || inherited>
                         <span class="badge badge-ghost badge-sm ml-2">
-                            "Standard (geerbt)"
+                            t("setting_default_inherited")
                         </span>
                     </Show>
                 </span>
@@ -155,7 +157,7 @@ fn SettingField(
                 </Show>
                 <Show when=move || inherited>
                     <button class="btn btn-ghost btn-sm" on:click={move |_| on_reset.run(())}>
-                        "Zurücksetzen"
+                        {t("setting_reset_button")}
                     </button>
                 </Show>
             </div>

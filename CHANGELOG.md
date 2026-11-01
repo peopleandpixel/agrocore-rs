@@ -14,6 +14,12 @@
 - **Tenant user preferences**: Per-user notification channel enable/disable, quiet hours (do-not-disturb), escalation rules, severity filtering, digest mode
 - **Disaster Recovery Runbook**: `docs/DISASTER_RECOVERY.md` with RTO < 15 min procedures for 50 GB database
 
+### P1 — Internationalization & Validation
+
+- **M8: German strings in i18n** — 45+ hardcoded German strings replaced with i18n keys across `backup.rs` (40), `settings_editor.rs` (4), `lib.rs` (2), and `error_boundary.rs`. Added 60+ translation keys to `locales/app.yml` covering 10 languages (en, de, es, fr, pt, it, pl, ro, uk, nl).
+- **M7: ErrorBoundary i18n** — `user_friendly_error()` now returns i18n keys instead of hardcoded German strings, enabling proper localization of error messages.
+- **E1: Validation on POST/PUT routes** — Added `.validate()` to 5 missing handlers: `update_customer` (customers.rs), `create_worker_task_status`, `update_worker_task_status`, `create_clock_entry`, `update_clock_entry` (workforce.rs). Added `validator::Validate` derive to `UpdateCustomerDto`, `UpdateWorkerTaskStatusDto`, and `UpdateClockEntryRequest`.
+
 ### Dependencies
 
 - Added `base64 0.22` to backup-service

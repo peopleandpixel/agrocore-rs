@@ -831,7 +831,9 @@ async fn gcp_get_access_token() -> BackupResult<String> {
         .send()
         .await;
 
-    if let Ok(resp) = resp && resp.status().is_success() {
+    if let Ok(resp) = resp
+        && resp.status().is_success()
+    {
         let body: serde_json::Value = resp
             .json()
             .await

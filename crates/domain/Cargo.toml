@@ -5,7 +5,7 @@ edition = "2024"
 license.workspace = true
 
 [dependencies]
-agrocore-shared = { path = "../shared", features = ["sqlx"] }
+agrocore-shared = { path = "../shared" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 utoipa = { workspace = true, features = ["actix_extras", "uuid", "chrono"] }
@@ -22,6 +22,6 @@ async-trait = { workspace = true }
 
 [features]
 default = ["sqlx"]
-sqlx = ["dep:sqlx", "agrocore-shared/sqlx"]
+sqlx = ["dep:sqlx", "agrocore-shared/sqlx", "dep:tokio"]
 mocks = ["dep:mockall"]
 depreciation = ["dep:tokio"]

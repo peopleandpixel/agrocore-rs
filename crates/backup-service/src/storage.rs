@@ -637,9 +637,8 @@ impl StorageBackendTrait for StorageBackend {
                 let path = Path::from(object_name);
                 let result = store.get(&path).await.map_err(BackupError::ObjectStore)?;
                 let stream = result.into_stream();
-                let adapted: ByteStream = Box::pin(stream.map(|item| {
-                    item.map_err(BackupError::ObjectStore)
-                }));
+                let adapted: ByteStream =
+                    Box::pin(stream.map(|item| item.map_err(BackupError::ObjectStore)));
                 Ok(adapted)
             }
             BackupTarget::Azure { .. } => {
@@ -653,9 +652,8 @@ impl StorageBackendTrait for StorageBackend {
                 let path = Path::from(object_name);
                 let result = store.get(&path).await.map_err(BackupError::ObjectStore)?;
                 let stream = result.into_stream();
-                let adapted: ByteStream = Box::pin(stream.map(|item| {
-                    item.map_err(BackupError::ObjectStore)
-                }));
+                let adapted: ByteStream =
+                    Box::pin(stream.map(|item| item.map_err(BackupError::ObjectStore)));
                 Ok(adapted)
             }
             BackupTarget::Gcs { .. } => {
@@ -669,9 +667,8 @@ impl StorageBackendTrait for StorageBackend {
                 let path = Path::from(object_name);
                 let result = store.get(&path).await.map_err(BackupError::ObjectStore)?;
                 let stream = result.into_stream();
-                let adapted: ByteStream = Box::pin(stream.map(|item| {
-                    item.map_err(BackupError::ObjectStore)
-                }));
+                let adapted: ByteStream =
+                    Box::pin(stream.map(|item| item.map_err(BackupError::ObjectStore)));
                 Ok(adapted)
             }
             BackupTarget::Sftp { .. } => {

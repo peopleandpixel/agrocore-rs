@@ -4,23 +4,25 @@
 //! preventing 500-style internal crashes from showing technical
 //! details to users.
 
-#![allow(dead_code)]
-
 /// Converts an API error string to a user-friendly message.
 /// This prevents technical stack traces from leaking to end users.
 pub fn user_friendly_error(err: &str) -> String {
-    if err.contains("401") || err.contains("unauthorized") || err.contains("Sitzung") {
-        "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.".to_string()
-    } else if err.contains("403") || err.contains("forbidden") {
-        "Zugriff verweigert. Kontaktieren Sie Ihren Administrator.".to_string()
-    } else if err.contains("500") || err.contains("status") {
-        "Ein Server-Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.".to_string()
-    } else if err.contains("timeout") || err.contains("network") {
-        "Verbindungsfehler. Bitte prüfen Sie Ihre Internetverbindung.".to_string()
+    if err.contains("401")
+        || err.contains("unauthorized")
+        || err.contains("Sitzung")
+        || err.contains("abgelaufen")
+    {
+        "session_expired".to_string()
+    } else if err.contains("403") || err.contains("forbidden") || err.contains("verweigert") {
+        "access_denied".to_string()
+    } else if err.contains("500") || err.contains("Server") {
+        "server_error_generic".to_string()
+    } else if err.contains("timeout") || err.contains("network") || err.contains("Verbindungs") {
+        "connection_error".to_string()
     } else if err.contains("not found") || err.contains("404") {
-        "Die angeforderten Daten wurden nicht gefunden.".to_string()
+        "not_found".to_string()
     } else {
-        format!("Fehler beim Laden der Daten: {}", err)
+        format!("error_unknown: {}", err)
     }
 }
 

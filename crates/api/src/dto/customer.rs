@@ -40,7 +40,7 @@ pub struct CreateCustomerDto {
     pub preferences: Option<serde_json::Value>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, validator::Validate)]
 pub struct UpdateCustomerDto {
     pub name: Option<String>,
     pub email: Option<String>,

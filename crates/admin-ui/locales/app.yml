@@ -10721,3 +10721,595 @@ add:
   ro: Adaugă
   uk: Додати
   nl: Toevoegen
+
+# API error messages
+connection_problem:
+  en: "Connection problem: {}"
+  de: "Verbindungsproblem: {}"
+  es: "Problema de conexión: {}"
+  fr: "Problème de connexion: {}"
+  pt: "Problema de conexão: {}"
+  it: "Problema di connessione: {}"
+  pl: "Problem połączenia: {}"
+  ro: "Problem de conexiune: {}"
+  uk: "Проблема з'єднання: {}"
+  nl: "Verbindingsprobleem: {}"
+
+server_error:
+  en: "Server error ({}): {}"
+  de: "Server-Fehler ({}): {}"
+  es: "Error del servidor ({}): {}"
+  fr: "Erreur serveur ({}): {}"
+  pt: "Erro do servidor ({}): {}"
+  it: "Errore server ({}): {}"
+  pl: "Błąd serwera ({}): {}"
+  ro: "Eroare server ({}): {}"
+  uk: "Помилка сервера ({}): {}"
+  nl: "Serverfout ({}): {}"
+
+session_expired:
+  en: Session expired. Please log in again.
+  de: Sitzung abgelaufen. Bitte neu anmelden.
+  es: Sesión expirada. Inicia sesión de nuevo.
+  fr: Session expirée. Veuillez vous reconnecter.
+  pt: Sessão expirada. Faça login novamente.
+  it: Sessione scaduta. Accedi di nuovo.
+  pl: Sesja wygasła. Zaloguj się ponownie.
+  ro: Sesiunea a expirat. Conectați-vă din nou.
+  uk: Сесію закінчено. Увійдіть знову.
+  nl: Sessie verlopen. Meld u opnieuw aan.
+
+error_status:
+  en: "Error ({}): {}"
+  de: "Fehler ({}): {}"
+  es: "Error ({}): {}"
+  fr: "Erreur ({}): {}"
+  pt: "Erro ({}): {}"
+  it: "Errore ({}): {}"
+  pl: "Błąd ({}): {}"
+  ro: "Eroare ({}): {}"
+  uk: "Помилка ({}): {}"
+  nl: "Fout ({}): {}"
+
+invalid_data_format:
+  en: "Invalid data format: {}"
+  de: "Datenformat ungültig: {}"
+  es: "Formato de datos no válido: {}"
+  fr: "Format de données invalide: {}"
+  pt: "Formato de dados inválido: {}"
+  it: "Formato dati non valido: {}"
+  pl: "Nieprawidłowy format danych: {}"
+  ro: "Format de date nevalid: {}"
+  uk: "Неправильний формат даних: {}"
+  nl: "Ongeldig gegevensformaat: {}"
+
+# Backup page
+backup_id_derived:
+  en: ID derived from filename
+  de: ID aus Dateiname abgeleitet
+  es: ID derivada del nombre de archivo
+  fr: ID dérivé du nom de fichier
+  pt: ID derivado do nome do arquivo
+  it: ID derivato dal nome del file
+  pl: ID wywodzące się z nazwy pliku
+  ro: ID derivat din numele fișierului
+  uk: ID, отриманий з імені файлу
+  nl: ID afgeleid van bestandsnaam
+
+backup_check_restore:
+  en: Check / Restore
+  de: Prüfen / Restore
+  es: Verificar / Restaurar
+  fr: Vérifier / Restaurer
+  pt: Verificar / Restaurar
+  it: Controlla / Ripristina
+  pl: Sprawdź / Przywróć
+  ro: Verifică / Restaurează
+  uk: Перевірка / Відновлення
+  nl: Controleren / Herstellen
+
+backup_delete:
+  en: Delete
+  de: Löschen
+  es: Eliminar
+  fr: Supprimer
+  pt: Excluir
+  it: Elimina
+  pl: Usuń
+  ro: Șterge
+  uk: Видалити
+  nl: Verwijderen
+
+backup_config_not_loaded:
+  en: "Configuration not loaded: {}"
+  de: "Konfiguration nicht geladen: {}"
+  es: "Configuración no cargada: {}"
+  fr: "Configuration non chargée: {}"
+  pt: "Configuração não carregada: {}"
+  it: "Configurazione non caricata: {}"
+  pl: "Konfiguracja nie załadowana: {}"
+  ro: "Configurație nu a fost încărcată: {}"
+  uk: "Конфігурація не завантажена: {}"
+  nl: "Configuratie niet geladen: {}"
+
+backups_not_loaded:
+  en: "Backups not loaded: {}"
+  de: "Backups nicht geladen: {}"
+  es: "Backups no cargados: {}"
+  fr: "Backups non chargés: {}"
+  pt: "Backups não carregados: {}"
+  it: "Backup non caricati: {}"
+  pl: "Kopie zapasowe nie załadowane: {}"
+  ro: "Backups nu au fost încărcate: {}"
+  uk: "Резервні копії не завантажені: {}"
+  nl: "Backups niet geladen: {}"
+
+backup_config_saved:
+  en: Backup configuration saved
+  de: Backup-Konfiguration gespeichert
+  es: Configuración de backup guardada
+  fr: Configuration de backup enregistrée
+  pt: Configuração de backup salva
+  it: Configurazione backup salvata
+  pl: Konfiguracja kopii zapasowej zapisana
+  ro: Configurația backup salvată
+  uk: Конфігурацію резервного копіювання збережено
+  nl: Backup-configuratie opgeslagen
+
+backup_started:
+  en: "Backup {} started ({})"
+  de: "Backup {} gestartet ({})"
+  es: "Backup {} iniciado ({})"
+  fr: "Backup {} démarré ({})"
+  pt: "Backup {} iniciado ({})"
+  it: "Backup {} avviato ({})"
+  pl: "Kopia zapasowa {} uruchomiona ({})"
+  ro: "Backup {} pornit ({})"
+  uk: "Резервне копіювання {} запущено ({})"
+  nl: "Backup {} gestart ({})"
+
+backup_failed:
+  en: "Backup failed: {}"
+  de: "Backup fehlgeschlagen: {}"
+  es: "Backup fallido: {}"
+  fr: "Backup échoué: {}"
+  pt: "Backup falhou: {}"
+  it: "Backup fallito: {}"
+  pl: "Kopia zapasowa nie powiodła się: {}"
+  ro: "Backup eșuat: {}"
+  uk: "Резервне копіювання не вдалося: {}"
+  nl: "Backup mislukt: {}"
+
+backup_deleted:
+  en: "Backup deleted: {} objects, {} freed"
+  de: "Backup gelöscht: {} Objekte, {} frei"
+  es: "Backup eliminado: {} objetos, {} liberado"
+  fr: "Backup supprimé: {} objets, {} libéré"
+  pt: "Backup excluído: {} objetos, {} liberado"
+  it: "Backup eliminato: {} oggetti, {} liberato"
+  pl: "Kopia zapasowa usunięta: {} obiektów, {} zwolniono"
+  ro: "Backup șters: {} obiecte, {} eliberat"
+  uk: "Резервну копію видалено: {} об'єктів, {} звільнено"
+  nl: "Backup verwijderd: {} objecten, {} vrijgemaakt"
+
+backup_restore_confirm:
+  en: "{}\n\nReally restore? This will overwrite the current database."
+  de: "{}\n\nTatsächlich wiederherstellen? Das überschreibt die aktuelle Datenbank."
+  es: "{}\n\n¿Realmente restaurar? Esto sobrescribirá la base de datos actual."
+  fr: "{}\n\nVraiment restaurer ? Cela écrasera la base de données actuelle."
+  pt: "{}\n\nRealmente restaurar? Isso substituirá o banco de dados atual."
+  it: "{}\n\nRipristinare davvero? Questo sovrascriverà il database corrente."
+  pl: "{}\n\nNaprawdę przywrócić? To nadpisze aktualną bazę danych."
+  ro: "{}\n\nRestaurare cu adevărat? Acest lucru va suprascrie baza de date actuală."
+  uk: "{}\n\nДійсно відновити? Це перезапише поточну базу даних."
+  nl: "{}\n\nEcht herstellen? Dit overschrijft de huidige database."
+
+restore_failed:
+  en: "Restore failed: {}"
+  de: "Restore fehlgeschlagen: {}"
+  es: "Restaurar fallido: {}"
+  fr: "Restauration échouée: {}"
+  pt: "Restaurar falhou: {}"
+  it: "Ripristino fallito: {}"
+  pl: "Przywracanie nie powiodło się: {}"
+  ro: "Restaurare eșuată: {}"
+  uk: "Відновлення не вдалося: {}"
+  nl: "Herstellen mislukt: {}"
+
+check_failed:
+  en: "Check failed: {}"
+  de: "Prüfung fehlgeschlagen: {}"
+  es: "Verificación fallida: {}"
+  fr: "Vérification échouée: {}"
+  pt: "Verificação falhou: {}"
+  it: "Controllo fallito: {}"
+  pl: "Sprawdzanie nie powiodło się: {}"
+  ro: "Verificare eșuată: {}"
+  uk: "Перевірка не вдалося: {}"
+  nl: "Controle mislukt: {}"
+
+backups_title:
+  en: Backups
+  de: Backups
+  es: Copias de seguridad
+  fr: Sauvegardes
+  pt: Backups
+  it: Backup
+  pl: Kopie zapasowe
+  ro: Backups
+  uk: Резервні копії
+  nl: Backups
+
+backup_config_title:
+  en: Configuration
+  de: Konfiguration
+  es: Configuración
+  fr: Configuration
+  pt: Configuração
+  it: Configurazione
+  pl: Konfiguracja
+  ro: Configurație
+  uk: Конфігурація
+  nl: Configuratie
+
+backup_scheduled_enabled:
+  en: Scheduled backups enabled
+  de: Geplante Backups aktiviert
+  es: Backups programados habilitados
+  fr: Backups planifiés activés
+  pt: Backups agendados habilitados
+  it: Backup pianificati abilitati
+  pl: Zaplanowane kopie zapasowe włączone
+  ro: Backups programate activate
+  uk: Заплановані резервні копії ввімкнено
+  nl: Geplande backups ingeschakeld
+
+backup_schedule_db:
+  en: Database schedule (Cron)
+  de: Zeitplan Datenbank (Cron)
+  es: Programación de base de datos (Cron)
+  fr: Planification de base de données (Cron)
+  pt: Agendamento de banco de dados (Cron)
+  it: Pianificazione database (Cron)
+  pl: Harmonogram bazy danych (Cron)
+  ro: Programare bază de date (Cron)
+  uk: Розклад бази даних (Cron)
+  nl: Database-schema (Cron)
+
+backup_schedule_config:
+  en: Config schedule (Cron)
+  de: Zeitplan Konfiguration (Cron)
+  es: Programación de configuración (Cron)
+  fr: Planification de configuration (Cron)
+  pt: Agendamento de configuração (Cron)
+  it: Pianificazione configurazione (Cron)
+  pl: Harmonogram konfiguracji (Cron)
+  ro: Programare configurație (Cron)
+  uk: Розклад конфігурації (Cron)
+  nl: Configuratie-schema (Cron)
+
+backup_timezone:
+  en: Timezone
+  de: Zeitzone
+  es: Zona horaria
+  fr: Fuseau horaire
+  pt: Fuso horário
+  it: Fuso orario
+  pl: Strefa czasowa
+  ro: Fus orar
+  uk: Часовий пояс
+  nl: Tijdzone
+
+backup_retention_title:
+  en: Retention (count, 0 = unlimited)
+  de: Aufbewahrung (Anzahl, 0 = unbegrenzt)
+  es: Retención (cantidad, 0 = ilimitado)
+  fr: Rétention (nombre, 0 = illimité)
+  pt: Retenção (quantidade, 0 = ilimitado)
+  it: Retenzione (conteggio, 0 = illimitato)
+  pl: Retencja (liczba, 0 = nieograniczone)
+  ro: Retenție (număr, 0 = nelimitat)
+  uk: Збереження (кількість, 0 = необмежено)
+  nl: Retentie (aantal, 0 = onbeperkt)
+
+backup_retention_daily:
+  en: Daily
+  de: Täglich
+  es: Diario
+  fr: Quotidien
+  pt: Diário
+  it: Giornaliero
+  pl: Codziennie
+  ro: Zilnic
+  uk: Щодня
+  nl: Dagelijks
+
+backup_retention_weekly:
+  en: Weekly
+  de: Wöchentlich
+  es: Semanal
+  fr: Hebdomadaire
+  pt: Semanal
+  it: Settimanale
+  pl: Tygodniowo
+  ro: Săptămânal
+  uk: Щотижня
+  nl: Weekelijks
+
+backup_retention_monthly:
+  en: Monthly
+  de: Monatlich
+  es: Mensual
+  fr: Mensuel
+  pt: Mensal
+  it: Mensile
+  pl: Miesięcznie
+  ro: Lunar
+  uk: Щомісяця
+  nl: Maandelijks
+
+backup_retention_yearly:
+  en: Yearly
+  de: Jährlich
+  es: Anual
+  fr: Annuel
+  pt: Anual
+  it: Annuale
+  pl: Rocznie
+  ro: Anual
+  uk: Щороку
+  nl: Jaarlijks
+
+backup_verify_after_write:
+  en: Verify each backup after writing
+  de: Jedes Backup nach dem Schreiben prüfen
+  es: Verificar cada backup después de escribir
+  fr: Vérifier chaque backup après écriture
+  pt: Verificar cada backup após gravação
+  it: Verifica ogni backup dopo la scrittura
+  pl: Weryfikuj każdą kopię zapasową po zapisaniu
+  ro: Verifică fiecare backup după scriere
+  uk: Перевіряйте кожну резервну копію після запису
+  nl: Elke backup controleren na schrijven
+
+backup_save_config:
+  en: Save configuration
+  de: Konfiguration speichern
+  es: Guardar configuración
+  fr: Enregistrer la configuration
+  pt: Salvar configuração
+  it: Salva configurazione
+  pl: Zapisz konfigurację
+  ro: Salvează configurația
+  uk: Зберегти конфігурацію
+  nl: Configuratie opslaan
+
+backup_run_now:
+  en: Run backup now
+  de: Backup jetzt ausführen
+  es: Ejecutar backup ahora
+  fr: Exécuter le backup maintenant
+  pt: Executar backup agora
+  it: Esegui backup ora
+  pl: Uruchom kopię zapasową teraz
+  ro: Rulează backup acum
+  uk: Запустити резервне копіювання зараз
+  nl: Backup nu uitvoeren
+
+backup_type_database:
+  en: Database
+  de: Datenbank
+  es: Base de datos
+  fr: Base de données
+  pt: Banco de dados
+  it: Database
+  pl: Baza danych
+  ro: Bază de date
+  uk: База даних
+  nl: Database
+
+backup_type_config:
+  en: Configuration
+  de: Konfiguration
+  es: Configuración
+  fr: Configuration
+  pt: Configuração
+  it: Configurazione
+  pl: Konfiguracja
+  ro: Configurație
+  uk: Конфігурація
+  nl: Configuratie
+
+backup_type_full:
+  en: Full
+  de: Vollständig
+  es: Completo
+  fr: Complet
+  pt: Completo
+  it: Completo
+  pl: Pełna
+  ro: Complet
+  uk: Повна
+  nl: Volledig
+
+backup_existing:
+  en: Existing backups
+  de: Vorhandene Backups
+  es: Backups existentes
+  fr: Backups existants
+  pt: Backups existentes
+  it: Backup esistenti
+  pl: Istniejące kopie zapasowe
+  ro: Backups existente
+  uk: Існуючі резервні копії
+  nl: Bestaande backups
+
+backup_reload:
+  en: Reload
+  de: Neu laden
+  es: Recargar
+  fr: Recharger
+  pt: Recarregar
+  it: Ricarica
+  pl: Przeładuj
+  ro: Reîncarcă
+  uk: Перезавантажити
+  nl: Opnieuw laden
+
+backup_none_found:
+  en: No backups found yet.
+  de: Noch keine Backups gefunden.
+  es: Aún no se encontraron backups.
+  fr: Aucun backup trouvé pour le moment.
+  pt: Nenhum backup encontrado ainda.
+  it: Nessun backup trovato ancora.
+  pl: Nie znaleziono jeszcze kopii zapasowych.
+  ro: Încă nu au fost găsite backups.
+  uk: Резервні копії ще не знайдено.
+  nl: Nog geen backups gevonden.
+
+backup_id:
+  en: ID
+  de: ID
+  es: ID
+  fr: ID
+  pt: ID
+  it: ID
+  pl: ID
+  ro: ID
+  uk: ID
+  nl: ID
+
+backup_type:
+  en: Type
+  de: Typ
+  es: Tipo
+  fr: Type
+  pt: Tipo
+  it: Tipo
+  pl: Typ
+  ro: Tip
+  uk: Тип
+  nl: Type
+
+backup_status:
+  en: Status
+  de: Status
+  es: Estado
+  fr: Statut
+  pt: Status
+  it: Stato
+  pl: Status
+  ro: Status
+  uk: Статус
+  nl: Status
+
+backup_start:
+  en: Start
+  de: Beginn
+  es: Inicio
+  fr: Début
+  pt: Início
+  it: Inizio
+  pl: Początek
+  ro: Început
+  uk: Початок
+  nl: Begin
+
+backup_size:
+  en: Size
+  de: Größe
+  es: Tamaño
+  fr: Taille
+  pt: Tamanho
+  it: Dimensione
+  pl: Rozmiar
+  ro: Dimensiune
+  uk: Розмір
+  nl: Grootte
+
+backup_targets:
+  en: Targets
+  de: Ziele
+  es: Destinos
+  fr: Cibles
+  pt: Destinos
+  it: Destinazioni
+  pl: Cele
+  ro: Ținte
+  uk: Цілі
+  nl: Doelen
+
+backup_actions:
+  en: Actions
+  de: Aktionen
+  es: Acciones
+  fr: Actions
+  pt: Ações
+  it: Azioni
+  pl: Akcje
+  ro: Acțiuni
+  uk: Дії
+  nl: Acties
+
+# Settings editor
+setting_saved:
+  en: "{} saved"
+  de: "{} gespeichert"
+  es: "{} guardado"
+  fr: "{} enregistré"
+  pt: "{} salvo"
+  it: "{} salvato"
+  pl: "{} zapisane"
+  ro: "{} salvat"
+  uk: "{} збережено"
+  nl: "{} opgeslagen"
+
+setting_reset:
+  en: "{} reset"
+  de: "{} zurückgesetzt"
+  es: "{} restablecido"
+  fr: "{} réinitialisé"
+  pt: "{} resetado"
+  it: "{} reimpostato"
+  pl: "{} zresetowane"
+  ro: "{} resetat"
+  uk: "{} скинуто"
+  nl: "{} teruggezet"
+
+setting_default_inherited:
+  en: Default (inherited)
+  de: Standard (geerbt)
+  es: Predeterminado (heredado)
+  fr: Par défaut (hérité)
+  pt: Padrão (herdado)
+  it: Predefinito (ereditato)
+  pl: Domyślne (odziedziczone)
+  ro: Implicit (moștenit)
+  uk: За замовчуванням (спадковий)
+  nl: Standaard (overgeërfd)
+
+setting_reset_button:
+  en: Reset
+  de: Zurücksetzen
+  es: Restablecer
+  fr: Réinitialiser
+  pt: Resetar
+  it: Reimposta
+  pl: Resetuj
+  ro: Resetează
+  uk: Скинути
+  nl: Terugzetten
+
+# Navigation
+nav_iot_devices:
+  en: IoT Devices
+  de: IoT-Geräte
+  es: Dispositivos IoT
+  fr: Appareils IoT
+  pt: Dispositivos IoT
+  it: Dispositivi IoT
+  pl: Urządzenia IoT
+  ro: Dispozitive IoT
+  uk: ПРІ-пристрої
+  nl: IoT-apparaten

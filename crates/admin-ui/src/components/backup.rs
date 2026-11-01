@@ -18,6 +18,7 @@ use leptos::task::spawn_local;
 
 use crate::api::{BackupConfigDto, BackupSummaryDto};
 use crate::components::toast::{ToastContext, ToastType};
+use crate::i18n::use_i18n;
 
 fn toast_ok(msg: String) {
     use_context::<ToastContext>()
@@ -67,6 +68,7 @@ fn BackupRow(
     on_delete: Callback<String>,
     on_restore: Callback<String>,
 ) -> impl IntoView {
+    let t = use_i18n();
     let id = backup.id.clone();
     let can_restore = backup.status == "Completed";
 
@@ -80,7 +82,7 @@ fn BackupRow(
                 <div class="font-mono text-xs">{backup.id.clone()}</div>
                 <Show when=move || !id_resolvable>
                     <div class="text-xs opacity-60" title="No manifest was found; the id was inferred from the file name. Delete may not resolve.">
-                        "ID aus Dateiname abgeleitet"
+                        {t("backup_id_derived")}
                     </div>
                 </Show>
             </td>
@@ -105,7 +107,7 @@ fn BackupRow(
                                 move |_| on_restore.run(id.clone())
                             }
                         >
-                            "Prüfen / Restore"
+                            {t("backup_check_restore")}
                         </button>
                     </Show>
                     <button
@@ -115,7 +117,7 @@ fn BackupRow(
                             move |_| on_delete.run(id.clone())
                         }
                     >
-                        "Löschen"
+                        {t("backup_delete")}
                     </button>
                 </div>
             </td>
@@ -172,6 +174,7 @@ fn retention_field(label: String, config: RwSignal<BackupConfigDto>, slot: usize
 /// The backup administration page.
 #[component]
 pub fn BackupManagement() -> impl IntoView {
+    let t = use_i18n();
     let config = RwSignal::new(BackupConfigDto {
         enabled: true,
         schedule_db: String::from("0 2 * * *"),
@@ -194,12 +197,12 @@ pub fn BackupManagement() -> impl IntoView {
     spawn_local(async move {
         match crate::api::fetch_backup_config().await {
             Ok(loaded) => config.set(loaded),
-            Err(e) => load_error.set(Some(format!("Konfiguration nicht geladen: {e}"))),
+            Err(e) => load_error.set(Some(format!("{} {}", t("backup_config_not_loaded"), e))),
         }
         match crate::api::fetch_backups().await {
             Ok(list) => backups.set(list),
             Err(e) => {
-                let msg = format!("Backups nicht geladen: {e}");
+                let msg = format!("{} {}", t("backups_not_loaded"), e);
                 load_error.set(Some(match load_error.get_untracked() {
                     Some(existing) => format!("{existing} / {msg}"),
                     None => msg,
@@ -230,9 +233,9 @@ pub fn BackupManagement() -> impl IntoView {
             match crate::api::save_backup_config(&config_snapshot).await {
                 Ok(stored) => {
                     config.set(stored);
-                    toast_ok(String::from("Backup-Konfiguration gespeichert"));
+                    toast_ok(t("backup_config_saved"));
                 }
-                Err(e) => toast_err(format!("Speichern fehlgeschlagen: {e}")),
+                Err(e) => toast_err(format!("{} {}", t("save_failed"), e)),
             }
             saving.set(false);
         });
@@ -243,9 +246,14 @@ pub fn BackupManagement() -> impl IntoView {
         spawn_local(async move {
             match crate::api::create_backup(backup_type).await {
                 Ok(job) => {
-                    toast_ok(format!("Backup {} gestartet ({})", backup_type, job.status));
+                    toast_ok(format!(
+                        "{} {} ({})",
+                        t("backup_started"),
+                        backup_type,
+                        job.status
+                    ));
                 }
-                Err(e) => toast_err(format!("Backup fehlgeschlagen: {e}")),
+                Err(e) => toast_err(format!("{} {}", t("backup_failed"), e)),
             }
             running.set(false);
         });
@@ -261,11 +269,13 @@ pub fn BackupManagement() -> impl IntoView {
                         .unwrap_or(0);
                     let freed = v.get("bytes_freed").and_then(|n| n.as_u64()).unwrap_or(0);
                     toast_ok(format!(
-                        "Backup gelöscht: {objects} Objekte, {} frei",
+                        "{}: {} objects, {} freed",
+                        t("backup_deleted"),
+                        objects,
                         format_bytes(freed)
                     ));
                 }
-                Err(e) => toast_err(format!("Löschen fehlgeschlagen: {e}")),
+                Err(e) => toast_err(format!("{} {}", t("delete_failed"), e)),
             }
             reload.run(());
         });
@@ -280,19 +290,20 @@ pub fn BackupManagement() -> impl IntoView {
                 Ok(check) => {
                     let proceed = window()
                         .confirm_with_message(&format!(
-                            "{}\n\nTatsächlich wiederherstellen? Das überschreibt die aktuelle Datenbank.",
-                            check.message
+                            "{}\n\n{}",
+                            check.message,
+                            t("backup_restore_confirm")
                         ))
                         .unwrap_or(false);
 
                     if proceed {
                         match crate::api::restore_backup(&id_for_dry, false).await {
                             Ok(result) => toast_ok(result.message),
-                            Err(e) => toast_err(format!("Restore fehlgeschlagen: {e}")),
+                            Err(e) => toast_err(format!("{} {}", t("restore_failed"), e)),
                         }
                     }
                 }
-                Err(e) => toast_err(format!("Prüfung fehlgeschlagen: {e}")),
+                Err(e) => toast_err(format!("{} {}", t("check_failed"), e)),
             }
         });
     });
@@ -311,7 +322,7 @@ pub fn BackupManagement() -> impl IntoView {
 
     view! {
         <div class="p-4 space-y-4">
-            <h1 class="text-2xl font-bold">"Backups"</h1>
+            <h1 class="text-2xl font-bold">{t("backups_title")}</h1>
 
             <Show when=move || load_error.get().is_some()>
                 <div class="alert alert-error">
@@ -328,7 +339,7 @@ pub fn BackupManagement() -> impl IntoView {
             // --- Konfiguration ---
             <div class="card bg-base-100 shadow">
                 <div class="card-body">
-                    <h2 class="card-title">"Konfiguration"</h2>
+                    <h2 class="card-title">{t("backup_config_title")}</h2>
 
                     <label class="label cursor-pointer justify-start gap-3">
                         <input
@@ -339,12 +350,12 @@ pub fn BackupManagement() -> impl IntoView {
                                 config.update(|c| c.enabled = event_target_value(&ev) == "true");
                             }
                         />
-                        <span class="label-text">"Geplante Backups aktiviert"</span>
+                        <span class="label-text">{t("backup_scheduled_enabled")}</span>
                     </label>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
                         <div class="form-control">
-                            <label class="label"><span class="label-text">"Zeitplan Datenbank (Cron)"</span></label>
+                            <label class="label"><span class="label-text">{t("backup_schedule_db")}</span></label>
                             <input
                                 type="text"
                                 class="input input-bordered"
@@ -355,7 +366,7 @@ pub fn BackupManagement() -> impl IntoView {
                             />
                         </div>
                         <div class="form-control">
-                            <label class="label"><span class="label-text">"Zeitplan Konfiguration (Cron)"</span></label>
+                            <label class="label"><span class="label-text">{t("backup_schedule_config")}</span></label>
                             <input
                                 type="text"
                                 class="input input-bordered"
@@ -366,7 +377,7 @@ pub fn BackupManagement() -> impl IntoView {
                             />
                         </div>
                         <div class="form-control">
-                            <label class="label"><span class="label-text">"Zeitzone"</span></label>
+                            <label class="label"><span class="label-text">{t("backup_timezone")}</span></label>
                             <input
                                 type="text"
                                 class="input input-bordered"
@@ -378,12 +389,12 @@ pub fn BackupManagement() -> impl IntoView {
                         </div>
                     </div>
 
-                    <h3 class="font-semibold mt-2">"Aufbewahrung (Anzahl, 0 = unbegrenzt)"</h3>
+                    <h3 class="font-semibold mt-2">{t("backup_retention_title")}</h3>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4">
-                        {retention_field(String::from("Täglich"), config, 0)}
-                        {retention_field(String::from("Wöchentlich"), config, 1)}
-                        {retention_field(String::from("Monatlich"), config, 2)}
-                        {retention_field(String::from("Jährlich"), config, 3)}
+                        {retention_field(t("backup_retention_daily"), config, 0)}
+                        {retention_field(t("backup_retention_weekly"), config, 1)}
+                        {retention_field(t("backup_retention_monthly"), config, 2)}
+                        {retention_field(t("backup_retention_yearly"), config, 3)}
                     </div>
 
                     <label class="label cursor-pointer justify-start gap-3">
@@ -395,7 +406,7 @@ pub fn BackupManagement() -> impl IntoView {
                                 config.update(|c| c.verification_enabled = event_target_value(&ev) == "true");
                             }
                         />
-                        <span class="label-text">"Jedes Backup nach dem Schreiben prüfen"</span>
+                        <span class="label-text">{t("backup_verify_after_write")}</span>
                     </label>
 
                     <div class="card-actions justify-end">
@@ -404,7 +415,7 @@ pub fn BackupManagement() -> impl IntoView {
                             disabled=move || saving.get()
                             on:click={move |_| on_save.run(())}
                         >
-                            "Konfiguration speichern"
+                            {t("backup_save_config")}
                         </button>
                     </div>
                 </div>
@@ -413,28 +424,28 @@ pub fn BackupManagement() -> impl IntoView {
             // --- Manuelle Backups ---
             <div class="card bg-base-100 shadow">
                 <div class="card-body">
-                    <h2 class="card-title">"Backup jetzt ausführen"</h2>
+                    <h2 class="card-title">{t("backup_run_now")}</h2>
                     <div class="flex gap-2">
                         <button
                             class="btn btn-sm"
                             disabled=move || running.get()
                             on:click={move |_| on_run.run("database")}
                         >
-                            "Datenbank"
+                            {t("backup_type_database")}
                         </button>
                         <button
                             class="btn btn-sm"
                             disabled=move || running.get()
                             on:click={move |_| on_run.run("config")}
                         >
-                            "Konfiguration"
+                            {t("backup_type_config")}
                         </button>
                         <button
                             class="btn btn-primary btn-sm"
                             disabled=move || running.get()
                             on:click={move |_| on_run.run("full")}
                         >
-                            "Vollständig"
+                            {t("backup_type_full")}
                         </button>
                     </div>
                 </div>
@@ -444,29 +455,29 @@ pub fn BackupManagement() -> impl IntoView {
             <div class="card bg-base-100 shadow">
                 <div class="card-body">
                     <div class="flex items-center justify-between">
-                        <h2 class="card-title">"Vorhandene Backups"</h2>
+                        <h2 class="card-title">{t("backup_existing")}</h2>
                         <button class="btn btn-ghost btn-sm" on:click={move |_| reload.run(())}>
-                            "Neu laden"
+                            {t("backup_reload")}
                         </button>
                     </div>
 
                     <Show
                         when=move || !backups.get().is_empty()
                         fallback=move || {
-                            view! { <p class="opacity-70">"Noch keine Backups gefunden."</p> }
+                            view! { <p class="opacity-70">{t("backup_none_found")} </p> }
                         }
                     >
                         <div class="overflow-x-auto">
                             <table class="table table-sm">
                                 <thead>
                                     <tr>
-                                        <th>"ID"</th>
-                                        <th>"Typ"</th>
-                                        <th>"Status"</th>
-                                        <th>"Beginn"</th>
-                                        <th>"Größe"</th>
-                                        <th>"Ziele"</th>
-                                        <th>"Aktionen"</th>
+                                        <th>{t("backup_id")}</th>
+                                        <th>{t("backup_type")}</th>
+                                        <th>{t("backup_status")}</th>
+                                        <th>{t("backup_start")}</th>
+                                        <th>{t("backup_size")}</th>
+                                        <th>{t("backup_targets")}</th>
+                                        <th>{t("backup_actions")}</th>
                                     </tr>
                                 </thead>
                                 <tbody>{rows}</tbody>

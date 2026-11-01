@@ -89,7 +89,7 @@ pub struct CreateWorkerTaskStatusDto {
     pub tenant_id: Uuid,
 }
 
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
 pub struct UpdateWorkerTaskStatusDto {
     pub status: WorkerTaskStatusTypeDto,
 }
@@ -179,7 +179,7 @@ pub struct CreateClockEntryRequest {
     pub notes: Option<String>,
 }
 
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, ToSchema, validator::Validate)]
 pub struct UpdateClockEntryRequest {
     pub lat: Option<f64>,
     pub lng: Option<f64>,

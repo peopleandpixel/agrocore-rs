@@ -300,10 +300,7 @@ impl InboundMessage {
         let sender_name = msg
             .from
             .as_ref()
-            .map(|u| {
-                u.username.clone()
-                    .unwrap_or_else(|| u.first_name.clone())
-            })
+            .map(|u| u.username.clone().unwrap_or_else(|| u.first_name.clone()))
             .unwrap_or_default();
 
         let text = msg.text.clone().unwrap_or_default();
