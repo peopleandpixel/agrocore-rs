@@ -3,7 +3,8 @@ retry: Повторити
 no_orders_yet: Ще немає завдань
 setup_title: Початкове налаштування
 admin_password: Пароль адміністратора
-password_requirements: Принаймні 12 символів з великою літерою, малою літерою, цифрою та спеціальним символом
+password_requirements: Принаймні 12 символів з великою літерою, малою літерою, цифрою
+  та спеціальним символом
 password_confirm: Підтвердіть пароль
 password_mismatch: Паролі не збігаються
 tenant_name: Назва організації
@@ -23,7 +24,8 @@ edit_site_title: Редагувати сайт
 delete_site: Видалити сайт
 delete_polygon: Видалити полігон
 redraw_polygon: Перемалювати полігон
-edit_polygon_hint: Перетягніть вершини, щоб редагувати форму. Подвійний клік на вершину видаляє її.
+edit_polygon_hint: Перетягніть вершини, щоб редагувати форму. Подвійний клік на вершину
+  видаляє її.
 setup_complete: Налаштування успішно завершено
 order_created: Замовлення успішно створено
 order_deleted: Замовлення успішно видалено
@@ -78,7 +80,8 @@ drawing_mode_on: Малювання увімкнено
 drawing_mode_off: Малювання вимкнено
 maximize_window: Максимізувати вікно
 restore_window: Відновити вікно
-drawing_mode_hint: Click the pencil button to enable drawing mode, then click on the map to draw your area.
+drawing_mode_hint: Click the pencil button to enable drawing mode, then click on the
+  map to draw your area.
 finish_polygon: Завершити ділянку
 cancel_drawing: Скасувати малювання
 users_desc: Manage team members and their access permissions.
@@ -93,7 +96,8 @@ role_worker: Worker
 role_viewer: Viewer
 edit_user: Edit User
 role_permissions_overview: Roles and Permissions Overview
-role_permissions_desc: Each role has defined permissions. Permissions cannot be assigned individually - only the user role.
+role_permissions_desc: Each role has defined permissions. Permissions cannot be assigned
+  individually - only the user role.
 role_admin_desc: Full access to all areas and user management
 role_manager_desc: Management without user permissions
 role_worker_desc: Input and view of own data
@@ -288,8 +292,8 @@ roles_overview: Огляд ролей
 impersonation: Імперсоналізація
 permissions_all_tenants: Усі tenant
 permissions_tenant_users: Користувачі tenant
-role_permissions_note: Кожна роль визначає набір дозволів. Користувачі можуть мати кілька ролей, і окремі дозволи можна надати
-  або скасувати для кожного користувача.
+role_permissions_note: Кожна роль визначає набір дозволів. Користувачі можуть мати
+  кілька ролей, і окремі дозволи можна надати або скасувати для кожного користувача.
 role_superadmin_desc: Повний доступ до системи, може керувати tenant
 nav_settings: Налаштування
 nav_types: Керування Типами
@@ -330,7 +334,8 @@ nav_group_administration: Адміністрування
 nav_group_worker: Робітник
 not_found: 404 Не знайдено
 access_denied: Доступ заборонено
-access_denied_desc: У вас немає дозволу переглядати цю сторінку. Зверніться до адміністратора, якщо вважаєте, що це помилка.
+access_denied_desc: У вас немає дозволу переглядати цю сторінку. Зверніться до адміністратора,
+  якщо вважаєте, що це помилка.
 go_to_dashboard: Перейти на панель
 dashboard_welcome_prefix: Ласкаво просимо до
 dashboard_tasks_desc: Наразі записані
@@ -441,9 +446,11 @@ setup_admin_desc: Створіть першого адміністратора �
 setup_tenant_desc: Організація представляє вашу компанію в системі.
 setup_company_desc: Додаткові метадані для вашої організації.
 setup_resources_desc: Визначте початковий тип поля для робочого простору.
-setup_admin_help: Використовуйте перший обліковий запис адміністратора, щоб завершити налаштування та керувати системою.
+setup_admin_help: Використовуйте перший обліковий запис адміністратора, щоб завершити
+  налаштування та керувати системою.
 setup_tenant_help: Slug стає частиною URL-адрес і має бути коротким та стабільним.
-setup_company_help: Інформація про компанію використовується для контактних даних і подальшої інтеграції.
+setup_company_help: Інформація про компанію використовується для контактних даних
+  і подальшої інтеграції.
 setup_resources_help: Виберіть модулі, які ви хочете ввімкнути з самого початку.
 validation_required_company: Будь ласка, введіть назву компанії, адресу та країну.
 validation_invalid_email: Введіть дійсну електронну адресу.
@@ -456,7 +463,8 @@ settings_tab_lpis: Постачальники LPIS
 settings_tab_status: Стан системи
 settings_tab_danger: Зона небезпеки
 lpis_provider_settings: Налаштування постачальника LPIS
-lpis_provider_desc: Налаштуйте постачальників LPIS для кожної країни. Зміни потребують перезавантаження.
+lpis_provider_desc: Налаштуйте постачальників LPIS для кожної країни. Зміни потребують
+  перезавантаження.
 base_url: Базовий URL
 timeout_seconds: Час очікування (с)
 cache_ttl_seconds: TTL кешу (с)
@@ -481,7 +489,8 @@ lpis_country_poland: Польща (LPIS)
 lpis_country_austria: Австрія (INVEKOS)
 setting_saved: Збережено
 setting_reset: Скинуто
-dashboard_simple_mode_text: Використовуйте помічників, щоб швидко завершити складну роботу.
+dashboard_simple_mode_text: Використовуйте помічників, щоб швидко завершити складну
+  роботу.
 dashboard_weather_setup_address: Адреса налаштування використовується, якщо доступна.
 no_sensor_weather: 'Датчик відсутній. '
 weather_no_site_for_observation: Немає місць, доступних для спостереження.
@@ -513,8 +522,10 @@ import_geojson: Імпорт GeoJSON
 import_shapefile: Імпорт Shapefile
 upload_geojson: Завантажити файл GeoJSON
 upload_shapefile: Завантажити Shapefile (ZIP)
-drag_drop_geojson: Перетягніть і відпустіть файл GeoJSON сюди, або натисніть, щоб переглянути
-drag_drop_shapefile: Перетягніть і відпустіть Shapefile (ZIP) сюди, або натисніть, щоб переглянути
+drag_drop_geojson: Перетягніть і відпустіть файл GeoJSON сюди, або натисніть, щоб
+  переглянути
+drag_drop_shapefile: Перетягніть і відпустіть Shapefile (ZIP) сюди, або натисніть,
+  щоб переглянути
 skip_duplicates: Пропускати дублікати
 update_existing: Оновлювати існуючі майданчики
 validate_lpis: Перевірити за допомогою LPIS (референс SIGPAC)
@@ -568,8 +579,8 @@ note: Примітка
 performed_at: Виконано
 total_cost: Всього Витрат (EUR)
 none: Жодного
-true: Так
-false: Ні
+"true": Так
+"false": Ні
 equipment_detail: Деталі Обладнання
 basic_info: Базова Інформація
 maintenance_info: Інформація про Технічне Обслуговування
@@ -1683,7 +1694,6 @@ group_type: Тип групи
 spatial_object_type: Тип геометрії
 sub_task_status: Стан підзавдання
 overall_task_status: Загальний стан
-# Variety attribute labels
 variety_berry_colour: Колір ягоди
 variety_use_kind: Використання
 variety_registration_countries: Країни реєстрації
@@ -1692,7 +1702,6 @@ variety_synonyms: Синоніми
 variety_source: Джерело
 variety_origin: Походження
 variety_category_label: Категорія
-# Breed attribute labels
 breed_origin: Походження
 breed_use_kind: Використання
 breed_birth_weight: Вага при народженні (кг)
@@ -1705,11 +1714,9 @@ breed_litter_size: Розмір приплоду
 breed_milk_per_year: Молоко/Рік (кг)
 breed_daily_gain: Щоденний приріст (г)
 breed_productive_lifespan: Продуктивне життя (роки)
-# Species labels
 species_common_name: Звичайна назва
 species_scientific_name: Наукова назва
 species_kingdom: Царство
-# Crop species common names
 crop_species_vitis_vinifera: Виноградна лоза
 crop_species_olea_europaea: Оливка
 crop_species_bos_taurus: Рогата худоба
@@ -1718,8 +1725,6 @@ crop_species_capra_hircus: Коза
 crop_species_sus_scrofa_domesticus: Свиня
 crop_species_equus_caballus: Кінь
 crop_species_gallus_gallus_domesticus: Куриця
-
-# Type Moderation
 nav_type_moderation: Модерація типів
 type_moderation: Модерація типів
 no_pending_entries: Немає типів, що очікують на затвердження
@@ -1729,3 +1734,61 @@ search_existing_type: Шукати існуючий тип
 type_approved: Тип затверджено
 type_rejected: Тип відхилено
 type_merged: Типи об'єднано
+company_location_map: Виберіть розташування компанії на карті
+mobile_phone: Мобільний телефон
+fax: Факс
+city: Місто
+postal_code: Поштовий індекс
+state_province: Область / Провінція
+vat_id: ІДН ПДВ
+registration_number: Реєстраційний номер
+connection_problem: 'Проблема з''єднання: {}'
+server_error: 'Помилка сервера ({}): {}'
+session_expired: Сесію закінчено. Увійдіть знову.
+error_status: 'Помилка ({}): {}'
+invalid_data_format: 'Неправильний формат даних: {}'
+backup_id_derived: ID, отриманий з імені файлу
+backup_check_restore: Перевірка / Відновлення
+backup_delete: Видалити
+backup_config_not_loaded: 'Конфігурація не завантажена: {}'
+backups_not_loaded: 'Резервні копії не завантажені: {}'
+backup_config_saved: Конфігурацію резервного копіювання збережено
+backup_started: Резервне копіювання {} запущено ({})
+backup_failed: 'Резервне копіювання не вдалося: {}'
+backup_deleted: 'Резервну копію видалено: {} об''єктів, {} звільнено'
+backup_restore_confirm: '{}
+
+
+  Дійсно відновити? Це перезапише поточну базу даних.'
+restore_failed: 'Відновлення не вдалося: {}'
+check_failed: 'Перевірка не вдалося: {}'
+backups_title: Резервні копії
+backup_config_title: Конфігурація
+backup_scheduled_enabled: Заплановані резервні копії ввімкнено
+backup_schedule_db: Розклад бази даних (Cron)
+backup_schedule_config: Розклад конфігурації (Cron)
+backup_timezone: Часовий пояс
+backup_retention_title: Збереження (кількість, 0 = необмежено)
+backup_retention_daily: Щодня
+backup_retention_weekly: Щотижня
+backup_retention_monthly: Щомісяця
+backup_retention_yearly: Щороку
+backup_verify_after_write: Перевіряйте кожну резервну копію після запису
+backup_save_config: Зберегти конфігурацію
+backup_run_now: Запустити резервне копіювання зараз
+backup_type_database: База даних
+backup_type_config: Конфігурація
+backup_type_full: Повна
+backup_existing: Існуючі резервні копії
+backup_reload: Перезавантажити
+backup_none_found: Резервні копії ще не знайдено.
+backup_id: ID
+backup_type: Тип
+backup_status: Статус
+backup_start: Початок
+backup_size: Розмір
+backup_targets: Цілі
+backup_actions: Дії
+setting_default_inherited: За замовчуванням (спадковий)
+setting_reset_button: Скинути
+nav_iot_devices: ПРІ-пристрої

@@ -3,7 +3,8 @@ retry: Reîncearcă
 no_orders_yet: Încă nicio sarcină
 setup_title: Configurare inițială
 admin_password: Parola de administrator
-password_requirements: Cel puțin 12 caractere cu literă mare, literă mică, cifră și caracter special
+password_requirements: Cel puțin 12 caractere cu literă mare, literă mică, cifră și
+  caracter special
 password_confirm: Confirmă parola
 password_mismatch: Parolele nu se potrivesc
 tenant_name: Numele organizației
@@ -23,7 +24,8 @@ edit_site_title: Editează site
 delete_site: Șterge site
 delete_polygon: Șterge poligonul
 redraw_polygon: Redesenază poligonul
-edit_polygon_hint: Trageți vârfurile pentru a edita forma. Dublu clic pe un vârf pentru a-l șterge.
+edit_polygon_hint: Trageți vârfurile pentru a edita forma. Dublu clic pe un vârf pentru
+  a-l șterge.
 setup_complete: Configurare finalizată cu succes
 order_created: Comandă creată cu succes
 order_deleted: Comandă ștearsă cu succes
@@ -78,7 +80,8 @@ drawing_mode_on: Desen activat
 drawing_mode_off: Desen dezactivat
 maximize_window: Maximizare fereastră
 restore_window: Restaurare fereastră
-drawing_mode_hint: Click the pencil button to enable drawing mode, then click on the map to draw your area.
+drawing_mode_hint: Click the pencil button to enable drawing mode, then click on the
+  map to draw your area.
 finish_polygon: Finalizare zonă
 cancel_drawing: Anulare desen
 users_desc: Manage team members and their access permissions.
@@ -93,7 +96,8 @@ role_worker: Worker
 role_viewer: Viewer
 edit_user: Edit User
 role_permissions_overview: Roles and Permissions Overview
-role_permissions_desc: Each role has defined permissions. Permissions cannot be assigned individually - only the user role.
+role_permissions_desc: Each role has defined permissions. Permissions cannot be assigned
+  individually - only the user role.
 role_admin_desc: Full access to all areas and user management
 role_manager_desc: Management without user permissions
 role_worker_desc: Input and view of own data
@@ -288,8 +292,9 @@ roles_overview: Prezentare generală a rolurilor
 impersonation: Personificare
 permissions_all_tenants: Toți tenant
 permissions_tenant_users: Utilizatori tenant
-role_permissions_note: Fiecare rol definește un set de permisiuni. Utilizatorii pot avea mai multe roluri, iar permisiunile
-  individuale pot fi acordate sau revocate per utilizator.
+role_permissions_note: Fiecare rol definește un set de permisiuni. Utilizatorii pot
+  avea mai multe roluri, iar permisiunile individuale pot fi acordate sau revocate
+  per utilizator.
 role_superadmin_desc: Acces complet la sistem, poate gestiona tenant
 nav_settings: Setări
 nav_types: Gestionare Tipuri
@@ -330,8 +335,8 @@ nav_group_administration: Administrare
 nav_group_worker: Muncitor
 not_found: 404 Nu a fost găsit
 access_denied: Acces interzis
-access_denied_desc: Nu aveți permisiunea de a vizualiza această pagină. Contactați administratorul dacă credeți că este o
-  eroare.
+access_denied_desc: Nu aveți permisiunea de a vizualiza această pagină. Contactați
+  administratorul dacă credeți că este o eroare.
 go_to_dashboard: Mergi la panou
 dashboard_welcome_prefix: Bun venit la
 dashboard_tasks_desc: În prezent înregistrată
@@ -442,13 +447,17 @@ setup_admin_desc: Creați primul utilizator administrator pentru această instal
 setup_tenant_desc: Organizația reprezintă compania dvs. în sistem.
 setup_company_desc: Metadate opționale pentru organizația dvs.
 setup_resources_desc: Definiți un tip de câmp inițial pentru spațiul de lucru.
-setup_admin_help: Utilizați primul cont de administrator pentru a finaliza configurarea și gestionarea sistemului.
-setup_tenant_help: Slug-ul devine parte a adreselor URL și ar trebui să rămână scurt și stabil.
-setup_company_help: Detaliile companiei sunt folosite pentru datele de contact și integrările ulterioare.
+setup_admin_help: Utilizați primul cont de administrator pentru a finaliza configurarea
+  și gestionarea sistemului.
+setup_tenant_help: Slug-ul devine parte a adreselor URL și ar trebui să rămână scurt
+  și stabil.
+setup_company_help: Detaliile companiei sunt folosite pentru datele de contact și
+  integrările ulterioare.
 setup_resources_help: Alegeți modulele pe care doriți să le activați de la început.
 validation_required_company: Vă rugăm să completați numele companiei, adresa și țara.
 validation_invalid_email: Vă rugăm să introduceți o adresă de email validă.
-validation_invalid_phone: Vă rugăm să introduceți un număr de telefon internațional valid.
+validation_invalid_phone: Vă rugăm să introduceți un număr de telefon internațional
+  valid.
 profile_saved_server: Profil salvat pe server.
 profile_save_failed: Salvarea a eșuat
 settings_tab_company: Companie
@@ -457,7 +466,8 @@ settings_tab_lpis: Furnizori LPIS
 settings_tab_status: Starea sistemului
 settings_tab_danger: Zonă de pericol
 lpis_provider_settings: Setări furnizor LPIS
-lpis_provider_desc: Configurați furnizorii LPIS pentru fiecare țară. Modificările necesită repornire.
+lpis_provider_desc: Configurați furnizorii LPIS pentru fiecare țară. Modificările
+  necesită repornire.
 base_url: URL de bază
 timeout_seconds: Timp de așteptare (s)
 cache_ttl_seconds: TTL cache (s)
@@ -466,7 +476,8 @@ enabled: Activat
 save_lpis_settings: Salvați setările LPIS
 default_inherited: Implicit (moștenit)
 reset_to_default: Resetează
-settings_server_stored: Aceste valori sunt stocate pe server și se aplică întregii organizații.
+settings_server_stored: Aceste valori sunt stocate pe server și se aplică întregii
+  organizații.
 settings_reload: Reîncarcă
 settings_restore_defaults: Resetați totul la valorile implicite
 settings_loaded_failed: Setările nu au putut fi încărcate
@@ -482,8 +493,10 @@ lpis_country_poland: Polonia (LPIS)
 lpis_country_austria: Austria (INVEKOS)
 setting_saved: Salvat
 setting_reset: Resetat
-dashboard_simple_mode_text: Utilizați asistenții îndrumați pentru a finaliza rapid lucrări complexe.
-dashboard_weather_setup_address: Adresa de configurare este utilizată atunci când este disponibilă.
+dashboard_simple_mode_text: Utilizați asistenții îndrumați pentru a finaliza rapid
+  lucrări complexe.
+dashboard_weather_setup_address: Adresa de configurare este utilizată atunci când
+  este disponibilă.
 no_sensor_weather: 'Niciun senzor disponibil. '
 weather_no_site_for_observation: Niciun site disponibil pentru observare.
 resource_overview: Prezentare generală asupra apei, energiei, consumabilelor și personalului.
@@ -514,8 +527,10 @@ import_geojson: Import GeoJSON
 import_shapefile: Import Shapefile
 upload_geojson: Încarcă fișier GeoJSON
 upload_shapefile: Import Shapefile (ZIP)
-drag_drop_geojson: Trageți și lăsați fișierul GeoJSON aici, sau faceți clic pentru a naviga
-drag_drop_shapefile: Trageți și lăsați Shapefile (ZIP) aici, sau faceți clic pentru a naviga
+drag_drop_geojson: Trageți și lăsați fișierul GeoJSON aici, sau faceți clic pentru
+  a naviga
+drag_drop_shapefile: Trageți și lăsați Shapefile (ZIP) aici, sau faceți clic pentru
+  a naviga
 skip_duplicates: Ignoră duplicatele
 update_existing: Actualizează terenurile existente
 validate_lpis: Validează contra LPIS (referință SIGPAC)
@@ -569,8 +584,8 @@ note: Notă
 performed_at: Efectuat pe
 total_cost: Cost Total (EUR)
 none: Niciunul
-true: Da
-false: Nu
+"true": Da
+"false": Nu
 equipment_detail: Detalii Echipament
 basic_info: Informații de Bază
 maintenance_info: Informații de Întreținere
@@ -1684,7 +1699,6 @@ group_type: Tipul grupului
 spatial_object_type: Tipul geometriei
 sub_task_status: Starea sub-sarcinii
 overall_task_status: Starea generală
-# Variety attribute labels
 variety_berry_colour: Culoarea boabelor
 variety_use_kind: Utilizare
 variety_registration_countries: Țări de înregistrare
@@ -1693,7 +1707,6 @@ variety_synonyms: Sinonime
 variety_source: Sursă
 variety_origin: Origine
 variety_category_label: Categorie
-# Breed attribute labels
 breed_origin: Origine
 breed_use_kind: Utilizare
 breed_birth_weight: Greutate la naștere (kg)
@@ -1706,11 +1719,9 @@ breed_litter_size: Mărimea fătării
 breed_milk_per_year: Lapte/An (kg)
 breed_daily_gain: Creștere zilnică (g)
 breed_productive_lifespan: Viață productivă (ani)
-# Species labels
 species_common_name: Nume comun
 species_scientific_name: Nume științific
 species_kingdom: Regat
-# Crop species common names
 crop_species_vitis_vinifera: Viță de vie
 crop_species_olea_europaea: Măsline
 crop_species_bos_taurus: Bovine
@@ -1719,8 +1730,6 @@ crop_species_capra_hircus: Capră
 crop_species_sus_scrofa_domesticus: Porc
 crop_species_equus_caballus: Cal
 crop_species_gallus_gallus_domesticus: Pui
-
-# Type Moderation
 nav_type_moderation: Moderare tipuri
 type_moderation: Moderare tipuri
 no_pending_entries: Niciun tip în așteptare de aprobare
@@ -1730,3 +1739,61 @@ search_existing_type: Caută tip existent
 type_approved: Tip aprobat
 type_rejected: Tip respins
 type_merged: Tipuri combinate
+company_location_map: Selectați locația companiei pe hartă
+mobile_phone: Telefon mobil
+fax: Fax
+city: Oraș
+postal_code: Cod poștal
+state_province: Județ / Provincie
+vat_id: Cod TVA
+registration_number: Număr de înregistrare
+connection_problem: 'Problem de conexiune: {}'
+server_error: 'Eroare server ({}): {}'
+session_expired: Sesiunea a expirat. Conectați-vă din nou.
+error_status: 'Eroare ({}): {}'
+invalid_data_format: 'Format de date nevalid: {}'
+backup_id_derived: ID derivat din numele fișierului
+backup_check_restore: Verifică / Restaurează
+backup_delete: Șterge
+backup_config_not_loaded: 'Configurație nu a fost încărcată: {}'
+backups_not_loaded: 'Backups nu au fost încărcate: {}'
+backup_config_saved: Configurația backup salvată
+backup_started: Backup {} pornit ({})
+backup_failed: 'Backup eșuat: {}'
+backup_deleted: 'Backup șters: {} obiecte, {} eliberat'
+backup_restore_confirm: '{}
+
+
+  Restaurare cu adevărat? Acest lucru va suprascrie baza de date actuală.'
+restore_failed: 'Restaurare eșuată: {}'
+check_failed: 'Verificare eșuată: {}'
+backups_title: Backups
+backup_config_title: Configurație
+backup_scheduled_enabled: Backups programate activate
+backup_schedule_db: Programare bază de date (Cron)
+backup_schedule_config: Programare configurație (Cron)
+backup_timezone: Fus orar
+backup_retention_title: Retenție (număr, 0 = nelimitat)
+backup_retention_daily: Zilnic
+backup_retention_weekly: Săptămânal
+backup_retention_monthly: Lunar
+backup_retention_yearly: Anual
+backup_verify_after_write: Verifică fiecare backup după scriere
+backup_save_config: Salvează configurația
+backup_run_now: Rulează backup acum
+backup_type_database: Bază de date
+backup_type_config: Configurație
+backup_type_full: Complet
+backup_existing: Backups existente
+backup_reload: Reîncarcă
+backup_none_found: Încă nu au fost găsite backups.
+backup_id: ID
+backup_type: Tip
+backup_status: Status
+backup_start: Început
+backup_size: Dimensiune
+backup_targets: Ținte
+backup_actions: Acțiuni
+setting_default_inherited: Implicit (moștenit)
+setting_reset_button: Resetează
+nav_iot_devices: Dispozitive IoT

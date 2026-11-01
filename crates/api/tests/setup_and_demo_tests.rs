@@ -42,7 +42,7 @@ fn with_var(key: &str, value: Option<&str>, f: impl FnOnce()) {
 
 #[test]
 fn initial_setup_request_requires_admin_firstname() {
-    use agrocore_api::dto::InitialSetupRequest;
+    use agrocore_api::handlers::system::InitialSetupRequest;
     use serde_json::json;
 
     let payload = json!({
@@ -65,7 +65,7 @@ fn initial_setup_request_requires_admin_firstname() {
 
 #[test]
 fn initial_setup_request_requires_admin_lastname() {
-    use agrocore_api::dto::InitialSetupRequest;
+    use agrocore_api::handlers::system::InitialSetupRequest;
     use serde_json::json;
 
     let payload = json!({
@@ -88,7 +88,7 @@ fn initial_setup_request_requires_admin_lastname() {
 
 #[test]
 fn initial_setup_request_requires_valid_email() {
-    use agrocore_api::dto::InitialSetupRequest;
+    use agrocore_api::handlers::system::InitialSetupRequest;
     use serde_json::json;
 
     let payload = json!({
@@ -111,7 +111,7 @@ fn initial_setup_request_requires_valid_email() {
 
 #[test]
 fn initial_setup_request_requires_password_minimum_length() {
-    use agrocore_api::dto::InitialSetupRequest;
+    use agrocore_api::handlers::system::InitialSetupRequest;
     use serde_json::json;
 
     let payload = json!({
@@ -134,7 +134,7 @@ fn initial_setup_request_requires_password_minimum_length() {
 
 #[test]
 fn initial_setup_request_requires_tenant_name() {
-    use agrocore_api::dto::InitialSetupRequest;
+    use agrocore_api::handlers::system::InitialSetupRequest;
     use serde_json::json;
 
     let payload = json!({
@@ -157,7 +157,7 @@ fn initial_setup_request_requires_tenant_name() {
 
 #[test]
 fn initial_setup_request_requires_tenant_slug() {
-    use agrocore_api::dto::InitialSetupRequest;
+    use agrocore_api::handlers::system::InitialSetupRequest;
     use serde_json::json;
 
     let payload = json!({
@@ -180,7 +180,7 @@ fn initial_setup_request_requires_tenant_slug() {
 
 #[test]
 fn initial_setup_request_validates_successfully() {
-    use agrocore_api::dto::InitialSetupRequest;
+    use agrocore_api::handlers::system::InitialSetupRequest;
     use serde_json::json;
 
     // Password must be 12+ chars with uppercase, lowercase, digit, special char
@@ -224,7 +224,7 @@ fn initial_setup_request_validates_successfully() {
 
 #[test]
 fn initial_setup_request_supports_all_modules() {
-    use agrocore_api::dto::InitialSetupRequest;
+    use agrocore_api::handlers::system::InitialSetupRequest;
     use serde_json::json;
 
     // Password must be 12+ chars with uppercase, lowercase, digit, special char
@@ -523,10 +523,6 @@ fn demo_data_summary_contains_all_entity_counts() {
         workers_count: 2,
         inventory_items_count: 3,
         animals_count: 3,
-        buildings_count: 3,
-        trees_count: 3,
-        tasks_count: 2,
-        livestock_count: 2,
     };
 
     // Verify all counts are present and non-zero
@@ -539,10 +535,6 @@ fn demo_data_summary_contains_all_entity_counts() {
         "Should have 3 demo inventory items"
     );
     assert_eq!(summary.animals_count, 3, "Should have 3 demo animals");
-    assert_eq!(summary.buildings_count, 3, "Should have 3 demo buildings");
-    assert_eq!(summary.trees_count, 3, "Should have 3 demo trees");
-    assert_eq!(summary.tasks_count, 2, "Should have 2 demo tasks");
-    assert_eq!(summary.livestock_count, 2, "Should have 2 demo livestock");
 }
 
 #[test]
@@ -559,10 +551,6 @@ fn demo_data_summary_serializes_correctly() {
         workers_count: 2,
         inventory_items_count: 3,
         animals_count: 3,
-        buildings_count: 3,
-        trees_count: 3,
-        tasks_count: 2,
-        livestock_count: 2,
     };
 
     let json = serde_json::to_string(&summary).expect("Failed to serialize");
@@ -573,20 +561,16 @@ fn demo_data_summary_serializes_correctly() {
         "JSON must contain sites_count"
     );
     assert!(
-        json.contains("buildings_count"),
-        "JSON must contain buildings_count"
+        json.contains("animals_count"),
+        "JSON must contain animals_count"
     );
     assert!(
-        json.contains("trees_count"),
-        "JSON must contain trees_count"
+        json.contains("orders_count"),
+        "JSON must contain orders_count"
     );
     assert!(
-        json.contains("tasks_count"),
-        "JSON must contain tasks_count"
-    );
-    assert!(
-        json.contains("livestock_count"),
-        "JSON must contain livestock_count"
+        json.contains("workers_count"),
+        "JSON must contain workers_count"
     );
 }
 
@@ -630,7 +614,7 @@ fn demo_default_password_is_not_trivial() {
 
 #[test]
 fn complete_setup_request_structure() {
-    use agrocore_api::dto::InitialSetupRequest;
+    use agrocore_api::handlers::system::InitialSetupRequest;
     use serde_json::json;
 
     // This is the exact structure a new deployment would send

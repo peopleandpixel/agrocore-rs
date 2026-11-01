@@ -13,6 +13,7 @@ fn tenant_and_create_tenant_validation_cover_required_fields() {
         slug: String::new(),
         config: TenantConfig::default(),
         is_active: true,
+        is_demo: false,
         created_at: Utc::now(),
         updated_at: Utc::now(),
     };

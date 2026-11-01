@@ -136,35 +136,21 @@ fn there_is_a_retry() {
 /// render raw key names in nine of ten locales.
 #[test]
 fn the_new_keys_are_translated() {
-    let locale = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("locales/app.yml");
-    let text = std::fs::read_to_string(&locale).expect("read app.yml");
+    let locales_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("locales");
+    let languages = ["en", "de", "es", "fr", "pt", "it", "pl", "ro", "uk", "nl"];
+    let keys = ["orders_load_failed", "retry", "no_orders_yet"];
 
-    for key in ["orders_load_failed", "retry", "no_orders_yet"] {
-        let at = text
-            .find(&format!("\n{key}:\n"))
-            .unwrap_or_else(|| panic!("missing key {key}"));
-        // Walk the lines: a key's block is every following line that is indented.
-        // Slicing by offsets found the first translation rather than the end of the
-        // block, which made every key look untranslated.
-        let block: String = text[at..]
-            .lines()
-            // `at` points at the newline before the key, so `lines()` yields an
-            // empty first element and the key itself. Both must be skipped before
-            // the translations start.
-            .skip(2)
-            .take_while(|l| l.starts_with("  ") || l.trim().is_empty())
-            .collect::<Vec<_>>()
-            .join("\n");
-        // `join` drops the newline that separated the key from its first
-        // translation, and the assertion below looks for one. Prefix it back rather
-        // than weakening the pattern to `"{lang}: "`, which would also match
-        // `de:` inside a longer key name.
-        let block = format!("\n{block}");
+    for lang in &languages {
+        let locale_file = locales_dir.join(format!("{lang}.yml"));
+        let text =
+            std::fs::read_to_string(&locale_file).unwrap_or_else(|_| panic!("read {lang}.yml"));
 
-        for lang in ["en", "de", "es", "fr", "pt", "it", "pl", "ro", "uk", "nl"] {
+        for key in &keys {
+            // In per-language files, keys are at the top level: "key: value"
             assert!(
-                block.contains(&format!("\n  {lang}: ")),
-                "{key} is missing the {lang} translation"
+                text.lines()
+                    .any(|line| line.starts_with(&format!("{key}:"))),
+                "{key} is missing in {lang}.yml"
             );
         }
     }

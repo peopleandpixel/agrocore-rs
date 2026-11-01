@@ -3,7 +3,8 @@ retry: Retry
 no_orders_yet: No orders yet
 setup_title: Initial Setup
 admin_password: Admin Password
-password_requirements: At least 12 characters with uppercase, lowercase, number, and special character
+password_requirements: At least 12 characters with uppercase, lowercase, number, and
+  special character
 password_confirm: Confirm Password
 password_mismatch: Passwords do not match
 tenant_name: Organization Name
@@ -23,8 +24,8 @@ edit_site_title: Edit Site
 delete_site: Delete site
 delete_polygon: Delete polygon
 redraw_polygon: Redraw polygon
-edit_polygon_hint: Drag vertices to edit the shape. Double-click a vertex to delete it. Use buttons below to delete or redraw
-  the polygon.
+edit_polygon_hint: Drag vertices to edit the shape. Double-click a vertex to delete
+  it. Use buttons below to delete or redraw the polygon.
 setup_complete: Setup completed successfully
 order_created: Order created successfully
 order_deleted: Order deleted successfully
@@ -79,7 +80,8 @@ drawing_mode_on: Drawing On
 drawing_mode_off: Drawing Off
 maximize_window: Maximize window
 restore_window: Restore window
-drawing_mode_hint: Click the pencil button to enable drawing mode, then click on the map to draw your area.
+drawing_mode_hint: Click the pencil button to enable drawing mode, then click on the
+  map to draw your area.
 finish_polygon: Finish area
 cancel_drawing: Cancel drawing
 users_desc: Manage team members and their access permissions.
@@ -94,7 +96,8 @@ role_worker: Worker
 role_viewer: Viewer
 edit_user: Edit User
 role_permissions_overview: Roles and Permissions Overview
-role_permissions_desc: Each role has defined permissions. Permissions cannot be assigned individually - only the user role.
+role_permissions_desc: Each role has defined permissions. Permissions cannot be assigned
+  individually - only the user role.
 role_admin_desc: Full access to all areas and user management
 role_manager_desc: Management without user permissions
 role_worker_desc: Input and view of own data
@@ -289,8 +292,8 @@ roles_overview: Roles Overview
 impersonation: Impersonation
 permissions_all_tenants: All tenants
 permissions_tenant_users: Tenant users
-role_permissions_note: Each role defines a set of permissions. Users can have multiple roles, and individual permissions can
-  be granted or revoked per user.
+role_permissions_note: Each role defines a set of permissions. Users can have multiple
+  roles, and individual permissions can be granted or revoked per user.
 role_superadmin_desc: Full system access, can manage tenants
 nav_settings: Settings
 nav_types: Type Management
@@ -331,8 +334,8 @@ nav_group_administration: Administration
 nav_group_worker: Worker
 not_found: 404 Not Found
 access_denied: Access Denied
-access_denied_desc: You do not have permission to view this page. Please contact your administrator if you believe this is
-  an error.
+access_denied_desc: You do not have permission to view this page. Please contact your
+  administrator if you believe this is an error.
 go_to_dashboard: Go to Dashboard
 dashboard_welcome_prefix: Welcome to
 dashboard_tasks_desc: Currently recorded
@@ -346,8 +349,8 @@ quick_actions: Quick actions
 issue_report: Report issue
 weather_forecast: Weather forecast
 no_weather_data: No weather data available.
-weather_no_external_data: No weather data available. If there is no sensor, the setup address is used for an external weather
-  lookup.
+weather_no_external_data: No weather data available. If there is no sensor, the setup
+  address is used for an external weather lookup.
 weather_stations_title: Weather stations
 no_weather_stations: No weather stations available yet.
 phenology_title: Phenology
@@ -468,7 +471,8 @@ enabled: Enabled
 save_lpis_settings: Save LPIS Settings
 default_inherited: Default (inherited)
 reset_to_default: Reset
-settings_server_stored: These values are stored server-side and apply to the entire tenant.
+settings_server_stored: These values are stored server-side and apply to the entire
+  tenant.
 settings_reload: Reload
 settings_restore_defaults: Reset all to defaults
 settings_loaded_failed: Settings could not be loaded
@@ -571,8 +575,8 @@ note: Note
 performed_at: Performed At
 total_cost: Total Cost (EUR)
 none: None
-true: true
-false: false
+"true": "true"
+"false": "false"
 equipment_detail: Equipment Detail
 basic_info: Basic Information
 maintenance_info: Maintenance Information
@@ -1686,7 +1690,6 @@ group_type: Group Type
 spatial_object_type: Geometry Type
 sub_task_status: Sub-task Status
 overall_task_status: Overall Status
-# Variety attribute labels
 variety_berry_colour: Berry Colour
 variety_use_kind: Use
 variety_registration_countries: Registration Countries
@@ -1695,7 +1698,6 @@ variety_synonyms: Synonyms
 variety_source: Source
 variety_origin: Origin
 variety_category_label: Category
-# Breed attribute labels
 breed_origin: Origin
 breed_use_kind: Use
 breed_birth_weight: Birth Weight (kg)
@@ -1708,11 +1710,9 @@ breed_litter_size: Litter Size
 breed_milk_per_year: Milk/Year (kg)
 breed_daily_gain: Daily Gain (g)
 breed_productive_lifespan: Productive Lifespan (Years)
-# Species labels
 species_common_name: Common Name
 species_scientific_name: Scientific Name
 species_kingdom: Kingdom
-# Crop species common names
 crop_species_vitis_vinifera: Grapevine
 crop_species_olea_europaea: Olive
 crop_species_bos_taurus: Cattle
@@ -1721,8 +1721,6 @@ crop_species_capra_hircus: Goat
 crop_species_sus_scrofa_domesticus: Pig
 crop_species_equus_caballus: Horse
 crop_species_gallus_gallus_domesticus: Chicken
-
-# Type Moderation
 nav_type_moderation: Type Moderation
 type_moderation: Type Moderation
 no_pending_entries: No types pending approval
@@ -1732,3 +1730,61 @@ search_existing_type: Search existing type
 type_approved: Type approved
 type_rejected: Type rejected
 type_merged: Types merged
+company_location_map: Select company location on map
+mobile_phone: Mobile phone
+fax: Fax
+city: City
+postal_code: Postal code
+state_province: State / Province
+vat_id: VAT ID
+registration_number: Registration number
+connection_problem: 'Connection problem: {}'
+server_error: 'Server error ({}): {}'
+session_expired: Session expired. Please log in again.
+error_status: 'Error ({}): {}'
+invalid_data_format: 'Invalid data format: {}'
+backup_id_derived: ID derived from filename
+backup_check_restore: Check / Restore
+backup_delete: Delete
+backup_config_not_loaded: 'Configuration not loaded: {}'
+backups_not_loaded: 'Backups not loaded: {}'
+backup_config_saved: Backup configuration saved
+backup_started: Backup {} started ({})
+backup_failed: 'Backup failed: {}'
+backup_deleted: 'Backup deleted: {} objects, {} freed'
+backup_restore_confirm: '{}
+
+
+  Really restore? This will overwrite the current database.'
+restore_failed: 'Restore failed: {}'
+check_failed: 'Check failed: {}'
+backups_title: Backups
+backup_config_title: Configuration
+backup_scheduled_enabled: Scheduled backups enabled
+backup_schedule_db: Database schedule (Cron)
+backup_schedule_config: Config schedule (Cron)
+backup_timezone: Timezone
+backup_retention_title: Retention (count, 0 = unlimited)
+backup_retention_daily: Daily
+backup_retention_weekly: Weekly
+backup_retention_monthly: Monthly
+backup_retention_yearly: Yearly
+backup_verify_after_write: Verify each backup after writing
+backup_save_config: Save configuration
+backup_run_now: Run backup now
+backup_type_database: Database
+backup_type_config: Configuration
+backup_type_full: Full
+backup_existing: Existing backups
+backup_reload: Reload
+backup_none_found: No backups found yet.
+backup_id: ID
+backup_type: Type
+backup_status: Status
+backup_start: Start
+backup_size: Size
+backup_targets: Targets
+backup_actions: Actions
+setting_default_inherited: Default (inherited)
+setting_reset_button: Reset
+nav_iot_devices: IoT Devices

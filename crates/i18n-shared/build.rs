@@ -1,11 +1,12 @@
 //! Build script for `agrocore-i18n-shared`
 //!
-//! Reads `crates/admin-ui/locales/app.yml` and generates
+//! Reads `crates/admin-ui/locales/{en,de,es,fr,pt,it,pl,ro,uk,nl}.yml` and generates
 //! `translation.rs` in `OUT_DIR` containing:
 //!   - A `Msg` enum with one variant per YAML top-level key
 //!   - A `Translatable` impl mapping each variant + locale to a `&'static str`
 
 use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
@@ -13,44 +14,39 @@ use std::path::PathBuf;
 fn main() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
 
-    // Locate the YAML source relative to the i18n-shared crate.
+    // Locate the locales directory relative to the i18n-shared crate.
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let yaml_path = manifest_dir
-        .parent()
-        .unwrap()
-        .join("admin-ui/locales/app.yml");
+    let locales_dir = manifest_dir.parent().unwrap().join("admin-ui/locales");
 
-    println!("cargo:rerun-if-changed={}", yaml_path.display());
+    let languages = ["en", "de", "es", "fr", "pt", "it", "pl", "ro", "uk", "nl"];
 
-    let yaml_content = fs::read_to_string(&yaml_path)
-        .unwrap_or_else(|e| panic!("Failed to read i18n YAML at {}: {}", yaml_path.display(), e));
+    // Register rerun flags for all locale files
+    for lang in &languages {
+        let path = locales_dir.join(format!("{lang}.yml"));
+        println!("cargo:rerun-if-changed={}", path.display());
+    }
 
-    // Parse the YAML into nested BTreeMap<String, BTreeMap<String, String>>.
-    // Some top-level keys (like _version: 2) are scalars, not maps — filter them out.
-    let parsed: BTreeMap<String, serde_yaml::Value> = serde_yaml::from_str(&yaml_content)
-        .unwrap_or_else(|e| panic!("Failed to parse YAML at {}: {}", yaml_path.display(), e));
+    // Read all per-language YAML files and merge into a single structure
+    // { key: { lang: value } }
+    let mut all_keys: HashMap<String, BTreeMap<String, String>> = HashMap::new();
 
-    let mut entries: Vec<(String, BTreeMap<String, String>)> = Vec::new();
-    for (key, value) in &parsed {
-        if let serde_yaml::Value::Mapping(map) = value {
-            let lang_map: Result<BTreeMap<String, String>, _> = map
-                .iter()
-                .map(|(k, v)| {
-                    let key_str = k
-                        .as_str()
-                        .ok_or_else(|| format!("Non-string key in {}: {:?}", key, k));
-                    let val_str = v
-                        .as_str()
-                        .ok_or_else(|| format!("Non-string value in {}: {:?}", key, v));
-                    key_str.and_then(|k| val_str.map(|v| (k.to_string(), v.to_string())))
-                })
-                .collect();
-            match lang_map {
-                Ok(m) => entries.push((key.clone(), m)),
-                Err(e) => eprintln!("cargo:warning=[i18n-codegen] Skipping key {}: {}", key, e),
-            }
+    for lang in &languages {
+        let path = locales_dir.join(format!("{lang}.yml"));
+        let content = fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("Failed to read i18n YAML at {}: {}", path.display(), e));
+
+        let parsed: BTreeMap<String, String> = serde_yaml::from_str(&content)
+            .unwrap_or_else(|e| panic!("Failed to parse YAML at {}: {}", path.display(), e));
+
+        for (key, value) in parsed {
+            all_keys
+                .entry(key)
+                .or_insert_with(BTreeMap::new)
+                .insert(lang.to_string(), value);
         }
     }
+
+    let mut entries: Vec<(String, BTreeMap<String, String>)> = all_keys.into_iter().collect();
     entries.sort_by(|(a, _), (b, _)| a.cmp(b));
 
     let mut enum_variants: Vec<String> = Vec::new();

@@ -81,19 +81,37 @@ pub struct I18n {
     translations: Option<&'static HashMap<String, HashMap<String, String>>>,
 }
 
-#[derive(Debug, Deserialize)]
-struct LocaleFile {
-    #[serde(rename = "_version")]
-    _version: u8,
-    #[serde(flatten)]
-    translations: HashMap<String, HashMap<String, String>>,
-}
-
 impl I18n {
     pub fn new() -> Self {
-        let file: LocaleFile = serde_yaml::from_str(include_str!("../locales/app.yml"))
-            .expect("failed to load admin-ui locales");
-        let translations = Box::leak(Box::new(file.translations));
+        let mut translations: HashMap<String, HashMap<String, String>> = HashMap::new();
+
+        let locale_files: &[(&str, &str)] = &[
+            ("en", include_str!("../locales/en.yml")),
+            ("de", include_str!("../locales/de.yml")),
+            ("es", include_str!("../locales/es.yml")),
+            ("fr", include_str!("../locales/fr.yml")),
+            ("pt", include_str!("../locales/pt.yml")),
+            ("it", include_str!("../locales/it.yml")),
+            ("pl", include_str!("../locales/pl.yml")),
+            ("ro", include_str!("../locales/ro.yml")),
+            ("uk", include_str!("../locales/uk.yml")),
+            ("nl", include_str!("../locales/nl.yml")),
+        ];
+
+        for &(lang, content) in locale_files {
+            let file: HashMap<String, String> = serde_yaml::from_str(content).unwrap_or_else(|e| {
+                eprintln!("Failed to parse {lang}.yml: {e}");
+                HashMap::new()
+            });
+            for (key, value) in file {
+                translations
+                    .entry(key)
+                    .or_insert_with(HashMap::new)
+                    .insert(lang.to_string(), value);
+            }
+        }
+
+        let translations = Box::leak(Box::new(translations));
         Self {
             translations: Some(translations),
         }

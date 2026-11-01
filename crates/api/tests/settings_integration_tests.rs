@@ -87,6 +87,8 @@ mod config_serialization_tests {
             rate_limit_burst_size: 30,
             enabled: true,
             configured: Some(String::from("PT")),
+            has_credentials: false,
+            auth: None,
         };
 
         let toml_str = toml::to_string(&config).unwrap();

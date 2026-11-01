@@ -112,12 +112,12 @@ mod tests {
 
     #[test]
     fn test_msg_translatable() {
-        // Key that exists in app.yml
-        let key = Msg::YES;
+        // Key that exists in locale files
+        let key = Msg::RETRY;
         let de = key.tr(Locale::De);
         let en = key.tr(Locale::En);
-        assert_eq!(de, "Ja", "German translation for YES should be 'Ja'");
-        assert_eq!(en, "Yes", "English translation for YES should be 'Yes'");
+        assert_eq!(de, "Erneut versuchen", "German translation for RETRY");
+        assert_eq!(en, "Retry", "English translation for RETRY");
     }
 
     #[test]
@@ -143,6 +143,6 @@ mod tests {
 
     #[test]
     fn test_msg_key() {
-        assert_eq!(Msg::YES.key(), "YES");
+        assert_eq!(Msg::RETRY.key(), "RETRY");
     }
 }

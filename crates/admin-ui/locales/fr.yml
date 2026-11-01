@@ -3,7 +3,8 @@ retry: Réessayer
 no_orders_yet: Aucune tâche pour le moment
 setup_title: Configuration Initiale
 admin_password: Mot de passe Administrateur
-password_requirements: Au moins 12 caractères avec majuscule, minuscule, chiffre et caractère spécial
+password_requirements: Au moins 12 caractères avec majuscule, minuscule, chiffre et
+  caractère spécial
 password_confirm: Confirmer le mot de passe
 password_mismatch: Les mots de passe ne correspondent pas
 tenant_name: Nom de l'organisation
@@ -23,7 +24,8 @@ edit_site_title: Modifier le site
 delete_site: Supprimer le site
 delete_polygon: Supprimer le polygone
 redraw_polygon: Redessiner le polygone
-edit_polygon_hint: Glissez les sommets pour modifier la forme. Double-cliquez sur un sommet pour le supprimer.
+edit_polygon_hint: Glissez les sommets pour modifier la forme. Double-cliquez sur
+  un sommet pour le supprimer.
 setup_complete: Configuration terminée avec succès
 order_created: Ordre créé avec succès
 order_deleted: Ordre supprimé avec succès
@@ -78,7 +80,8 @@ drawing_mode_on: Dessin activé
 drawing_mode_off: Dessin désactivé
 maximize_window: Agrandir la fenêtre
 restore_window: Restaurer la fenêtre
-drawing_mode_hint: Click the pencil button to enable drawing mode, then click on the map to draw your area.
+drawing_mode_hint: Click the pencil button to enable drawing mode, then click on the
+  map to draw your area.
 finish_polygon: Terminer la zone
 cancel_drawing: Annuler le dessin
 users_desc: Manage team members and their access permissions.
@@ -93,7 +96,8 @@ role_worker: Worker
 role_viewer: Viewer
 edit_user: Edit User
 role_permissions_overview: Roles and Permissions Overview
-role_permissions_desc: Each role has defined permissions. Permissions cannot be assigned individually - only the user role.
+role_permissions_desc: Each role has defined permissions. Permissions cannot be assigned
+  individually - only the user role.
 role_admin_desc: Full access to all areas and user management
 role_manager_desc: Management without user permissions
 role_worker_desc: Input and view of own data
@@ -288,8 +292,9 @@ roles_overview: Aperçu des rôles
 impersonation: Supplantation
 permissions_all_tenants: Tous les tenants
 permissions_tenant_users: Utilisateurs du tenant
-role_permissions_note: Chaque rôle définit un ensemble de permissions. Les utilisateurs peuvent avoir plusieurs rôles, et
-  les permissions individuelles peuvent être accordées ou révoquées par utilisateur.
+role_permissions_note: Chaque rôle définit un ensemble de permissions. Les utilisateurs
+  peuvent avoir plusieurs rôles, et les permissions individuelles peuvent être accordées
+  ou révoquées par utilisateur.
 role_superadmin_desc: Accès complet au système, peut gérer les tenants
 nav_settings: Paramètres
 nav_types: Gestion des Types
@@ -330,8 +335,8 @@ nav_group_administration: Administration
 nav_group_worker: Travailleur
 not_found: 404 Not Found
 access_denied: Accès refusé
-access_denied_desc: Vous n'avez pas la permission de voir cette page. Contactez votre administrateur si vous pensez qu'il
-  s'agit d'une erreur.
+access_denied_desc: Vous n'avez pas la permission de voir cette page. Contactez votre
+  administrateur si vous pensez qu'il s'agit d'une erreur.
 go_to_dashboard: Aller au tableau de bord
 dashboard_welcome_prefix: Welcome to
 dashboard_tasks_desc: Actuellement enregistré
@@ -345,8 +350,8 @@ quick_actions: Quick actions
 issue_report: Report issue
 weather_forecast: Weather forecast
 no_weather_data: No weather data available.
-weather_no_external_data: Aucune donnée météo. S'il n'y a pas de station, l'adresse de configuration est utilisée pour une
-  requête externe.
+weather_no_external_data: Aucune donnée météo. S'il n'y a pas de station, l'adresse
+  de configuration est utilisée pour une requête externe.
 weather_stations_title: Weather stations
 no_weather_stations: No weather stations available yet.
 phenology_title: Phenology
@@ -443,11 +448,14 @@ setup_admin_desc: Créez le premier utilisateur administrateur pour cette instal
 setup_tenant_desc: L'entreprise représente votre organisation dans le système.
 setup_company_desc: Métadonnées facultatives pour votre organisation.
 setup_resources_desc: Définissez un type de champ de départ pour l'espace de travail.
-setup_admin_help: Utilisez le premier compte administrateur pour terminer la configuration et gérer le système.
+setup_admin_help: Utilisez le premier compte administrateur pour terminer la configuration
+  et gérer le système.
 setup_tenant_help: L'identifiant fait partie des URL et doit rester court et stable.
-setup_company_help: Les coordonnées de l'entreprise servent au contact et aux intégrations ultérieures.
+setup_company_help: Les coordonnées de l'entreprise servent au contact et aux intégrations
+  ultérieures.
 setup_resources_help: Choisissez les modules à activer dès le départ.
-validation_required_company: Veuillez renseigner le nom de l'entreprise, l'adresse et le pays.
+validation_required_company: Veuillez renseigner le nom de l'entreprise, l'adresse
+  et le pays.
 validation_invalid_email: Please enter a valid email address.
 validation_invalid_phone: Please enter a valid international phone number.
 profile_saved_server: Profil enregistré sur le serveur.
@@ -458,7 +466,8 @@ settings_tab_lpis: Fournisseurs LPIS
 settings_tab_status: État du Système
 settings_tab_danger: Zone de Danger
 lpis_provider_settings: Paramètres du fournisseur LPIS
-lpis_provider_desc: Configurez les fournisseurs LPIS pour chaque pays. Les modifications nécessitent un redémarrage.
+lpis_provider_desc: Configurez les fournisseurs LPIS pour chaque pays. Les modifications
+  nécessitent un redémarrage.
 base_url: URL de base
 timeout_seconds: Délai d'attente (s)
 cache_ttl_seconds: TTL de cache (s)
@@ -467,7 +476,8 @@ enabled: Activé
 save_lpis_settings: Enregistrer les paramètres LPIS
 default_inherited: Par défaut (hérité)
 reset_to_default: Réinitialiser
-settings_server_stored: Ces valeurs sont stockées côté serveur et s'appliquent à tout le tenant.
+settings_server_stored: Ces valeurs sont stockées côté serveur et s'appliquent à tout
+  le tenant.
 settings_reload: Recharger
 settings_restore_defaults: Tout réinitialiser aux valeurs par défaut
 settings_loaded_failed: Les paramètres n'ont pas pu être chargés
@@ -483,7 +493,8 @@ lpis_country_poland: Pologne (LPIS)
 lpis_country_austria: Autriche (INVEKOS)
 setting_saved: Enregistré
 setting_reset: Réinitialisé
-dashboard_simple_mode_text: Utilisez les assistants guidés pour terminer rapidement les tâches complexes.
+dashboard_simple_mode_text: Utilisez les assistants guidés pour terminer rapidement
+  les tâches complexes.
 dashboard_weather_setup_address: L'adresse de configuration est utilisée si elle existe.
 no_sensor_weather: No sensor available. The setup address is used when present.
 weather_no_site_for_observation: Aucune parcelle disponible pour l'observation.
@@ -491,7 +502,8 @@ resource_overview: Overview of water, energy, supplies, and staff.
 resource_assignments_desc: Les affectations sont dérivées des tâches et des rôles.
 manage_requirements: Manage legal requirements and certifications.
 next_audit_desc: La date sera remplie à partir des données d'audit.
-certification_status_desc: Les certificats apparaîtront une fois les données d'audit connectées.
+certification_status_desc: Les certificats apparaîtront une fois les données d'audit
+  connectées.
 compliance_no_site_for_checklist: Aucune parcelle disponible pour la liste de contrôle.
 analytics_no_site_for_prediction: Aucune parcelle disponible pour la prédiction.
 analytics_no_site_for_calculation: Aucune parcelle disponible pour le calcul.
@@ -570,8 +582,8 @@ note: Remarque
 performed_at: Effectué le
 total_cost: Coût Total (EUR)
 none: Aucun
-true: Oui
-false: Non
+"true": Oui
+"false": Non
 equipment_detail: Détails de l'équipement
 basic_info: Informations de Base
 maintenance_info: Informations de Maintenance
@@ -1685,7 +1697,6 @@ group_type: Type de groupe
 spatial_object_type: Type de géométrie
 sub_task_status: Statut de sous-tâche
 overall_task_status: Statut global
-# Variety attribute labels
 variety_berry_colour: Couleur de baie
 variety_use_kind: Usage
 variety_registration_countries: Pays d'enregistrement
@@ -1694,7 +1705,6 @@ variety_synonyms: Synonymes
 variety_source: Source
 variety_origin: Origine
 variety_category_label: Catégorie
-# Breed attribute labels
 breed_origin: Origine
 breed_use_kind: Usage
 breed_birth_weight: Poids à la naissance (kg)
@@ -1707,11 +1717,9 @@ breed_litter_size: Taille de portée
 breed_milk_per_year: Lait/An (kg)
 breed_daily_gain: Gain quotidien (g)
 breed_productive_lifespan: Durée productive (ans)
-# Species labels
 species_common_name: Nom commun
 species_scientific_name: Nom scientifique
 species_kingdom: Royaume
-# Crop species common names
 crop_species_vitis_vinifera: Vigne
 crop_species_olea_europaea: Olivier
 crop_species_bos_taurus: Bétail
@@ -1720,8 +1728,6 @@ crop_species_capra_hircus: Chèvre
 crop_species_sus_scrofa_domesticus: Porc
 crop_species_equus_caballus: Cheval
 crop_species_gallus_gallus_domesticus: Poulet
-
-# Type Moderation
 nav_type_moderation: Modération des types
 type_moderation: Modération des types
 no_pending_entries: Aucun type en attente d'approbation
@@ -1731,3 +1737,61 @@ search_existing_type: Rechercher un type existant
 type_approved: Type approuvé
 type_rejected: Type rejeté
 type_merged: Types fusionnés
+company_location_map: Sélectionner l'emplacement de l'entreprise sur la carte
+mobile_phone: Téléphone portable
+fax: Fax
+city: Ville
+postal_code: Code postal
+state_province: État / Province
+vat_id: N° TVA
+registration_number: Numéro d'enregistrement
+connection_problem: 'Problème de connexion: {}'
+server_error: 'Erreur serveur ({}): {}'
+session_expired: Session expirée. Veuillez vous reconnecter.
+error_status: 'Erreur ({}): {}'
+invalid_data_format: 'Format de données invalide: {}'
+backup_id_derived: ID dérivé du nom de fichier
+backup_check_restore: Vérifier / Restaurer
+backup_delete: Supprimer
+backup_config_not_loaded: 'Configuration non chargée: {}'
+backups_not_loaded: 'Backups non chargés: {}'
+backup_config_saved: Configuration de backup enregistrée
+backup_started: Backup {} démarré ({})
+backup_failed: 'Backup échoué: {}'
+backup_deleted: 'Backup supprimé: {} objets, {} libéré'
+backup_restore_confirm: '{}
+
+
+  Vraiment restaurer ? Cela écrasera la base de données actuelle.'
+restore_failed: 'Restauration échouée: {}'
+check_failed: 'Vérification échouée: {}'
+backups_title: Sauvegardes
+backup_config_title: Configuration
+backup_scheduled_enabled: Backups planifiés activés
+backup_schedule_db: Planification de base de données (Cron)
+backup_schedule_config: Planification de configuration (Cron)
+backup_timezone: Fuseau horaire
+backup_retention_title: Rétention (nombre, 0 = illimité)
+backup_retention_daily: Quotidien
+backup_retention_weekly: Hebdomadaire
+backup_retention_monthly: Mensuel
+backup_retention_yearly: Annuel
+backup_verify_after_write: Vérifier chaque backup après écriture
+backup_save_config: Enregistrer la configuration
+backup_run_now: Exécuter le backup maintenant
+backup_type_database: Base de données
+backup_type_config: Configuration
+backup_type_full: Complet
+backup_existing: Backups existants
+backup_reload: Recharger
+backup_none_found: Aucun backup trouvé pour le moment.
+backup_id: ID
+backup_type: Type
+backup_status: Statut
+backup_start: Début
+backup_size: Taille
+backup_targets: Cibles
+backup_actions: Actions
+setting_default_inherited: Par défaut (hérité)
+setting_reset_button: Réinitialiser
+nav_iot_devices: Appareils IoT

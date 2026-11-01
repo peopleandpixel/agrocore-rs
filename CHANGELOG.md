@@ -16,9 +16,17 @@
 
 ### P1 — Internationalization & Validation
 
-- **M8: German strings in i18n** — 45+ hardcoded German strings replaced with i18n keys across `backup.rs` (40), `settings_editor.rs` (4), `lib.rs` (2), and `error_boundary.rs`. Added 60+ translation keys to `locales/app.yml` covering 10 languages (en, de, es, fr, pt, it, pl, ro, uk, nl).
+- **M8: German strings in i18n** — 45+ hardcoded German strings replaced with i18n keys across `backup.rs` (40), `settings_editor.rs` (4), `lib.rs` (2), and `error_boundary.rs`. Added 60+ translation keys covering 10 languages (en, de, es, fr, pt, it, pl, ro, uk, nl).
 - **M7: ErrorBoundary i18n** — `user_friendly_error()` now returns i18n keys instead of hardcoded German strings, enabling proper localization of error messages.
 - **E1: Validation on POST/PUT routes** — Added `.validate()` to 5 missing handlers: `update_customer` (customers.rs), `create_worker_task_status`, `update_worker_task_status`, `create_clock_entry`, `update_clock_entry` (workforce.rs). Added `validator::Validate` derive to `UpdateCustomerDto`, `UpdateWorkerTaskStatusDto`, and `UpdateClockEntryRequest`.
+
+### i18n Architecture — Per-Language Locale Files
+
+- **Split `app.yml` into per-language files** — Replaced single `locales/app.yml` with 10 per-language files (`en.yml`, `de.yml`, `es.yml`, `fr.yml`, `pt.yml`, `it.yml`, `pl.yml`, `ro.yml`, `uk.yml`, `nl.yml`). Each file contains a flat `key: value` map for its language.
+- **Updated `I18n::new()`** — Now loads all 10 locale files at compile time using `include_str!()` and builds the `HashMap<key, HashMap<lang, value>>` structure.
+- **Updated `i18n-shared` build script** — `build.rs` now reads all per-language YAML files instead of a single `app.yml`, generating the `Msg` enum with 1779 variants.
+- **Fixed YAML boolean keys** — Quoted `true` and `false` keys in all locale files to prevent YAML from parsing them as booleans.
+- **Updated tests** — Fixed `order_list_load_state_tests.rs` to check per-language files; fixed `i18n-shared` tests to use `Msg::RETRY` instead of `Msg::YES`; fixed `tenant_tests.rs` (missing `is_demo`), `nutrition_tests.rs` (missing `price_per_kg_eur`), `settings_integration_tests.rs` (missing `auth`/`has_credentials`), and `setup_and_demo_tests.rs` (DemoDataSummary fields, InitialSetupRequest import).
 
 ### Dependencies
 

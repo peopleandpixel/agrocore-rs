@@ -32,6 +32,7 @@ fn test_calculate_fertilizer_amount() {
             k: 0.0,
             mg: 0.0,
         },
+        price_per_kg_eur: None,
     };
 
     let amount = NutritionService::calculate_fertilizer_amount(&demand, &fertilizer);
@@ -55,6 +56,7 @@ fn test_calculate_balance() {
             k: 15.0,
             mg: 0.0,
         },
+        price_per_kg_eur: None,
     };
 
     // Bringe 400kg aus -> 60kg N, 60kg P, 60kg K
@@ -82,6 +84,7 @@ fn test_calculate_fertilizer_amount_handles_zero_n() {
             k: 0.0,
             mg: 0.0,
         },
+        price_per_kg_eur: None,
     };
 
     assert_eq!(

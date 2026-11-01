@@ -3,7 +3,8 @@ retry: Opnieuw proberen
 no_orders_yet: Nog geen taken
 setup_title: Initiële installatie
 admin_password: Beheerderswachtwoord
-password_requirements: Minstens 12 tekens met hoofdletter, kleine letter, cijfer en speciaal teken
+password_requirements: Minstens 12 tekens met hoofdletter, kleine letter, cijfer en
+  speciaal teken
 password_confirm: Bevestig wachtwoord
 password_mismatch: Wachtwoorden komen niet overeen
 tenant_name: Organisatienaam
@@ -23,7 +24,8 @@ edit_site_title: Locatie bewerken
 delete_site: Locatie verwijderen
 delete_polygon: Polygon verwijderen
 redraw_polygon: Polygon opnieuw tekenen
-edit_polygon_hint: Sleep hoekpunten om de vorm te bewerken. Dubbelklik op een hoekpunt om het te verwijderen.
+edit_polygon_hint: Sleep hoekpunten om de vorm te bewerken. Dubbelklik op een hoekpunt
+  om het te verwijderen.
 setup_complete: Installatie succesvol voltooid
 order_created: Order succesvol aangemaakt
 order_deleted: Order succesvol verwijderd
@@ -78,7 +80,8 @@ drawing_mode_on: Tekenen aan
 drawing_mode_off: Tekenen uit
 maximize_window: Venster maximaliseren
 restore_window: Venster herstellen
-drawing_mode_hint: Click the pencil button to enable drawing mode, then click on the map to draw your area.
+drawing_mode_hint: Click the pencil button to enable drawing mode, then click on the
+  map to draw your area.
 finish_polygon: Gebied afronden
 cancel_drawing: Tekenen annuleren
 users_desc: Manage team members and their access permissions.
@@ -93,7 +96,8 @@ role_worker: Worker
 role_viewer: Viewer
 edit_user: Edit User
 role_permissions_overview: Roles and Permissions Overview
-role_permissions_desc: Each role has defined permissions. Permissions cannot be assigned individually - only the user role.
+role_permissions_desc: Each role has defined permissions. Permissions cannot be assigned
+  individually - only the user role.
 role_admin_desc: Full access to all areas and user management
 role_manager_desc: Management without user permissions
 role_worker_desc: Input and view of own data
@@ -288,8 +292,9 @@ roles_overview: Rollenoverzicht
 impersonation: Impersonatie
 permissions_all_tenants: Alle tenants
 permissions_tenant_users: Tenant-gebruikers
-role_permissions_note: Elke rol definieert een set van rechten. Gebruikers kunnen meerdere rollen hebben, en individuele rechten
-  kunnen per gebruiker worden toegekend of ingetrokken.
+role_permissions_note: Elke rol definieert een set van rechten. Gebruikers kunnen
+  meerdere rollen hebben, en individuele rechten kunnen per gebruiker worden toegekend
+  of ingetrokken.
 role_superadmin_desc: Volledige systeemtoegang, kan tenants beheren
 nav_settings: Instellingen
 nav_types: Typebeheer
@@ -330,8 +335,8 @@ nav_group_administration: Administratie
 nav_group_worker: Werknemer
 not_found: 404 Niet gevonden
 access_denied: Toegang geweigerd
-access_denied_desc: Je hebt geen toestemming om deze pagina te bekijken. Neem contact op met je beheerder als je denkt dat
-  dit een fout is.
+access_denied_desc: Je hebt geen toestemming om deze pagina te bekijken. Neem contact
+  op met je beheerder als je denkt dat dit een fout is.
 go_to_dashboard: Naar dashboard
 dashboard_welcome_prefix: Welkom bij
 dashboard_tasks_desc: Momenteel opgenomen
@@ -442,9 +447,11 @@ setup_admin_desc: Maak de eerste beheerder aan voor deze installatie.
 setup_tenant_desc: De organisatie vertegenwoordigt uw bedrijf in het systeem.
 setup_company_desc: Optionele metadata voor uw organisatie.
 setup_resources_desc: Definieer een initieel veldtype voor de werkruimte.
-setup_admin_help: Gebruik het eerste beheerdersaccount om de installatie te voltooien en het systeem te beheren.
+setup_admin_help: Gebruik het eerste beheerdersaccount om de installatie te voltooien
+  en het systeem te beheren.
 setup_tenant_help: De slug wordt onderdeel van de URLs en moet kort en stabiel blijven.
-setup_company_help: Bedrijfsgegevens worden gebruikt voor contactgegevens en latere integraties.
+setup_company_help: Bedrijfsgegevens worden gebruikt voor contactgegevens en latere
+  integraties.
 setup_resources_help: Kies vanaf het begin de modules die u wilt inschakelen.
 validation_required_company: Vul de bedrijfsnaam, het adres en het land in.
 validation_invalid_email: Voer een geldig e-mailadres in.
@@ -457,7 +464,8 @@ settings_tab_lpis: LPIS-leveranciers
 settings_tab_status: Systeemstatus
 settings_tab_danger: Gevarenzone
 lpis_provider_settings: LPIS-leveranciersinstellingen
-lpis_provider_desc: Configureer LPIS-leveranciers voor elk land. Wijzigingen vereisen herstart.
+lpis_provider_desc: Configureer LPIS-leveranciers voor elk land. Wijzigingen vereisen
+  herstart.
 base_url: Basis-URL
 timeout_seconds: Time-out (s)
 cache_ttl_seconds: Cache TTL (s)
@@ -466,7 +474,8 @@ enabled: Ingeschakeld
 save_lpis_settings: LPIS-instellingen opslaan
 default_inherited: Standaard (geërfd)
 reset_to_default: Resetten
-settings_server_stored: Deze waarden worden serverzijde opgeslagen en gelden voor de hele organisatie.
+settings_server_stored: Deze waarden worden serverzijde opgeslagen en gelden voor
+  de hele organisatie.
 settings_reload: Herladen
 settings_restore_defaults: Alles resetten naar standaardwaarden
 settings_loaded_failed: Instellingen konden niet worden geladen
@@ -482,7 +491,8 @@ lpis_country_poland: Polen (LPIS)
 lpis_country_austria: Oostenrijk (INVEKOS)
 setting_saved: Opgeslagen
 setting_reset: Gereset
-dashboard_simple_mode_text: Gebruik de begeleide assistenten om complexe werkzaamheden snel af te ronden.
+dashboard_simple_mode_text: Gebruik de begeleide assistenten om complexe werkzaamheden
+  snel af te ronden.
 dashboard_weather_setup_address: Het insteladres wordt gebruikt indien beschikbaar.
 no_sensor_weather: 'Geen sensor beschikbaar. '
 weather_no_site_for_observation: Geen plek beschikbaar voor observatie.
@@ -569,8 +579,8 @@ note: Notitie
 performed_at: Uitgevoerd op
 total_cost: Totale Kosten (EUR)
 none: Geen
-true: Ja
-false: Nee
+"true": Ja
+"false": Nee
 equipment_detail: Apparatuurdetails
 basic_info: Basisinformatie
 maintenance_info: Onderhoudsinformatie
@@ -1684,7 +1694,6 @@ group_type: Groepstype
 spatial_object_type: Geometrietype
 sub_task_status: Subtaakstatus
 overall_task_status: Algemene status
-# Variety attribute labels
 variety_berry_colour: Beskleur
 variety_use_kind: Gebruik
 variety_registration_countries: Registratielanden
@@ -1693,7 +1702,6 @@ variety_synonyms: Synoniemen
 variety_source: Bron
 variety_origin: Oorsprong
 variety_category_label: Categorie
-# Breed attribute labels
 breed_origin: Oorsprong
 breed_use_kind: Gebruik
 breed_birth_weight: Geboortegewicht (kg)
@@ -1706,11 +1714,9 @@ breed_litter_size: Worpomvang
 breed_milk_per_year: Melk/Jaar (kg)
 breed_daily_gain: Dagelijkse toename (g)
 breed_productive_lifespan: Productieve levensduur (jaren)
-# Species labels
 species_common_name: Gemeenschappelijke naam
 species_scientific_name: Wetenschappelijke naam
 species_kingdom: Rijk
-# Crop species common names
 crop_species_vitis_vinifera: Wijnstok
 crop_species_olea_europaea: Olijfboom
 crop_species_bos_taurus: Rundvee
@@ -1719,8 +1725,6 @@ crop_species_capra_hircus: Geit
 crop_species_sus_scrofa_domesticus: Varken
 crop_species_equus_caballus: Paard
 crop_species_gallus_gallus_domesticus: Kip
-
-# Type Moderation
 nav_type_moderation: Type-moderatie
 type_moderation: Type-moderatie
 no_pending_entries: Geen typen wachtend op goedkeuring
@@ -1730,3 +1734,61 @@ search_existing_type: Bestaand type zoeken
 type_approved: Type goedgekeurd
 type_rejected: Type afgewezen
 type_merged: Typen samengevoegd
+company_location_map: Bedrijfslocatie op de kaart selecteren
+mobile_phone: Mobiele telefoon
+fax: Fax
+city: Stad
+postal_code: Postcode
+state_province: Staat / Provincie
+vat_id: BTW-nummer
+registration_number: Registratienummer
+connection_problem: 'Verbindingsprobleem: {}'
+server_error: 'Serverfout ({}): {}'
+session_expired: Sessie verlopen. Meld u opnieuw aan.
+error_status: 'Fout ({}): {}'
+invalid_data_format: 'Ongeldig gegevensformaat: {}'
+backup_id_derived: ID afgeleid van bestandsnaam
+backup_check_restore: Controleren / Herstellen
+backup_delete: Verwijderen
+backup_config_not_loaded: 'Configuratie niet geladen: {}'
+backups_not_loaded: 'Backups niet geladen: {}'
+backup_config_saved: Backup-configuratie opgeslagen
+backup_started: Backup {} gestart ({})
+backup_failed: 'Backup mislukt: {}'
+backup_deleted: 'Backup verwijderd: {} objecten, {} vrijgemaakt'
+backup_restore_confirm: '{}
+
+
+  Echt herstellen? Dit overschrijft de huidige database.'
+restore_failed: 'Herstellen mislukt: {}'
+check_failed: 'Controle mislukt: {}'
+backups_title: Backups
+backup_config_title: Configuratie
+backup_scheduled_enabled: Geplande backups ingeschakeld
+backup_schedule_db: Database-schema (Cron)
+backup_schedule_config: Configuratie-schema (Cron)
+backup_timezone: Tijdzone
+backup_retention_title: Retentie (aantal, 0 = onbeperkt)
+backup_retention_daily: Dagelijks
+backup_retention_weekly: Weekelijks
+backup_retention_monthly: Maandelijks
+backup_retention_yearly: Jaarlijks
+backup_verify_after_write: Elke backup controleren na schrijven
+backup_save_config: Configuratie opslaan
+backup_run_now: Backup nu uitvoeren
+backup_type_database: Database
+backup_type_config: Configuratie
+backup_type_full: Volledig
+backup_existing: Bestaande backups
+backup_reload: Opnieuw laden
+backup_none_found: Nog geen backups gevonden.
+backup_id: ID
+backup_type: Type
+backup_status: Status
+backup_start: Begin
+backup_size: Grootte
+backup_targets: Doelen
+backup_actions: Acties
+setting_default_inherited: Standaard (overgeërfd)
+setting_reset_button: Terugzetten
+nav_iot_devices: IoT-apparaten
