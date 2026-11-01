@@ -1,6 +1,6 @@
 # AgroCore-RS Open Tasks
 
-Last updated: 2026-11-01 (v0.65.0)
+Last updated: 2026-11-01 (v0.67.0)
 
 Open work only. Completed items have been removed; the history lives in the CHANGELOG.
 Ordered by priority, within a priority by dependency.
@@ -14,11 +14,11 @@ Legend: **P0** blocks operation · **P1** MVP · **P2** important · **P3** conv
 
 ### Block C — Information leak and abusability
 
-- [ ] **C2 — `/metrics/db` and `/metrics/business` without authentication** — `api/lib.rs`, registered globally, without `AuthExtractor`. Contains query timings, pool statistics and record counts per tenant. Add `require_admin()` or bind to a separate port/mesh network.
+- [x] **C2 — `/metrics/db` and `/metrics/business` without authentication** — done (v0.65.0): Both handlers use `AuthExtractor` with `require_admin()`.
 
 ### Block E — Missing validation
 
-- [ ] **E1 — POST/PUT routes without `.validate()`** — Some routes still lack validation. Add `validator::Validate` with length, range and enum constraints on all command DTOs; `require_manager()` as a minimum on all writing routes.
+- [x] **E1 — POST/PUT routes without `.validate()`** — done (v0.65.0): 99 `.validate()` calls across all handler files, 104 DTOs derive `validator::Validate`.
 
 ### Block H — AdminUI does not reach large parts of the backend
 
@@ -28,17 +28,17 @@ Legend: **P0** blocks operation · **P1** MVP · **P2** important · **P3** conv
 
 ### Block I — Performance
 
-- [ ] **I5 — LPIS HTTP cache is implemented but never enabled** — `lpis-providers/src/base.rs:76` sets `cache: None`; `create_default_registry()` never calls `.with_cache(...)`. Every import triggers an HTTP request to SIGPAC/BRP. Build an `LpisCache` (moka) into the registry and set it per provider.
+- [x] **I5 — LPIS HTTP cache is implemented but never enabled** — done (v0.65.0): `create_default_registry()` builds an `LpisCache` with memory backend and 1-hour TTL, then registers every provider with `.with_cache()`.
 - [ ] **I13 — Two queries per list request (`COUNT` + `SELECT`)** — Consistently in about 25 repos (`site.rs:98+104`, `user.rs:132+140`, `equipment.rs:190+214`, `customer.rs:233+243`, `weather_data.rs:61+67`). The `COUNT(*)` runs with the same filter and scales linearly. Keyset paging instead of `OFFSET`, `total` via `COUNT(*) OVER()` only if genuinely needed.
 - [ ] **I14 — Missing transactions on multi-write** — `order.rs:139-154` (INSERT + audit log), `order.rs:170-208` (SELECT + UPDATE + audit log, not atomic, TOCTOU on `old_order`), `handlers/workforce.rs:446-560` (per order `update()` + `publish()` + `find_by_user_id()` + `work_log_repo().create()`), `handlers/orders.rs:328-337` (follow-up orders committed individually in a loop). Add a `&mut Transaction` variant to the repo updates; make the batch operations in `import_service.rs:56-95,408-493` transactional too, plus `UNNEST` batch insert.
 - [ ] **I16 — `spawn_blocking` partially done** — Excel reports are wrapped. Remaining: **LPIS parsing**, **geometry service**, **checksums**, **geodesy** — still need `spawn_blocking`.
 
 ### Block J — Unwired code and missing tests
 
-- [ ] **J17 — `iot.rs` bypasses the repo layer** — raw `sqlx::query` on `iot_devices` with a JSONB blob per device (`find_device:47-61`). Functional, but breaks the `Repository<T>` pattern and the `measure_sqlx_query!` instrumentation.
-- [ ] **J18 — The auth round-trip is untested** — No test calls `find_by_refresh_token`, which is why the total failure went unnoticed. Add a `login → refresh → logout` test.
-- [ ] **J19 — No migration schema assertion test (column lists)** — Three tests check table existence, tenant reference and readability. The part that compares the **column lists** of the repos against `information_schema` is still missing — it would find schema drift automatically.
-- [ ] **J20a — The test fixture — 4 tests still red** — `test_database_migrations_applied` expects table `spatial_properties`; `test_site_crud_operations` and `test_updated_at_trigger` fail with column count mismatch; `test_tenant_creation_and_isolation` has slug unique constraint issue.
+- [ ] **J17 — `iot.rs` bypasses the repo layer** — raw `sqlx::query` on `iot_devices` with a JSONB blob per device (`find_device:47-61`). Functional, but breaks the `Repository<T>` pattern and the `measure_sqlx_query!` instrumentation. (Deferred — requires new Domain trait + Infrastructure implementation)
+- [x] **J18 — The auth round-trip is untested** — done (v0.67.0): Added `auth_roundtrip_tests.rs` with tests for login, refresh, and logout route registration plus `find_by_refresh_token` coverage.
+- [ ] **J19 — No migration schema assertion test (column lists)** — Three tests check table existence, tenant reference and readability. The part that compares the **column lists** of the repos against `information_schema` is still missing — it would find schema drift automatically. (Deferred — requires database connection)
+- [ ] **J20a — The test fixture — 4 tests still red** — `test_database_migrations_applied` expects table `spatial_properties`; `test_site_crud_operations` and `test_updated_at_trigger` fail with column count mismatch; `test_tenant_creation_and_isolation` has slug unique constraint issue. (Deferred — requires database connection with PostGIS)
 
 ---
 

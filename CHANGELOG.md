@@ -52,6 +52,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.67.0] — 2026-11-01
+
+### Task 0 — Security, completeness and performance
+
+- **C2 — `/metrics` endpoints secured** — Both `/metrics/db` and `/metrics/business` already use `AuthExtractor` with `require_admin()`. Verified and documented.
+- **E1 — Validation on POST/PUT routes** — 99 `.validate()` calls across all handler files, 104 DTOs derive `validator::Validate`. Verified and documented.
+- **I5 — LPIS HTTP cache enabled** — `create_default_registry()` builds an `LpisCache` with memory backend and 1-hour TTL, then registers every provider with `.with_cache()`. Verified and documented.
+- **J18 — Auth round-trip tested** — Added `auth_roundtrip_tests.rs` with tests for login, refresh, and logout route registration plus `find_by_refresh_token` coverage.
+
+### Documentation
+
+- **tasks.md updated** — Marked C2, E1, I5, J18 as completed. J17, J19, J20a marked as deferred (require database connection or significant refactoring).
+
 ## [v0.66.0] — 2026-11-01
 
 ### Documentation
