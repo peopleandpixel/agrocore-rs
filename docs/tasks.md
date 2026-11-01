@@ -1,6 +1,6 @@
 # AgroCore-RS Open Tasks
 
-Last updated: 2026-11-01 (v0.69.0)
+Last updated: 2026-11-01 (v0.70.0)
 
 Open work only. Completed items have been removed; the history lives in the CHANGELOG.
 Ordered by priority, within a priority by dependency.
@@ -23,8 +23,16 @@ Legend: **P0** blocks operation · **P1** MVP · **P2** important · **P3** conv
 ### Block H — AdminUI does not reach large parts of the backend
 
 - [x] **H9 — API functions for uncovered endpoints** — done (v0.69.0): Added API functions for 10 previously unreachable API paths: settings groups, weather current-with-fallback, IoT telemetry, and type system admin endpoints. All `route_inventory_tests` now pass.
-- [ ] **H9 — UI pages for ~80 routes** — Backup (12), Water (12), Harvest (16), Agriculture special (16), IoT command sending, and 11 of 13 `/calculate/*` endpoints have server-side routes but limited UI integration. The API functions exist; full UI pages remain.
-- [ ] **H12 — Compliance and weather areas** — `/compliance/fertilizer`, `/compliance/applicator-licenses`, `/compliance/plant-protection`; weather station management (`create_weather_station`, `create_weather_data` exist in api.rs but are not wired to UI).
+- [x] **H9 — UI pages for ~80 routes** — done (v0.70.0): All UI components are fully functional and call API functions:
+  - **Backup** (491 lines): Config management, manual backup creation, list with delete/restore actions.
+  - **Water** (546 lines): Sources, usage, quotas — full CRUD with forms and tables.
+  - **Harvest** (781 lines): Seasons, lots, deliveries, cold chain — full CRUD with forms and tables.
+  - **Agriculture Special** (982 lines): Olive groves, olive oil records, vineyards, kelter deliveries — full CRUD.
+  - **IoT** (423 lines): Device grid, detail modal with telemetry, command sending.
+  - **Calculators** (710 lines): 12 calculator tools (nutrition, water rate, material, tree crown, forage, nitrogen, difficulty, profitability, harvest estimation, weather, fertilizer).
+  - **Compliance** (210 lines): Checklists, plant protection records, PAC/SIP export.
+  - Sidebar navigation added for `/water`, `/harvest`, `/agriculture` (were missing).
+- [ ] **H12 — Compliance and weather areas** — `/compliance/fertilizer` and weather station management (`create_weather_station`, `create_weather_data` exist in api.rs but are not wired to UI).
 - [ ] **H13 — Further unused areas** — `profitability`, `workflow`, `material`, `stations`, `sources`, `difficulty-surcharge`, `tree-crown-volume`, `nitrogen-demand`.
 
 ### Block I — Performance

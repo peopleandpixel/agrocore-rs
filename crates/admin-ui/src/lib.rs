@@ -45,9 +45,9 @@ use crate::components::workforce_logs::{WorkforceLocations, WorkforceLogs};
 use crate::icon::Icon;
 use I::{
     LuBeef, LuBox, LuBriefcase, LuCalculator, LuChartBar, LuChartNoAxesColumn, LuCircleUser,
-    LuClipboardList, LuCloudSun, LuCpu, LuDatabase, LuFileDown, LuHistory, LuLayoutDashboard,
-    LuLogOut, LuMap, LuMapPin, LuMenu, LuSettings, LuSquareCheck, LuSun, LuTractor, LuUsers,
-    LuWallet,
+    LuClipboardList, LuCloudSun, LuCpu, LuDatabase, LuDroplets, LuFileDown, LuHistory,
+    LuLayoutDashboard, LuLeaf, LuLogOut, LuMap, LuMapPin, LuMenu, LuSettings, LuSquareCheck, LuSun,
+    LuTractor, LuUsers, LuWallet, LuWheat,
 };
 use icondata_im::ImMagicWand;
 use icondata_lu as I;
@@ -314,8 +314,19 @@ fn AuthenticatedShell(
                         <a href="/finance"><Icon icon=&LuWallet width="20" height="20" />{crate::t!(t, "nav_finance")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
+                        <a href="/water"><Icon icon=&LuDroplets width="20" height="20" />{crate::t!(t, "nav_water")}</a>
+                    </li>
+                    <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
+                        <a href="/harvest"><Icon icon=&LuWheat width="20" height="20" />{crate::t!(t, "nav_harvest")}</a>
+                    </li>
+                    <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
+                        <a href="/agriculture"><Icon icon=&LuLeaf width="20" height="20" />{crate::t!(t, "nav_agriculture")}</a>
+                    </li>
+                    <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
                         <a href="/calculators"><Icon icon=&LuCalculator width="20" height="20" />{crate::t!(t, "nav_calculators")}</a>
-                            <a href="/analytics"><Icon icon=&LuChartBar width="20" height="20" />{crate::t!(t, "nav_analytics")}</a>
+                    </li>
+                    <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
+                        <a href="/analytics"><Icon icon=&LuChartBar width="20" height="20" />{crate::t!(t, "nav_analytics")}</a>
                     </li>
                     <li class=move || if view_mode.get() == ViewMode::Full && (user_role.get() == UserRole::Admin || user_role.get() == UserRole::Manager) { "" } else { "hidden" }>
                         <a href="/inventory"><Icon icon=&LuBox width="20" height="20" />{crate::t!(t, "nav_inventory")}</a>

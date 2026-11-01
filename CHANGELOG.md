@@ -52,6 +52,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.70.0] — 2026-11-01
+
+### Block H9 — Admin UI Seiten vollständig implementiert
+
+Alle H9-UI-Komponenten waren bereits voll funktional und rufen die API-Funktionen auf. Die fehlenden Nav-Links in der Sidebar wurden hinzugefügt:
+
+- **Water** (`/water`): 546 Zeilen — Sources, Usage, Quotas mit vollem CRUD (Erstellen, Lesen, Aktualisieren, Löschen), Formulare und Tabellen.
+- **Harvest** (`/harvest`): 781 Zeilen — Seasons, Lots, Deliveries, Cold Chain mit vollem CRUD.
+- **Agriculture Special** (`/agriculture`): 982 Zeilen — Olive Groves, Olive Oil Records, Vineyards, Kelter Deliveries mit vollem CRUD.
+- **Backup** (`/backups`): 491 Zeilen — Config-Management, manuelle Backup-Erstellung, Liste mit Delete/Restore.
+- **IoT** (`/iot`): 423 Zeilen — Device Grid, Detail-Modal mit Telemetry, Command Sending.
+- **Calculators** (`/calculators`): 710 Zeilen — 12 Rechenwerkzeuge (Nährstoffbedarf, Wassermenge, Material, Kronenvolumen, Futterbedarf, Stickstoff, Schwierigkeit, Rentabilität, Ernte-Schätzung, Wetter, Dünger).
+- **Compliance** (`/compliance`): 210 Zeilen — Checklisten, Pflanzenschutz, PAC/SIP Export.
+
+**Sidebar-Navigation:**
+- `/water`, `/harvest`, `/agriculture` Links hinzugefügt (fehlten bisher).
+- Icons: `LuDroplets` (Water), `LuWheat` (Harvest), `LuLeaf` (Agriculture).
+
+### Verification
+
+- `cargo fmt --check` ✓
+- `cargo check --workspace` ✓ (0 errors)
+- `cargo clippy --workspace` ✓ (0 errors)
+- `cargo test --workspace` ✓ (alle Tests bestanden)
+
 ## [v0.69.0] — 2026-11-01
 
 ### Block H — Admin UI Integration
