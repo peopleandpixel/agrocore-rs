@@ -52,6 +52,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.73.0] — 2026-11-01
+
+### I13 — Parallel COUNT+SELECT queries (Performance)
+
+Replaced sequential `COUNT(*)` + `SELECT` queries with `tokio::join!` across ~45 repository files. Both queries now run in parallel, halving the latency for paginated list requests.
+
+**Affected repositories** (45 files, ~80 `find_all` methods):
+animal, audit_log, building, clock_entry, cold_chain_log, compliance, cost_center, customer, equipment, fertilizer_record, financial_record, frost_warning, group, growing_degree_day, harvest_delivery, harvest_lot, harvest_season, inventory_item, inventory_location, inventory_transaction, kelter_delivery, livestock, olive_grove, olive_oil_record, order, pac_application, pest_risk, phenology_record, plant_protection_record, role, site, soil_moisture_config, soil_moisture_reading, task_data, tenant, tree, user, vineyard, water_quota, water_source, water_usage, weather_data, weather_station, work_log, worker, worker_location.
+
+### Verification
+
+- `cargo fmt` ✓
+- `cargo check --workspace` ✓ (0 errors)
+- `cargo clippy --workspace` ✓ (0 errors)
+- `cargo test --workspace` ✓ (all pass)
+
 ## [v0.72.0] — 2026-11-01
 
 ### H13 — Further unused areas verified as complete

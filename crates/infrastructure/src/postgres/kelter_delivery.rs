@@ -39,22 +39,24 @@ impl KelterDeliveryRepo for PgKelterDeliveryRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 =
+            let total_future =
                 sqlx::query_scalar("SELECT COUNT(*) FROM kelter_deliveries WHERE tenant_id = $1")
                     .bind(tid)
-                    .fetch_one(&pool)
-                    .await
-                    .map_err(|e| SharedError::Database(e.to_string()))?;
+                    .fetch_one(&pool);
 
-            let data: Vec<KelterDelivery> = sqlx::query_as(
+            let data_future = sqlx::query_as::<_, KelterDelivery>(
                 "SELECT id, vineyard_id, delivery_date, gross_weight_kg, net_weight_kg, lot_number, kelter_name, transport_company, temperature_c, notes, created_at, updated_at FROM kelter_deliveries WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
             )
             .bind(tid)
             .bind(per_page as i32)
             .bind(offset as i32)
-            .fetch_all(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            .fetch_all(&pool);
+
+            let (total, data) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<KelterDelivery> =
+                data.map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(PaginatedResponse {
                 data,
@@ -78,25 +80,27 @@ impl KelterDeliveryRepo for PgKelterDeliveryRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar(
+            let total_future = sqlx::query_scalar(
                 "SELECT COUNT(*) FROM kelter_deliveries WHERE vineyard_id = $1 AND tenant_id = $2",
             )
             .bind(vineyard_id)
             .bind(tid)
-            .fetch_one(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            .fetch_one(&pool);
 
-            let data: Vec<KelterDelivery> = sqlx::query_as(
+            let data_future = sqlx::query_as::<_, KelterDelivery>(
                 "SELECT id, vineyard_id, delivery_date, gross_weight_kg, net_weight_kg, lot_number, kelter_name, transport_company, temperature_c, notes, created_at, updated_at FROM kelter_deliveries WHERE vineyard_id = $1 AND tenant_id = $2 LIMIT $3 OFFSET $4",
             )
             .bind(vineyard_id)
             .bind(tid)
             .bind(per_page as i32)
             .bind(offset as i32)
-            .fetch_all(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            .fetch_all(&pool);
+
+            let (total, data) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<KelterDelivery> =
+                data.map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(PaginatedResponse {
                 data,

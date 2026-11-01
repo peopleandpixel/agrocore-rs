@@ -37,21 +37,23 @@ impl ClockEntryRepo for PgClockEntryRepo {
         let per_page = p.effective_per_page();
         let offset = page * per_page;
         Box::pin(async move {
-            let total: i64 =
+            let total_future =
                 sqlx::query_scalar("SELECT COUNT(*) FROM clock_entries WHERE tenant_id = $1")
                     .bind(tid)
-                    .fetch_one(&pool)
-                    .await
-                    .map_err(|e| SharedError::Database(e.to_string()))?;
+                    .fetch_one(&pool);
 
-            let data: Vec<ClockEntry> =
-                sqlx::query_as("SELECT id, tenant_id, worker_id, entry_type, timestamp, lat, lng, task_id, notes, created_at, updated_at FROM clock_entries WHERE tenant_id = $1 ORDER BY timestamp DESC LIMIT $2 OFFSET $3")
-                    .bind(tid)
-                    .bind(per_page as i32)
-                    .bind(offset as i32)
-                    .fetch_all(&pool)
-                    .await
-                    .map_err(|e| SharedError::Database(e.to_string()))?;
+            let data_future = sqlx::query_as::<_, ClockEntry>(
+                "SELECT id, tenant_id, worker_id, entry_type, timestamp, lat, lng, task_id, notes, created_at, updated_at FROM clock_entries WHERE tenant_id = $1 ORDER BY timestamp DESC LIMIT $2 OFFSET $3",
+            )
+            .bind(tid)
+            .bind(per_page as i32)
+            .bind(offset as i32)
+            .fetch_all(&pool);
+
+            let (total, data) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<ClockEntry> = data.map_err(|e| SharedError::Database(e.to_string()))?;
 
             let total_pages = if total == 0 {
                 0
@@ -79,25 +81,26 @@ impl ClockEntryRepo for PgClockEntryRepo {
         let per_page = p.effective_per_page();
         let offset = page * per_page;
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar(
+            let total_future = sqlx::query_scalar(
                 "SELECT COUNT(*) FROM clock_entries WHERE tenant_id = $1 AND worker_id = $2",
             )
             .bind(tid)
             .bind(worker_id)
-            .fetch_one(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            .fetch_one(&pool);
 
-            let data: Vec<ClockEntry> = sqlx::query_as(
+            let data_future = sqlx::query_as::<_, ClockEntry>(
                 "SELECT id, tenant_id, worker_id, entry_type, timestamp, lat, lng, task_id, notes, created_at, updated_at FROM clock_entries WHERE tenant_id = $1 AND worker_id = $2 ORDER BY timestamp DESC LIMIT $3 OFFSET $4",
             )
             .bind(tid)
             .bind(worker_id)
             .bind(per_page as i32)
             .bind(offset as i32)
-            .fetch_all(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            .fetch_all(&pool);
+
+            let (total, data) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<ClockEntry> = data.map_err(|e| SharedError::Database(e.to_string()))?;
 
             let total_pages = if total == 0 {
                 0

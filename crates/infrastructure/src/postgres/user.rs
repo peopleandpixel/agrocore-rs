@@ -156,27 +156,30 @@ impl UserRepository for PgUserRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar(
+            let query_sql = format!(
+                "{} WHERE u.tenant_id = $1 AND u.is_active = true GROUP BY u.id LIMIT $2 OFFSET $3",
+                USER_SELECT_FIELDS
+            );
+            let total_future = sqlx::query_scalar(
                 "SELECT COUNT(*) FROM users WHERE tenant_id = $1 AND is_active = true",
             )
             .bind(tid)
-            .fetch_one(&pool)
-            .await
-            .map_err(map_db_error)?;
+            .fetch_one(&pool);
 
-            let data: Vec<User> = sqlx::query_as::<_, UserRow>(&format!(
-                "{} WHERE u.tenant_id = $1 AND u.is_active = true GROUP BY u.id LIMIT $2 OFFSET $3",
-                USER_SELECT_FIELDS
-            ))
-            .bind(tid)
-            .bind(per_page as i32)
-            .bind(offset as i32)
-            .fetch_all(&pool)
-            .await
-            .map_err(map_db_error)?
-            .into_iter()
-            .map(Into::into)
-            .collect();
+            let data_future = sqlx::query_as::<_, UserRow>(&query_sql)
+                .bind(tid)
+                .bind(per_page as i32)
+                .bind(offset as i32)
+                .fetch_all(&pool);
+
+            let (total, rows) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(map_db_error)?;
+            let data: Vec<User> = rows
+                .map_err(map_db_error)?
+                .into_iter()
+                .map(Into::into)
+                .collect();
 
             Ok(PaginatedResponse {
                 data,

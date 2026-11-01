@@ -36,21 +36,23 @@ impl VineyardRepo for PgVineyardRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 =
+            let total_future =
                 sqlx::query_scalar("SELECT COUNT(*) FROM vineyards WHERE tenant_id = $1")
                     .bind(tid)
-                    .fetch_one(&pool)
-                    .await
-                    .map_err(|e| SharedError::Database(e.to_string()))?;
+                    .fetch_one(&pool);
 
-            let data: Vec<Vineyard> =
-                sqlx::query_as("SELECT id, tenant_id, site_id, doc_area, vintage, grape_variety, brix_at_harvest, ph_at_harvest, acidity, yield_tons, quality_grade, slope_percent, altitude_m, is_organic, certification_body, certification_number, is_active, created_at, updated_at FROM vineyards WHERE tenant_id = $1 LIMIT $2 OFFSET $3")
-                    .bind(tid)
-                    .bind(per_page as i32)
-                    .bind(offset as i32)
-                    .fetch_all(&pool)
-                    .await
-                    .map_err(|e| SharedError::Database(e.to_string()))?;
+            let data_future = sqlx::query_as::<_, Vineyard>(
+                "SELECT id, tenant_id, site_id, doc_area, vintage, grape_variety, brix_at_harvest, ph_at_harvest, acidity, yield_tons, quality_grade, slope_percent, altitude_m, is_organic, certification_body, certification_number, is_active, created_at, updated_at FROM vineyards WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
+            )
+            .bind(tid)
+            .bind(per_page as i32)
+            .bind(offset as i32)
+            .fetch_all(&pool);
+
+            let (total, data) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<Vineyard> = data.map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(PaginatedResponse {
                 data,
@@ -74,25 +76,26 @@ impl VineyardRepo for PgVineyardRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar(
+            let total_future = sqlx::query_scalar(
                 "SELECT COUNT(*) FROM vineyards WHERE tenant_id = $1 AND site_id = $2",
             )
             .bind(tid)
             .bind(site_id)
-            .fetch_one(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            .fetch_one(&pool);
 
-            let data: Vec<Vineyard> = sqlx::query_as(
+            let data_future = sqlx::query_as::<_, Vineyard>(
                 "SELECT id, tenant_id, site_id, doc_area, vintage, grape_variety, brix_at_harvest, ph_at_harvest, acidity, yield_tons, quality_grade, slope_percent, altitude_m, is_organic, certification_body, certification_number, is_active, created_at, updated_at FROM vineyards WHERE tenant_id = $1 AND site_id = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
             )
             .bind(tid)
             .bind(site_id)
             .bind(per_page as i32)
             .bind(offset as i32)
-            .fetch_all(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            .fetch_all(&pool);
+
+            let (total, data) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<Vineyard> = data.map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(PaginatedResponse {
                 data,

@@ -42,22 +42,23 @@ impl BuildingRepository for PgBuildingRepo {
         Box::pin(async move {
             let offset = page * per_page;
 
-            let total: i64 =
+            let total_future =
                 sqlx::query_scalar("SELECT COUNT(*) FROM buildings WHERE tenant_id = $1")
                     .bind(tid)
-                    .fetch_one(&pool)
-                    .await
-                    .map_err(|e| SharedError::Database(e.to_string()))?;
+                    .fetch_one(&pool);
 
-            let data: Vec<Building> = sqlx::query_as(
+            let data_future = sqlx::query_as::<_, Building>(
                 "SELECT id, tenant_id, plot_id, building_type, label, geometry, created_at, updated_at FROM buildings WHERE tenant_id = $1 ORDER BY label LIMIT $2 OFFSET $3",
             )
             .bind(tid)
             .bind(per_page as i32)
             .bind(offset as i32)
-            .fetch_all(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            .fetch_all(&pool);
+
+            let (total, data) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<Building> = data.map_err(|e| SharedError::Database(e.to_string()))?;
 
             let total_pages = if total == 0 {
                 0
@@ -88,25 +89,26 @@ impl BuildingRepository for PgBuildingRepo {
         Box::pin(async move {
             let offset = page * per_page;
 
-            let total: i64 = sqlx::query_scalar(
+            let total_future = sqlx::query_scalar(
                 "SELECT COUNT(*) FROM buildings WHERE tenant_id = $1 AND plot_id = $2",
             )
             .bind(tid)
             .bind(plot_id)
-            .fetch_one(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            .fetch_one(&pool);
 
-            let data: Vec<Building> = sqlx::query_as(
+            let data_future = sqlx::query_as::<_, Building>(
                 "SELECT id, tenant_id, plot_id, building_type, label, geometry, created_at, updated_at FROM buildings WHERE tenant_id = $1 AND plot_id = $2 ORDER BY label LIMIT $3 OFFSET $4",
             )
             .bind(tid)
             .bind(plot_id)
             .bind(per_page as i32)
             .bind(offset as i32)
-            .fetch_all(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            .fetch_all(&pool);
+
+            let (total, data) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<Building> = data.map_err(|e| SharedError::Database(e.to_string()))?;
 
             let total_pages = if total == 0 {
                 0

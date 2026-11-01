@@ -84,19 +84,20 @@ impl EquipmentRepository for PgEquipmentRepo {
         Box::pin(async move {
             let offset = page * per_page;
 
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM equipment WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true)")
+            let total_future = sqlx::query_scalar("SELECT COUNT(*) FROM equipment WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true)")
                 .bind(tid)
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+                .fetch_one(&pool);
 
-            let items: Vec<Equipment> = sqlx::query_as("SELECT id, tenant_id, label, code, equipment_type, in_usage, maintenance_intervals, next_maintenance_date, last_maintenance_hours, is_active, created_at, updated_at FROM equipment WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY label LIMIT $2 OFFSET $3")
+            let data_future = sqlx::query_as::<_, Equipment>("SELECT id, tenant_id, label, code, equipment_type, in_usage, maintenance_intervals, next_maintenance_date, last_maintenance_hours, is_active, created_at, updated_at FROM equipment WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY label LIMIT $2 OFFSET $3")
                 .bind(tid)
                 .bind(per_page as i32)
                 .bind(offset as i32)
-                .fetch_all(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+                .fetch_all(&pool);
+
+            let (total, items) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(|e| SharedError::Database(e.to_string()))?;
+            let items: Vec<Equipment> = items.map_err(|e| SharedError::Database(e.to_string()))?;
 
             let total_pages = if total == 0 {
                 0

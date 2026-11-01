@@ -35,20 +35,23 @@ impl AuditLogRepo for PgAuditLogRepo {
         let per_page = p.effective_per_page();
         let offset = page * per_page;
         Box::pin(async move {
-            let total: i64 =
+            let total_future =
                 sqlx::query_scalar("SELECT COUNT(*) FROM audit_logs WHERE tenant_id = $1")
                     .bind(tid)
-                    .fetch_one(&pool)
-                    .await
-                    .map_err(|e| SharedError::Database(e.to_string()))?;
+                    .fetch_one(&pool);
 
-            let data: Vec<AuditLog> = sqlx::query_as("SELECT id, tenant_id, user_id, action, entity_type, entity_id, old_value, new_value, changed_fields, ip_address, user_agent, request_id, session_id, created_at FROM audit_logs WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3")
-                .bind(tid)
-                .bind(per_page as i32)
-                .bind(offset as i32)
-                .fetch_all(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let data_future = sqlx::query_as::<_, AuditLog>(
+                "SELECT id, tenant_id, user_id, action, entity_type, entity_id, old_value, new_value, changed_fields, ip_address, user_agent, request_id, session_id, created_at FROM audit_logs WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3",
+            )
+            .bind(tid)
+            .bind(per_page as i32)
+            .bind(offset as i32)
+            .fetch_all(&pool);
+
+            let (total, data) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<AuditLog> = data.map_err(|e| SharedError::Database(e.to_string()))?;
 
             let total_pages = if total == 0 {
                 0

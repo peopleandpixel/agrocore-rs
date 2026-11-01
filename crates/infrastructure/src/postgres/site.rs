@@ -102,13 +102,12 @@ impl SiteRepository for PgSiteRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM sites WHERE tenant_id = $1")
-                .bind(tid)
-                .fetch_one(&pool)
-                .await
-                .map_err(|e| SharedError::Database(e.to_string()))?;
+            let total_future =
+                sqlx::query_scalar("SELECT COUNT(*) FROM sites WHERE tenant_id = $1")
+                    .bind(tid)
+                    .fetch_one(&pool);
 
-            let data: Vec<SiteDb> = sqlx::query_as::<_, SiteDb>(
+            let data_future = sqlx::query_as::<_, SiteDb>(
                 r#"SELECT id, tenant_id, business_id, label, site_type, crop_type, variety,
                    area, gross_area, plots, row_config, bbch_stage, planted_date,
                    cleared_date, soil_type, slope, slope_facing, altitude, organic,
@@ -123,9 +122,12 @@ impl SiteRepository for PgSiteRepo {
             .bind(tid)
             .bind(per_page as i32)
             .bind(offset as i32)
-            .fetch_all(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            .fetch_all(&pool);
+
+            let (total, data) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<SiteDb> = data.map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(PaginatedResponse {
                 data: data.into_iter().map(Site::from).collect(),
@@ -520,26 +522,29 @@ impl SpatialObjectRepository for PgSiteRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 =
+            let total_future =
                 sqlx::query_scalar("SELECT COUNT(*) FROM spatial_objects WHERE tenant_id = $1")
                     .bind(tid)
-                    .fetch_one(&pool)
-                    .await
-                    .map_err(|e| SharedError::Database(e.to_string()))?;
+                    .fetch_one(&pool);
 
-            let data: Vec<agrocore_domain::entities::spatial::SpatialObject> = sqlx::query_as(
-                r#"SELECT id, tenant_id, site_id, parent_id, label, object_type, geometry,
+            let data_future =
+                sqlx::query_as::<_, agrocore_domain::entities::spatial::SpatialObject>(
+                    r#"SELECT id, tenant_id, site_id, parent_id, label, object_type, geometry,
                    area, buffer_meters, properties, custom_fields, note, is_active,
                    is_temporary, planted_at, variety_id,
                    created_at, updated_at, created_by, updated_by
                    FROM spatial_objects WHERE tenant_id = $1 LIMIT $2 OFFSET $3"#,
-            )
-            .bind(tid)
-            .bind(per_page as i32)
-            .bind(offset as i32)
-            .fetch_all(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+                )
+                .bind(tid)
+                .bind(per_page as i32)
+                .bind(offset as i32)
+                .fetch_all(&pool);
+
+            let (total, data) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<agrocore_domain::entities::spatial::SpatialObject> =
+                data.map_err(|e| SharedError::Database(e.to_string()))?;
 
             Ok(PaginatedResponse {
                 data,

@@ -44,21 +44,23 @@ impl CostCenterRepo for PgCostCenterRepo {
         let per_page = p.effective_per_page();
         let offset = page * per_page;
         Box::pin(async move {
-            let total: i64 =
+            let total_future =
                 sqlx::query_scalar("SELECT COUNT(*) FROM cost_centers WHERE tenant_id = $1")
                     .bind(tid)
-                    .fetch_one(&pool)
-                    .await
-                    .map_err(|e| SharedError::Database(e.to_string()))?;
-            let data: Vec<CostCenter> = sqlx::query_as(
+                    .fetch_one(&pool);
+
+            let data_future = sqlx::query_as::<_, CostCenter>(
                 "SELECT id, tenant_id, parent_id, code, label, description, budget_eur, is_active, created_at, updated_at FROM cost_centers WHERE tenant_id = $1 LIMIT $2 OFFSET $3",
             )
             .bind(tid)
             .bind(per_page as i32)
             .bind(offset as i32)
-            .fetch_all(&pool)
-            .await
-            .map_err(|e| SharedError::Database(e.to_string()))?;
+            .fetch_all(&pool);
+
+            let (total, data) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<CostCenter> = data.map_err(|e| SharedError::Database(e.to_string()))?;
             Ok(PaginatedResponse {
                 data,
                 total: total as u64,

@@ -52,16 +52,24 @@ impl WorkerLocationRepo for PgWorkerLocationRepo {
         let per_page = p.effective_per_page();
         let offset = page * per_page;
         Box::pin(async move {
-            let total: i64 =
+            let total_future =
                 sqlx::query_scalar("SELECT COUNT(*) FROM worker_locations WHERE tenant_id = $1")
                     .bind(tid)
-                    .fetch_one(&pool)
-                    .await
-                    .map_err(|e| SharedError::Database(e.to_string()))?;
-            let data: Vec<WorkerLocation> = sqlx::query_as(
-                "SELECT id, tenant_id, worker_id, ST_X(location) as lng, ST_Y(location) as lat, timestamp FROM worker_locations WHERE tenant_id = $1 ORDER BY timestamp DESC LIMIT $2 OFFSET $3"
+                    .fetch_one(&pool);
+
+            let data_future = sqlx::query_as::<_, WorkerLocation>(
+                "SELECT id, tenant_id, worker_id, ST_X(location) as lng, ST_Y(location) as lat, timestamp FROM worker_locations WHERE tenant_id = $1 ORDER BY timestamp DESC LIMIT $2 OFFSET $3",
             )
-                .bind(tid).bind(per_page as i32).bind(offset as i32).fetch_all(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
+            .bind(tid)
+            .bind(per_page as i32)
+            .bind(offset as i32)
+            .fetch_all(&pool);
+
+            let (total, data) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<WorkerLocation> =
+                data.map_err(|e| SharedError::Database(e.to_string()))?;
             let total_pages = if total == 0 {
                 0
             } else {

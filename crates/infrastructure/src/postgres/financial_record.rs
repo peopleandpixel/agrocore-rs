@@ -45,8 +45,21 @@ impl FinancialRecordRepo for PgFinancialRecordRepo {
         let per_page = p.effective_per_page();
         let offset = page * per_page;
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM financial_records WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true)").bind(tid).fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
-            let data: Vec<FinancialRecord> = sqlx::query_as("SELECT id, tenant_id, cost_center_id, site_id, record_type, amount_eur, currency, date, description, invoice_ref, external_id, created_at, updated_at FROM financial_records WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY date DESC LIMIT $2 OFFSET $3").bind(tid).bind(per_page as i32).bind(offset as i32).fetch_all(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
+            let total_future = sqlx::query_scalar("SELECT COUNT(*) FROM financial_records WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true)")
+                .bind(tid)
+                .fetch_one(&pool);
+
+            let data_future = sqlx::query_as::<_, FinancialRecord>("SELECT id, tenant_id, cost_center_id, site_id, record_type, amount_eur, currency, date, description, invoice_ref, external_id, created_at, updated_at FROM financial_records WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true) ORDER BY date DESC LIMIT $2 OFFSET $3")
+                .bind(tid)
+                .bind(per_page as i32)
+                .bind(offset as i32)
+                .fetch_all(&pool);
+
+            let (total, data) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data: Vec<FinancialRecord> =
+                data.map_err(|e| SharedError::Database(e.to_string()))?;
             let total_pages = if total == 0 {
                 0
             } else {
@@ -72,10 +85,22 @@ impl FinancialRecordRepo for PgFinancialRecordRepo {
         let per_page = p.effective_per_page();
         let offset = page * per_page;
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM financial_records WHERE tenant_id = $1 AND cost_center_id = $2")
-                .bind(tid).bind(cost_center_id).fetch_one(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
-            let data = sqlx::query_as("SELECT id, tenant_id, cost_center_id, site_id, record_type, amount_eur, currency, date, description, invoice_ref, external_id, created_at, updated_at FROM financial_records WHERE tenant_id = $1 AND cost_center_id = $2 ORDER BY date DESC LIMIT $3 OFFSET $4")
-                .bind(tid).bind(cost_center_id).bind(per_page as i32).bind(offset as i32).fetch_all(&pool).await.map_err(|e| SharedError::Database(e.to_string()))?;
+            let total_future = sqlx::query_scalar("SELECT COUNT(*) FROM financial_records WHERE tenant_id = $1 AND cost_center_id = $2")
+                .bind(tid)
+                .bind(cost_center_id)
+                .fetch_one(&pool);
+
+            let data_future = sqlx::query_as::<_, FinancialRecord>("SELECT id, tenant_id, cost_center_id, site_id, record_type, amount_eur, currency, date, description, invoice_ref, external_id, created_at, updated_at FROM financial_records WHERE tenant_id = $1 AND cost_center_id = $2 ORDER BY date DESC LIMIT $3 OFFSET $4")
+                .bind(tid)
+                .bind(cost_center_id)
+                .bind(per_page as i32)
+                .bind(offset as i32)
+                .fetch_all(&pool);
+
+            let (total, data) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(|e| SharedError::Database(e.to_string()))?;
+            let data = data.map_err(|e| SharedError::Database(e.to_string()))?;
             Ok(PaginatedResponse {
                 data,
                 total: total as u64,

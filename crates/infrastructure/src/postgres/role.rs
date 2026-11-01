@@ -75,23 +75,24 @@ impl RoleRepository for PgRoleRepo {
         let offset = page * per_page;
 
         Box::pin(async move {
-            let total: i64 = sqlx::query_scalar(
+            let total_future = sqlx::query_scalar(
                 "SELECT COUNT(*) FROM roles WHERE tenant_id = $1"
             )
             .bind(tid)
-            .fetch_one(&pool)
-            .await
-            .map_err(map_db_error)?;
+            .fetch_one(&pool);
 
-            let rows: Vec<(Uuid, String, String, bool, chrono::DateTime<Utc>, chrono::DateTime<Utc>)> = sqlx::query_as(
+            let data_future = sqlx::query_as::<_, (Uuid, String, String, bool, chrono::DateTime<Utc>, chrono::DateTime<Utc>)>(
                 "SELECT id, name, COALESCE(description, ''), is_system, created_at, updated_at FROM roles WHERE tenant_id = $1 ORDER BY name LIMIT $2 OFFSET $3"
             )
             .bind(tid)
             .bind(per_page as i32)
             .bind(offset as i32)
-            .fetch_all(&pool)
-            .await
-            .map_err(map_db_error)?;
+            .fetch_all(&pool);
+
+            let (total, rows) = tokio::join!(total_future, data_future);
+
+            let total: i64 = total.map_err(map_db_error)?;
+            let rows: Vec<(Uuid, String, String, bool, chrono::DateTime<Utc>, chrono::DateTime<Utc>)> = rows.map_err(map_db_error)?;
 
             let data = rows.into_iter().map(|(id, name, description, is_system, created_at, updated_at)| Role {
                 id,
