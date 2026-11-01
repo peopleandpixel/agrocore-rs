@@ -31,20 +31,43 @@ pub fn CompliancePage() -> impl IntoView {
     let create_checklist = t("create_checklist");
     let type_label = t("type");
     let due_date_label = t("due_date");
-    let cancel_label = t("cancel");
-    let save_label = t("save");
+    let cancel_label: &'static str = Box::leak(t("cancel").into_boxed_str());
+    let save_label: &'static str = Box::leak(t("save").into_boxed_str());
     let no_site_for_checklist = t("compliance_no_site_for_checklist");
     let no_site_for_checklist_label: &'static str =
         Box::leak(no_site_for_checklist.into_boxed_str());
+    // Fertilizer labels
+    let fertilizer_title: &'static str = Box::leak(t("fertilizer_records").into_boxed_str());
+    let fertilizer_new: &'static str = Box::leak(t("new_fertilizer_record").into_boxed_str());
+    let fertilizer_product: &'static str = Box::leak(t("fertilizer_product").into_boxed_str());
+    let fertilizer_quantity: &'static str = Box::leak(t("fertilizer_quantity").into_boxed_str());
+    let fertilizer_area: &'static str = Box::leak(t("fertilizer_area").into_boxed_str());
+    let fertilizer_date: &'static str = Box::leak(t("fertilizer_date").into_boxed_str());
+    let fertilizer_nutrients: &'static str = Box::leak(t("fertilizer_nutrients").into_boxed_str());
+    let no_fertilizer_records: &'static str =
+        Box::leak(t("no_fertilizer_records").into_boxed_str());
+    let delete_label: &'static str = Box::leak(t("delete").into_boxed_str());
+    let field_required: &'static str = Box::leak(t("field_required").into_boxed_str());
     let sites = LocalResource::new(|| async move { api::fetch_sites().await.ok() });
     let checklists =
         LocalResource::new(|| async move { api::fetch_compliance_checklists().await.ok() });
     let plant_protection =
         LocalResource::new(|| async move { api::fetch_plant_protection_records().await.ok() });
+    let fertilizer_records =
+        LocalResource::new(|| async move { api::fetch_fertilizer_records().await.ok() });
     let (show_modal, set_show_modal) = signal(false);
     let (error, set_error) = signal(None::<String>);
     let (due_date, set_due_date) = signal(Utc::now().date_naive().to_string());
     let (checklist_type, set_checklist_type) = signal(String::from("GlobalGAP"));
+    // Fertilizer modal state
+    let (show_fertilizer_modal, set_show_fertilizer_modal) = signal(false);
+    let (fert_product, set_fert_product) = signal(String::new());
+    let (fert_n, set_fert_n) = signal(0.0f64);
+    let (fert_p, set_fert_p) = signal(0.0f64);
+    let (fert_k, set_fert_k) = signal(0.0f64);
+    let (fert_quantity, set_fert_quantity) = signal(0.0f64);
+    let (fert_area, set_fert_area) = signal(0.0f64);
+    let (fert_date, set_fert_date) = signal(Utc::now().date_naive().to_string());
 
     let on_export = move |_| {
         spawn_local(async move {
@@ -144,6 +167,75 @@ pub fn CompliancePage() -> impl IntoView {
                 </div>
             </div>
 
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="card-title">{fertilizer_title}</h2>
+                        <button class="btn btn-sm btn-primary" on:click=move |_| set_show_fertilizer_modal.set(true)>
+                            <Icon icon=&LuPlus width="16" height="16" />
+                            {fertilizer_new}
+                        </button>
+                    </div>
+                    {move || {
+                        fertilizer_records.read().as_ref().and_then(|page| page.as_ref()).map(|page| {
+                            if page.data.is_empty() {
+                                view! {
+                                    <div class="alert alert-ghost"><span>{no_fertilizer_records}</span></div>
+                                }.into_any()
+                            } else {
+                                view! {
+                                    <div class="overflow-x-auto">
+                                        <table class="table table-zebra w-full">
+                                            <thead>
+                                                <tr>
+                                                    <th>{fertilizer_product}</th>
+                                                    <th>{fertilizer_nutrients}</th>
+                                                    <th>{fertilizer_quantity}</th>
+                                                    <th>{fertilizer_area}</th>
+                                                    <th>{fertilizer_date}</th>
+                                                    <th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {page.data.iter().map(|rec| {
+                                                    let product = rec.get("product_name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                                                    let n = rec.get("nutrient_n").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                                                    let p = rec.get("nutrient_p").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                                                    let k = rec.get("nutrient_k").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                                                    let qty = rec.get("quantity_kg").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                                                    let area = rec.get("area_ha").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                                                    let date = rec.get("application_date").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                                                    let id = rec.get("id").and_then(|v| v.as_str()).and_then(|s| uuid::Uuid::parse_str(s).ok());
+                                                    view! {
+                                                        <tr>
+                                                            <td>{product.clone()}</td>
+                                                            <td>{format!("N: {:.1} / P: {:.1} / K: {:.1}", n, p, k)}</td>
+                                                            <td>{format!("{:.1} kg", qty)}</td>
+                                                            <td>{format!("{:.2} ha", area)}</td>
+                                                            <td>{date.clone()}</td>
+                                                            <td>
+                                                                <button class="btn btn-xs btn-ghost btn-error" on:click=move |_| {
+                                                                    let Some(id) = id else { return };
+                                                                    spawn_local(async move {
+                                                                        let _ = api::delete_fertilizer_record(id).await;
+                                                                    });
+                                                                }>
+                                                                    <Icon icon=&LuTrash2 width="14" height="14" />
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                }).collect::<Vec<_>>()}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }.into_any()
+                            }
+                        }).unwrap_or_else(|| view! { <div class="loading-spinner"></div> }.into_any())
+                    }}
+                </div>
+            </div>
+
             <Show when=move || show_modal.get()>
                 <div class="modal modal-open">
                     <div class="modal-box">
@@ -194,6 +286,98 @@ pub fn CompliancePage() -> impl IntoView {
                                     })
                                     .await
                                     {
+                                        Ok(_) => {
+                                            let _ = leptos::prelude::window().location().reload();
+                                        }
+                                        Err(e) => set_error.set(Some(e)),
+                                    }
+                                });
+                            }>{save_label.clone()}</button>
+                        </div>
+                    </div>
+                </div>
+            </Show>
+
+            <Show when=move || show_fertilizer_modal.get()>
+                <div class="modal modal-open">
+                    <div class="modal-box">
+                        <h3 class="font-bold text-lg">{fertilizer_new}</h3>
+                        {move || error.get().map(|err| view! {
+                            <div class="alert alert-error mt-4"><span>{err}</span></div>
+                        })}
+                        <div class="grid grid-cols-2 gap-4 mt-4">
+                            <div class="form-control col-span-2">
+                                <label class="label"><span class="label-text">{fertilizer_product}</span></label>
+                                <input type="text" class="input input-bordered w-full" prop:value=move || fert_product.get() on:input=move |ev| set_fert_product.set(event_target_value(&ev)) />
+                            </div>
+                            <div class="form-control">
+                                <label class="label"><span class="label-text">"N (kg/ha)"</span></label>
+                                <input type="number" step="0.1" class="input input-bordered w-full" prop:value=move || fert_n.get() on:input=move |ev| {
+                                    set_fert_n.set(event_target_value(&ev).parse().unwrap_or(0.0));
+                                } />
+                            </div>
+                            <div class="form-control">
+                                <label class="label"><span class="label-text">"P (kg/ha)"</span></label>
+                                <input type="number" step="0.1" class="input input-bordered w-full" prop:value=move || fert_p.get() on:input=move |ev| {
+                                    set_fert_p.set(event_target_value(&ev).parse().unwrap_or(0.0));
+                                } />
+                            </div>
+                            <div class="form-control">
+                                <label class="label"><span class="label-text">"K (kg/ha)"</span></label>
+                                <input type="number" step="0.1" class="input input-bordered w-full" prop:value=move || fert_k.get() on:input=move |ev| {
+                                    set_fert_k.set(event_target_value(&ev).parse().unwrap_or(0.0));
+                                } />
+                            </div>
+                            <div class="form-control">
+                                <label class="label"><span class="label-text">{fertilizer_quantity.clone()}</span></label>
+                                <input type="number" step="0.1" class="input input-bordered w-full" prop:value=move || fert_quantity.get() on:input=move |ev| {
+                                    set_fert_quantity.set(event_target_value(&ev).parse().unwrap_or(0.0));
+                                } />
+                            </div>
+                            <div class="form-control">
+                                <label class="label"><span class="label-text">{fertilizer_area.clone()}</span></label>
+                                <input type="number" step="0.01" class="input input-bordered w-full" prop:value=move || fert_area.get() on:input=move |ev| {
+                                    set_fert_area.set(event_target_value(&ev).parse().unwrap_or(0.0));
+                                } />
+                            </div>
+                            <div class="form-control">
+                                <label class="label"><span class="label-text">{fertilizer_date.clone()}</span></label>
+                                <input type="date" class="input input-bordered w-full" prop:value=move || fert_date.get() on:input=move |ev| set_fert_date.set(event_target_value(&ev)) />
+                            </div>
+                        </div>
+                        <div class="modal-action">
+                            <button class="btn" on:click=move |_| set_show_fertilizer_modal.set(false)>{cancel_label.clone()}</button>
+                            <button class="btn btn-primary" on:click=move |_| {
+                                let product = fert_product.get();
+                                let n = fert_n.get();
+                                let p = fert_p.get();
+                                let k = fert_k.get();
+                                let qty = fert_quantity.get();
+                                let area = fert_area.get();
+                                let date = fert_date.get();
+                                let site_id = sites.read().clone().flatten().and_then(|page| page.data.first().map(|s| s.id));
+                                let no_site_msg = no_site_for_checklist_label.to_string();
+                                set_error.set(None);
+                                if product.trim().is_empty() {
+                                    set_error.set(Some(field_required.to_string()));
+                                    return;
+                                }
+                                spawn_local(async move {
+                                    let Some(site_id) = site_id else {
+                                        set_error.set(Some(no_site_msg));
+                                        return;
+                                    };
+                                    match api::create_fertilizer_record(api::CreateFertilizerRecordRequest {
+                                        site_id,
+                                        order_id: None,
+                                        product_name: product,
+                                        nutrient_n: n,
+                                        nutrient_p: p,
+                                        nutrient_k: k,
+                                        quantity_kg: qty,
+                                        area_ha: area,
+                                        application_date: format!("{}T00:00:00Z", date),
+                                    }).await {
                                         Ok(_) => {
                                             let _ = leptos::prelude::window().location().reload();
                                         }

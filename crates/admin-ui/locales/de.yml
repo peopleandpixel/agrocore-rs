@@ -1796,3 +1796,10 @@ backup_actions: Aktionen
 setting_default_inherited: Standard (geerbt)
 setting_reset_button: Zurücksetzen
 nav_iot_devices: IoT-Geräte
+fertilizer_records: Düngemittelprotokolle
+new_fertilizer_record: Neues Düngemittel
+fertilizer_product: Produkt
+fertilizer_quantity: Menge (kg)
+fertilizer_area: Fläche (ha)
+fertilizer_date: Ausbringdatum
+fertilizer_nutrients: N/P/K

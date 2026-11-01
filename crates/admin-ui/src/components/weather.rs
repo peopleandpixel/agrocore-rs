@@ -44,8 +44,8 @@ pub fn WeatherManagement() -> impl IntoView {
     let report_observation = i18n.t(lang.get().as_str(), "report_observation");
     let weather_observation_title = i18n.t(lang.get().as_str(), "weather_observation_title");
     let observation_note = i18n.t(lang.get().as_str(), "observation_note");
-    let cancel = i18n.t(lang.get().as_str(), "cancel");
-    let save = i18n.t(lang.get().as_str(), "save");
+    let cancel: &'static str = Box::leak(i18n.t(lang.get().as_str(), "cancel").into_boxed_str());
+    let save: &'static str = Box::leak(i18n.t(lang.get().as_str(), "save").into_boxed_str());
     let weather_no_site_for_observation =
         i18n.t(lang.get().as_str(), "weather_no_site_for_observation");
     let weather_no_site_for_observation_label: &'static str =
@@ -59,8 +59,25 @@ pub fn WeatherManagement() -> impl IntoView {
             .flatten()
     });
     let (show_observation_modal, set_show_observation_modal) = signal(false);
+    let (show_station_modal, set_show_station_modal) = signal(false);
     let (error, set_error) = signal(None::<String>);
     let (notes, set_notes) = signal(String::new());
+    // Station form state
+    let (st_label, set_st_label) = signal(String::new());
+    let (st_type, set_st_type) = signal(String::from("manual"));
+    let (st_manufacturer, set_st_manufacturer) = signal(String::new());
+    let (st_model, set_st_model) = signal(String::new());
+    let (reload, set_reload) = signal(0u32);
+    let weather_station_label = i18n.t(lang.get().as_str(), "weather_station_label");
+    let weather_station_type = i18n.t(lang.get().as_str(), "weather_station_type");
+    let weather_station_manufacturer = i18n.t(lang.get().as_str(), "weather_station_manufacturer");
+    let weather_station_model = i18n.t(lang.get().as_str(), "weather_station_model");
+    let weather_create_station = i18n.t(lang.get().as_str(), "weather_create_station");
+    let weather_delete_station = i18n.t(lang.get().as_str(), "weather_delete_station");
+    let field_required: &'static str = Box::leak(
+        i18n.t(lang.get().as_str(), "field_required")
+            .into_boxed_str(),
+    );
 
     view! {
         <div class="flex flex-col gap-6">
@@ -91,8 +108,15 @@ pub fn WeatherManagement() -> impl IntoView {
 
                     <div class="card bg-base-100 shadow">
                         <div class="card-body">
-                            <h2 class="card-title mb-4">{weather_stations_title}</h2>
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="card-title">{weather_stations_title}</h2>
+                                <button class="btn btn-sm btn-primary" on:click=move |_| set_show_station_modal.set(true)>
+                                    <Icon icon=&LuPlus width="16" height="16" />
+                                    {weather_create_station.clone()}
+                                </button>
+                            </div>
                             {move || {
+                                let _ = reload.get();
                                 stations.read().as_ref().and_then(|result| result.as_ref()).and_then(|page| {
                                     if page.data.is_empty() {
                                         None
@@ -102,12 +126,21 @@ pub fn WeatherManagement() -> impl IntoView {
                                                 {page.data.iter().map(|station| {
                                                     let label = station_label(station);
                                                     let status = station_status(station);
+                                                    let id = station.get("id").and_then(|v| v.as_str()).and_then(|s| uuid::Uuid::parse_str(s).ok());
                                                     view! {
                                                         <div class="flex justify-between items-center p-3 bg-base-200 rounded-lg">
                                                             <div>
                                                                 <div class="font-bold">{label}</div>
                                                                 <div class="text-xs opacity-60">{status}</div>
                                                             </div>
+                                                            <button class="btn btn-xs btn-ghost btn-error" on:click=move |_| {
+                                                                let Some(id) = id else { return };
+                                                                spawn_local(async move {
+                                                                    let _ = api::delete_weather_station(id).await;
+                                                                });
+                                                            }>
+                                                                <Icon icon=&LuTrash2 width="14" height="14" />
+                                                            </button>
                                                         </div>
                                                     }
                                                 }).collect::<Vec<_>>()}
@@ -162,7 +195,7 @@ pub fn WeatherManagement() -> impl IntoView {
                             <textarea class="textarea textarea-bordered w-full" prop:value=move || notes.get() on:input=move |ev| set_notes.set(event_target_value(&ev))></textarea>
                         </div>
                         <div class="modal-action">
-                            <button class="btn" on:click=move |_| set_show_observation_modal.set(false)>{cancel.as_str().to_string()}</button>
+                            <button class="btn" on:click=move |_| set_show_observation_modal.set(false)>{cancel.clone()}</button>
                             <button class="btn btn-primary" on:click=move |_| {
                                 let notes_value = notes.get();
                                 let site_id = sites
@@ -188,6 +221,69 @@ pub fn WeatherManagement() -> impl IntoView {
                                     })
                                     .await
                                     {
+                                        Ok(_) => {
+                                            let _ = leptos::prelude::window().location().reload();
+                                        }
+                                        Err(e) => set_error.set(Some(e)),
+                                    }
+                                });
+                            }>{save.clone()}</button>
+                        </div>
+                    </div>
+                </div>
+            </Show>
+
+            <Show when=move || show_station_modal.get()>
+                <div class="modal modal-open">
+                    <div class="modal-box">
+                        <h3 class="font-bold text-lg">{weather_create_station.clone()}</h3>
+                        {move || error.get().map(|err| view! {
+                            <div class="alert alert-error mt-4"><span>{err}</span></div>
+                        })}
+                        <div class="space-y-4 mt-4">
+                            <div class="form-control">
+                                <label class="label"><span class="label-text">{weather_station_label.clone()}</span></label>
+                                <input type="text" class="input input-bordered w-full" prop:value=move || st_label.get() on:input=move |ev| set_st_label.set(event_target_value(&ev)) />
+                            </div>
+                            <div class="form-control">
+                                <label class="label"><span class="label-text">{weather_station_type.clone()}</span></label>
+                                <select class="select select-bordered w-full" prop:value=move || st_type.get() on:change=move |ev| set_st_type.set(event_target_value(&ev))>
+                                    <option value="manual">"Manual"</option>
+                                    <option value="automated">"Automated"</option>
+                                    <option value="external">"External API"</option>
+                                </select>
+                            </div>
+                            <div class="form-control">
+                                <label class="label"><span class="label-text">{weather_station_manufacturer.clone()}</span></label>
+                                <input type="text" class="input input-bordered w-full" prop:value=move || st_manufacturer.get() on:input=move |ev| set_st_manufacturer.set(event_target_value(&ev)) />
+                            </div>
+                            <div class="form-control">
+                                <label class="label"><span class="label-text">{weather_station_model.clone()}</span></label>
+                                <input type="text" class="input input-bordered w-full" prop:value=move || st_model.get() on:input=move |ev| set_st_model.set(event_target_value(&ev)) />
+                            </div>
+                        </div>
+                        <div class="modal-action">
+                            <button class="btn" on:click=move |_| set_show_station_modal.set(false)>{cancel.clone()}</button>
+                            <button class="btn btn-primary" on:click=move |_| {
+                                let label = st_label.get();
+                                let stype = st_type.get();
+                                let manufacturer = st_manufacturer.get();
+                                let model = st_model.get();
+                                set_error.set(None);
+                                if label.trim().is_empty() {
+                                    set_error.set(Some(field_required.to_string()));
+                                    return;
+                                }
+                                spawn_local(async move {
+                                    match api::create_weather_station(api::CreateWeatherStationRequest {
+                                        label: label,
+                                        station_type: stype,
+                                        location: None,
+                                        manufacturer: if manufacturer.is_empty() { None } else { Some(manufacturer) },
+                                        model: if model.is_empty() { None } else { Some(model) },
+                                        serial_number: None,
+                                        api_key_config: None,
+                                    }).await {
                                         Ok(_) => {
                                             let _ = leptos::prelude::window().location().reload();
                                         }

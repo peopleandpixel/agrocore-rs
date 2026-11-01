@@ -1797,3 +1797,10 @@ backup_actions: Acțiuni
 setting_default_inherited: Implicit (moștenit)
 setting_reset_button: Resetează
 nav_iot_devices: Dispozitive IoT
+fertilizer_records: Fertilizer Records
+new_fertilizer_record: New Fertilizer Record
+fertilizer_product: Product
+fertilizer_quantity: Quantity (kg)
+fertilizer_area: Area (ha)
+fertilizer_date: Application Date
+fertilizer_nutrients: N/P/K

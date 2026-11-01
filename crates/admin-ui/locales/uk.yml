@@ -1792,3 +1792,10 @@ backup_actions: Дії
 setting_default_inherited: За замовчуванням (спадковий)
 setting_reset_button: Скинути
 nav_iot_devices: ПРІ-пристрої
+fertilizer_records: Fertilizer Records
+new_fertilizer_record: New Fertilizer Record
+fertilizer_product: Product
+fertilizer_quantity: Quantity (kg)
+fertilizer_area: Area (ha)
+fertilizer_date: Application Date
+fertilizer_nutrients: N/P/K

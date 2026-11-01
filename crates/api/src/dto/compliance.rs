@@ -213,7 +213,7 @@ pub struct CreateFertilizerRecordDto {
 }
 
 impl From<CreateFertilizerRecordDto>
-    for agrocore_domain::entities::compliance::CreateFertilizerRecordDto
+    for agrocore_domain::entities::fertilizer::CreateFertilizerRecordDto
 {
     fn from(dto: CreateFertilizerRecordDto) -> Self {
         Self {

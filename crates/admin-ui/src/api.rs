@@ -1048,6 +1048,36 @@ pub async fn fetch_fertilizer_records() -> Result<PaginatedResponse<serde_json::
     get_json("/api/v1/compliance/fertilizer", true).await
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CreateFertilizerRecordRequest {
+    pub site_id: uuid::Uuid,
+    pub order_id: Option<uuid::Uuid>,
+    pub product_name: String,
+    pub nutrient_n: f64,
+    pub nutrient_p: f64,
+    pub nutrient_k: f64,
+    pub quantity_kg: f64,
+    pub area_ha: f64,
+    pub application_date: String,
+}
+
+pub async fn create_fertilizer_record(
+    req: CreateFertilizerRecordRequest,
+) -> Result<serde_json::Value, String> {
+    post_json("/api/v1/compliance/fertilizer", &req, true).await
+}
+
+pub async fn update_fertilizer_record(
+    id: uuid::Uuid,
+    req: serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    put_json(&format!("/api/v1/compliance/fertilizer/{}", id), &req, true).await
+}
+
+pub async fn delete_fertilizer_record(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(&format!("/api/v1/compliance/fertilizer/{}", id), true).await
+}
+
 pub async fn fetch_plant_protection_records() -> Result<PaginatedResponse<serde_json::Value>, String>
 {
     get_json("/api/v1/compliance/plant-protection", true).await
@@ -1244,6 +1274,17 @@ pub async fn create_weather_station(
     req: CreateWeatherStationRequest,
 ) -> Result<serde_json::Value, String> {
     post_json("/api/v1/weather/stations", &req, true).await
+}
+
+pub async fn update_weather_station(
+    id: uuid::Uuid,
+    req: serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    put_json(&format!("/api/v1/weather/stations/{}", id), &req, true).await
+}
+
+pub async fn delete_weather_station(id: uuid::Uuid) -> Result<(), String> {
+    delete_json(&format!("/api/v1/weather/stations/{}", id), true).await
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

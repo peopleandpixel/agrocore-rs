@@ -1,9 +1,9 @@
 use crate::AppState;
 use crate::dto::{
     ApplicatorLicenseDto, CreateApplicatorLicenseDto, CreateComplianceChecklistDto,
-    CreatePlantProtectionDto, ErrorResponse, PaginatedResponseDto, PlantProtectionRecordDto,
-    UpdateApplicatorLicenseDto, UpdateComplianceChecklistDto, UpdateFertilizerRecordDto,
-    UpdatePlantProtectionDto,
+    CreateFertilizerRecordDto, CreatePlantProtectionDto, ErrorResponse, PaginatedResponseDto,
+    PlantProtectionRecordDto, UpdateApplicatorLicenseDto, UpdateComplianceChecklistDto,
+    UpdateFertilizerRecordDto, UpdatePlantProtectionDto,
 };
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
@@ -36,7 +36,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         web::resource("/compliance/checklists/find-by-type/{checklist_type}")
             .route(web::get().to(find_checklists_by_type)),
     )
-    .service(web::resource("/compliance/fertilizer").route(web::get().to(list_fertilizer_records)))
+    .service(
+        web::resource("/compliance/fertilizer")
+            .route(web::get().to(list_fertilizer_records))
+            .route(web::post().to(create_fertilizer_record)),
+    )
     .service(
         web::resource("/compliance/fertilizer/{id}")
             .route(web::get().to(get_fertilizer_record))
@@ -104,6 +108,26 @@ pub async fn list_fertilizer_records(
         per_page: result.per_page,
         total_pages: result.total_pages,
     }))
+}
+
+pub async fn create_fertilizer_record(
+    state: web::Data<AppState>,
+    auth: AuthUser,
+    dto: web::Json<CreateFertilizerRecordDto>,
+) -> Result<HttpResponse, ApiError> {
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
+    let record = state
+        .db
+        .fertilizer_record_repo()
+        .create(
+            agrocore_domain::TenantId(auth.0.tenant_id),
+            dto.into_inner().into(),
+            auth.0.user_id,
+        )
+        .await?;
+    Ok(HttpResponse::Created().json(record))
 }
 
 pub async fn list_plant_protection_records(

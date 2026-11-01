@@ -1,6 +1,6 @@
 # AgroCore-RS Open Tasks
 
-Last updated: 2026-11-01 (v0.70.0)
+Last updated: 2026-11-01 (v0.71.0)
 
 Open work only. Completed items have been removed; the history lives in the CHANGELOG.
 Ordered by priority, within a priority by dependency.
@@ -32,7 +32,7 @@ Legend: **P0** blocks operation · **P1** MVP · **P2** important · **P3** conv
   - **Calculators** (710 lines): 12 calculator tools (nutrition, water rate, material, tree crown, forage, nitrogen, difficulty, profitability, harvest estimation, weather, fertilizer).
   - **Compliance** (210 lines): Checklists, plant protection records, PAC/SIP export.
   - Sidebar navigation added for `/water`, `/harvest`, `/agriculture` (were missing).
-- [ ] **H12 — Compliance and weather areas** — `/compliance/fertilizer` and weather station management (`create_weather_station`, `create_weather_data` exist in api.rs but are not wired to UI).
+- [x] **H12 — Compliance and weather areas** — done (v0.71.0): Added `create_fertilizer_record` POST endpoint with validation; fertilizer records section in Compliance page with table, create modal, and delete. Weather station management: added `update_weather_station` and `delete_weather_station` API functions; create station modal and delete buttons in Weather page.
 - [ ] **H13 — Further unused areas** — `profitability`, `workflow`, `material`, `stations`, `sources`, `difficulty-surcharge`, `tree-crown-volume`, `nitrogen-demand`.
 
 ### Block I — Performance

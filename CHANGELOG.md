@@ -52,6 +52,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.71.0] — 2026-11-01
+
+### H12 — Compliance Fertilizer & Weather Station Management
+
+- **Fertilizer Records POST endpoint** — Added `create_fertilizer_record` handler with `.validate()` in `compliance.rs`; route registered at `POST /compliance/fertilizer`. Fixed `CreateFertilizerRecordDto` `From` impl to convert to `entities::fertilizer` module (was incorrectly targeting `entities::compliance`).
+- **Fertilizer Records UI** — Added full fertilizer records section to the Compliance page (`compliance.rs`): paginated table showing product, N/P/K nutrients, quantity, area, and application date; create modal with form fields for all nutrients; delete button per row.
+- **Weather Station CRUD API** — Added `update_weather_station` and `delete_weather_station` API functions in `api.rs` (create already existed but had no UI caller).
+- **Weather Station Management UI** — Added create station modal to the Weather page (`weather.rs`): form fields for label, type (manual/automated/external), manufacturer, and model; delete button per station row.
+- **i18n** — Added 14 new translation keys for fertilizer records and weather station management across all 10 locale files (en, de, es, fr, it, nl, pl, pt, ro, uk).
+
+### Verification
+
+- `cargo fmt --check` ✓
+- `cargo check --workspace` ✓ (0 errors)
+- `cargo clippy --workspace` ✓ (0 errors)
+- `cargo test --workspace` ✓ (all pass)
+
 ## [v0.70.0] — 2026-11-01
 
 ### Block H9 — Admin UI Seiten vollständig implementiert

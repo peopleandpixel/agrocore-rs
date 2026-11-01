@@ -1795,3 +1795,10 @@ backup_actions: Acciones
 setting_default_inherited: Predeterminado (heredado)
 setting_reset_button: Restablecer
 nav_iot_devices: Dispositivos IoT
+fertilizer_records: Fertilizer Records
+new_fertilizer_record: New Fertilizer Record
+fertilizer_product: Product
+fertilizer_quantity: Quantity (kg)
+fertilizer_area: Area (ha)
+fertilizer_date: Application Date
+fertilizer_nutrients: N/P/K
