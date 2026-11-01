@@ -21,6 +21,7 @@ pub mod finance;
 pub mod group;
 pub mod harvest;
 pub mod inventory;
+pub mod iot;
 pub mod livestock;
 pub mod olive;
 pub mod order;
@@ -52,6 +53,10 @@ pub use compliance::{
 };
 pub use customer::{CreateCustomerDto, Customer, UpdateCustomerDto};
 pub use group::{CreateGroupDto, Group, GroupType, UpdateGroupDto};
+pub use iot::{
+    CreateIoTDeviceDto, DeviceStatus, IoTCapability, IoTCapabilityType, IoTCommand, IoTDevice,
+    IoTDeviceData, IoTTelemetry, UpdateIoTDeviceDto,
+};
 pub use livestock::{
     Animal, AnimalSpecies, AnimalStatus, CreateAnimalDto, CreateGrazingRecordDto,
     CreateLivestockDto, CreateTreatmentRecordDto, GrazingRecord, Livestock, LivestockType,

@@ -9,6 +9,10 @@ use crate::dto::{
 };
 use crate::error::ApiError;
 use actix_web::{HttpResponse, web};
+use agrocore_domain::entities::iot::{
+    DeviceStatus, IoTCapability, IoTCapabilityType as DomainCapabilityType, IoTCommand, IoTDevice,
+    IoTDeviceData, IoTTelemetry,
+};
 use agrocore_logging::info;
 use agrocore_messaging::{
     IoTCommandEvent, IoTDeviceConfig, IoTMeasurement, IoTTelemetryEvent,
@@ -16,7 +20,6 @@ use agrocore_messaging::{
 };
 use agrocore_shared::SharedError;
 use serde::{Deserialize, Serialize};
-use sqlx::Row;
 use std::collections::HashMap;
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -54,41 +57,132 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     );
 }
 
+fn to_domain_device(dto: &IoTDeviceResponse) -> IoTDevice {
+    IoTDevice {
+        device_id: dto.device_id.clone(),
+        tenant_id: agrocore_domain::entities::tenant::TenantId(dto.tenant_id),
+        site_id: dto.site_id,
+        device: IoTDeviceData {
+            device_type: dto.device_type.clone(),
+            capabilities: dto
+                .capabilities
+                .iter()
+                .map(|c| IoTCapability {
+                    capability_type: match &c.capability_type {
+                        IoTCapabilityType::Temperature => DomainCapabilityType::Temperature,
+                        IoTCapabilityType::Humidity => DomainCapabilityType::Humidity,
+                        IoTCapabilityType::SoilMoisture => DomainCapabilityType::SoilMoisture,
+                        IoTCapabilityType::Light => DomainCapabilityType::Light,
+                        IoTCapabilityType::GPS => DomainCapabilityType::GPS,
+                        IoTCapabilityType::BatteryLevel => DomainCapabilityType::BatteryLevel,
+                        IoTCapabilityType::SignalStrength => DomainCapabilityType::SignalStrength,
+                        IoTCapabilityType::ActuatorControl => DomainCapabilityType::ActuatorControl,
+                        IoTCapabilityType::FirmwareUpdate => DomainCapabilityType::FirmwareUpdate,
+                        IoTCapabilityType::Power => DomainCapabilityType::Power,
+                        IoTCapabilityType::Energy => DomainCapabilityType::Energy,
+                        IoTCapabilityType::Pressure => DomainCapabilityType::Pressure,
+                        IoTCapabilityType::Voltage => DomainCapabilityType::Voltage,
+                        IoTCapabilityType::Current => DomainCapabilityType::Current,
+                        IoTCapabilityType::Custom(s) => DomainCapabilityType::Custom(s.clone()),
+                    },
+                    unit: c.unit.clone(),
+                    min_value: c.min_value,
+                    max_value: c.max_value,
+                    precision: c.precision,
+                })
+                .collect(),
+            metadata: dto.metadata.clone(),
+            status: match dto.status {
+                DeviceStatusDto::Online => DeviceStatus::Online,
+                DeviceStatusDto::Offline => DeviceStatus::Offline,
+                DeviceStatusDto::Error => DeviceStatus::Error,
+                DeviceStatusDto::Maintenance => DeviceStatus::Maintenance,
+                DeviceStatusDto::Updating => DeviceStatus::Updating,
+            },
+            firmware_version: dto.firmware_version.clone(),
+            battery_level: dto.battery_level,
+            signal_strength: dto.signal_strength,
+            error_message: dto.error_message.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            last_seen: dto.last_seen,
+            topic_prefix: dto.topic_prefix.clone(),
+        },
+    }
+}
+
+fn to_response(device: &IoTDevice) -> IoTDeviceResponse {
+    IoTDeviceResponse {
+        device_id: device.device_id.clone(),
+        device_type: device.device.device_type.clone(),
+        tenant_id: device.tenant_id.0,
+        site_id: device.site_id,
+        capabilities: device
+            .device
+            .capabilities
+            .iter()
+            .map(|c| IoTCapabilityDto {
+                capability_type: match &c.capability_type {
+                    DomainCapabilityType::Temperature => IoTCapabilityType::Temperature,
+                    DomainCapabilityType::Humidity => IoTCapabilityType::Humidity,
+                    DomainCapabilityType::SoilMoisture => IoTCapabilityType::SoilMoisture,
+                    DomainCapabilityType::Light => IoTCapabilityType::Light,
+                    DomainCapabilityType::GPS => IoTCapabilityType::GPS,
+                    DomainCapabilityType::BatteryLevel => IoTCapabilityType::BatteryLevel,
+                    DomainCapabilityType::SignalStrength => IoTCapabilityType::SignalStrength,
+                    DomainCapabilityType::ActuatorControl => IoTCapabilityType::ActuatorControl,
+                    DomainCapabilityType::FirmwareUpdate => IoTCapabilityType::FirmwareUpdate,
+                    DomainCapabilityType::Power => IoTCapabilityType::Power,
+                    DomainCapabilityType::Energy => IoTCapabilityType::Energy,
+                    DomainCapabilityType::Pressure => IoTCapabilityType::Pressure,
+                    DomainCapabilityType::Voltage => IoTCapabilityType::Voltage,
+                    DomainCapabilityType::Current => IoTCapabilityType::Current,
+                    DomainCapabilityType::Custom(s) => IoTCapabilityType::Custom(s.clone()),
+                },
+                unit: c.unit.clone(),
+                min_value: c.min_value,
+                max_value: c.max_value,
+                precision: c.precision,
+            })
+            .collect(),
+        metadata: device.device.metadata.clone(),
+        status: match device.device.status {
+            DeviceStatus::Online => DeviceStatusDto::Online,
+            DeviceStatus::Offline => DeviceStatusDto::Offline,
+            DeviceStatus::Error => DeviceStatusDto::Error,
+            DeviceStatus::Maintenance => DeviceStatusDto::Maintenance,
+            DeviceStatus::Updating => DeviceStatusDto::Updating,
+        },
+        firmware_version: device.device.firmware_version.clone(),
+        battery_level: device.device.battery_level,
+        signal_strength: device.device.signal_strength,
+        error_message: device.device.error_message.clone(),
+        created_at: device.device.created_at,
+        updated_at: device.device.updated_at,
+        last_seen: device.device.last_seen,
+        topic_prefix: device.device.topic_prefix.clone(),
+    }
+}
+
 async fn find_device(
     state: &web::Data<AppState>,
     tenant_id: uuid::Uuid,
     device_id: &str,
 ) -> Result<Option<IoTDeviceResponse>, ApiError> {
-    let row = sqlx::query("SELECT device FROM iot_devices WHERE device_id = $1 AND tenant_id = $2")
-        .bind(device_id)
-        .bind(tenant_id)
-        .fetch_optional(state.db.tenant_pool(tenant_id))
-        .await?;
-
-    row.map(|row| {
-        serde_json::from_value(row.try_get("device")?)
-            .map_err(|error| ApiError(SharedError::Internal(error.to_string())))
-    })
-    .transpose()
+    let repo = state.db.iot_device_repo();
+    let tid = agrocore_domain::entities::tenant::TenantId(tenant_id);
+    let device = repo.find_by_device_id(tid, device_id).await?;
+    Ok(device.map(|d| to_response(&d)))
 }
 
 async fn persist_device(
     state: &web::Data<AppState>,
     device: &IoTDeviceResponse,
 ) -> Result<(), ApiError> {
-    let payload = serde_json::to_value(device)
-        .map_err(|error| ApiError(SharedError::Internal(error.to_string())))?;
-    sqlx::query(
-        "INSERT INTO iot_devices (device_id, tenant_id, site_id, device) VALUES ($1, $2, $3, $4)
-         ON CONFLICT (device_id) DO UPDATE SET tenant_id = EXCLUDED.tenant_id,
-         site_id = EXCLUDED.site_id, device = EXCLUDED.device, updated_at = NOW()",
-    )
-    .bind(&device.device_id)
-    .bind(device.tenant_id)
-    .bind(device.site_id)
-    .bind(payload)
-    .execute(state.db.tenant_pool(device.tenant_id))
-    .await?;
+    let repo = state.db.iot_device_repo();
+    let tid = agrocore_domain::entities::tenant::TenantId(device.tenant_id);
+    let domain_device = to_domain_device(device);
+    repo.upsert(tid, &domain_device).await?;
     Ok(())
 }
 
@@ -141,13 +235,23 @@ pub async fn list_devices(
             _ => None,
         });
 
-    let rows = sqlx::query("SELECT device FROM iot_devices WHERE tenant_id = $1")
-        .bind(tenant_id)
-        .fetch_all(state.db.tenant_pool(auth.0.tenant_id))
-        .await?;
-    let devices: Vec<IoTDeviceResponse> = rows
-        .into_iter()
-        .filter_map(|row| serde_json::from_value(row.try_get("device").ok()?).ok())
+    let repo = state.db.iot_device_repo();
+    let tid = agrocore_domain::entities::tenant::TenantId(tenant_id);
+
+    // Map status_filter to domain DeviceStatus
+    let domain_status = status_filter.as_ref().map(|s| match s {
+        DeviceStatusDto::Online => DeviceStatus::Online,
+        DeviceStatusDto::Offline => DeviceStatus::Offline,
+        DeviceStatusDto::Error => DeviceStatus::Error,
+        DeviceStatusDto::Maintenance => DeviceStatus::Maintenance,
+        DeviceStatusDto::Updating => DeviceStatus::Updating,
+    });
+
+    let devices: Vec<IoTDeviceResponse> = repo
+        .find_all(tid, site_id, domain_status)
+        .await?
+        .iter()
+        .map(to_response)
         .collect();
 
     let filtered: Vec<IoTDeviceResponse> = devices
@@ -375,13 +479,10 @@ pub async fn delete_device(
     // A tenant admin is not a superadmin. Cross-tenant access needs a separate,
     // globally granted flag; `is_admin()` is a role *within* a tenant and must
     // never widen the tenant boundary.
-    let deleted = sqlx::query("DELETE FROM iot_devices WHERE device_id = $1 AND tenant_id = $2")
-        .bind(&device_id)
-        .bind(auth.0.tenant_id)
-        .execute(state.db.tenant_pool(auth.0.tenant_id))
-        .await?
-        .rows_affected();
-    if deleted > 0 {
+    let repo = state.db.iot_device_repo();
+    let tid = agrocore_domain::entities::tenant::TenantId(auth.0.tenant_id);
+    let deleted = repo.delete(tid, &device_id).await?;
+    if deleted {
         info!("IoT device deleted: {}", device_id);
         Ok(HttpResponse::NoContent().finish())
     } else {
@@ -435,60 +536,29 @@ pub async fn get_device_telemetry(
             .map(|dt| dt.with_timezone(&chrono::Utc))
     });
 
-    // J8: Query real telemetry from iot_telemetry table
-    let pool = state.db.tenant_pool(auth.0.tenant_id);
-    let rows: Vec<(
-        String,
-        f64,
-        String,
-        Option<String>,
-        chrono::DateTime<chrono::Utc>,
-    )> = if let Some(since) = since {
-        sqlx::query_as(
-            r#"SELECT capability, value, unit, quality, received_at
-                   FROM iot_telemetry
-                   WHERE device_id = $1 AND received_at >= $2
-                   ORDER BY received_at DESC
-                   LIMIT $3"#,
-        )
-        .bind(&device_id)
-        .bind(since)
-        .bind(limit as i32)
-        .fetch_all(pool)
+    // J8: Query real telemetry from iot_telemetry table via repository
+    let repo = state.db.iot_device_repo();
+    let tid = agrocore_domain::entities::tenant::TenantId(auth.0.tenant_id);
+    let rows: Vec<IoTTelemetry> = repo
+        .get_telemetry(tid, &device_id, since, limit)
         .await
-        .map_err(|e| ApiError(SharedError::Database(e.to_string())))?
-    } else {
-        sqlx::query_as(
-            r#"SELECT capability, value, unit, quality, received_at
-                   FROM iot_telemetry
-                   WHERE device_id = $1
-                   ORDER BY received_at DESC
-                   LIMIT $2"#,
-        )
-        .bind(&device_id)
-        .bind(limit as i32)
-        .fetch_all(pool)
-        .await
-        .map_err(|e| ApiError(SharedError::Database(e.to_string())))?
-    };
+        .map_err(|e| ApiError(SharedError::Database(e.to_string())))?;
 
     let measurements: Vec<IoTMeasurementDto> = rows
         .into_iter()
-        .map(
-            |(capability, value, unit, quality, received_at)| IoTMeasurementDto {
-                capability: IoTCapabilityDto {
-                    capability_type: IoTCapabilityType::Custom(capability),
-                    unit: None,
-                    min_value: None,
-                    max_value: None,
-                    precision: None,
-                },
-                value,
-                unit,
-                quality,
-                timestamp: received_at,
+        .map(|t| IoTMeasurementDto {
+            capability: IoTCapabilityDto {
+                capability_type: IoTCapabilityType::Custom(t.capability),
+                unit: None,
+                min_value: None,
+                max_value: None,
+                precision: None,
             },
-        )
+            value: t.value,
+            unit: t.unit,
+            quality: t.quality,
+            timestamp: t.received_at,
+        })
         .collect();
 
     let response = IoTDeviceTelemetryResponse {
@@ -542,23 +612,20 @@ pub async fn send_command(
     let command_id = Uuid::new_v4();
     let now = chrono::Utc::now();
 
-    // J8: Persist the command in iot_commands table
-    let pool = state.db.tenant_pool(auth.0.tenant_id);
-    sqlx::query(
-        r#"INSERT INTO iot_commands 
-           (id, tenant_id, device_id, command_type, payload, status, requested_at, timeout_seconds)
-           VALUES ($1, $2, $3, $4, $5, 'Sent', $6, $7)"#,
-    )
-    .bind(command_id)
-    .bind(auth.0.tenant_id)
-    .bind(&device_id)
-    .bind(&dto.command_type)
-    .bind(&dto.payload)
-    .bind(now)
-    .bind(dto.timeout_seconds.map(|s| s as i32))
-    .execute(pool)
-    .await
-    .map_err(|e| ApiError(SharedError::Database(e.to_string())))?;
+    // J8: Persist the command in iot_commands table via repository
+    let command = IoTCommand {
+        id: command_id,
+        device_id: device_id.clone(),
+        command_type: dto.command_type.clone(),
+        payload: dto.payload.clone(),
+        status: "Sent".to_string(),
+        requested_at: now,
+        timeout_seconds: dto.timeout_seconds.map(|s| s as i32),
+    };
+    let repo = state.db.iot_device_repo();
+    repo.create_command(&command)
+        .await
+        .map_err(|e| ApiError(SharedError::Database(e.to_string())))?;
 
     // J8: Publish command to NATS so the MQTT bridge can forward it
     let command_event = IoTCommandEvent {
@@ -772,6 +839,9 @@ pub async fn ingest_telemetry(
         .ok_or_else(|| ApiError::not_found("Device not found"))?;
 
     // J8: Store each measurement in iot_telemetry table
+    // Telemetry is stored directly via sqlx since the repository layer
+    // focuses on device CRUD; telemetry ingestion is a high-throughput
+    // write path that benefits from batch inserts.
     let now = chrono::Utc::now();
     let metadata_ref = dto.metadata.as_ref();
     for m in &dto.measurements {

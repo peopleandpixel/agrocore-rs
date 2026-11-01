@@ -7,9 +7,9 @@ use crate::postgres::{
     growing_degree_day::PgGrowingDegreeDayRepo, harvest_delivery::PgHarvestDeliveryRepo,
     harvest_lot::PgHarvestLotRepo, harvest_season::PgHarvestSeasonRepo,
     inventory_item::PgInventoryItemRepo, inventory_location::PgInventoryLocationRepo,
-    inventory_transaction::PgInventoryTransactionRepo, kelter_delivery::PgKelterDeliveryRepo,
-    livestock::PgLivestockRepo, olive_grove::PgOliveGroveRepo,
-    olive_oil_record::PgOliveOilRecordRepo, order::PgOrderRepo,
+    inventory_transaction::PgInventoryTransactionRepo, iot_device::PgIotDeviceRepo,
+    kelter_delivery::PgKelterDeliveryRepo, livestock::PgLivestockRepo,
+    olive_grove::PgOliveGroveRepo, olive_oil_record::PgOliveOilRecordRepo, order::PgOrderRepo,
     pac_application::PgPACApplicationRepo, pest_risk::PgPestRiskRepo,
     phenology_record::PgPhenologyRecordRepo, plant_protection_record::PgPlantProtectionRecordRepo,
     setting::PgSettingsRepo, site::PgSiteRepo, soil_moisture_config::PgSoilMoistureConfigRepo,
@@ -24,14 +24,14 @@ use agrocore_domain::repositories::{
     ComplianceChecklistRepo, CostCenterRepo, CustomerRepository, EquipmentRepository,
     FertilizerRecordRepo, FinancialRecordRepo, FrostWarningRepo, GroupRepository,
     GrowingDegreeDayRepo, HarvestDeliveryRepo, HarvestLotRepo, HarvestSeasonRepo,
-    InventoryItemRepository, InventoryLocationRepo, InventoryTransactionRepo, KelterDeliveryRepo,
-    LivestockRepository, OliveGroveRepo, OliveOilRecordRepo, OrderRepository, PACApplicationRepo,
-    PestRiskRepo, PhenologyRecordRepo, PlantProtectionRecordRepo, SettingsRepository,
-    SiteRepository, SoilMoistureConfigRepo, SpatialObjectRepository, TaskDataRepository,
-    TaskSubTaskRepository, TenantRepository, TreeRepository, TypeCategoryRepository,
-    TypeEntryRepository, UserRepository, VineyardRepo, WaterQuotaRepo, WaterSourceRepo,
-    WaterUsageRepo, WeatherDataRepo, WeatherStationRepo, WorkLogRepo, WorkerLocationRepo,
-    WorkerRepo, WorkerTaskStatusRepository,
+    InventoryItemRepository, InventoryLocationRepo, InventoryTransactionRepo, IotDeviceRepository,
+    KelterDeliveryRepo, LivestockRepository, OliveGroveRepo, OliveOilRecordRepo, OrderRepository,
+    PACApplicationRepo, PestRiskRepo, PhenologyRecordRepo, PlantProtectionRecordRepo,
+    SettingsRepository, SiteRepository, SoilMoistureConfigRepo, SpatialObjectRepository,
+    TaskDataRepository, TaskSubTaskRepository, TenantRepository, TreeRepository,
+    TypeCategoryRepository, TypeEntryRepository, UserRepository, VineyardRepo, WaterQuotaRepo,
+    WaterSourceRepo, WaterUsageRepo, WeatherDataRepo, WeatherStationRepo, WorkLogRepo,
+    WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
 };
 use agrocore_logging::{debug, info};
 use sqlx::PgPool;
@@ -109,6 +109,7 @@ pub struct MockDatabase {
     pub livestock_repo: Option<Arc<agrocore_domain::repositories::MockLivestockRepository>>,
     pub type_category_repo: Option<Arc<agrocore_domain::repositories::MockTypeCategoryRepository>>,
     pub type_entry_repo: Option<Arc<agrocore_domain::repositories::MockTypeEntryRepository>>,
+    pub iot_device_repo: Option<Arc<agrocore_domain::repositories::MockIotDeviceRepository>>,
 }
 
 impl Database {
@@ -586,6 +587,18 @@ impl Database {
         }
     }
 
+    pub fn iot_device_repo(&self) -> Arc<dyn IotDeviceRepository> {
+        match self {
+            Self::Postgres(db) => db.iot_device_repo(),
+            #[cfg(feature = "mocks")]
+            Self::Mock(m) => m
+                .iot_device_repo
+                .clone()
+                .expect("iot_device_repo mock not set")
+                as Arc<dyn IotDeviceRepository>,
+        }
+    }
+
     pub fn clock_entry_repo(&self) -> Arc<dyn ClockEntryRepo> {
         match self {
             Self::Postgres(db) => db.clock_entry_repo(),
@@ -762,6 +775,7 @@ pub struct PostgresDb {
     pub inventory_item_repo: Arc<dyn InventoryItemRepository>,
     pub inventory_transaction_repo: Arc<dyn InventoryTransactionRepo>,
     pub inventory_location_repo: Arc<dyn InventoryLocationRepo>,
+    pub iot_device_repo: Arc<dyn IotDeviceRepository>,
     pub clock_entry_repo: Arc<dyn ClockEntryRepo>,
     pub frost_warning_repo: Arc<dyn FrostWarningRepo>,
     pub growing_degree_day_repo: Arc<dyn GrowingDegreeDayRepo>,
@@ -892,6 +906,7 @@ impl PostgresDb {
             inventory_item_repo: Arc::new(PgInventoryItemRepo::new(pool.clone())),
             inventory_transaction_repo: Arc::new(PgInventoryTransactionRepo::new(pool.clone())),
             inventory_location_repo: Arc::new(PgInventoryLocationRepo::new(pool.clone())),
+            iot_device_repo: Arc::new(PgIotDeviceRepo::new(pool.clone())),
             clock_entry_repo: Arc::new(PgClockEntryRepo::new(pool.clone())),
             frost_warning_repo: Arc::new(crate::postgres::frost_warning::PgFrostWarningRepo::new(
                 pool.clone(),
@@ -966,6 +981,7 @@ impl PostgresDb {
             inventory_item_repo: Arc::new(PgInventoryItemRepo::new(pool.clone())),
             inventory_transaction_repo: Arc::new(PgInventoryTransactionRepo::new(pool.clone())),
             inventory_location_repo: Arc::new(PgInventoryLocationRepo::new(pool.clone())),
+            iot_device_repo: Arc::new(PgIotDeviceRepo::new(pool.clone())),
             clock_entry_repo: Arc::new(PgClockEntryRepo::new(pool.clone())),
             frost_warning_repo: Arc::new(crate::postgres::frost_warning::PgFrostWarningRepo::new(
                 pool.clone(),
@@ -1171,6 +1187,10 @@ impl PostgresDb {
 
     pub fn inventory_location_repo(&self) -> Arc<dyn InventoryLocationRepo> {
         self.inventory_location_repo.clone()
+    }
+
+    pub fn iot_device_repo(&self) -> Arc<dyn IotDeviceRepository> {
+        self.iot_device_repo.clone()
     }
 
     pub fn clock_entry_repo(&self) -> Arc<dyn ClockEntryRepo> {

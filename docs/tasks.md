@@ -35,7 +35,7 @@ Legend: **P0** blocks operation · **P1** MVP · **P2** important · **P3** conv
 
 ### Block J — Unwired code and missing tests
 
-- [ ] **J17 — `iot.rs` bypasses the repo layer** — raw `sqlx::query` on `iot_devices` with a JSONB blob per device (`find_device:47-61`). Functional, but breaks the `Repository<T>` pattern and the `measure_sqlx_query!` instrumentation. (Deferred — requires new Domain trait + Infrastructure implementation)
+- [x] **J17 — `iot.rs` bypasses the repo layer** — done (v0.68.0): Created `IotDeviceRepository` trait in domain crate, PostgreSQL implementation in infrastructure crate, and refactored all 7 raw SQL queries in `iot.rs` handler to use the repository pattern. Telemetry ingestion keeps direct sqlx for high-throughput batch inserts (documented).
 - [x] **J18 — The auth round-trip is untested** — done (v0.67.0): Added `auth_roundtrip_tests.rs` with tests for login, refresh, and logout route registration plus `find_by_refresh_token` coverage.
 - [ ] **J19 — No migration schema assertion test (column lists)** — Three tests check table existence, tenant reference and readability. The part that compares the **column lists** of the repos against `information_schema` is still missing — it would find schema drift automatically. (Deferred — requires database connection)
 - [ ] **J20a — The test fixture — 4 tests still red** — `test_database_migrations_applied` expects table `spatial_properties`; `test_site_crud_operations` and `test_updated_at_trigger` fail with column count mismatch; `test_tenant_creation_and_isolation` has slug unique constraint issue. (Deferred — requires database connection with PostGIS)

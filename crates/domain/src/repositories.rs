@@ -1913,3 +1913,42 @@ pub trait SettingsRepository: Send + Sync {
 
 pub mod task_sub_task;
 pub use task_sub_task::{NearbySubTask, TaskProgressAggregate, TaskSubTask, TaskSubTaskRepository};
+
+// --- IoT Device Repository ---
+use crate::entities::iot::{DeviceStatus, IoTCommand, IoTDevice, IoTTelemetry};
+
+#[cfg_attr(feature = "mocks", automock)]
+pub trait IotDeviceRepository: Send + Sync {
+    /// Find a device by its string device_id within a tenant.
+    fn find_by_device_id(
+        &self,
+        tid: TenantId,
+        device_id: &str,
+    ) -> RepositoryFuture<Option<IoTDevice>>;
+
+    /// List all devices for a tenant, optionally filtered by site and status.
+    fn find_all(
+        &self,
+        tid: TenantId,
+        site_id: Option<Uuid>,
+        status: Option<DeviceStatus>,
+    ) -> RepositoryFuture<Vec<IoTDevice>>;
+
+    /// Insert or update a device (upsert on device_id).
+    fn upsert(&self, tid: TenantId, device: &IoTDevice) -> RepositoryFuture<()>;
+
+    /// Delete a device by device_id within a tenant.
+    fn delete(&self, tid: TenantId, device_id: &str) -> RepositoryFuture<bool>;
+
+    /// Get recent telemetry for a device, optionally filtered by timestamp.
+    fn get_telemetry(
+        &self,
+        tid: TenantId,
+        device_id: &str,
+        since: Option<chrono::DateTime<chrono::Utc>>,
+        limit: i64,
+    ) -> RepositoryFuture<Vec<IoTTelemetry>>;
+
+    /// Persist a command record.
+    fn create_command(&self, command: &IoTCommand) -> RepositoryFuture<()>;
+}

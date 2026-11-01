@@ -52,6 +52,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.68.0] — 2026-11-01
+
+### J17 — IoT handler now uses Repository pattern
+
+- **IoT Device domain entities** — Added `agrocore-domain/src/entities/iot.rs` with `IoTDevice`, `IoTDeviceData`, `DeviceStatus`, `IoTCapability`, `IoTCapabilityType`, `IoTTelemetry`, `IoTCommand`, `CreateIoTDeviceDto`, and `UpdateIoTDeviceDto`.
+- **IotDeviceRepository trait** — Added to `agrocore-domain/src/repositories.rs` with `find_by_device_id`, `find_all`, `upsert`, `delete`, `get_telemetry`, and `create_command` methods. Supports `mockall` via `#[cfg_attr(feature = "mocks", automock)]`.
+- **PostgreSQL implementation** — `agrocore-infrastructure/src/postgres/iot_device.rs` implements `IotDeviceRepository` using `sqlx::query_as` with `TenantPool` for tenant-scoped queries.
+- **Handler refactored** — `agrocore-api/src/handlers/iot.rs` replaced all 7 raw `sqlx::query` calls with repository calls. Added `to_domain_device()` and `to_response()` conversion functions. Telemetry ingestion keeps direct `sqlx::query` for high-throughput batch inserts (documented).
+- **Database wiring** — `PgIotDeviceRepo` registered in `postgres.rs`, `Database` enum and `PostgresDb` struct updated with `iot_device_repo()` accessor, `MockDatabase` extended.
+
+### Verification
+
+- `cargo fmt --check` ✓
+- `cargo check --workspace` ✓ (0 errors)
+- `cargo clippy -p agrocore-api -p agrocore-domain -p agrocore-infrastructure` ✓ (0 errors)
+- `cargo test --workspace` ✓ (all pass except 3 pre-existing `route_inventory_tests`)
+
 ## [v0.67.0] — 2026-11-01
 
 ### Task 0 — Security, completeness and performance
