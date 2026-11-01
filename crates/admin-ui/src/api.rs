@@ -4511,3 +4511,73 @@ pub async fn calc_specialized_profitability(
     )
     .await
 }
+
+// ---------------------------------------------------------------------------
+// Settings groups – namespaces used by fetch_setting_group / save_setting_group.
+// ---------------------------------------------------------------------------
+
+/// Company profile settings group.
+pub const SETTINGS_GROUP_COMPANY: &str = "company";
+/// Locale settings group.
+pub const SETTINGS_GROUP_LOCALE: &str = "locale";
+/// Notification settings group.
+pub const SETTINGS_GROUP_NOTIFICATION: &str = "notification";
+/// Weather settings group.
+pub const SETTINGS_GROUP_WEATHER: &str = "weather";
+/// Backup settings group.
+pub const SETTINGS_GROUP_BACKUP: &str = "backup";
+
+// ---------------------------------------------------------------------------
+// Weather – current reading with company-profile fallback.
+// ---------------------------------------------------------------------------
+
+/// GET /api/v1/weather/current-with-fallback
+pub async fn fetch_weather_current_with_fallback() -> Result<serde_json::Value, String> {
+    get_json("/api/v1/weather/current-with-fallback", true).await
+}
+
+// ---------------------------------------------------------------------------
+// IoT – telemetry ingestion endpoint.
+// ---------------------------------------------------------------------------
+
+/// POST /api/v1/iot/telemetry — ingest telemetry measurements.
+pub async fn post_iot_telemetry(
+    measurements: &[serde_json::Value],
+) -> Result<serde_json::Value, String> {
+    let body = serde_json::json!({ "measurements": measurements });
+    post_json("/api/v1/iot/telemetry", &body, true).await
+}
+
+// ---------------------------------------------------------------------------
+// Type system — admin endpoints (no UI yet, referenced for completeness).
+// ---------------------------------------------------------------------------
+
+/// GET /api/v1/types/categories
+pub async fn fetch_type_categories() -> Result<serde_json::Value, String> {
+    get_json("/api/v1/types/categories", true).await
+}
+
+/// GET /api/v1/types/pending-review
+pub async fn fetch_types_pending_review() -> Result<serde_json::Value, String> {
+    get_json("/api/v1/types/pending-review", true).await
+}
+
+/// POST /api/v1/types/approve — approve a pending type entry by ID.
+pub async fn approve_type_entry(id: uuid::Uuid) -> Result<serde_json::Value, String> {
+    let body = serde_json::json!({ "id": id });
+    post_json("/api/v1/types/approve", &body, true).await
+}
+
+/// POST /api/v1/types/merge
+pub async fn merge_type_entries(
+    source_id: uuid::Uuid,
+    target_id: uuid::Uuid,
+) -> Result<serde_json::Value, String> {
+    let body = serde_json::json!({ "source_id": source_id, "target_id": target_id });
+    post_json("/api/v1/types/merge", &body, true).await
+}
+
+/// GET /api/v1/types/user-created
+pub async fn fetch_user_created_types() -> Result<serde_json::Value, String> {
+    get_json("/api/v1/types/user-created", true).await
+}

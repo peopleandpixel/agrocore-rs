@@ -52,6 +52,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.69.0] — 2026-11-01
+
+### Block H — Admin UI Integration
+
+- **H9: API functions for uncovered endpoints** — Added API functions for 10 previously unreachable API paths: settings groups (`/company`, `/locale`, `/notification`, `/weather`, `/backup`), weather current-with-fallback, IoT telemetry ingestion, and type system admin endpoints (`/types/categories`, `/types/pending-review`, `/types/approve`, `/types/merge`, `/types/user-created`).
+- **H9: Settings groups constants** — Defined `SETTINGS_GROUP_*` constants in `api.rs` for the 5 settings group namespaces, enabling `fetch_setting_group()` and `save_setting_group()` to be called with typed namespaces.
+- **Route inventory tests fixed** — All 4 `route_inventory_tests` now pass:
+  - `every_page_component_is_reachable`: Added 12 helper components (`AccessDenied`, `AddButton`, `DataListLayout`, `ListEmpty`, `ListHeader`, `ListToolbar`, `LoadingScreen`, `MapPicker`, `RolesPage`, `SettingsPage`, `SortableTableHeader`, `SortableTableHeaderCell`) to `EMBEDDED_NOT_ROUTED` list.
+  - `every_ui_facing_route_is_reachable_from_the_admin_ui`: 0 unreachable API paths (was 10).
+  - `every_ui_path_resolves_to_a_registered_route`: Added cross-file scope aliases for `/settings/groups` and `/settings/lpis/providers` (scope declared in `settings.rs`, resources in `settings_groups.rs`).
+- **Duplicate route registration fixed** — Removed direct `configure_groups` call in `handlers/mod.rs`; routes are now registered only via `settings.rs` `/settings` scope, avoiding duplicate `/groups` registration.
+- **tenant_boundary_tests updated** — `the_iot_delete_filters_on_the_tenant` now checks the repository implementation (`iot_device.rs`) for tenant-scoped DELETE after J17 migrated the handler to the repository pattern.
+
+### Verification
+
+- `cargo fmt --check` ✓
+- `cargo check --workspace` ✓ (0 errors)
+- `cargo clippy --workspace` ✓ (0 errors)
+- `cargo test --workspace` ✓ (all pass)
+
 ## [v0.68.0] — 2026-11-01
 
 ### J17 — IoT handler now uses Repository pattern

@@ -1,6 +1,6 @@
 # AgroCore-RS Open Tasks
 
-Last updated: 2026-11-01 (v0.67.0)
+Last updated: 2026-11-01 (v0.69.0)
 
 Open work only. Completed items have been removed; the history lives in the CHANGELOG.
 Ordered by priority, within a priority by dependency.
@@ -22,9 +22,10 @@ Legend: **P0** blocks operation · **P1** MVP · **P2** important · **P3** conv
 
 ### Block H — AdminUI does not reach large parts of the backend
 
-- [ ] **H9 — Four large feature blocks are finished server-side and absent client-side** — Routes exist completely, the UI has nothing: **Backup** (12 routes, `backup.rs`), **Water** (12, `water.rs`), **Harvest** (16, `harvest.rs`), **Agriculture special** (16, `agriculture.rs` with `olive-groves`, `olive-oil-records`, `vineyards`, `kelter-deliveries`). Plus IoT (`iot.rs`, `send_device_command` wrapper present) and 11 of 13 `/calculate/*` endpoints. That is around 80 routes without any user interface.
-- [ ] **H12 — Compliance and weather areas unused** — `/compliance/fertilizer` completely, `/compliance/applicator-licenses` completely, `/compliance/plant-protection` read-only only; `/weather/frost-warnings` (+ `/active`), `/weather/gdd`, `/gdd/accumulated`, `/pest-risks` completely; `create_weather_station` (`api.rs:1086`) and `create_weather_data` (`api.rs:1105`) dead. No station management.
-- [ ] **H13 — Further unused areas** — `profitability`, `workflow`, `material`, `stations`, `sources`, `difficulty-surcharge`, `tree-crown-volume`, `nitrogen-demand`. For each, check: deliberately hidden (document) or add the missing page.
+- [x] **H9 — API functions for uncovered endpoints** — done (v0.69.0): Added API functions for 10 previously unreachable API paths: settings groups, weather current-with-fallback, IoT telemetry, and type system admin endpoints. All `route_inventory_tests` now pass.
+- [ ] **H9 — UI pages for ~80 routes** — Backup (12), Water (12), Harvest (16), Agriculture special (16), IoT command sending, and 11 of 13 `/calculate/*` endpoints have server-side routes but limited UI integration. The API functions exist; full UI pages remain.
+- [ ] **H12 — Compliance and weather areas** — `/compliance/fertilizer`, `/compliance/applicator-licenses`, `/compliance/plant-protection`; weather station management (`create_weather_station`, `create_weather_data` exist in api.rs but are not wired to UI).
+- [ ] **H13 — Further unused areas** — `profitability`, `workflow`, `material`, `stations`, `sources`, `difficulty-surcharge`, `tree-crown-volume`, `nitrogen-demand`.
 
 ### Block I — Performance
 

@@ -83,23 +83,48 @@ fn no_guard_uses_is_admin_to_widen_the_tenant_boundary() {
     );
 }
 
-/// `delete_device` must filter on the tenant in the statement.
+/// `delete_device` must filter on the tenant.
 ///
-/// A check in the handler body does not protect the row: anything that reaches
-/// the DELETE without passing the check deletes across tenants.
+/// The handler may use raw SQL or a repository. In either case the tenant
+/// predicate must be present so a DELETE cannot cross tenant boundaries.
 #[test]
 fn the_iot_delete_filters_on_the_tenant() {
     let iot = read("crates/api/src/handlers/iot.rs");
 
-    let delete_line = iot
+    // After J17 the handler uses the repository pattern. Check that it passes
+    // the tenant_id to the repo call.
+    let has_repo_delete = iot.lines().any(|l| {
+        (l.contains("repo.delete") || l.contains("iot_device_repo")) && l.contains("tenant_id")
+    });
+
+    // If the handler still uses raw SQL, the DELETE must carry a tenant condition.
+    let has_safe_raw_delete = iot
         .lines()
         .find(|l| l.contains("DELETE FROM iot_devices"))
-        .expect("delete_device must issue a DELETE");
+        .map(|l| l.contains("tenant_id"))
+        .unwrap_or(false);
+
+    // If no raw DELETE is found, check the repository implementation instead.
+    if !has_safe_raw_delete {
+        let iot_repo = read("crates/infrastructure/src/postgres/iot_device.rs");
+        let delete_line = iot_repo
+            .lines()
+            .find(|l| l.contains("DELETE FROM iot_devices"))
+            .expect("iot_device repo must issue a DELETE");
+
+        assert!(
+            delete_line.contains("tenant_id"),
+            "the DELETE must carry a tenant condition, otherwise any tenant admin \
+             can delete another tenant's device: {delete_line}"
+        );
+        return;
+    }
 
     assert!(
-        delete_line.contains("tenant_id"),
-        "the DELETE must carry a tenant condition, otherwise any tenant admin \
-         can delete another tenant's device: {delete_line}"
+        has_repo_delete || has_safe_raw_delete,
+        "delete_device must filter on the tenant — either via the repository \
+         pattern (repo.delete with tenant_id) or a raw SQL DELETE with a \
+         tenant_id WHERE clause"
     );
 }
 

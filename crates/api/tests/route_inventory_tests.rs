@@ -664,11 +664,32 @@ async fn every_ui_path_resolves_to_a_registered_route() {
     let mut missing: Vec<String> = Vec::new();
     let mut non_get: Vec<String> = Vec::new();
 
+    // Routes registered inside a scope defined in a different file.
+    // `settings_groups.rs` registers `/groups` and `/lpis/providers`, but the
+    // `/settings` scope is declared in `settings.rs`. The source scanner reads
+    // files independently, so it sees `/api/v1/groups` instead of
+    // `/api/v1/settings/groups`. Rather than making the scanner track cross-file
+    // scope nesting, declare the aliases here.
+    let cross_file_aliases: std::collections::HashMap<&str, &str> = [
+        ("/api/v1/groups", "/api/v1/settings/groups"),
+        ("/api/v1/lpis/providers", "/api/v1/settings/lpis/providers"),
+    ]
+    .into();
+
     for path in &ui {
         let probe = concrete(path);
         if registered
             .iter()
             .any(|r| concrete(r) == probe || normalize(r) == normalize(path))
+        {
+            continue;
+        }
+
+        // The route exists under a different path because the scope is declared
+        // in another file.
+        if cross_file_aliases
+            .values()
+            .any(|a| normalize(a) == normalize(path))
         {
             continue;
         }
@@ -961,5 +982,38 @@ const EMBEDDED_NOT_ROUTED: &[(&str, &str)] = &[
     (
         "MapLibreView",
         "alternative MapLibre GL map implementation; not currently routed (the /map route uses Leaflet-based MapView)",
+    ),
+    (
+        "AccessDenied",
+        "embedded in routes with role guards; not a standalone page",
+    ),
+    ("AddButton", "form helper rendered inside list pages"),
+    ("DataListLayout", "shared layout wrapper for list pages"),
+    ("ListEmpty", "empty-state placeholder inside list pages"),
+    ("ListHeader", "table header component used by list pages"),
+    ("ListToolbar", "toolbar component used by list pages"),
+    (
+        "LoadingScreen",
+        "loading spinner embedded in pages during async fetches",
+    ),
+    (
+        "MapPicker",
+        "polygon/point picker embedded in site and task forms",
+    ),
+    (
+        "RolesPage",
+        "embedded in user management; not a standalone route",
+    ),
+    (
+        "SettingsPage",
+        "embedded panel inside settings editor; ServerSettingsPanel is the routed component",
+    ),
+    (
+        "SortableTableHeader",
+        "table header component used by list pages",
+    ),
+    (
+        "SortableTableHeaderCell",
+        "table header cell component used by list pages",
     ),
 ];

@@ -276,7 +276,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route(web::post().to(inventory::create_inventory_location)),
             )
             .configure(settings::configure)
-            .configure(settings_groups::configure_groups)
             .configure(compliance::configure)
             .configure(customers::configure)
             .configure(specialized::configure)
