@@ -16,11 +16,13 @@ use agrocore_domain::entities::workforce::{
     CreateClockEntryDto, CreateWorkLogDto, CreateWorkerDto, CreateWorkerLocationDto,
     ReportLocationDto, UpdateClockEntryDto, UpdateWorkLogDto, UpdateWorkerDto,
 };
+use agrocore_infrastructure::postgres::tenant_pool::TenantPool;
 use agrocore_logging::warn;
 use agrocore_messaging::{Event, GlobalEvent, SpatialPolygonEventKind, SpatialPresenceEvent};
 use agrocore_shared::{Pagination, SharedError};
 use chrono::Utc;
 use serde::Deserialize;
+use sqlx::Executor;
 use std::collections::HashSet;
 use uuid::Uuid;
 use validator::Validate;
@@ -460,14 +462,41 @@ pub async fn report_location(
         .await;
     }
 
+    // Resolve worker ID outside the transaction (read-only)
+    let worker_id = match state
+        .db
+        .worker_repo()
+        .find_by_user_id(agrocore_domain::TenantId(auth.0.tenant_id), auth.0.user_id)
+        .await
+    {
+        Ok(Some(worker)) => worker.id,
+        Ok(None) => auth.0.user_id,
+        Err(e) => {
+            warn!("Failed to resolve worker for auto-complete worklog: {}", e);
+            auth.0.user_id
+        }
+    };
+
+    // Execute order updates and worklog creation within a single transaction
     match state
         .db
         .order_repo()
         .find_assigned_to_worker(agrocore_domain::TenantId(auth.0.tenant_id), auth.0.user_id)
         .await
     {
-        Ok(mut orders) => {
-            for mut order in orders.drain(..) {
+        Ok(orders) => {
+            let tenant_uuid = auth.0.tenant_id;
+            let pool = state.db.pool().clone();
+            let tp = TenantPool::new(&pool, tenant_uuid);
+            let mut tx = match tp.begin().await {
+                Ok(tx) => tx,
+                Err(e) => {
+                    warn!("Failed to begin transaction for auto-presence: {}", e);
+                    return Ok(HttpResponse::Created().json(loc));
+                }
+            };
+
+            for mut order in orders {
                 let Some(policy) = order.execution_policy.as_ref() else {
                     continue;
                 };
@@ -482,124 +511,66 @@ pub async fn report_location(
                 let duration_minutes = order.expected_work_duration_minutes();
                 let action = order.observe_presence(inside, loc.timestamp);
 
-                if action.is_none() {
-                    if let Err(e) = state
-                        .db
-                        .order_repo()
-                        .update(
-                            agrocore_domain::TenantId(auth.0.tenant_id),
-                            order.id,
-                            agrocore_domain::entities::order::UpdateOrderDto {
-                                status: Some(order.status.clone()),
-                                planned_date: order.planned_date,
-                                deadline_date: order.deadline_date,
-                                started_at: order.started_at,
-                                completed_at: order.completed_at,
-                                last_completed_at: order.last_completed_at,
-                                recurrence: order.recurrence.clone(),
-                                execution_policy: order.execution_policy.clone(),
-                                automation_state: order.automation_state.clone(),
-                                site_ids: Some(order.site_ids.clone()),
-                                assigned_worker_ids: Some(order.assigned_worker_ids.clone()),
-                                ..Default::default()
-                            },
-                            auth.0.user_id,
-                        )
-                        .await
-                    {
-                        warn!(
-                            "Failed to persist auto-presence state for order {}: {}",
-                            order.id, e
-                        );
-                    }
-                    continue;
-                }
+                let status_json = serde_json::to_value(order.status.clone()).unwrap();
+                let started_at_json = serde_json::to_value(order.started_at).unwrap();
+                let completed_at_json = serde_json::to_value(order.completed_at).unwrap();
+                let last_completed_at_json = serde_json::to_value(order.last_completed_at).unwrap();
+                let recurrence_json = serde_json::to_value(&order.recurrence).unwrap();
+                let execution_policy_json = serde_json::to_value(&order.execution_policy).unwrap();
+                let automation_state_json = serde_json::to_value(&order.automation_state).unwrap();
+                let site_ids_json = serde_json::to_value(&order.site_ids).unwrap();
+                let assigned_worker_ids_json =
+                    serde_json::to_value(&order.assigned_worker_ids).unwrap();
 
-                if let Err(e) = state
-                    .db
-                    .order_repo()
-                    .update(
-                        agrocore_domain::TenantId(auth.0.tenant_id),
-                        order.id,
-                        agrocore_domain::entities::order::UpdateOrderDto {
-                            status: Some(order.status.clone()),
-                            planned_date: order.planned_date,
-                            deadline_date: order.deadline_date,
-                            started_at: order.started_at,
-                            completed_at: order.completed_at,
-                            last_completed_at: order.last_completed_at,
-                            recurrence: order.recurrence.clone(),
-                            execution_policy: order.execution_policy.clone(),
-                            automation_state: order.automation_state.clone(),
-                            site_ids: Some(order.site_ids.clone()),
-                            assigned_worker_ids: Some(order.assigned_worker_ids.clone()),
-                            ..Default::default()
-                        },
-                        auth.0.user_id,
-                    )
-                    .await
-                {
-                    warn!(
-                        "Failed to persist auto-presence transition for order {}: {}",
-                        order.id, e
-                    );
-                }
-
-                let event = Event::new("api".into(), GlobalEvent::OrderUpdated(order.clone()));
-                let _ = crate::publish_event(
-                    state.messaging.as_ref(),
-                    "events.orders".to_string(),
-                    &event,
+                let _ = sqlx::query(
+                    r#"UPDATE orders SET status = $1, actual_start = $2, actual_end = $3,
+                       last_completed_at = $4, recurrence = $5, execution_policy = $6,
+                       automation_state = $7, site_ids = $8, assigned_worker_ids = $9,
+                       updated_at = NOW() WHERE id = $10 AND tenant_id = $11"#,
                 )
+                .bind(status_json)
+                .bind(started_at_json)
+                .bind(completed_at_json)
+                .bind(last_completed_at_json)
+                .bind(recurrence_json)
+                .bind(execution_policy_json)
+                .bind(automation_state_json)
+                .bind(site_ids_json)
+                .bind(assigned_worker_ids_json)
+                .bind(order.id)
+                .bind(agrocore_domain::TenantId(tenant_uuid))
+                .execute(&mut *tx)
                 .await;
 
                 if matches!(
                     action,
                     Some(agrocore_domain::entities::order::TaskAutomationAction::Completed)
                 ) {
-                    let worker_id = match state
-                        .db
-                        .worker_repo()
-                        .find_by_user_id(
-                            agrocore_domain::TenantId(auth.0.tenant_id),
-                            auth.0.user_id,
-                        )
-                        .await
-                    {
-                        Ok(Some(worker)) => worker.id,
-                        Ok(None) => auth.0.user_id,
-                        Err(e) => {
-                            warn!("Failed to resolve worker for auto-complete worklog: {}", e);
-                            auth.0.user_id
-                        }
-                    };
-                    let worklog = agrocore_domain::entities::workforce::CreateWorkLogDto {
-                        worker_id,
-                        date: loc.timestamp,
-                        hours_worked: duration_minutes.unwrap_or(0) as f64 / 60.0,
-                        overtime_hours: 0.0,
-                        rest_period_hours: 0.0,
-                        task_description: order.label.clone(),
-                        site_id: order.site_ids.first().copied(),
-                        is_night_shift: false,
-                        breaks_taken: 0,
-                    };
-                    if let Err(e) = state
-                        .db
-                        .work_log_repo()
-                        .create(
-                            agrocore_domain::TenantId(auth.0.tenant_id),
-                            worklog,
-                            auth.0.user_id,
-                        )
-                        .await
-                    {
-                        warn!(
-                            "Failed to create auto-complete worklog for order {}: {}",
-                            order.id, e
-                        );
-                    }
+                    let worklog_id = uuid::Uuid::new_v4();
+                    let _ = sqlx::query(
+                        r#"INSERT INTO work_logs (id, tenant_id, worker_id, date, hours_worked,
+                           overtime_hours, rest_period_hours, task_description, site_id,
+                           is_night_shift, breaks_taken, created_at, updated_at)
+                           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())"#,
+                    )
+                    .bind(worklog_id)
+                    .bind(agrocore_domain::TenantId(tenant_uuid))
+                    .bind(worker_id)
+                    .bind(loc.timestamp)
+                    .bind(duration_minutes.unwrap_or(0) as f64 / 60.0)
+                    .bind(0.0)
+                    .bind(0.0)
+                    .bind(&order.label)
+                    .bind(order.site_ids.first().copied())
+                    .bind(false)
+                    .bind(0)
+                    .execute(&mut *tx)
+                    .await;
                 }
+            }
+
+            if let Err(e) = tx.commit().await {
+                warn!("Failed to commit auto-presence transaction: {}", e);
             }
         }
         Err(e) => warn!("Failed to load auto-presence orders: {}", e),

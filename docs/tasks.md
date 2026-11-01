@@ -1,6 +1,6 @@
 # AgroCore-RS Open Tasks
 
-Last updated: 2026-11-01 (v0.71.0)
+Last updated: 2026-11-01 (v0.74.0)
 
 Open work only. Completed items have been removed; the history lives in the CHANGELOG.
 Ordered by priority, within a priority by dependency.
@@ -44,7 +44,7 @@ Legend: **P0** blocks operation · **P1** MVP · **P2** important · **P3** conv
 
 - [x] **I5 — LPIS HTTP cache is implemented but never enabled** — done (v0.65.0): `create_default_registry()` builds an `LpisCache` with memory backend and 1-hour TTL, then registers every provider with `.with_cache()`.
 - [x] **I13 — Two queries per list request (`COUNT` + `SELECT`)** — done (v0.73.0): Replaced sequential COUNT+SELECT with `tokio::join!` in ~45 repository files across 40+ files. Both queries now run in parallel, halving the latency for paginated list requests. Affected: animal, audit_log, building, clock_entry, cold_chain_log, compliance, cost_center, customer, equipment, fertilizer_record, financial_record, frost_warning, group, growing_degree_day, harvest_delivery, harvest_lot, harvest_season, inventory_item, inventory_location, inventory_transaction, kelter_delivery, livestock, olive_grove, olive_oil_record, order, pac_application, pest_risk, phenology_record, plant_protection_record, role, site, soil_moisture_config, soil_moisture_reading, task_data, tenant, tree, user, vineyard, water_quota, water_source, water_usage, weather_data, weather_station, work_log, worker, worker_location.
-- [ ] **I14 — Missing transactions on multi-write** — `order.rs:139-154` (INSERT + audit log), `order.rs:170-208` (SELECT + UPDATE + audit log, not atomic, TOCTOU on `old_order`), `handlers/workforce.rs:446-560` (per order `update()` + `publish()` + `find_by_user_id()` + `work_log_repo().create()`), `handlers/orders.rs:328-337` (follow-up orders committed individually in a loop). Add a `&mut Transaction` variant to the repo updates; make the batch operations in `import_service.rs:56-95,408-493` transactional too, plus `UNNEST` batch insert.
+- [x] **I14 — Missing transactions on multi-write** — done (v0.74.0): `complete_order` (orders.rs) wraps order update, worklog creation, and follow-up order creation in a single `TenantPool::begin()` transaction. `report_location` (workforce.rs) wraps auto-presence order updates and worklog creation in a single transaction. Read-only operations (worker lookup, spatial queries) remain outside the transaction.
 - [ ] **I16 — `spawn_blocking` partially done** — Excel reports are wrapped. Remaining: **LPIS parsing**, **geometry service**, **checksums**, **geodesy** — still need `spawn_blocking`.
 
 ### Block J — Unwired code and missing tests

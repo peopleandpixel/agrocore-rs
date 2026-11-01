@@ -11,10 +11,12 @@ use agrocore_domain::entities::workforce::CreateWorkLogDto;
 #[allow(unused_imports)]
 use agrocore_domain::repositories::WorkerTaskStatusRepository;
 use agrocore_domain::services::workflow::WorkflowService;
+use agrocore_infrastructure::postgres::tenant_pool::TenantPool;
 use agrocore_logging::{error, info, warn};
 use agrocore_messaging::{Event, GlobalEvent};
 use agrocore_shared::SharedError;
 use chrono::Utc;
+use sqlx::Executor;
 use validator::Validate;
 
 #[utoipa::path(
@@ -270,26 +272,7 @@ pub async fn complete_order(
         .into());
     }
 
-    // 3. Persist change (reuse update logic from repo)
-    let update_dto = agrocore_domain::entities::order::UpdateOrderDto {
-        status: Some(order.status.clone()),
-        planned_date: order.planned_date,
-        completed_at: order.completed_at,
-        last_completed_at: order.last_completed_at,
-        recurrence: order.recurrence.clone(),
-        execution_policy: order.execution_policy.clone(),
-        automation_state: order.automation_state.clone(),
-        started_at: order.started_at,
-        ..Default::default()
-    };
-
-    let updated = state
-        .db
-        .order_repo()
-        .update(tenant_id, order_id, update_dto, auth.0.user_id)
-        .await?
-        .ok_or_else(|| SharedError::NotFound("Order not found".into()))?;
-
+    // Resolve worker ID outside the transaction (read-only)
     let worker_id = match state
         .db
         .worker_repo()
@@ -303,44 +286,106 @@ pub async fn complete_order(
             auth.0.user_id
         }
     };
-    let worklog = CreateWorkLogDto {
-        worker_id,
-        date: now,
-        hours_worked: duration_minutes.unwrap_or(0) as f64 / 60.0,
-        overtime_hours: 0.0,
-        rest_period_hours: 0.0,
-        task_description: updated.label.clone(),
-        site_id: updated.site_ids.first().copied(),
-        is_night_shift: false,
-        breaks_taken: 0,
-    };
-    if let Err(e) = state
-        .db
-        .work_log_repo()
-        .create(tenant_id, worklog, auth.0.user_id)
-        .await
-    {
-        warn!(
-            "Failed to create worklog for completed order {}: {}",
-            order_id, e
-        );
-    }
 
-    // 4. Process workflows
-    let follow_ups = WorkflowService::process_status_transition(
-        &updated,
-        agrocore_domain::entities::OrderStatus::Completed,
-    );
-    for next_order_dto in follow_ups {
-        if let Err(e) = state
-            .db
-            .order_repo()
-            .create(tenant_id, next_order_dto, auth.0.user_id)
+    // 2. Execute all writes within a single transaction to prevent TOCTOU races
+    let tenant_uuid = auth.0.tenant_id;
+    let pool = state.db.pool().clone();
+    let tp = TenantPool::new(&pool, tenant_uuid);
+    let updated = {
+        let mut tx = tp.begin().await?;
+        // Update order status
+        let status_json = serde_json::to_value(order.status.clone()).unwrap();
+        let started_at_json = serde_json::to_value(order.started_at).unwrap();
+        let completed_at_json = serde_json::to_value(order.completed_at).unwrap();
+        let last_completed_at_json = serde_json::to_value(order.last_completed_at).unwrap();
+        let recurrence_json = serde_json::to_value(&order.recurrence).unwrap();
+        let execution_policy_json = serde_json::to_value(&order.execution_policy).unwrap();
+        let automation_state_json = serde_json::to_value(&order.automation_state).unwrap();
+
+        let updated: agrocore_domain::entities::order::Order =
+            sqlx::query_as::<_, agrocore_domain::entities::order::Order>(
+                r#"UPDATE orders SET status = $1, actual_start = $2, actual_end = $3, 
+               last_completed_at = $4, recurrence = $5, execution_policy = $6, 
+               automation_state = $7, updated_at = NOW()
+               WHERE id = $8 AND tenant_id = $9 RETURNING *"#,
+            )
+            .bind(status_json)
+            .bind(started_at_json)
+            .bind(completed_at_json)
+            .bind(last_completed_at_json)
+            .bind(recurrence_json)
+            .bind(execution_policy_json)
+            .bind(automation_state_json)
+            .bind(order_id)
+            .bind(tenant_id)
+            .fetch_one(&mut *tx)
             .await
-        {
-            error!("Failed to create follow-up order: {}", e);
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+
+        // Create worklog entry
+        let worklog = CreateWorkLogDto {
+            worker_id,
+            date: now,
+            hours_worked: duration_minutes.unwrap_or(0) as f64 / 60.0,
+            overtime_hours: 0.0,
+            rest_period_hours: 0.0,
+            task_description: updated.label.clone(),
+            site_id: updated.site_ids.first().copied(),
+            is_night_shift: false,
+            breaks_taken: 0,
+        };
+        let worklog_id = uuid::Uuid::new_v4();
+        let _ = sqlx::query(
+            r#"INSERT INTO work_logs (id, tenant_id, worker_id, date, hours_worked, 
+               overtime_hours, rest_period_hours, task_description, site_id, 
+               is_night_shift, breaks_taken, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())"#,
+        )
+        .bind(worklog_id)
+        .bind(tenant_id)
+        .bind(worklog.worker_id)
+        .bind(worklog.date)
+        .bind(worklog.hours_worked)
+        .bind(worklog.overtime_hours)
+        .bind(worklog.rest_period_hours)
+        .bind(&worklog.task_description)
+        .bind(worklog.site_id)
+        .bind(worklog.is_night_shift)
+        .bind(worklog.breaks_taken)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| SharedError::Database(e.to_string()))?;
+
+        // Process workflows — create follow-up orders
+        let follow_ups = WorkflowService::process_status_transition(
+            &updated,
+            agrocore_domain::entities::OrderStatus::Completed,
+        );
+        for next_order_dto in follow_ups {
+            let next_id = uuid::Uuid::new_v4();
+            let order_type_json = serde_json::to_value(&next_order_dto.order_type).unwrap();
+            let status_json =
+                serde_json::to_value(agrocore_domain::entities::OrderStatus::Planned).unwrap();
+            let _ = sqlx::query(
+                r#"INSERT INTO orders (id, tenant_id, label, order_type, status, 
+                   created_at, updated_at, is_active, customer_id)
+                   VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), true, $6)"#,
+            )
+            .bind(next_id)
+            .bind(tenant_id)
+            .bind(&next_order_dto.label)
+            .bind(order_type_json)
+            .bind(status_json)
+            .bind(next_order_dto.customer_id)
+            .execute(&mut *tx)
+            .await;
         }
-    }
+
+        tx.commit()
+            .await
+            .map_err(|e| SharedError::Database(e.to_string()))?;
+        updated
+    };
 
     let event = Event::new("api".into(), GlobalEvent::OrderUpdated(updated.clone()));
     let _ = crate::publish_event(

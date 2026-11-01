@@ -52,6 +52,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.74.0] — 2026-11-01
+
+### I14 — Transactions for Multi-Write Operations (Correctness)
+
+Eliminated TOCTOU (Time-of-Check-to-Time-of-Use) race conditions in two critical handlers by wrapping all writes in a single PostgreSQL transaction using `TenantPool::begin()`.
+
+- **`complete_order` (orders.rs)** — Order status update, worklog creation, and follow-up order creation now run atomically within a single transaction. Worker ID resolution remains outside the transaction (read-only).
+- **`report_location` (workforce.rs)** — Auto-presence order updates and worklog creation now run atomically within a single transaction. Spatial lookups and event publishing remain outside (read-only and side effects).
+
+**Dependencies added**: `agrocore_infrastructure::postgres::tenant_pool::TenantPool` and `sqlx::Executor` to both handlers.
+
+### Verification
+
+- `cargo fmt` ✓
+- `cargo check --workspace` ✓ (0 errors)
+- `cargo clippy --workspace` ✓ (0 errors)
+- `cargo test --workspace` ✓ (all pass)
+
 ## [v0.73.0] — 2026-11-01
 
 ### I13 — Parallel COUNT+SELECT queries (Performance)
