@@ -11,9 +11,9 @@
 //! look alike.
 
 use crate::api;
+use crate::icon::Icon;
 use icondata_lu::LuMap;
 use leptos::prelude::*;
-use crate::icon::Icon;
 
 /// One row in the overview, whichever entity it came from.
 ///

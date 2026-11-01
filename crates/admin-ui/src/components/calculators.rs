@@ -17,10 +17,10 @@
 //! as `"net_area"` — not the Rust variant names.
 
 use crate::api;
+use crate::icon::Icon;
 use icondata_lu::LuCalculator;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 /// The tools, grouped by what they are for. The i18n key per tool is the label
 /// shown in the picker.

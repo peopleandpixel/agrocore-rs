@@ -1,8 +1,8 @@
 use crate::api;
+use crate::icon::Icon;
 use icondata_lu::*;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 #[component]
 pub fn EquipmentManagement() -> impl IntoView {

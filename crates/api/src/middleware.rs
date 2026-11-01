@@ -1,16 +1,14 @@
 use crate::AppState;
-use actix_web::{web, Error, FromRequest, HttpRequest, HttpMessage};
-use actix_web::{
-    dev::{Service, ServiceRequest, ServiceResponse, Transform},
-};
+use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform};
+use actix_web::{Error, FromRequest, HttpMessage, HttpRequest, web};
 use agrocore_logging::debug;
 use agrocore_shared::config::decoding_key;
 use dashmap::DashMap;
+use futures_util::future::LocalBoxFuture;
 use jsonwebtoken::{Algorithm, Validation, decode};
 use redis::AsyncCommands;
 use serde::Deserialize;
 use std::future::{Future, Ready, ready};
-use futures_util::future::LocalBoxFuture;
 use std::net::IpAddr;
 use std::sync::Arc;
 use std::task::{Context, Poll};
@@ -421,7 +419,7 @@ where
                             req.path()
                         );
                         let err = actix_web::error::ErrorForbidden(
-                            "Demo tenant is in read-only mode. Writes are not allowed."
+                            "Demo tenant is in read-only mode. Writes are not allowed.",
                         );
                         return Box::pin(async move { Err(err) });
                     }
@@ -461,12 +459,11 @@ pub async fn spawn_demo_auto_reset(state: Arc<AppState>) {
             let pool = db.unscoped_pool();
 
             // Check when the demo tenant was last created/updated
-            let created_at: Option<chrono::DateTime<chrono::Utc>> = sqlx::query_scalar(
-                "SELECT created_at FROM tenants WHERE is_demo = true LIMIT 1",
-            )
-            .fetch_optional(&pool)
-            .await
-            .unwrap_or(None);
+            let created_at: Option<chrono::DateTime<chrono::Utc>> =
+                sqlx::query_scalar("SELECT created_at FROM tenants WHERE is_demo = true LIMIT 1")
+                    .fetch_optional(&pool)
+                    .await
+                    .unwrap_or(None);
 
             if let Some(created) = created_at {
                 let age_hours = (chrono::Utc::now() - created).num_hours();

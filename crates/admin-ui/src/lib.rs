@@ -1,7 +1,7 @@
 mod api;
 mod components;
-mod icon;
 mod i18n;
+mod icon;
 
 #[cfg(test)]
 mod tests;
@@ -38,21 +38,21 @@ use crate::components::water::WaterManagement;
 use crate::components::weather::WeatherManagement;
 use crate::components::weather_warnings::WeatherWarnings;
 use crate::components::wizard::WizardView;
-use crate::components::worker_tasks::WorkerTasksPage;
 use crate::components::worker_task_detail::WorkerTaskDetailPage;
+use crate::components::worker_tasks::WorkerTasksPage;
 use crate::components::workers::WorkersPage;
 use crate::components::workforce_logs::{WorkforceLocations, WorkforceLogs};
-use icondata_lu as I;
-use icondata_im::ImMagicWand;
+use crate::icon::Icon;
 use I::{
-    LuBeef, LuBox, LuBriefcase, LuCalculator, LuChartBar, LuChartNoAxesColumn,
-    LuCircleUser, LuClipboardList, LuCloudSun, LuCpu, LuDatabase, LuFileDown, LuHistory,
-    LuLayoutDashboard, LuLogOut, LuMap, LuMapPin, LuMenu, LuSettings, LuSquareCheck, LuSun,
-    LuTractor, LuUsers, LuWallet,
+    LuBeef, LuBox, LuBriefcase, LuCalculator, LuChartBar, LuChartNoAxesColumn, LuCircleUser,
+    LuClipboardList, LuCloudSun, LuCpu, LuDatabase, LuFileDown, LuHistory, LuLayoutDashboard,
+    LuLogOut, LuMap, LuMapPin, LuMenu, LuSettings, LuSquareCheck, LuSun, LuTractor, LuUsers,
+    LuWallet,
 };
+use icondata_im::ImMagicWand;
+use icondata_lu as I;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 use leptos_router::{components::*, path};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, serde::Serialize, serde::Deserialize)]

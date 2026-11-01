@@ -61,6 +61,7 @@ pub const NATS_SUBJECT_COMMANDS_BRIDGE: &str = "commands.bridge";
 pub const NATS_SUBJECT_COMMANDS_BRIDGE_BROADCAST: &str = "commands.bridge.broadcast";
 
 pub mod bridge;
+pub mod inbound_webhook;
 pub mod notification;
 
 pub use bridge::{BridgeConfig, BridgeRoute, BridgeStats, MqttBridge, MqttBridgeBuilder};
@@ -482,31 +483,36 @@ async fn try_deliver(
     secret: Option<&str>,
 ) -> anyhow::Result<()> {
     let client = reqwest::Client::new();
-    
+
     let mut req = client
         .post(url)
         .header("Content-Type", "application/json")
         .header("X-Webhook-Event", &event.event_type)
         .header("X-Webhook-Id", event.id.to_string())
         .body(serde_json::to_string(&event.payload)?);
-    
+
     // Add HMAC signature if secret is configured
     if let Some(secret) = secret {
         let payload_str = event.payload.to_string();
         let mac = hmac_sha256(&payload_str, secret);
         req = req.header("X-Webhook-Signature", mac);
     }
-    
-    let resp = req.send().await
+
+    let resp = req
+        .send()
+        .await
         .map_err(|e| anyhow::anyhow!("Webhook HTTP request failed: {}", e))?;
-    
+
     let status_code = resp.status().as_u16();
     let is_success = resp.status().is_success();
-    let body = resp.text().await
-        .unwrap_or_default();
-    
+    let body = resp.text().await.unwrap_or_default();
+
     if is_success {
-        agrocore_logging::info!("Webhook delivered successfully to {} (status {})", url, status_code);
+        agrocore_logging::info!(
+            "Webhook delivered successfully to {} (status {})",
+            url,
+            status_code
+        );
         Ok(())
     } else {
         Err(anyhow::anyhow!(
@@ -521,9 +527,9 @@ async fn try_deliver(
 fn hmac_sha256(payload: &str, secret: &str) -> String {
     use hmac::{Hmac, Mac};
     type HmacSha256 = Hmac<sha2::Sha256>;
-    
-    let mut mac = HmacSha256::new_from_slice(secret.as_bytes())
-        .expect("HMAC can take keys of any size");
+
+    let mut mac =
+        HmacSha256::new_from_slice(secret.as_bytes()).expect("HMAC can take keys of any size");
     mac.update(payload.as_bytes());
     format!("sha256={}", hex::encode(mac.finalize().into_bytes()))
 }

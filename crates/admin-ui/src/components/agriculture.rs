@@ -9,10 +9,10 @@
 //! `"GrandeReserva"`), not snake-case. The select sends the variant names.
 
 use crate::api;
+use crate::icon::Icon;
 use icondata_lu::{LuPlus, LuTrash2};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 /// The grades `QualityGrade` accepts. `Custom(String)` carries caller text.
 const QUALITY_GRADES: [(&str, &str); 6] = [

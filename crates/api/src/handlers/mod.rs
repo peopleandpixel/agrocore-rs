@@ -173,7 +173,10 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route("/status", web::get().to(system::get_status))
                     .route("/setup", web::post().to(system::initial_setup))
                     .route("/tenant", web::delete().to(system::delete_tenant))
-                    .route("/company-profile", web::put().to(system::update_company_profile)),
+                    .route(
+                        "/company-profile",
+                        web::put().to(system::update_company_profile),
+                    ),
             )
             .service(
                 web::resource("/equipments/search")

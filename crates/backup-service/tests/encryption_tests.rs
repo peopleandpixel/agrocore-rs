@@ -189,30 +189,51 @@ async fn test_none_method_copies_plaintext() {
 }
 
 #[tokio::test]
-async fn test_unimplemented_methods_report_clear_errors() {
+async fn test_kms_methods_require_cloud_credentials() {
     let (plain_path, cipher_path) = temp_paths("unimpl");
     std::fs::write(&plain_path, b"payload").expect("write");
 
-    for method in [
-        EncryptionMethod::Age,
-        EncryptionMethod::AwsKms,
-        EncryptionMethod::AzureKeyVault,
-        EncryptionMethod::GcpKms,
-    ] {
-        let method_label = method.to_string();
-        let manager = EncryptionManager::new(EncryptionConfig {
-            default: method,
-            ..Default::default()
-        });
-        let err = manager
-            .encrypt_file(&plain_path, &cipher_path)
-            .await
-            .expect_err("unimplemented backend must not silently succeed");
-        assert!(
-            err.to_string().contains("not yet implemented"),
-            "{method_label} should report not-implemented, got {err}"
-        );
-    }
+    // Azure Key Vault fails without AZURE_KEY_VAULT_URL
+    let manager = EncryptionManager::new(EncryptionConfig {
+        default: EncryptionMethod::AzureKeyVault,
+        ..Default::default()
+    });
+    let err = manager
+        .encrypt_file(&plain_path, &cipher_path)
+        .await
+        .expect_err("Azure KV must not succeed without credentials");
+    assert!(
+        err.to_string().contains("not set"),
+        "Azure KV should fail without credentials, got {err}"
+    );
+
+    // GCP KMS fails without GCP_KMS_KEY_NAME
+    let manager = EncryptionManager::new(EncryptionConfig {
+        default: EncryptionMethod::GcpKms,
+        ..Default::default()
+    });
+    let err = manager
+        .encrypt_file(&plain_path, &cipher_path)
+        .await
+        .expect_err("GCP KMS must not succeed without credentials");
+    assert!(
+        err.to_string().contains("not set"),
+        "GCP KMS should fail without credentials, got {err}"
+    );
+
+    // Age fails without recipients configured
+    let manager = EncryptionManager::new(EncryptionConfig {
+        default: EncryptionMethod::Age,
+        ..Default::default()
+    });
+    let err = manager
+        .encrypt_file(&plain_path, &cipher_path)
+        .await
+        .expect_err("Age must not succeed without recipients");
+    assert!(
+        err.to_string().contains("requires at least one recipient"),
+        "Age should require recipients, got {err}"
+    );
 
     let _ = std::fs::remove_dir_all(plain_path.parent().unwrap());
 }

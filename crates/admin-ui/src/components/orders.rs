@@ -1,10 +1,10 @@
 use crate::api;
 use crate::components::form::RequiredLabel;
 use crate::components::toast::{ToastContext, ToastType};
+use crate::icon::Icon;
 use icondata_lu::*;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 fn submit_order(
     label: String,

@@ -9,10 +9,10 @@
 //! the page is useful before any plot is known.
 
 use crate::api;
+use crate::icon::Icon;
 use icondata_lu::{LuPlus, LuTrash2};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 /// The tree kinds the API accepts.
 ///

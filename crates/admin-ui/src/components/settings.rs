@@ -5,11 +5,11 @@ use crate::components::form::{
 };
 use crate::components::map_picker::MapPicker;
 use crate::i18n::{I18n, LANGUAGE_OPTIONS, Language};
+use crate::icon::Icon;
 use agrocore_shared::lpis::LpisCountry;
 use icondata_lu::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 #[component]
 pub fn SettingsPage() -> impl IntoView {
     let i18n = use_context::<I18n>().expect("i18n engine");
@@ -81,7 +81,8 @@ pub fn SettingsPage() -> impl IntoView {
     let (postal_code, set_postal_code) = signal(initial_profile.postal_code.unwrap_or_default());
     let (state, set_state) = signal(initial_profile.state.unwrap_or_default());
     let (vat_id, set_vat_id) = signal(initial_profile.vat_id.unwrap_or_default());
-    let (registration_number, set_registration_number) = signal(initial_profile.registration_number.unwrap_or_default());
+    let (registration_number, set_registration_number) =
+        signal(initial_profile.registration_number.unwrap_or_default());
     let (status_message, set_status_message) = signal(None::<String>);
 
     let blank_to_none = |value: String| {

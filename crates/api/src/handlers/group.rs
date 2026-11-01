@@ -56,7 +56,9 @@ pub async fn create_group(
     auth: AuthUser,
     dto: web::Json<CreateGroupDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let group = state
         .db
         .group_repo()
@@ -108,7 +110,9 @@ pub async fn update_group(
     path: web::Path<Uuid>,
     dto: web::Json<UpdateGroupDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let group = state
         .db
         .group_repo()

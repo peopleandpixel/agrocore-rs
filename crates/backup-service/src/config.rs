@@ -137,6 +137,14 @@ pub enum BackupTarget {
         encryption: TargetEncryption,
         key_path: Option<PathBuf>,
         password: Option<String>,
+        /// Optional host key fingerprint for MITM protection (SHA256:<base64>).
+        /// When set, the server's public key is verified before connecting.
+        #[serde(default)]
+        host_key_fingerprint: Option<String>,
+        /// Optional path to a known_hosts file for host key verification.
+        /// Takes precedence over host_key_fingerprint if both are set.
+        #[serde(default)]
+        known_hosts_path: Option<PathBuf>,
     },
     WebDAV {
         url: String,

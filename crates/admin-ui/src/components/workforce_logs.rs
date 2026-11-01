@@ -11,10 +11,10 @@
 //! offers instead is the current positions and a way to post the caller's own.
 
 use crate::api;
+use crate::icon::Icon;
 use icondata_lu::{LuPlus, LuTrash2};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 /// A numeric input that takes the raw string, so a half-typed value does not
 /// re-render the form and clear the field.

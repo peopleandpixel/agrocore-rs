@@ -1,11 +1,11 @@
 use crate::api;
 use crate::i18n::I18n;
 use crate::i18n::Language;
+use crate::icon::Icon;
 use chrono::Utc;
 use icondata_lu::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 fn station_label(station: &serde_json::Value) -> String {
     station
@@ -204,7 +204,11 @@ pub fn WeatherManagement() -> impl IntoView {
 }
 
 #[component]
-fn WeatherStat(icon: &'static icondata_core::IconData, label: String, value: String) -> impl IntoView {
+fn WeatherStat(
+    icon: &'static icondata_core::IconData,
+    label: String,
+    value: String,
+) -> impl IntoView {
     view! {
         <div class="flex flex-col items-center p-2 bg-base-200 rounded-box">
             <Icon icon=icon width="24" height="24" attr:class="mb-1 opacity-70" />

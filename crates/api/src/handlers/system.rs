@@ -299,8 +299,12 @@ pub async fn update_company_profile(
             // Update coordinates from map picker
             if dto.latitude.is_some() || dto.longitude.is_some() {
                 profile.coordinates = Some(GeoCoordinates {
-                    lat: dto.latitude.unwrap_or(profile.coordinates.as_ref().map(|c| c.lat).unwrap_or(0.0)),
-                    lng: dto.longitude.unwrap_or(profile.coordinates.as_ref().map(|c| c.lng).unwrap_or(0.0)),
+                    lat: dto
+                        .latitude
+                        .unwrap_or(profile.coordinates.as_ref().map(|c| c.lat).unwrap_or(0.0)),
+                    lng: dto
+                        .longitude
+                        .unwrap_or(profile.coordinates.as_ref().map(|c| c.lng).unwrap_or(0.0)),
                 });
             }
             profile
@@ -340,7 +344,7 @@ pub async fn update_company_profile(
 
     // Persist via SQL (RLS-aware)
     sqlx::query(
-        "UPDATE tenants SET config = jsonb_set(config, '{company_profile}', $1) WHERE id = $2"
+        "UPDATE tenants SET config = jsonb_set(config, '{company_profile}', $1) WHERE id = $2",
     )
     .bind(serde_json::to_value(&profile).map_err(|e| {
         error!("Failed to serialize company profile: {}", e);
@@ -354,7 +358,10 @@ pub async fn update_company_profile(
         agrocore_infrastructure::PostgresDb::map_db_error(e)
     })?;
 
-    info!("Company profile updated successfully for tenant {}", tenant_id);
+    info!(
+        "Company profile updated successfully for tenant {}",
+        tenant_id
+    );
     Ok(HttpResponse::Ok().json(profile))
 }
 

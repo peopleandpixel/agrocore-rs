@@ -1,10 +1,10 @@
 use crate::api;
 use crate::i18n;
+use crate::icon::Icon;
 use icondata_lu::{LuArrowLeft, LuSave};
 use leptos::ev::MouseEvent;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 /// EquipmentDetailPage - shows detailed equipment info, maintenance history,
 /// cost summary, and a form to record new maintenance.

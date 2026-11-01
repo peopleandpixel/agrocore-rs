@@ -15,10 +15,10 @@
 //! page could not have shown.
 
 use crate::api;
+use crate::icon::Icon;
 use icondata_lu::{LuPlus, LuTrash2};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 /// The species `AnimalSpecies` accepts, with the wire value the domain uses.
 ///

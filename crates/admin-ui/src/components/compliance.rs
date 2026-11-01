@@ -1,10 +1,10 @@
 use crate::api;
 use crate::i18n::{I18n, Language};
+use crate::icon::Icon;
 use chrono::Utc;
 use icondata_lu::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 #[component]
 pub fn CompliancePage() -> impl IntoView {

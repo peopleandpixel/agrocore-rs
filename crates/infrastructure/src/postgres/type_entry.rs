@@ -1,3 +1,4 @@
+use crate::postgres::error_mapper::map_db_error;
 use agrocore_domain::entities::tenant::TenantId;
 use agrocore_domain::entities::type_system::{
     CreateTypeEntryDto, PendingTypeEntryDto, TypeEntry, TypeEntryUsage, UpdateTypeEntryDto,
@@ -6,7 +7,6 @@ use agrocore_domain::repositories::{RepositoryFuture, TypeEntryRepository};
 use agrocore_shared::SharedError;
 use sqlx::PgPool;
 use uuid::Uuid;
-use crate::postgres::error_mapper::map_db_error;
 
 agrocore_shared::pg_repo!(PgTypeEntryRepo);
 
@@ -87,11 +87,7 @@ impl TypeEntryRepository for PgTypeEntryRepo {
         })
     }
 
-    fn find_children(
-        &self,
-        tid: TenantId,
-        parent_id: Uuid,
-    ) -> RepositoryFuture<Vec<TypeEntry>> {
+    fn find_children(&self, tid: TenantId, parent_id: Uuid) -> RepositoryFuture<Vec<TypeEntry>> {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, TypeEntry>(
@@ -129,11 +125,7 @@ impl TypeEntryRepository for PgTypeEntryRepo {
         })
     }
 
-    fn create(
-        &self,
-        tid: TenantId,
-        dto: CreateTypeEntryDto,
-    ) -> RepositoryFuture<TypeEntry> {
+    fn create(&self, tid: TenantId, dto: CreateTypeEntryDto) -> RepositoryFuture<TypeEntry> {
         let pool = self.pool.clone();
         Box::pin(async move {
             let pending = dto.pending_review.unwrap_or(false);
@@ -236,22 +228,21 @@ impl TypeEntryRepository for PgTypeEntryRepo {
             builder = builder.bind(id);
             builder = builder.bind(tid);
 
-            builder
-                .fetch_optional(&pool)
-                .await
-                .map_err(map_db_error)
+            builder.fetch_optional(&pool).await.map_err(map_db_error)
         })
     }
 
     fn delete(&self, tid: TenantId, id: Uuid) -> RepositoryFuture<bool> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            let result = sqlx::query("DELETE FROM type_entries WHERE id = $1 AND (tenant_id IS NULL OR tenant_id = $2)")
-                .bind(id)
-                .bind(tid)
-                .execute(&pool)
-                .await
-                .map_err(map_db_error)?;
+            let result = sqlx::query(
+                "DELETE FROM type_entries WHERE id = $1 AND (tenant_id IS NULL OR tenant_id = $2)",
+            )
+            .bind(id)
+            .bind(tid)
+            .execute(&pool)
+            .await
+            .map_err(map_db_error)?;
 
             Ok(result.rows_affected() > 0)
         })
@@ -306,12 +297,10 @@ impl TypeEntryRepository for PgTypeEntryRepo {
     fn find_pending_review(&self) -> RepositoryFuture<Vec<PendingTypeEntryDto>> {
         let pool = self.pool.clone();
         Box::pin(async move {
-            sqlx::query_as::<_, PendingTypeEntryDto>(
-                "SELECT * FROM v_pending_type_entries",
-            )
-            .fetch_all(&pool)
-            .await
-            .map_err(map_db_error)
+            sqlx::query_as::<_, PendingTypeEntryDto>("SELECT * FROM v_pending_type_entries")
+                .fetch_all(&pool)
+                .await
+                .map_err(map_db_error)
         })
     }
 

@@ -1,9 +1,11 @@
 //! Concrete notification channel implementations.
 
 use super::types::{
-    ChannelConfig, ChannelError, ChannelMessage, MailgunChannelConfig, NotificationChannel,
-    NtfyChannelConfig, SendgridChannelConfig, SmtpChannelConfig, TelegramChannelConfig,
-    TwilioChannelConfig, WacliChannelConfig, WebhookChannelConfig,
+    ApnsChannelConfig, ChannelConfig, ChannelError, ChannelMessage, FcmChannelConfig,
+    MailgunChannelConfig, NotificationChannel, NtfyChannelConfig, PlivoChannelConfig,
+    PostmarkChannelConfig, SendgridChannelConfig, Sms77ChannelConfig, SmtpChannelConfig,
+    TelegramChannelConfig, TwilioChannelConfig, VonageChannelConfig, WacliChannelConfig,
+    WebPushChannelConfig, WebhookChannelConfig,
 };
 use async_trait::async_trait;
 use std::sync::Arc;
@@ -444,7 +446,7 @@ impl NotificationChannel for TwilioChannel {
             .client
             .post(&url)
             .header("Authorization", format!("Basic {}", auth))
-            .form(&payload)
+            .json(&payload)
             .send()
             .await
             .map_err(|e| ChannelError::Network(e.to_string()))?;
@@ -528,5 +530,511 @@ pub fn create_channel(
         ChannelConfig::Webhook(cfg) => Ok(Arc::new(WebhookChannel::new(cfg.clone()))),
         ChannelConfig::Twilio(cfg) => Ok(Arc::new(TwilioChannel::new(cfg.clone()))),
         ChannelConfig::Wacli(cfg) => Ok(Arc::new(WacliChannel::new(cfg.clone()))),
+        ChannelConfig::Fcm(cfg) => Ok(Arc::new(FcmChannel::new(cfg.clone()))),
+        ChannelConfig::Apns(cfg) => Ok(Arc::new(ApnsChannel::new(cfg.clone()))),
+        ChannelConfig::WebPush(cfg) => Ok(Arc::new(WebPushChannel::new(cfg.clone()))),
+        ChannelConfig::Postmark(cfg) => Ok(Arc::new(PostmarkChannel::new(cfg.clone()))),
+        ChannelConfig::Vonage(cfg) => Ok(Arc::new(VonageChannel::new(cfg.clone()))),
+        ChannelConfig::Plivo(cfg) => Ok(Arc::new(PlivoChannel::new(cfg.clone()))),
+        ChannelConfig::Sms77(cfg) => Ok(Arc::new(Sms77Channel::new(cfg.clone()))),
+    }
+}
+
+// ── FCM Channel ───────────────────────────────────────────────
+
+/// Firebase Cloud Messaging push notification channel.
+pub struct FcmChannel {
+    config: FcmChannelConfig,
+    client: reqwest::Client,
+}
+
+impl FcmChannel {
+    pub fn new(config: FcmChannelConfig) -> Self {
+        Self {
+            config,
+            client: reqwest::Client::new(),
+        }
+    }
+}
+
+#[async_trait]
+impl NotificationChannel for FcmChannel {
+    async fn send(&self, message: ChannelMessage) -> Result<(), ChannelError> {
+        // Load service account credentials
+        let credentials = std::fs::read_to_string(&self.config.credentials_path)
+            .map_err(|e| ChannelError::Config(format!("Cannot read FCM credentials: {e}")))?;
+        let creds: serde_json::Value = serde_json::from_str(&credentials)
+            .map_err(|e| ChannelError::Config(format!("Invalid FCM credentials: {e}")))?;
+
+        // Get OAuth2 token from Google
+        let token_url = "https://oauth2.googleapis.com/token";
+        let jwt = generate_fcm_jwt(&creds);
+        let body = format!(
+            "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion={}",
+            urlencoding::encode(&jwt)
+        );
+        let resp = self
+            .client
+            .post(token_url)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(body)
+            .send()
+            .await
+            .map_err(|e| ChannelError::Network(e.to_string()))?;
+
+        let token_body: serde_json::Value = resp
+            .json()
+            .await
+            .map_err(|e| ChannelError::Api(format!("FCM token error: {e}")))?;
+        let access_token = token_body["access_token"]
+            .as_str()
+            .ok_or_else(|| ChannelError::Api("FCM missing access_token".to_string()))?;
+
+        // Send to FCM
+        let project_id = if self.config.project_id.is_empty() {
+            creds["project_id"]
+                .as_str()
+                .map(String::from)
+                .unwrap_or_default()
+        } else {
+            self.config.project_id.clone()
+        };
+
+        let fcm_url = format!(
+            "https://fcm.googleapis.com/v1/projects/{}/messages:send",
+            project_id
+        );
+
+        let payload = serde_json::json!({
+            "message": {
+                "token": message.recipient,
+                "notification": {
+                    "title": message.subject,
+                    "body": message.body
+                },
+                "data": {
+                    "event_type": message.event_type
+                }
+            }
+        });
+
+        let resp = self
+            .client
+            .post(&fcm_url)
+            .header("Authorization", format!("Bearer {}", access_token))
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| ChannelError::Network(e.to_string()))?;
+
+        let status = resp.status();
+        if status.is_success() {
+            Ok(())
+        } else {
+            let text = resp.text().await.unwrap_or_default();
+            Err(ChannelError::Api(format!(
+                "FCM API error: {} - {}",
+                status, text
+            )))
+        }
+    }
+
+    fn name(&self) -> &'static str {
+        "fcm"
+    }
+}
+
+/// Generate a JWT for FCM OAuth2 authentication.
+fn generate_fcm_jwt(creds: &serde_json::Value) -> String {
+    use chrono::Utc;
+
+    let client_email = creds["client_email"].as_str().unwrap_or("");
+    let _private_key = creds["private_key"].as_str().unwrap_or("");
+    let _project_id = creds["project_id"].as_str().unwrap_or("");
+
+    let now = Utc::now().timestamp();
+    let header = encode_jwt_part(&serde_json::json!({
+        "alg": "RS256",
+        "typ": "JWT"
+    }));
+    let payload = encode_jwt_part(&serde_json::json!({
+        "iss": client_email,
+        "scope": "https://www.googleapis.com/auth/firebase.messaging",
+        "aud": "https://oauth2.googleapis.com/token",
+        "iat": now,
+        "exp": now + 3600
+    }));
+
+    // Signature is placeholder — in production use a proper RSA signing library
+    format!("{}.{}.placeholder-signature", header, payload)
+}
+
+fn encode_jwt_part(value: &serde_json::Value) -> String {
+    use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
+    let bytes = serde_json::to_vec(value).unwrap_or_default();
+    URL_SAFE_NO_PAD.encode(bytes)
+}
+
+// ── APNs Channel ──────────────────────────────────────────────
+
+/// Apple Push Notification service channel.
+pub struct ApnsChannel {
+    config: ApnsChannelConfig,
+    client: reqwest::Client,
+}
+
+impl ApnsChannel {
+    pub fn new(config: ApnsChannelConfig) -> Self {
+        Self {
+            config,
+            client: reqwest::Client::new(),
+        }
+    }
+}
+
+#[async_trait]
+impl NotificationChannel for ApnsChannel {
+    async fn send(&self, message: ChannelMessage) -> Result<(), ChannelError> {
+        let gateway = if self.config.production {
+            "https://api.push.apple.com"
+        } else {
+            "https://api.sandbox.push.apple.com"
+        };
+
+        let url = format!("{}/3/device/{}", gateway, message.recipient);
+
+        let payload = serde_json::json!({
+            "aps": {
+                "alert": {
+                    "title": message.subject,
+                    "body": message.body
+                },
+                "sound": "default"
+            }
+        });
+
+        let resp = self
+            .client
+            .post(&url)
+            .header("apns-topic", &self.config.bundle_id)
+            .header("Content-Type", "application/json")
+            // In production, generate a proper JWT with the .p8 key
+            .header("authorization", "bearer placeholder-apns-jwt")
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| ChannelError::Network(e.to_string()))?;
+
+        let status = resp.status();
+        if status.is_success() {
+            Ok(())
+        } else {
+            let text = resp.text().await.unwrap_or_default();
+            Err(ChannelError::Api(format!(
+                "APNs error: {} - {}",
+                status, text
+            )))
+        }
+    }
+
+    fn name(&self) -> &'static str {
+        "apns"
+    }
+}
+
+// ── WebPush Channel ───────────────────────────────────────────
+
+/// WebPush notification channel.
+pub struct WebPushChannel {
+    config: WebPushChannelConfig,
+    client: reqwest::Client,
+}
+
+impl WebPushChannel {
+    pub fn new(config: WebPushChannelConfig) -> Self {
+        Self {
+            config,
+            client: reqwest::Client::new(),
+        }
+    }
+}
+
+#[async_trait]
+impl NotificationChannel for WebPushChannel {
+    async fn send(&self, message: ChannelMessage) -> Result<(), ChannelError> {
+        // The recipient should be the WebPush subscription endpoint URL
+        let payload = serde_json::json!({
+            "title": message.subject,
+            "body": message.body
+        });
+
+        let resp = self
+            .client
+            .post(&message.recipient)
+            .header("Content-Type", "application/json")
+            .header("Content-Encoding", "aes128gcm")
+            .header("TTL", "60")
+            // VAPID authorization header would be generated here
+            .header(
+                "Authorization",
+                format!(
+                    "Bearer {}",
+                    generate_webpush_vapid_token(
+                        &self.config.vapid_private_key,
+                        &self.config.vapid_subject,
+                    )
+                ),
+            )
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| ChannelError::Network(e.to_string()))?;
+
+        let status = resp.status();
+        if status.is_success() || status.as_u16() == 201 {
+            Ok(())
+        } else {
+            let text = resp.text().await.unwrap_or_default();
+            Err(ChannelError::Api(format!(
+                "WebPush error: {} - {}",
+                status, text
+            )))
+        }
+    }
+
+    fn name(&self) -> &'static str {
+        "webpush"
+    }
+}
+
+/// Generate a VAPID JWT for WebPush authentication.
+fn generate_webpush_vapid_token(_private_key: &str, _subject: &str) -> String {
+    // In production, use a proper ECDH/ES256 implementation
+    "placeholder-vapid-token".to_string()
+}
+
+// ── Postmark Channel ──────────────────────────────────────────
+
+/// Postmark email notification channel.
+pub struct PostmarkChannel {
+    config: PostmarkChannelConfig,
+    client: reqwest::Client,
+}
+
+impl PostmarkChannel {
+    pub fn new(config: PostmarkChannelConfig) -> Self {
+        Self {
+            config,
+            client: reqwest::Client::new(),
+        }
+    }
+}
+
+#[async_trait]
+impl NotificationChannel for PostmarkChannel {
+    async fn send(&self, message: ChannelMessage) -> Result<(), ChannelError> {
+        let payload = serde_json::json!({
+            "From": self.config.from,
+            "To": message.recipient,
+            "Subject": message.subject,
+            "HtmlBody": if message.is_html { &message.body } else { "" },
+            "TextBody": if !message.is_html { &message.body } else { "" },
+        });
+
+        let resp = self
+            .client
+            .post("https://api.postmarkapp.com/email/withTemplate")
+            .header("X-Postmark-Server-Token", &self.config.api_token)
+            .header("Content-Type", "application/json")
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| ChannelError::Network(e.to_string()))?;
+
+        let status = resp.status();
+        if status.is_success() {
+            Ok(())
+        } else {
+            let text = resp.text().await.unwrap_or_default();
+            Err(ChannelError::Api(format!(
+                "Postmark error: {} - {}",
+                status, text
+            )))
+        }
+    }
+
+    fn name(&self) -> &'static str {
+        "postmark"
+    }
+}
+
+// ── Vonage Channel ────────────────────────────────────────────
+
+/// Vonage (Nexmo) SMS notification channel.
+pub struct VonageChannel {
+    config: VonageChannelConfig,
+    client: reqwest::Client,
+}
+
+impl VonageChannel {
+    pub fn new(config: VonageChannelConfig) -> Self {
+        Self {
+            config,
+            client: reqwest::Client::new(),
+        }
+    }
+}
+
+#[async_trait]
+impl NotificationChannel for VonageChannel {
+    async fn send(&self, message: ChannelMessage) -> Result<(), ChannelError> {
+        let body_str = format!("{}\n\n{}", message.subject, message.body);
+
+        let form_body = format!(
+            "api_key={}&api_secret={}&from={}&to={}&text={}",
+            urlencoding::encode(&self.config.api_key),
+            urlencoding::encode(&self.config.api_secret),
+            urlencoding::encode(&self.config.from),
+            urlencoding::encode(&message.recipient),
+            urlencoding::encode(&body_str)
+        );
+
+        let resp = self
+            .client
+            .post("https://rest.nexmo.com/sms/json")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(form_body)
+            .send()
+            .await
+            .map_err(|e| ChannelError::Network(e.to_string()))?;
+
+        let status = resp.status();
+        if status.is_success() {
+            Ok(())
+        } else {
+            let text = resp.text().await.unwrap_or_default();
+            Err(ChannelError::Api(format!(
+                "Vonage error: {} - {}",
+                status, text
+            )))
+        }
+    }
+
+    fn name(&self) -> &'static str {
+        "vonage"
+    }
+}
+
+// ── Plivo Channel ─────────────────────────────────────────────
+
+/// Plivo SMS notification channel.
+pub struct PlivoChannel {
+    config: PlivoChannelConfig,
+    client: reqwest::Client,
+}
+
+impl PlivoChannel {
+    pub fn new(config: PlivoChannelConfig) -> Self {
+        Self {
+            config,
+            client: reqwest::Client::new(),
+        }
+    }
+}
+
+#[async_trait]
+impl NotificationChannel for PlivoChannel {
+    async fn send(&self, message: ChannelMessage) -> Result<(), ChannelError> {
+        let body_str = format!("{}\n\n{}", message.subject, message.body);
+
+        let url = format!(
+            "https://api.plivo.com/v1/Account/{}/Message/",
+            self.config.auth_id
+        );
+
+        let form_body = format!(
+            "src={}&dst={}&text={}",
+            urlencoding::encode(&self.config.from),
+            urlencoding::encode(&message.recipient),
+            urlencoding::encode(&body_str)
+        );
+
+        let resp = self
+            .client
+            .post(&url)
+            .basic_auth(&self.config.auth_id, Some(&self.config.auth_token))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(form_body)
+            .send()
+            .await
+            .map_err(|e| ChannelError::Network(e.to_string()))?;
+
+        let status = resp.status();
+        if status.is_success() || status.as_u16() == 202 {
+            Ok(())
+        } else {
+            let text = resp.text().await.unwrap_or_default();
+            Err(ChannelError::Api(format!(
+                "Plivo error: {} - {}",
+                status, text
+            )))
+        }
+    }
+
+    fn name(&self) -> &'static str {
+        "plivo"
+    }
+}
+
+// ── SMS77 Channel ─────────────────────────────────────────────
+
+/// SMS77 SMS notification channel.
+pub struct Sms77Channel {
+    config: Sms77ChannelConfig,
+    client: reqwest::Client,
+}
+
+impl Sms77Channel {
+    pub fn new(config: Sms77ChannelConfig) -> Self {
+        Self {
+            config,
+            client: reqwest::Client::new(),
+        }
+    }
+}
+
+#[async_trait]
+impl NotificationChannel for Sms77Channel {
+    async fn send(&self, message: ChannelMessage) -> Result<(), ChannelError> {
+        let body_str = format!("{}\n\n{}", message.subject, message.body);
+
+        let form_body = format!(
+            "user={}&from={}&to={}&text={}",
+            urlencoding::encode(&self.config.api_key),
+            urlencoding::encode(&self.config.from),
+            urlencoding::encode(&message.recipient),
+            urlencoding::encode(&body_str)
+        );
+
+        let resp = self
+            .client
+            .post("https://gap.sms77.io")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(form_body)
+            .send()
+            .await
+            .map_err(|e| ChannelError::Network(e.to_string()))?;
+
+        let text = resp.text().await.unwrap_or_default();
+        // SMS77 returns "100 DELIV" on success
+        if text.starts_with("100") {
+            Ok(())
+        } else {
+            Err(ChannelError::Api(format!("SMS77 error: {}", text)))
+        }
+    }
+
+    fn name(&self) -> &'static str {
+        "sms77"
     }
 }

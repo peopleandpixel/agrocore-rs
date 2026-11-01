@@ -167,9 +167,11 @@ impl BackupService {
         &mut self,
         mut bridge: agrocore_messaging::MqttBridge,
     ) -> BackupResult<()> {
-        let mut scheduler_config = SchedulerConfig::default();
-        scheduler_config.enabled = self.config.enabled;
-        scheduler_config.timezone = self.config.timezone.clone();
+        let scheduler_config = SchedulerConfig {
+            enabled: self.config.enabled,
+            timezone: self.config.timezone.clone(),
+            ..SchedulerConfig::default()
+        };
 
         let nats_client = self.nats.clone();
         let scheduler = Arc::new(

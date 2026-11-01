@@ -1,9 +1,8 @@
 /// Access denied page shown when user doesn't have permission to view a resource
-
 use crate::i18n::use_i18n;
+use crate::icon::Icon;
 use icondata_lu::LuShieldAlert;
 use leptos::prelude::*;
-use crate::icon::Icon;
 
 #[component]
 pub fn AccessDenied() -> impl IntoView {

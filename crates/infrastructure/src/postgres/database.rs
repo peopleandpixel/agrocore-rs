@@ -15,24 +15,23 @@ use crate::postgres::{
     setting::PgSettingsRepo, site::PgSiteRepo, soil_moisture_config::PgSoilMoistureConfigRepo,
     task_data::PgTaskDataRepo, task_sub_task::PgTaskSubTaskRepo, tenant::PgTenantRepo,
     tree::PgTreeRepo, type_category::PgTypeCategoryRepo, type_entry::PgTypeEntryRepo,
-    user::PgUserRepo, vineyard::PgVineyardRepo,
-    weather_data::PgWeatherDataRepo, weather_station::PgWeatherStationRepo,
-    work_log::PgWorkLogRepo, worker::PgWorkerRepo, worker_location::PgWorkerLocationRepo,
-    worker_task_status::PgWorkerTaskStatusRepo,
+    user::PgUserRepo, vineyard::PgVineyardRepo, weather_data::PgWeatherDataRepo,
+    weather_station::PgWeatherStationRepo, work_log::PgWorkLogRepo, worker::PgWorkerRepo,
+    worker_location::PgWorkerLocationRepo, worker_task_status::PgWorkerTaskStatusRepo,
 };
 use agrocore_domain::repositories::{
-    AnimalRepository, AuditLogRepo, BuildingRepository, ClockEntryRepo,
-    ColdChainLogRepo, ComplianceChecklistRepo, CostCenterRepo, CustomerRepository,
-    EquipmentRepository, FertilizerRecordRepo, FinancialRecordRepo, FrostWarningRepo,
-    GroupRepository, GrowingDegreeDayRepo, HarvestDeliveryRepo, HarvestLotRepo, HarvestSeasonRepo,
+    AnimalRepository, AuditLogRepo, BuildingRepository, ClockEntryRepo, ColdChainLogRepo,
+    ComplianceChecklistRepo, CostCenterRepo, CustomerRepository, EquipmentRepository,
+    FertilizerRecordRepo, FinancialRecordRepo, FrostWarningRepo, GroupRepository,
+    GrowingDegreeDayRepo, HarvestDeliveryRepo, HarvestLotRepo, HarvestSeasonRepo,
     InventoryItemRepository, InventoryLocationRepo, InventoryTransactionRepo, KelterDeliveryRepo,
     LivestockRepository, OliveGroveRepo, OliveOilRecordRepo, OrderRepository, PACApplicationRepo,
     PestRiskRepo, PhenologyRecordRepo, PlantProtectionRecordRepo, SettingsRepository,
     SiteRepository, SoilMoistureConfigRepo, SpatialObjectRepository, TaskDataRepository,
     TaskSubTaskRepository, TenantRepository, TreeRepository, TypeCategoryRepository,
-    TypeEntryRepository, UserRepository,
-    VineyardRepo, WaterQuotaRepo, WaterSourceRepo, WaterUsageRepo, WeatherDataRepo,
-    WeatherStationRepo, WorkLogRepo, WorkerLocationRepo, WorkerRepo, WorkerTaskStatusRepository,
+    TypeEntryRepository, UserRepository, VineyardRepo, WaterQuotaRepo, WaterSourceRepo,
+    WaterUsageRepo, WeatherDataRepo, WeatherStationRepo, WorkLogRepo, WorkerLocationRepo,
+    WorkerRepo, WorkerTaskStatusRepository,
 };
 use agrocore_logging::{debug, info};
 use sqlx::PgPool;
@@ -692,7 +691,10 @@ impl Database {
         match self {
             Self::Postgres(db) => db.type_category_repo(),
             #[cfg(feature = "mocks")]
-            Self::Mock(m) => m.type_category_repo.clone().expect("type_category_repo mock not set")
+            Self::Mock(m) => m
+                .type_category_repo
+                .clone()
+                .expect("type_category_repo mock not set")
                 as Arc<dyn TypeCategoryRepository>,
         }
     }
@@ -701,10 +703,11 @@ impl Database {
         match self {
             Self::Postgres(db) => db.type_entry_repo(),
             #[cfg(feature = "mocks")]
-            Self::Mock(m) => {
-                m.type_entry_repo.clone().expect("type_entry_repo mock not set")
-                    as Arc<dyn TypeEntryRepository>
-            }
+            Self::Mock(m) => m
+                .type_entry_repo
+                .clone()
+                .expect("type_entry_repo mock not set")
+                as Arc<dyn TypeEntryRepository>,
         }
     }
 }

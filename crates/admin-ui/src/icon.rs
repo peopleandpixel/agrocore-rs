@@ -8,11 +8,14 @@ pub fn Icon(
     /// The icon to render.
     icon: &'static IconData,
     /// Optional inline CSS style.
-    #[prop(into, optional)] style: MaybeProp<String>,
+    #[prop(into, optional)]
+    style: MaybeProp<String>,
     /// Icon width (default: "1em").
-    #[prop(into, optional)] width: MaybeProp<String>,
+    #[prop(into, optional)]
+    width: MaybeProp<String>,
     /// Icon height (default: "1em").
-    #[prop(into, optional)] height: MaybeProp<String>,
+    #[prop(into, optional)]
+    height: MaybeProp<String>,
 ) -> impl IntoView {
     // Wrap the icon data in a <g> element
     let data = format!("<g>{}</g>", icon.data);

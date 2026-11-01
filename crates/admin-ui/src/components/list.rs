@@ -1,7 +1,7 @@
-use leptos::prelude::*;
-use std::sync::Arc;
 use crate::icon::Icon;
 use icondata_lu::*;
+use leptos::prelude::*;
+use std::sync::Arc;
 
 /// Sort direction for table columns
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -367,10 +367,7 @@ pub fn ListEmpty(colspan: usize) -> impl IntoView {
 // ---------------------------------------------------------------------------
 
 #[component]
-pub fn AddButton(
-    label: String,
-    on_click: Arc<dyn Fn() + Send + Sync + 'static>,
-) -> impl IntoView {
+pub fn AddButton(label: String, on_click: Arc<dyn Fn() + Send + Sync + 'static>) -> impl IntoView {
     let t = crate::i18n::use_i18n();
 
     view! {

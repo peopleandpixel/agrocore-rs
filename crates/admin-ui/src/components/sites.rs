@@ -1,10 +1,10 @@
 use crate::api;
 use crate::components::map::FieldPolygonEditor;
 use crate::components::toast::{ToastContext, ToastType};
+use crate::icon::Icon;
 use icondata_lu::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 #[component]
 pub fn SiteManagement() -> impl IntoView {

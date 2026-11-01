@@ -240,13 +240,12 @@ pub async fn run_server(
         agrocore_logging::info!("DEMO_MODE enabled — checking for demo tenant...");
 
         let pool = db.unscoped_pool();
-        let existing: Option<uuid::Uuid> = sqlx::query_scalar(
-            "SELECT id FROM tenants WHERE slug = $1 AND is_demo = true",
-        )
-        .bind("demo")
-        .fetch_optional(&pool)
-        .await
-        .unwrap_or(None);
+        let existing: Option<uuid::Uuid> =
+            sqlx::query_scalar("SELECT id FROM tenants WHERE slug = $1 AND is_demo = true")
+                .bind("demo")
+                .fetch_optional(&pool)
+                .await
+                .unwrap_or(None);
 
         if let Some(tid) = existing {
             agrocore_logging::info!("Demo tenant already exists (id: {tid}), skipping seed.");
@@ -257,9 +256,7 @@ pub async fn run_server(
 
             if let Ok(seeded_tenant_id) = seed_demo_internal(&db).await {
                 demo_tenant_id = Some(seeded_tenant_id);
-                agrocore_logging::info!(
-                    "Demo tenant seeded successfully (id: {seeded_tenant_id})"
-                );
+                agrocore_logging::info!("Demo tenant seeded successfully (id: {seeded_tenant_id})");
             } else {
                 warn!("Failed to auto-seed demo tenant — manual seed required");
             }

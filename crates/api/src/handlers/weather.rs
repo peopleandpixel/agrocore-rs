@@ -6,14 +6,14 @@ use crate::dto::{
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
 use actix_web::{HttpResponse, web};
+use agrocore_domain::WeatherDataProvider;
 use agrocore_domain::entities::weather::{
     CreatePhenologyRecordDto, CreateWeatherDataDto, CreateWeatherStationDto,
     UpdatePhenologyRecordDto, UpdateWeatherDataDto, UpdateWeatherStationDto,
 };
-use agrocore_domain::WeatherDataProvider;
 use agrocore_logging::warn;
-use agrocore_weather_service::providers::OpenMeteoProvider;
 use agrocore_shared::SharedError;
+use agrocore_weather_service::providers::OpenMeteoProvider;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -149,7 +149,9 @@ pub async fn update_station(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateWeatherStationDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let station = state
         .db
         .weather_station_repo()
@@ -197,7 +199,9 @@ pub async fn create_station(
     auth: AuthUser,
     dto: web::Json<CreateWeatherStationDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let station = state
         .db
         .weather_station_repo()
@@ -255,7 +259,9 @@ pub async fn create_weather_data(
     auth: AuthUser,
     dto: web::Json<CreateWeatherDataDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let wd = state
         .db
         .weather_data_repo()
@@ -287,7 +293,9 @@ pub async fn update_weather_data(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateWeatherDataDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let data = state
         .db
         .weather_data_repo()
@@ -363,7 +371,9 @@ pub async fn create_phenology(
     auth: AuthUser,
     dto: web::Json<CreatePhenologyRecordDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let pr = state
         .db
         .phenology_record_repo()
@@ -396,7 +406,9 @@ pub async fn update_phenology(
     id: web::Path<Uuid>,
     dto: web::Json<UpdatePhenologyRecordDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let record = state
         .db
         .phenology_record_repo()
@@ -458,7 +470,9 @@ pub async fn create_frost_warning(
     auth: AuthUser,
     dto: web::Json<crate::dto::CreateFrostWarningDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let fw = state
         .db
         .frost_warning_repo()
@@ -491,7 +505,9 @@ pub async fn update_frost_warning(
     id: web::Path<Uuid>,
     dto: web::Json<crate::dto::UpdateFrostWarningDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let fw = state
         .db
         .frost_warning_repo()
@@ -574,7 +590,9 @@ pub async fn create_gdd(
     auth: AuthUser,
     dto: web::Json<crate::dto::CreateGrowingDegreeDayDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let gdd = state
         .db
         .growing_degree_day_repo()
@@ -643,7 +661,9 @@ pub async fn create_pest_risk(
     auth: AuthUser,
     dto: web::Json<crate::dto::CreatePestRiskDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let pr = state
         .db
         .pest_risk_repo()
@@ -690,7 +710,10 @@ pub async fn get_current_weather_with_fallback(
     let stations = state
         .db
         .weather_station_repo()
-        .find_all(agrocore_domain::TenantId(tenant_id), agrocore_shared::Pagination::default())
+        .find_all(
+            agrocore_domain::TenantId(tenant_id),
+            agrocore_shared::Pagination::default(),
+        )
         .await?;
 
     let has_active_stations = stations.data.iter().any(|s| s.is_active);
@@ -700,7 +723,10 @@ pub async fn get_current_weather_with_fallback(
         let weather_data = state
             .db
             .weather_data_repo()
-            .find_all(agrocore_domain::TenantId(tenant_id), agrocore_shared::Pagination::default())
+            .find_all(
+                agrocore_domain::TenantId(tenant_id),
+                agrocore_shared::Pagination::default(),
+            )
             .await?;
 
         if let Some(latest) = weather_data.data.first() {
@@ -753,13 +779,10 @@ pub async fn get_current_weather_with_fallback(
 
     // Fetch from Open-Meteo (free, no API key required)
     let provider = OpenMeteoProvider;
-    let result = provider
-        .fetch_current(lat, lon, None)
-        .await
-        .map_err(|e| {
-            warn!("Open-Meteo fallback failed: {}", e);
-            SharedError::Internal(format!("Weather service unavailable: {}", e))
-        })?;
+    let result = provider.fetch_current(lat, lon, None).await.map_err(|e| {
+        warn!("Open-Meteo fallback failed: {}", e);
+        SharedError::Internal(format!("Weather service unavailable: {}", e))
+    })?;
 
     Ok(HttpResponse::Ok().json(WeatherFetchResultDto {
         temperature_c: result.temperature_c,

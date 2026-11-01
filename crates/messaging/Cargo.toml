@@ -24,6 +24,7 @@ rumqttc.workspace = true
 futures-util = "0.3.32"
 async-trait = "0.1"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "multipart"] }
+urlencoding = "2.1"
 lettre = { version = "0.11", default-features = false, features = ["builder", "smtp-transport", "tokio1-rustls-tls", "rustls-tls"] }
 
 base64 = "0.22"

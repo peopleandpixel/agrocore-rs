@@ -6,6 +6,7 @@
 pub mod channel;
 pub mod config;
 pub mod dispatcher;
+pub mod preferences;
 pub mod template;
 pub mod types;
 

@@ -1,5 +1,24 @@
 # Changelog
 
+## [v0.64.0] — 2026-11-01
+
+### P0 — Security & Reliability
+
+- **SFTP Host-Key-Pinning**: `check_server_key` verifies server public key against configured fingerprint or known_hosts file — protects against MITM attacks
+- **Cloud Downloads streaming**: S3, Azure, GCS downloads now stream instead of loading entire file into memory — fixes OOM risk for large backups
+- **Age encryption**: Full encrypt/decrypt support using `age` crate with x25519 recipients
+- **KMS encryption**: AWS KMS, Azure Key Vault, and GCP KMS envelope encryption — generates random data key, encrypts it with KMS, uses AES-256-GCM for payload
+- **Push notification channels**: Firebase Cloud Messaging (FCM), Apple APNs, and WebPush support
+- **Inbound webhooks**: WhatsApp Business API, Telegram Bot API, and E-Mail Reply webhook parsers with unified `InboundMessage` type
+- **Additional providers**: Postmark (email), Vonage/Nexmo (SMS), Plivo (SMS), SMS77 (SMS)
+- **Tenant user preferences**: Per-user notification channel enable/disable, quiet hours (do-not-disturb), escalation rules, severity filtering, digest mode
+- **Disaster Recovery Runbook**: `docs/DISASTER_RECOVERY.md` with RTO < 15 min procedures for 50 GB database
+
+### Dependencies
+
+- Added `base64 0.22` to backup-service
+- Added `urlencoding 2.1` to messaging
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),

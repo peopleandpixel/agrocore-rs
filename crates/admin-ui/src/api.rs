@@ -182,10 +182,7 @@ pub async fn save_company_profile_api(profile: &CompanyProfile) -> Result<(), St
         .map_err(|e| e.to_string())?;
 
     if !resp.ok() {
-        return Err(format!(
-            "Failed to save company profile: {}",
-            resp.status()
-        ));
+        return Err(format!("Failed to save company profile: {}", resp.status()));
     }
 
     // Also update localStorage
@@ -416,7 +413,10 @@ pub fn set_impersonated_user_name(name: &str) {
 }
 
 pub fn impersonated_user_name() -> Option<String> {
-    storage()?.get_item(IMPERSONATED_USER_NAME_KEY).ok().flatten()
+    storage()?
+        .get_item(IMPERSONATED_USER_NAME_KEY)
+        .ok()
+        .flatten()
 }
 
 fn with_auth(req: RequestBuilder) -> RequestBuilder {
@@ -2356,7 +2356,10 @@ pub async fn fetch_iot_devices() -> Result<Vec<IoTDeviceDto>, String> {
     let resp: serde_json::Value = get_json("/api/v1/iot/devices", true).await?;
     let empty: Vec<serde_json::Value> = vec![];
     let devices = resp["devices"].as_array().unwrap_or(&empty);
-    devices.iter().filter_map(|d| serde_json::from_value(d.clone()).ok()).collect()
+    devices
+        .iter()
+        .filter_map(|d| serde_json::from_value(d.clone()).ok())
+        .collect()
 }
 
 /// GET /api/v1/iot/devices/{id} — get single device
@@ -2370,7 +2373,10 @@ pub async fn create_iot_device(req: &CreateIoTDeviceRequest) -> Result<IoTDevice
 }
 
 /// PUT /api/v1/iot/devices/{id} — update a device
-pub async fn update_iot_device(device_id: &str, req: &UpdateIoTDeviceRequest) -> Result<IoTDeviceDto, String> {
+pub async fn update_iot_device(
+    device_id: &str,
+    req: &UpdateIoTDeviceRequest,
+) -> Result<IoTDeviceDto, String> {
     put_json(&format!("/api/v1/iot/devices/{}", device_id), req, true).await
 }
 
@@ -2381,11 +2387,17 @@ pub async fn delete_iot_device(device_id: &str) -> Result<(), String> {
 
 /// GET /api/v1/iot/devices/{id}/telemetry — get device telemetry
 pub async fn fetch_iot_device_telemetry(device_id: &str) -> Result<Vec<IoTMeasurementDto>, String> {
-    let resp: serde_json::Value =
-        get_json(&format!("/api/v1/iot/devices/{}/telemetry", device_id), true).await?;
+    let resp: serde_json::Value = get_json(
+        &format!("/api/v1/iot/devices/{}/telemetry", device_id),
+        true,
+    )
+    .await?;
     let empty: Vec<serde_json::Value> = vec![];
     let measurements = resp["measurements"].as_array().unwrap_or(&empty);
-    measurements.iter().filter_map(|m| serde_json::from_value(m.clone()).ok()).collect()
+    measurements
+        .iter()
+        .filter_map(|m| serde_json::from_value(m.clone()).ok())
+        .collect()
 }
 
 /// POST /api/v1/iot/devices/{id}/command — send command to a device
@@ -2393,12 +2405,21 @@ pub async fn send_iot_device_command(
     device_id: &str,
     req: &IoTCommandRequest,
 ) -> Result<IoTCommandResponseDto, String> {
-    post_json(&format!("/api/v1/iot/devices/{}/command", device_id), req, true).await
+    post_json(
+        &format!("/api/v1/iot/devices/{}/command", device_id),
+        req,
+        true,
+    )
+    .await
 }
 
 /// GET /api/v1/iot/devices/{id}/ha-discovery — Home Assistant discovery config
 pub async fn fetch_iot_ha_discovery(device_id: &str) -> Result<serde_json::Value, String> {
-    get_json(&format!("/api/v1/iot/devices/{}/ha-discovery", device_id), true).await
+    get_json(
+        &format!("/api/v1/iot/devices/{}/ha-discovery", device_id),
+        true,
+    )
+    .await
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

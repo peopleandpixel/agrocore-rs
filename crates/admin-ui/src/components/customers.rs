@@ -1,9 +1,9 @@
 use crate::api;
 use crate::components::toast::{ToastContext, ToastType};
+use crate::icon::Icon;
 use icondata_lu::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 /// CustomersPage — customer management with search and lookup.
 /// Consumes orphaned API routes:

@@ -10,10 +10,10 @@
 //! send the variant names.
 
 use crate::api;
+use crate::icon::Icon;
 use icondata_lu::LuPlus;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 /// The source types `WaterSourceType` accepts. `Custom(String)` carries caller
 /// text and is not offered.

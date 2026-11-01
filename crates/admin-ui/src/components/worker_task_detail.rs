@@ -12,7 +12,11 @@ pub fn WorkerTaskDetailPage() -> impl IntoView {
     let t = i18n::use_i18n();
     let params = use_params_map();
     let task_id_str = Memo::new(move |_| {
-        params.get().get("id").map(|s| s.to_string()).unwrap_or_default()
+        params
+            .get()
+            .get("id")
+            .map(|s| s.to_string())
+            .unwrap_or_default()
     });
 
     let (task, set_task) = signal(None::<api::OrderDto>);
@@ -85,9 +89,7 @@ pub fn WorkerTaskDetailPage() -> impl IntoView {
         };
 
         spawn_local(async move {
-            let req = api::UpdateWorkerTaskStatusRequest {
-                status: new_status,
-            };
+            let req = api::UpdateWorkerTaskStatusRequest { status: new_status };
             match api::update_worker_task_status(task_id, wid, req).await {
                 Ok(_) => {
                     let _ = leptos::prelude::window().location().reload();

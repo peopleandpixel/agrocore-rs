@@ -8,10 +8,10 @@
 //! `"critical"`), which is what the select sends — not the Rust variant names.
 
 use crate::api;
+use crate::icon::Icon;
 use icondata_lu::{LuPlus, LuTrash2};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 /// The risk levels `RiskLevel` accepts, with the serde wire value.
 const RISK_LEVELS: [(&str, &str); 4] = [

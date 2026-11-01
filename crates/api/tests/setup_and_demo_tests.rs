@@ -60,10 +60,7 @@ fn initial_setup_request_requires_admin_firstname() {
 
     let request: InitialSetupRequest = serde_json::from_value(payload).unwrap();
     let result = request.admin.validate();
-    assert!(
-        result.is_err(),
-        "Empty firstname must fail validation"
-    );
+    assert!(result.is_err(), "Empty firstname must fail validation");
 }
 
 #[test]
@@ -86,10 +83,7 @@ fn initial_setup_request_requires_admin_lastname() {
 
     let request: InitialSetupRequest = serde_json::from_value(payload).unwrap();
     let result = request.admin.validate();
-    assert!(
-        result.is_err(),
-        "Empty lastname must fail validation"
-    );
+    assert!(result.is_err(), "Empty lastname must fail validation");
 }
 
 #[test]
@@ -112,10 +106,7 @@ fn initial_setup_request_requires_valid_email() {
 
     let request: InitialSetupRequest = serde_json::from_value(payload).unwrap();
     let result = request.admin.validate();
-    assert!(
-        result.is_err(),
-        "Invalid email must fail validation"
-    );
+    assert!(result.is_err(), "Invalid email must fail validation");
 }
 
 #[test]
@@ -138,10 +129,7 @@ fn initial_setup_request_requires_password_minimum_length() {
 
     let request: InitialSetupRequest = serde_json::from_value(payload).unwrap();
     let result = request.admin.validate();
-    assert!(
-        result.is_err(),
-        "Short password must fail validation"
-    );
+    assert!(result.is_err(), "Short password must fail validation");
 }
 
 #[test]
@@ -164,10 +152,7 @@ fn initial_setup_request_requires_tenant_name() {
 
     let request: InitialSetupRequest = serde_json::from_value(payload).unwrap();
     let result = request.tenant.validate();
-    assert!(
-        result.is_err(),
-        "Empty tenant name must fail validation"
-    );
+    assert!(result.is_err(), "Empty tenant name must fail validation");
 }
 
 #[test]
@@ -190,10 +175,7 @@ fn initial_setup_request_requires_tenant_slug() {
 
     let request: InitialSetupRequest = serde_json::from_value(payload).unwrap();
     let result = request.tenant.validate();
-    assert!(
-        result.is_err(),
-        "Empty tenant slug must fail validation"
-    );
+    assert!(result.is_err(), "Empty tenant slug must fail validation");
 }
 
 #[test]
@@ -226,13 +208,13 @@ fn initial_setup_request_validates_successfully() {
     });
 
     let request: InitialSetupRequest = serde_json::from_value(payload).unwrap();
-    
+
     // Admin validation
     assert!(
         request.admin.validate().is_ok(),
         "Valid admin data must pass validation"
     );
-    
+
     // Tenant validation
     assert!(
         request.tenant.validate().is_ok(),
@@ -284,7 +266,7 @@ fn initial_setup_request_supports_all_modules() {
     let request: InitialSetupRequest = serde_json::from_value(payload).unwrap();
     assert!(request.admin.validate().is_ok());
     assert!(request.tenant.validate().is_ok());
-    
+
     let modules = request
         .tenant
         .config
@@ -313,12 +295,9 @@ fn dev_secret_detection_works() {
                 .map(|v| v.eq_ignore_ascii_case("1") || v.eq_ignore_ascii_case("true")),
             Some(true)
         );
-        assert!(
-            !dev_secret_allowed,
-            "ALLOW_DEV_SECRET must not be set"
-        );
+        assert!(!dev_secret_allowed, "ALLOW_DEV_SECRET must not be set");
     });
-    
+
     // When ALLOW_DEV_SECRET=1, dev-secret check is bypassed
     with_var("ALLOW_DEV_SECRET", Some("1"), || {
         let dev_secret_allowed = matches!(
@@ -344,7 +323,7 @@ fn jwt_secret_minimum_length_is_enforced() {
         32,
         "Minimum JWT secret length must be 32"
     );
-    
+
     // A short secret should fail
     let short_secret = "short";
     assert!(
@@ -395,10 +374,7 @@ fn rls_enabled() -> bool {
 #[test]
 fn rls_disabled_by_default() {
     with_var("AGROCORE_RLS_ENABLED", None, || {
-        assert!(
-            !rls_enabled(),
-            "RLS must be disabled by default"
-        );
+        assert!(!rls_enabled(), "RLS must be disabled by default");
     });
 }
 
@@ -407,11 +383,7 @@ fn rls_enabled_with_true_value() {
     // rls_enabled() only accepts lowercase "true" and "1", not "TRUE"
     for value in ["1", "true"] {
         with_var("AGROCORE_RLS_ENABLED", Some(value), || {
-            assert!(
-                rls_enabled(),
-                "RLS must be enabled with value: {}",
-                value
-            );
+            assert!(rls_enabled(), "RLS must be enabled with value: {}", value);
         });
     }
 }
@@ -420,11 +392,7 @@ fn rls_enabled_with_true_value() {
 fn rls_disabled_with_false_value() {
     for value in ["0", "false", "no", ""] {
         with_var("AGROCORE_RLS_ENABLED", Some(value), || {
-            assert!(
-                !rls_enabled(),
-                "RLS must be disabled with value: {}",
-                value
-            );
+            assert!(!rls_enabled(), "RLS must be disabled with value: {}", value);
         });
     }
 }
@@ -486,10 +454,7 @@ fn demo_seed_request_requires_tenant_name() {
 
     let request: DemoSeedRequest = serde_json::from_value(payload).unwrap();
     let result = request.validate();
-    assert!(
-        result.is_err(),
-        "Empty tenant name must fail validation"
-    );
+    assert!(result.is_err(), "Empty tenant name must fail validation");
 }
 
 #[test]
@@ -505,10 +470,7 @@ fn demo_seed_request_requires_user_email() {
 
     let request: DemoSeedRequest = serde_json::from_value(payload).unwrap();
     let result = request.validate();
-    assert!(
-        result.is_err(),
-        "Empty user email must fail validation"
-    );
+    assert!(result.is_err(), "Empty user email must fail validation");
 }
 
 #[test]
@@ -540,10 +502,7 @@ fn demo_seed_request_reset_defaults_to_false() {
     });
 
     let request: DemoSeedRequest = serde_json::from_value(payload).unwrap();
-    assert!(
-        !request.reset,
-        "Reset flag must default to false"
-    );
+    assert!(!request.reset, "Reset flag must default to false");
 }
 
 // ============================================================================
@@ -575,7 +534,10 @@ fn demo_data_summary_contains_all_entity_counts() {
     assert_eq!(summary.equipment_count, 3, "Should have 3 demo equipment");
     assert_eq!(summary.orders_count, 2, "Should have 2 demo orders");
     assert_eq!(summary.workers_count, 2, "Should have 2 demo workers");
-    assert_eq!(summary.inventory_items_count, 3, "Should have 3 demo inventory items");
+    assert_eq!(
+        summary.inventory_items_count, 3,
+        "Should have 3 demo inventory items"
+    );
     assert_eq!(summary.animals_count, 3, "Should have 3 demo animals");
     assert_eq!(summary.buildings_count, 3, "Should have 3 demo buildings");
     assert_eq!(summary.trees_count, 3, "Should have 3 demo trees");
@@ -604,13 +566,28 @@ fn demo_data_summary_serializes_correctly() {
     };
 
     let json = serde_json::to_string(&summary).expect("Failed to serialize");
-    
+
     // Verify all fields are present in JSON
-    assert!(json.contains("sites_count"), "JSON must contain sites_count");
-    assert!(json.contains("buildings_count"), "JSON must contain buildings_count");
-    assert!(json.contains("trees_count"), "JSON must contain trees_count");
-    assert!(json.contains("tasks_count"), "JSON must contain tasks_count");
-    assert!(json.contains("livestock_count"), "JSON must contain livestock_count");
+    assert!(
+        json.contains("sites_count"),
+        "JSON must contain sites_count"
+    );
+    assert!(
+        json.contains("buildings_count"),
+        "JSON must contain buildings_count"
+    );
+    assert!(
+        json.contains("trees_count"),
+        "JSON must contain trees_count"
+    );
+    assert!(
+        json.contains("tasks_count"),
+        "JSON must contain tasks_count"
+    );
+    assert!(
+        json.contains("livestock_count"),
+        "JSON must contain livestock_count"
+    );
 }
 
 // ============================================================================
@@ -630,7 +607,7 @@ fn demo_default_password_meets_minimum_length() {
 #[test]
 fn demo_default_password_is_not_trivial() {
     const DEMO_DEFAULT_PASSWORD: &str = "demo1234-agrocore";
-    
+
     // Should not be a common password
     let common_passwords = ["password", "123456", "admin", "demo", "test"];
     for common in &common_passwords {
@@ -704,8 +681,8 @@ fn complete_setup_request_structure() {
         }
     });
 
-    let request: InitialSetupRequest = serde_json::from_value(payload.clone())
-        .expect("Setup request must deserialize");
+    let request: InitialSetupRequest =
+        serde_json::from_value(payload.clone()).expect("Setup request must deserialize");
 
     // Validate admin
     request.admin.validate().expect("Admin must be valid");
@@ -769,7 +746,7 @@ fn demo_seed_reset_mode() {
 fn demo_covers_all_entity_types() {
     // This test documents the expected entity types that the demo switch creates.
     // It serves as a checklist to ensure no entity type is forgotten.
-    
+
     let entity_types = [
         ("Tenant", 1),
         ("User (Admin)", 1),
@@ -789,7 +766,7 @@ fn demo_covers_all_entity_types() {
 
     // Verify we have coverage for all major entity types
     assert_eq!(entity_types.len(), 14, "Should cover 14 entity types");
-    
+
     // Print coverage for documentation
     println!("Demo data coverage:");
     for (entity, count) in &entity_types {
@@ -802,7 +779,7 @@ fn demo_uses_english_terms() {
     // Verify that demo data uses English terms as required
     let english_terms = [
         "North Farm",
-        "South Farm", 
+        "South Farm",
         "East Pasture",
         "Wheat",
         "Corn",

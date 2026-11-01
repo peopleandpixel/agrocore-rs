@@ -124,9 +124,8 @@ impl StorageBackend {
 
     /// Adapt already-materialised bytes to our stream type.
     ///
-    /// `GetResult::bytes()` collects the object into memory; this wrapper only
-    /// exists so the trait signature stays uniform across backends. Local and
-    /// multipart paths stream instead and never call this.
+    /// Used by SFTP backend which materialises the download before streaming.
+    #[allow(dead_code)]
     fn bytes_to_stream(bytes: Bytes) -> ByteStream {
         Box::pin(futures::stream::once(async move { Ok(bytes) }))
     }
@@ -634,13 +633,14 @@ impl StorageBackendTrait for StorageBackend {
                         target.target_id()
                     ))
                 })?;
-                let result = store
-                    .get(&Path::from(object_name))
-                    .await
-                    .map_err(BackupError::ObjectStore)?;
-                Ok(Self::bytes_to_stream(
-                    result.bytes().await.map_err(BackupError::ObjectStore)?,
-                ))
+                // Stream the download instead of loading everything into memory
+                let path = Path::from(object_name);
+                let result = store.get(&path).await.map_err(BackupError::ObjectStore)?;
+                let stream = result.into_stream();
+                let adapted: ByteStream = Box::pin(stream.map(|item| {
+                    item.map_err(BackupError::ObjectStore)
+                }));
+                Ok(adapted)
             }
             BackupTarget::Azure { .. } => {
                 let (_, store) = self.find_azure_store(target).ok_or_else(|| {
@@ -649,13 +649,14 @@ impl StorageBackendTrait for StorageBackend {
                         target.target_id()
                     ))
                 })?;
-                let result = store
-                    .get(&Path::from(object_name))
-                    .await
-                    .map_err(BackupError::ObjectStore)?;
-                Ok(Self::bytes_to_stream(
-                    result.bytes().await.map_err(BackupError::ObjectStore)?,
-                ))
+                // Stream the download instead of loading everything into memory
+                let path = Path::from(object_name);
+                let result = store.get(&path).await.map_err(BackupError::ObjectStore)?;
+                let stream = result.into_stream();
+                let adapted: ByteStream = Box::pin(stream.map(|item| {
+                    item.map_err(BackupError::ObjectStore)
+                }));
+                Ok(adapted)
             }
             BackupTarget::Gcs { .. } => {
                 let (_, store) = self.find_gcs_store(target).ok_or_else(|| {
@@ -664,13 +665,14 @@ impl StorageBackendTrait for StorageBackend {
                         target.target_id()
                     ))
                 })?;
-                let result = store
-                    .get(&Path::from(object_name))
-                    .await
-                    .map_err(BackupError::ObjectStore)?;
-                Ok(Self::bytes_to_stream(
-                    result.bytes().await.map_err(BackupError::ObjectStore)?,
-                ))
+                // Stream the download instead of loading everything into memory
+                let path = Path::from(object_name);
+                let result = store.get(&path).await.map_err(BackupError::ObjectStore)?;
+                let stream = result.into_stream();
+                let adapted: ByteStream = Box::pin(stream.map(|item| {
+                    item.map_err(BackupError::ObjectStore)
+                }));
+                Ok(adapted)
             }
             BackupTarget::Sftp { .. } => {
                 crate::sftp_backend::backend_from_target(target)?

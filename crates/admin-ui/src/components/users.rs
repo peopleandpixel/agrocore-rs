@@ -1,11 +1,11 @@
 use crate::api;
 use crate::api::UserDto;
 use crate::components::form::{RequiredLabel, is_valid_email};
+use crate::icon::Icon;
 use chrono::{DateTime, Utc};
 use icondata_lu::*;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 use uuid::Uuid;
 
 /// Format a datetime string as a localized relative "time ago" display.

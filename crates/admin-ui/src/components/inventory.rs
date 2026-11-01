@@ -1,10 +1,13 @@
 use crate::api;
+use crate::icon::Icon;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 // Re-export commonly used icons
-use icondata_lu::{LuPlus, LuTrash2, LuTriangleAlert as LuAlertTriangle, LuArrowUpToLine, LuArrowDownToLine, LuArrowRightLeft, LuSlidersHorizontal, LuPencil};
+use icondata_lu::{
+    LuArrowDownToLine, LuArrowRightLeft, LuArrowUpToLine, LuPencil, LuPlus, LuSlidersHorizontal,
+    LuTrash2, LuTriangleAlert as LuAlertTriangle,
+};
 
 #[component]
 #[allow(unused_variables)]

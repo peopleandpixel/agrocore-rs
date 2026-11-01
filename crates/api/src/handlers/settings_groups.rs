@@ -104,24 +104,52 @@ const BACKUP_GROUP: &[(&str, &str, FieldType)] = &[
     ("schedule_config", "backup.schedule_config", FieldType::Str),
     ("timezone", "backup.timezone", FieldType::Str),
     ("retention_daily", "backup.retention.daily", FieldType::Num),
-    ("retention_weekly", "backup.retention.weekly", FieldType::Num),
-    ("retention_monthly", "backup.retention.monthly", FieldType::Num),
-    ("retention_yearly", "backup.retention.yearly", FieldType::Num),
-    ("verification_enabled", "backup.verification_enabled", FieldType::Bool),
+    (
+        "retention_weekly",
+        "backup.retention.weekly",
+        FieldType::Num,
+    ),
+    (
+        "retention_monthly",
+        "backup.retention.monthly",
+        FieldType::Num,
+    ),
+    (
+        "retention_yearly",
+        "backup.retention.yearly",
+        FieldType::Num,
+    ),
+    (
+        "verification_enabled",
+        "backup.verification_enabled",
+        FieldType::Bool,
+    ),
 ];
 
 const NOTIFICATION_GROUP: &[(&str, &str, FieldType)] = &[
-    ("email_enabled", "notification.email.enabled", FieldType::Bool),
+    (
+        "email_enabled",
+        "notification.email.enabled",
+        FieldType::Bool,
+    ),
     ("push_enabled", "notification.push.enabled", FieldType::Bool),
 ];
 
 const WEATHER_GROUP: &[(&str, &str, FieldType)] = &[
     ("provider", "weather.provider", FieldType::Str),
-    ("cache_ttl_seconds", "weather.cache_ttl_seconds", FieldType::Num),
+    (
+        "cache_ttl_seconds",
+        "weather.cache_ttl_seconds",
+        FieldType::Num,
+    ),
 ];
 
 const LOCALE_GROUP: &[(&str, &str, FieldType)] = &[
-    ("default_language", "locale.default_language", FieldType::Str),
+    (
+        "default_language",
+        "locale.default_language",
+        FieldType::Str,
+    ),
     (
         "supported_languages",
         "locale.supported_languages",
@@ -541,8 +569,18 @@ group_handlers!(
     NotificationGroupDto,
     "notification"
 );
-group_handlers!(get_weather_group, update_weather_group, WeatherGroupDto, "weather");
-group_handlers!(get_locale_group, update_locale_group, LocaleGroupDto, "locale");
+group_handlers!(
+    get_weather_group,
+    update_weather_group,
+    WeatherGroupDto,
+    "weather"
+);
+group_handlers!(
+    get_locale_group,
+    update_locale_group,
+    LocaleGroupDto,
+    "locale"
+);
 group_handlers!(
     get_company_group,
     update_company_group,

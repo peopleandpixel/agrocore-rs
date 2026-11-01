@@ -11,9 +11,12 @@ use crate::encryption::{decrypt_payload, encrypt_payload};
 use crate::error::{BackupError, BackupResult};
 use crate::storage::{ByteStream, StorageBackendTrait};
 use async_trait::async_trait;
+use base64::{Engine, engine::general_purpose::STANDARD};
 use futures::StreamExt;
 use russh::client::Handler;
+use russh::keys::ssh_key::PublicKey;
 use russh_sftp::client::SftpSession;
+use std::collections::HashSet;
 use std::pin::Pin;
 use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -29,10 +32,15 @@ pub struct SftpBackend {
     key_passphrase: Option<String>,
     encryption: TargetEncryption,
     encryption_config: EncryptionConfig,
+    /// Expected host key fingerprint (SHA256:<base64>) for MITM protection.
+    host_key_fingerprint: Option<String>,
+    /// Path to a known_hosts file for host key verification.
+    known_hosts_path: Option<std::path::PathBuf>,
 }
 
 impl SftpBackend {
     /// Create a backend from a validated target.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         host: String,
         port: u16,
@@ -41,6 +49,8 @@ impl SftpBackend {
         password: Option<String>,
         key_path: Option<std::path::PathBuf>,
         encryption: TargetEncryption,
+        host_key_fingerprint: Option<String>,
+        known_hosts_path: Option<std::path::PathBuf>,
     ) -> Self {
         Self {
             host,
@@ -52,6 +62,8 @@ impl SftpBackend {
             key_passphrase: None,
             encryption,
             encryption_config: EncryptionConfig::default(),
+            host_key_fingerprint,
+            known_hosts_path,
         }
     }
 
@@ -79,10 +91,33 @@ impl SftpBackend {
     /// Connect and open an SFTP session over a new SSH channel.
     async fn connect(&self) -> BackupResult<(russh::client::Handle<ClientHandler>, SftpSession)> {
         let config = Arc::new(russh::client::Config::default());
-        let mut session =
-            russh::client::connect(config, (self.host.as_str(), self.port), ClientHandler)
-                .await
-                .map_err(|e| BackupError::Config(format!("SFTP connect failed: {e}")))?;
+
+        // Build the set of accepted host key fingerprints
+        let mut accepted_keys = HashSet::new();
+
+        // Add explicit fingerprint if configured
+        if let Some(ref fp) = self.host_key_fingerprint
+            && let Some(key) = load_public_key_from_fingerprint(fp)
+        {
+            accepted_keys.insert(key);
+        }
+
+        // Load known_hosts file if configured (takes precedence)
+        if let Some(ref known_hosts) = self.known_hosts_path {
+            let host_with_port = format!("{}:{}", self.host, self.port);
+            if let Ok(keys) = load_known_hosts_for_host(known_hosts, &self.host, &host_with_port) {
+                // If known_hosts is loaded, use only those keys (replace explicit fingerprint)
+                accepted_keys = keys;
+            }
+        }
+
+        let mut session = russh::client::connect(
+            config,
+            (self.host.as_str(), self.port),
+            ClientHandler::new(accepted_keys),
+        )
+        .await
+        .map_err(|e| BackupError::Config(format!("SFTP connect failed: {e}")))?;
 
         let authenticated = match &self.key_path {
             Some(key_path) => {
@@ -161,8 +196,21 @@ fn sftp_err(e: impl std::fmt::Display) -> BackupError {
     BackupError::Config(format!("SFTP operation failed: {e}"))
 }
 
-/// Minimal SSH client handler: accepts whatever the server offers.
-struct ClientHandler;
+/// SSH client handler with optional host key verification.
+///
+/// When `accepted_keys` is empty, any server key is accepted (legacy behavior).
+/// When `accepted_keys` contains entries, the server's public key must match
+/// one of the accepted keys — otherwise the connection is rejected to protect
+/// against MITM attacks.
+struct ClientHandler {
+    accepted_keys: HashSet<String>,
+}
+
+impl ClientHandler {
+    fn new(accepted_keys: HashSet<String>) -> Self {
+        Self { accepted_keys }
+    }
+}
 
 #[async_trait::async_trait]
 impl Handler for ClientHandler {
@@ -170,12 +218,144 @@ impl Handler for ClientHandler {
 
     async fn check_server_key(
         &mut self,
-        _server_public_key: &russh::keys::ssh_key::PublicKey,
+        server_public_key: &russh::keys::ssh_key::PublicKey,
     ) -> Result<bool, Self::Error> {
-        // Host-key pinning is not implemented. Production deployments should
-        // verify this against a known_hosts file before accepting the key.
-        Ok(true)
+        // If no keys are configured, fall back to accepting any key but log a warning
+        if self.accepted_keys.is_empty() {
+            agrocore_logging::warn!(
+                "SFTP host key verification is disabled — connection is vulnerable to MITM attacks. \
+                 Configure host_key_fingerprint or known_hosts_path for production use."
+            );
+            return Ok(true);
+        }
+
+        // Compute the SHA256 fingerprint of the server's public key
+        let fingerprint = match compute_sha256_fingerprint(server_public_key) {
+            Some(fp) => fp,
+            None => return Ok(false),
+        };
+
+        if self.accepted_keys.contains(&fingerprint) {
+            agrocore_logging::info!("SFTP host key verified successfully: {}", fingerprint);
+            Ok(true)
+        } else {
+            agrocore_logging::error!(
+                "SFTP host key verification failed! Server key {} does not match any accepted key. \
+                 This may indicate a MITM attack. Accepted keys: {:?}",
+                fingerprint,
+                self.accepted_keys
+            );
+            Ok(false)
+        }
     }
+}
+
+/// Compute a SHA256 fingerprint for an SSH public key in the format "SHA256:<base64>".
+fn compute_sha256_fingerprint(key: &PublicKey) -> Option<String> {
+    use sha2::{Digest, Sha256};
+
+    // Serialize the key to SSH wire format
+    let key_bytes = match key.to_bytes() {
+        Ok(b) => b,
+        Err(e) => {
+            agrocore_logging::error!("Failed to serialize SSH public key: {}", e);
+            return None;
+        }
+    };
+
+    let mut hasher = Sha256::new();
+    hasher.update(&key_bytes);
+    let result = hasher.finalize();
+
+    Some(format!("SHA256:{}", STANDARD.encode(result)))
+}
+
+/// Load a public key from a fingerprint string (SHA256:<base64>).
+/// Returns None if the fingerprint format is invalid.
+fn load_public_key_from_fingerprint(fingerprint: &str) -> Option<String> {
+    // The fingerprint is already in the format we store, so we just return it
+    if fingerprint.starts_with("SHA256:") {
+        Some(fingerprint.to_string())
+    } else {
+        agrocore_logging::warn!(
+            "Invalid host key fingerprint format: {} — expected SHA256:<base64>",
+            fingerprint
+        );
+        None
+    }
+}
+
+/// Load accepted host keys from a known_hosts file for a specific host.
+///
+/// Parses OpenSSH-style known_hosts format:
+/// `host_name key_type base64_key [comment]`
+/// or hashed format:
+/// `|1|salt|hash key_type base64_key [comment]`
+fn load_known_hosts_for_host(
+    known_hosts_path: &std::path::Path,
+    host: &str,
+    host_with_port: &str,
+) -> Result<HashSet<String>, BackupError> {
+    use std::fs::File;
+    use std::io::{BufRead, BufReader};
+
+    let file = File::open(known_hosts_path).map_err(|e| {
+        BackupError::Config(format!(
+            "Cannot open known_hosts file {}: {}",
+            known_hosts_path.display(),
+            e
+        ))
+    })?;
+
+    let reader = BufReader::new(file);
+    let mut accepted = HashSet::new();
+
+    for line in reader.lines() {
+        let line = line
+            .map_err(|e| BackupError::Config(format!("Failed to read known_hosts line: {}", e)))?;
+
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() < 3 {
+            continue;
+        }
+
+        let host_pattern = parts[0];
+        let key_type = parts[1];
+        let key_data = parts[2];
+
+        // Check if this entry matches our host
+        let matches = host_pattern == host
+            || host_pattern == host_with_port
+            || host_pattern.starts_with(['.', ',', '|', '*']) && host_pattern.contains(host);
+
+        if matches {
+            // Compute SHA256 fingerprint from the base64 key data
+            if let Ok(key_bytes) = STANDARD.decode(key_data) {
+                use sha2::{Digest, Sha256};
+                let mut hasher = Sha256::new();
+                hasher.update(&key_bytes);
+                let result = hasher.finalize();
+                let fp = format!("SHA256:{} ({})", STANDARD.encode(result), key_type);
+                accepted.insert(fp);
+            }
+        }
+    }
+
+    if !accepted.is_empty() {
+        agrocore_logging::info!(
+            "Loaded {} host key(s) from {} for host {}",
+            accepted.len(),
+            known_hosts_path.display(),
+            host
+        );
+    }
+
+    Ok(accepted)
 }
 
 #[async_trait]
@@ -393,6 +573,8 @@ pub fn backend_from_target(target: &BackupTarget) -> BackupResult<SftpBackend> {
             password,
             key_path,
             encryption,
+            host_key_fingerprint,
+            known_hosts_path,
         } => Ok(SftpBackend::new(
             host.clone(),
             *port,
@@ -401,6 +583,8 @@ pub fn backend_from_target(target: &BackupTarget) -> BackupResult<SftpBackend> {
             password.clone(),
             key_path.clone(),
             encryption.clone(),
+            host_key_fingerprint.clone(),
+            known_hosts_path.clone(),
         )),
         other => Err(BackupError::Config(format!(
             "not an SFTP target: {other:?}"
@@ -421,6 +605,8 @@ mod tests {
             encryption: TargetEncryption::None,
             key_path: None,
             password: Some("secret".to_string()),
+            host_key_fingerprint: None,
+            known_hosts_path: None,
         }
     }
 

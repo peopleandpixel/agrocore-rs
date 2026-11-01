@@ -57,6 +57,9 @@ rand_core = "0.6"
 # Hashing
 sha2 = "0.10"
 
+# Base64 encoding
+base64 = "0.22"
+
 # Scheduling
 # tokio-cron-scheduler = { version = "0.13", features = ["signal"] }
 

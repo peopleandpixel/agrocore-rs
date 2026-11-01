@@ -1824,11 +1824,7 @@ pub trait TypeEntryRepository: Send + Sync {
         category_id: Uuid,
         code: &str,
     ) -> RepositoryFuture<Option<TypeEntry>>;
-    fn find_children(
-        &self,
-        tid: TenantId,
-        parent_id: Uuid,
-    ) -> RepositoryFuture<Vec<TypeEntry>>;
+    fn find_children(&self, tid: TenantId, parent_id: Uuid) -> RepositoryFuture<Vec<TypeEntry>>;
     fn find_root_entries(
         &self,
         tid: TenantId,

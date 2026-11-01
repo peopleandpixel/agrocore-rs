@@ -1,10 +1,10 @@
 use crate::ViewMode;
 use crate::api;
 use crate::components::error_boundary::user_friendly_error;
-use icondata_lu::*;
-use icondata_im::ImMagicWand;
-use leptos::prelude::*;
 use crate::icon::Icon;
+use icondata_im::ImMagicWand;
+use icondata_lu::*;
+use leptos::prelude::*;
 
 #[component]
 pub fn DashboardView() -> impl IntoView {

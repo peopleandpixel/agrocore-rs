@@ -2,7 +2,7 @@
 
 use crate::api;
 use crate::icon::Icon;
-use icondata_lu::{LuPlus, LuTrash2, LuZap, LuActivity};
+use icondata_lu::{LuActivity, LuPlus, LuTrash2, LuZap};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use wasm_bindgen::JsCast;
@@ -177,7 +177,11 @@ fn CreateDeviceModal(on_close: impl Fn() + Clone + 'static) -> impl IntoView {
             let id = device_id.get().trim().to_string();
             let typ = device_type.get().trim().to_string();
             let caps_str = capabilities.get().trim().to_string();
-            let caps: Vec<String> = caps_str.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+            let caps: Vec<String> = caps_str
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect();
 
             if id.is_empty() || typ.is_empty() {
                 return;
@@ -250,14 +254,23 @@ fn CreateDeviceModal(on_close: impl Fn() + Clone + 'static) -> impl IntoView {
 }
 
 #[component]
-fn DeviceDetailModal(device: api::IoTDeviceDto, on_close: impl Fn() + Clone + 'static) -> impl IntoView {
+fn DeviceDetailModal(
+    device: api::IoTDeviceDto,
+    on_close: impl Fn() + Clone + 'static,
+) -> impl IntoView {
     let device_id_str = device.device_id.clone();
     let device_type_str = device.device_type.clone();
     let device_status = device.status.clone();
-    let firmware = device.firmware_version.clone().unwrap_or_else(|| "—".to_string());
+    let firmware = device
+        .firmware_version
+        .clone()
+        .unwrap_or_else(|| "—".to_string());
     let battery = device.battery_level;
     let signal_strength = device.signal_strength;
-    let topic = device.topic_prefix.clone().unwrap_or_else(|| "—".to_string());
+    let topic = device
+        .topic_prefix
+        .clone()
+        .unwrap_or_else(|| "—".to_string());
     let last_seen = device.last_seen.clone().unwrap_or_else(|| "—".to_string());
 
     let device_id_for_telemetry = device_id_str.clone();
@@ -276,7 +289,8 @@ fn DeviceDetailModal(device: api::IoTDeviceDto, on_close: impl Fn() + Clone + 's
         move |_| {
             let cmd_type = command_type.get().clone();
             let payload_str = command_payload.get().clone();
-            let payload: serde_json::Value = serde_json::from_str(&payload_str).unwrap_or(serde_json::json!({}));
+            let payload: serde_json::Value =
+                serde_json::from_str(&payload_str).unwrap_or(serde_json::json!({}));
             let req = api::IoTCommandRequest {
                 command_type: cmd_type,
                 payload,

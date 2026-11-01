@@ -88,7 +88,9 @@ pub async fn create_olive_grove(
     auth: AuthUser,
     dto: web::Json<CreateOliveGroveDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let grove = state
         .db
         .olive_grove_repo()
@@ -121,7 +123,9 @@ pub async fn update_olive_grove(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateOliveGroveDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let grove = state
         .db
         .olive_grove_repo()
@@ -178,7 +182,9 @@ pub async fn create_olive_oil_record(
     auth: AuthUser,
     dto: web::Json<CreateOliveOilRecordDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let record = state
         .db
         .olive_oil_record_repo()
@@ -211,7 +217,9 @@ pub async fn update_olive_oil_record(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateOliveOilRecordDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let record = state
         .db
         .olive_oil_record_repo()
@@ -268,7 +276,9 @@ pub async fn create_vineyard(
     auth: AuthUser,
     dto: web::Json<CreateVineyardDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let v = state
         .db
         .vineyard_repo()
@@ -301,7 +311,9 @@ pub async fn update_vineyard(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateVineyardDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let v = state
         .db
         .vineyard_repo()
@@ -358,7 +370,9 @@ pub async fn create_kelter_delivery(
     auth: AuthUser,
     dto: web::Json<CreateKelterDeliveryDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let kd = state
         .db
         .kelter_delivery_repo()
@@ -391,7 +405,9 @@ pub async fn update_kelter_delivery(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateKelterDeliveryDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let kd = state
         .db
         .kelter_delivery_repo()

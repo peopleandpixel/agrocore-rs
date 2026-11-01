@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::process::Command;
-use tokio::sync::{mpsc, RwLock};
+use tokio::sync::{RwLock, mpsc};
 use tokio_cron_scheduler::{Job, JobScheduler};
 use uuid::Uuid;
 
@@ -56,7 +56,7 @@ impl SchedulerService {
         let scheduler = Arc::new(scheduler);
 
         let (shutdown_tx, _shutdown_rx) = mpsc::channel::<()>(1);
-        
+
         Ok(Self {
             config,
             scheduler,
@@ -87,16 +87,16 @@ impl SchedulerService {
     /// J14: Graceful shutdown — signal all running jobs to stop and wait for completion.
     pub async fn stop(&self) -> SchedulerResult<()> {
         info!("Scheduler stop requested — initiating graceful shutdown");
-        
+
         // Signal shutdown to all listening tasks
         if let Some(tx) = &self.shutdown_tx {
             let _ = tx.send(()).await;
         }
-        
+
         // Wait for running jobs to finish (with timeout)
         let timeout = Duration::from_secs(self.config.shutdown_timeout_secs);
         let start = std::time::Instant::now();
-        
+
         while start.elapsed() < timeout {
             let running = self.running_jobs.read().await;
             if running.is_empty() {
@@ -106,7 +106,7 @@ impl SchedulerService {
             drop(running);
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
-        
+
         // Timeout — force stop
         let running = self.running_jobs.read().await;
         if !running.is_empty() {
@@ -117,7 +117,7 @@ impl SchedulerService {
         }
         Ok(())
     }
-    
+
     /// Returns a receiver that waits for the shutdown signal.
     pub fn shutdown_receiver(&mut self) -> Option<mpsc::Receiver<()>> {
         // Create a new channel for the shutdown listener

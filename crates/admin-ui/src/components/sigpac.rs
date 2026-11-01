@@ -8,9 +8,9 @@ use crate::api::{
     search_parcels_near_point,
 };
 use crate::i18n::use_i18n;
+use crate::icon::Icon;
 use icondata_lu as I;
 use leptos::prelude::*;
-use crate::icon::Icon;
 
 #[component]
 pub fn SigpacParcels() -> impl IntoView {

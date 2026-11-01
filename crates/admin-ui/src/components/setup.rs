@@ -6,10 +6,10 @@ use crate::components::map_picker::MapPicker;
 use crate::components::toast::{ToastContext, ToastType};
 use crate::i18n::LANGUAGE_OPTIONS;
 use crate::i18n::{I18n, Language};
+use crate::icon::Icon;
 use icondata_lu::*;
 use leptos::prelude::{window, *};
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, PartialOrd, Ord)]
 enum SetupStep {
@@ -290,11 +290,9 @@ pub fn SetupAssistant() -> impl IntoView {
         let set_company_latitude = set_company_latitude.clone();
         let set_company_longitude = set_company_longitude.clone();
         move |_| {
-            {
-                let (lat, lng) = company_location.get();
-                set_company_latitude.set(Some(lat));
-                set_company_longitude.set(Some(lng));
-            }
+            let (lat, lng) = company_location.get();
+            set_company_latitude.set(Some(lat));
+            set_company_longitude.set(Some(lng));
         }
     });
 

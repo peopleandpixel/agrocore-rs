@@ -1,9 +1,9 @@
 use crate::api;
 use crate::i18n;
+use crate::icon::Icon;
 use icondata_lu::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 /// TaskDetailPage — shows a single task with start/stop actions.
 /// Consumes orphaned API routes:

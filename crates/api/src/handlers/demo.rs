@@ -740,7 +740,10 @@ pub async fn seed_demo_internal(db: &agrocore_infrastructure::Database) -> Resul
     let tenant_id = Uuid::new_v4();
     let user_id = Uuid::new_v4();
 
-    let mut tx = pool.begin().await.map_err(|e| format!("Begin error: {}", e))?;
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|e| format!("Begin error: {}", e))?;
 
     // Create Tenant with is_demo=true
     sqlx::query_as::<_, agrocore_domain::entities::tenant::Tenant>(
@@ -775,9 +778,8 @@ pub async fn seed_demo_internal(db: &agrocore_infrastructure::Database) -> Resul
         .map_err(|e| format!("Pin tenant: {}", e))?;
 
     // Create Admin User
-    let demo_password = std::env::var("DEMO_ADMIN_PASSWORD").unwrap_or_else(|_| {
-        DEMO_DEFAULT_PASSWORD.to_string()
-    });
+    let demo_password =
+        std::env::var("DEMO_ADMIN_PASSWORD").unwrap_or_else(|_| DEMO_DEFAULT_PASSWORD.to_string());
     let password_hash = agrocore_infrastructure::password::hash_password(demo_password)
         .await
         .map_err(|_| "Hashing error".to_string())?;
@@ -799,7 +801,9 @@ pub async fn seed_demo_internal(db: &agrocore_infrastructure::Database) -> Resul
     .map_err(PostgresDb::map_db_error)
     .map_err(|e| format!("User insert: {}", e))?;
 
-    tx.commit().await.map_err(|e| format!("Commit error: {}", e))?;
+    tx.commit()
+        .await
+        .map_err(|e| format!("Commit error: {}", e))?;
 
     Ok(tenant_id)
 }

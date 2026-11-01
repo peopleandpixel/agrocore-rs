@@ -1,12 +1,12 @@
 use crate::AppState;
 use crate::error::ApiError;
 use crate::middleware::AuthExtractor as AuthUser;
-use actix_web::{web, HttpResponse};
-use agrocore_domain::entities::type_system::{
-    ApproveTypeEntryDto, CreateTypeEntryDto, MergeTypeEntryDto, PendingTypeEntryDto,
-    TypeCategory, TypeEntry, TypeEntryUsage, TypeRef, UpdateTypeEntryDto,
-};
+use actix_web::{HttpResponse, web};
 use agrocore_domain::entities::tenant::TenantId;
+use agrocore_domain::entities::type_system::{
+    ApproveTypeEntryDto, CreateTypeEntryDto, MergeTypeEntryDto, PendingTypeEntryDto, TypeCategory,
+    TypeEntry, TypeEntryUsage, TypeRef, UpdateTypeEntryDto,
+};
 use agrocore_shared::SharedError;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -205,11 +205,7 @@ pub async fn get_type_children(
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, ApiError> {
     let tid = TenantId(auth.0.tenant_id);
-    let children = state
-        .db
-        .type_entry_repo()
-        .find_children(tid, *path)
-        .await?;
+    let children = state.db.type_entry_repo().find_children(tid, *path).await?;
     let result: Vec<TypeEntryDto> = children.into_iter().map(Into::into).collect();
     Ok(HttpResponse::Ok().json(result))
 }
@@ -233,10 +229,7 @@ pub async fn create_type(
 ) -> Result<HttpResponse, ApiError> {
     // Check Admin/SuperAdmin permission
     if !auth.is_admin() {
-        return Err(SharedError::Forbidden(
-            "Only Admin/SuperAdmin can create types".into(),
-        )
-        .into());
+        return Err(SharedError::Forbidden("Only Admin/SuperAdmin can create types".into()).into());
     }
 
     let tid = TenantId(auth.0.tenant_id);
@@ -268,10 +261,7 @@ pub async fn update_type(
 ) -> Result<HttpResponse, ApiError> {
     // Check Admin/SuperAdmin permission
     if !auth.is_admin() {
-        return Err(SharedError::Forbidden(
-            "Only Admin/SuperAdmin can update types".into(),
-        )
-        .into());
+        return Err(SharedError::Forbidden("Only Admin/SuperAdmin can update types".into()).into());
     }
 
     let tid = TenantId(auth.0.tenant_id);
@@ -302,19 +292,11 @@ pub async fn delete_type(
 ) -> Result<HttpResponse, ApiError> {
     // Check Admin/SuperAdmin permission
     if !auth.is_admin() {
-        return Err(SharedError::Forbidden(
-            "Only Admin/SuperAdmin can delete types".into(),
-        )
-        .into());
+        return Err(SharedError::Forbidden("Only Admin/SuperAdmin can delete types".into()).into());
     }
 
     let tid = TenantId(auth.0.tenant_id);
-    if state
-        .db
-        .type_entry_repo()
-        .soft_delete(tid, *path)
-        .await?
-    {
+    if state.db.type_entry_repo().soft_delete(tid, *path).await? {
         Ok(HttpResponse::Ok().json(serde_json::json!({"deleted": true})))
     } else {
         Err(SharedError::NotFound("Type entry not found".into()).into())
@@ -470,10 +452,9 @@ pub async fn merge_type_entry(
     dto: web::Json<MergeTypeEntryDto>,
 ) -> Result<HttpResponse, ApiError> {
     if !auth.is_admin() {
-        return Err(SharedError::Forbidden(
-            "Only Admin/SuperAdmin can merge type entries".into(),
-        )
-        .into());
+        return Err(
+            SharedError::Forbidden("Only Admin/SuperAdmin can merge type entries".into()).into(),
+        );
     }
 
     let tid = TenantId(auth.0.tenant_id);

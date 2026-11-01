@@ -10,10 +10,10 @@
 //! is worse than one that visibly does nothing.
 
 use crate::api;
+use crate::icon::Icon;
 use icondata_lu::{LuPlus, LuTrash2};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 /// The building kinds the API accepts.
 const BUILDING_TYPES: [(&str, &str); 3] = [

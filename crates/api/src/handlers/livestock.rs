@@ -49,7 +49,9 @@ pub async fn create_animal(
     auth: AuthUser,
     dto: web::Json<CreateAnimalDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let animal = state
         .db
         .animal_repo()
@@ -107,7 +109,9 @@ pub async fn update_animal(
     path: web::Path<Uuid>,
     dto: web::Json<UpdateAnimalDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let animal = state
         .db
         .animal_repo()

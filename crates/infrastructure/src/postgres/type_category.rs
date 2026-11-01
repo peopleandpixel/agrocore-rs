@@ -47,10 +47,7 @@ impl TypeCategoryRepository for PgTypeCategoryRepo {
         })
     }
 
-    fn create(
-        &self,
-        dto: CreateTypeCategoryDto,
-    ) -> RepositoryFuture<TypeCategory> {
+    fn create(&self, dto: CreateTypeCategoryDto) -> RepositoryFuture<TypeCategory> {
         let pool = self.pool.clone();
         Box::pin(async move {
             sqlx::query_as::<_, TypeCategory>(

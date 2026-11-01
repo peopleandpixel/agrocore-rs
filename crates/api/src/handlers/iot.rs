@@ -12,7 +12,7 @@ use actix_web::{HttpResponse, web};
 use agrocore_logging::info;
 use agrocore_messaging::{
     IoTCommandEvent, IoTDeviceConfig, IoTMeasurement, IoTTelemetryEvent,
-    generate_ha_discovery_configs, NATS_SUBJECT_COMMANDS_BRIDGE, NATS_SUBJECT_TELEMETRY,
+    NATS_SUBJECT_COMMANDS_BRIDGE, NATS_SUBJECT_TELEMETRY, generate_ha_discovery_configs,
 };
 use agrocore_shared::SharedError;
 use serde::{Deserialize, Serialize};
@@ -437,51 +437,58 @@ pub async fn get_device_telemetry(
 
     // J8: Query real telemetry from iot_telemetry table
     let pool = state.db.tenant_pool(auth.0.tenant_id);
-    let rows: Vec<(String, f64, String, Option<String>, chrono::DateTime<chrono::Utc>)> =
-        if let Some(since) = since {
-            sqlx::query_as(
-                r#"SELECT capability, value, unit, quality, received_at
+    let rows: Vec<(
+        String,
+        f64,
+        String,
+        Option<String>,
+        chrono::DateTime<chrono::Utc>,
+    )> = if let Some(since) = since {
+        sqlx::query_as(
+            r#"SELECT capability, value, unit, quality, received_at
                    FROM iot_telemetry
                    WHERE device_id = $1 AND received_at >= $2
                    ORDER BY received_at DESC
                    LIMIT $3"#,
-            )
-            .bind(&device_id)
-            .bind(since)
-            .bind(limit as i32)
-            .fetch_all(pool)
-            .await
-            .map_err(|e| ApiError(SharedError::Database(e.to_string())))?
-        } else {
-            sqlx::query_as(
-                r#"SELECT capability, value, unit, quality, received_at
+        )
+        .bind(&device_id)
+        .bind(since)
+        .bind(limit as i32)
+        .fetch_all(pool)
+        .await
+        .map_err(|e| ApiError(SharedError::Database(e.to_string())))?
+    } else {
+        sqlx::query_as(
+            r#"SELECT capability, value, unit, quality, received_at
                    FROM iot_telemetry
                    WHERE device_id = $1
                    ORDER BY received_at DESC
                    LIMIT $2"#,
-            )
-            .bind(&device_id)
-            .bind(limit as i32)
-            .fetch_all(pool)
-            .await
-            .map_err(|e| ApiError(SharedError::Database(e.to_string())))?
-        };
+        )
+        .bind(&device_id)
+        .bind(limit as i32)
+        .fetch_all(pool)
+        .await
+        .map_err(|e| ApiError(SharedError::Database(e.to_string())))?
+    };
 
     let measurements: Vec<IoTMeasurementDto> = rows
         .into_iter()
-        .map(|(capability, value, unit, quality, received_at)| IoTMeasurementDto {
-            capability: IoTCapabilityDto {
-                capability_type: IoTCapabilityType::Custom(capability),
-                unit: None,
-                min_value: None,
-                max_value: None,
-                precision: None,
+        .map(
+            |(capability, value, unit, quality, received_at)| IoTMeasurementDto {
+                capability: IoTCapabilityDto {
+                    capability_type: IoTCapabilityType::Custom(capability),
+                    unit: None,
+                    min_value: None,
+                    max_value: None,
+                    precision: None,
+                },
+                value,
+                unit,
+                quality,
+                timestamp: received_at,
             },
-            value,
-            unit,
-            quality,
-            timestamp: received_at,
-        })
+        )
         .collect();
 
     let response = IoTDeviceTelemetryResponse {

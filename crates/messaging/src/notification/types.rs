@@ -237,6 +237,76 @@ fn default_wacli_binary() -> String {
     "wacli".to_string()
 }
 
+/// Firebase Cloud Messaging (FCM) push notification configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FcmChannelConfig {
+    /// Path to the Google service account JSON credentials file.
+    pub credentials_path: String,
+    /// FCM project ID.
+    #[serde(default)]
+    pub project_id: String,
+    /// VAPID public key for WebPush (optional).
+    #[serde(default)]
+    pub vapid_public_key: String,
+}
+
+/// Apple Push Notification service (APNs) configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApnsChannelConfig {
+    /// Path to the APNs authentication key (.p8 file).
+    pub key_path: String,
+    /// APNs Key ID.
+    pub key_id: String,
+    /// Apple Developer Team ID.
+    pub team_id: String,
+    /// Bundle identifier of the target app.
+    pub bundle_id: String,
+    /// Use production APNs gateway (false = sandbox).
+    #[serde(default)]
+    pub production: bool,
+}
+
+/// WebPush notification configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WebPushChannelConfig {
+    /// VAPID public key (base64).
+    pub vapid_public_key: String,
+    /// VAPID private key (base64).
+    pub vapid_private_key: String,
+    /// VAPID "admin" email address.
+    pub vapid_subject: String,
+}
+
+/// Postmark email API configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PostmarkChannelConfig {
+    pub api_token: String,
+    pub from: String,
+}
+
+/// Vonage (Nexmo) SMS API configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VonageChannelConfig {
+    pub api_key: String,
+    pub api_secret: String,
+    pub from: String,
+}
+
+/// Plivo SMS API configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlivoChannelConfig {
+    pub auth_id: String,
+    pub auth_token: String,
+    pub from: String,
+}
+
+/// SMS77 SMS API configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Sms77ChannelConfig {
+    pub api_key: String,
+    pub from: String,
+}
+
 /// Channel configuration as stored in `NotificationConfig::channels`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -249,6 +319,13 @@ pub enum ChannelConfig {
     Webhook(WebhookChannelConfig),
     Twilio(TwilioChannelConfig),
     Wacli(WacliChannelConfig),
+    Fcm(FcmChannelConfig),
+    Apns(ApnsChannelConfig),
+    WebPush(WebPushChannelConfig),
+    Postmark(PostmarkChannelConfig),
+    Vonage(VonageChannelConfig),
+    Plivo(PlivoChannelConfig),
+    Sms77(Sms77ChannelConfig),
 }
 
 impl ChannelConfig {
@@ -264,6 +341,13 @@ impl ChannelConfig {
             ChannelConfig::Webhook(_) => "webhook",
             ChannelConfig::Twilio(_) => "twilio",
             ChannelConfig::Wacli(_) => "wacli",
+            ChannelConfig::Fcm(_) => "fcm",
+            ChannelConfig::Apns(_) => "apns",
+            ChannelConfig::WebPush(_) => "webpush",
+            ChannelConfig::Postmark(_) => "postmark",
+            ChannelConfig::Vonage(_) => "vonage",
+            ChannelConfig::Plivo(_) => "plivo",
+            ChannelConfig::Sms77(_) => "sms77",
         }
     }
 
@@ -337,6 +421,59 @@ impl ChannelConfig {
             ChannelConfig::Wacli(c) => {
                 if c.phone_number.trim().is_empty() {
                     return Err(missing("wacli.phone_number"));
+                }
+            }
+            ChannelConfig::Fcm(c) => {
+                if c.credentials_path.trim().is_empty() {
+                    return Err(missing("fcm.credentials_path"));
+                }
+            }
+            ChannelConfig::Apns(c) => {
+                if c.key_path.trim().is_empty() {
+                    return Err(missing("apns.key_path"));
+                }
+                if c.key_id.trim().is_empty() {
+                    return Err(missing("apns.key_id"));
+                }
+                if c.team_id.trim().is_empty() {
+                    return Err(missing("apns.team_id"));
+                }
+            }
+            ChannelConfig::WebPush(c) => {
+                if c.vapid_public_key.trim().is_empty() {
+                    return Err(missing("webpush.vapid_public_key"));
+                }
+                if c.vapid_private_key.trim().is_empty() {
+                    return Err(missing("webpush.vapid_private_key"));
+                }
+            }
+            ChannelConfig::Postmark(c) => {
+                if c.api_token.trim().is_empty() {
+                    return Err(missing("postmark.api_token"));
+                }
+                if c.from.trim().is_empty() {
+                    return Err(missing("postmark.from"));
+                }
+            }
+            ChannelConfig::Vonage(c) => {
+                if c.api_key.trim().is_empty() {
+                    return Err(missing("vonage.api_key"));
+                }
+                if c.api_secret.trim().is_empty() {
+                    return Err(missing("vonage.api_secret"));
+                }
+            }
+            ChannelConfig::Plivo(c) => {
+                if c.auth_id.trim().is_empty() {
+                    return Err(missing("plivo.auth_id"));
+                }
+                if c.auth_token.trim().is_empty() {
+                    return Err(missing("plivo.auth_token"));
+                }
+            }
+            ChannelConfig::Sms77(c) => {
+                if c.api_key.trim().is_empty() {
+                    return Err(missing("sms77.api_key"));
                 }
             }
         }

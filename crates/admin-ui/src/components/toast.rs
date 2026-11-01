@@ -1,6 +1,6 @@
+use crate::icon::Icon;
 use icondata_lu::*;
 use leptos::prelude::*;
-use crate::icon::Icon;
 use uuid::Uuid;
 
 #[derive(Clone, Debug, PartialEq)]

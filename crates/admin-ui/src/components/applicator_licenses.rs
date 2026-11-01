@@ -10,10 +10,10 @@
 //! (`"Basic"`, `"Professional"`), not the snake-case form. The select sends those.
 
 use crate::api;
+use crate::icon::Icon;
 use icondata_lu::{LuPlus, LuTrash2};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 /// The license types `LicenseType` accepts, with the serde wire value.
 ///

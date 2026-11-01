@@ -98,7 +98,9 @@ pub async fn create_pac_application(
     auth: AuthExtractor,
     dto: web::Json<CreatePACApplicationDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let app = state
         .db
         .pac_application_repo()
@@ -150,7 +152,9 @@ pub async fn update_pac_application(
     id: web::Path<Uuid>,
     dto: web::Json<agrocore_domain::entities::finance::UpdatePACApplicationDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let app = state
         .db
         .pac_application_repo()
@@ -229,7 +233,9 @@ pub async fn create_cost_center(
     auth: AuthExtractor,
     dto: web::Json<CreateCostCenterDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let cc = state
         .db
         .cost_center_repo()
@@ -281,7 +287,9 @@ pub async fn update_cost_center(
     id: web::Path<Uuid>,
     dto: web::Json<agrocore_domain::entities::finance::UpdateCostCenterDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let cc = state
         .db
         .cost_center_repo()
@@ -360,7 +368,9 @@ pub async fn create_financial_record(
     auth: AuthExtractor,
     dto: web::Json<CreateFinancialRecordDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let rec = state
         .db
         .financial_record_repo()
@@ -412,7 +422,9 @@ pub async fn update_financial_record(
     id: web::Path<Uuid>,
     dto: web::Json<agrocore_domain::entities::finance::UpdateFinancialRecordDto>,
 ) -> Result<HttpResponse, ApiError> {
-    dto.0.validate().map_err(|e| SharedError::Validation(e.to_string()))?;
+    dto.0
+        .validate()
+        .map_err(|e| SharedError::Validation(e.to_string()))?;
     let record = state
         .db
         .financial_record_repo()

@@ -12,10 +12,10 @@
 //! others.
 
 use crate::api;
+use crate::icon::Icon;
 use icondata_lu::{LuPlus, LuTrash2};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 fn num(label: String, value: ReadSignal<String>, set: WriteSignal<String>) -> impl IntoView {
     view! {

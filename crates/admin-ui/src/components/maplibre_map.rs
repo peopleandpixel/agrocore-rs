@@ -2,7 +2,7 @@ use crate::api::GeoPoint;
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use wasm_bindgen::{closure::Closure, JsCast, JsValue};
+use wasm_bindgen::{JsCast, JsValue, closure::Closure};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkerLocation {
@@ -53,7 +53,9 @@ pub fn MapLibreView(
     let show_sites = show_sites.unwrap_or(true);
 
     // Initialize map via JS
-    let init_center = initial_center.map(|c| vec![c.lng, c.lat]).unwrap_or(vec![-9.1393, 38.7223]);
+    let init_center = initial_center
+        .map(|c| vec![c.lng, c.lat])
+        .unwrap_or(vec![-9.1393, 38.7223]);
     let init_zoom = initial_zoom.unwrap_or(13.0);
     Effect::new({
         let map_ref = map_ref.clone();
@@ -77,13 +79,26 @@ pub fn MapLibreView(
                 };
 
                 let map_options = js_sys::Object::new();
-                js_sys::Reflect::set(&map_options, &"container".into(), &"map-container".into()).ok();
-                js_sys::Reflect::set(&map_options, &"style".into(), &"https://demotiles.maplibre.org/style.json".into()).ok();
-                let center_arr = js_sys::Array::of2(&JsValue::from_f64(init_center[0]), &JsValue::from_f64(init_center[1]));
+                js_sys::Reflect::set(&map_options, &"container".into(), &"map-container".into())
+                    .ok();
+                js_sys::Reflect::set(
+                    &map_options,
+                    &"style".into(),
+                    &"https://demotiles.maplibre.org/style.json".into(),
+                )
+                .ok();
+                let center_arr = js_sys::Array::of2(
+                    &JsValue::from_f64(init_center[0]),
+                    &JsValue::from_f64(init_center[1]),
+                );
                 js_sys::Reflect::set(&map_options, &"center".into(), &center_arr).ok();
-                js_sys::Reflect::set(&map_options, &"zoom".into(), &JsValue::from_f64(init_zoom)).ok();
+                js_sys::Reflect::set(&map_options, &"zoom".into(), &JsValue::from_f64(init_zoom))
+                    .ok();
 
-                let map = match js_sys::Reflect::construct(&constructor, &js_sys::Array::of1(&map_options)) {
+                let map = match js_sys::Reflect::construct(
+                    &constructor,
+                    &js_sys::Array::of1(&map_options),
+                ) {
                     Ok(m) => m,
                     Err(_) => return,
                 };
@@ -98,9 +113,13 @@ pub fn MapLibreView(
 
     // Fetch worker locations
     let fetch_workers = move || {
-        if !show_workers { return; }
+        if !show_workers {
+            return;
+        }
         leptos::task::spawn_local(async move {
-            match crate::api::get_json::<Vec<WorkerLocation>>("/api/v1/workforce/locations", true).await {
+            match crate::api::get_json::<Vec<WorkerLocation>>("/api/v1/workforce/locations", true)
+                .await
+            {
                 Ok(locations) => set_worker_locations.set(locations),
                 Err(e) => eprintln!("Failed to fetch worker locations: {}", e),
             }
@@ -109,7 +128,9 @@ pub fn MapLibreView(
 
     // Fetch tasks
     let fetch_tasks = move || {
-        if !show_tasks { return; }
+        if !show_tasks {
+            return;
+        }
         leptos::task::spawn_local(async move {
             match crate::api::get_json::<Vec<MapTaskData>>("/api/v1/map/tasks", true).await {
                 Ok(tasks_data) => set_tasks.set(tasks_data),
@@ -120,7 +141,9 @@ pub fn MapLibreView(
 
     // Fetch sites
     let fetch_sites = move || {
-        if !show_sites { return; }
+        if !show_sites {
+            return;
+        }
         leptos::task::spawn_local(async move {
             match crate::api::get_json::<Vec<MapSiteData>>("/api/v1/map/sites", true).await {
                 Ok(sites_data) => set_sites.set(sites_data),
@@ -156,13 +179,18 @@ pub fn MapLibreView(
                         let popup = format!(
                             "<b>Worker:</b> {}<br><b>Status:</b> {}<br><b>Last update:</b> {}",
                             &worker.worker_id.to_string()[..8],
-                            if worker.current_task_id.is_some() { "In Task" } else { "Idle" },
+                            if worker.current_task_id.is_some() {
+                                "In Task"
+                            } else {
+                                "Idle"
+                            },
                             worker.timestamp.format("%H:%M:%S")
                         );
                         let opt_str = serde_json::to_string(&serde_json::json!({
                             "inTask": worker.current_task_id.is_some(),
                             "popup": popup
-                        })).unwrap_or_default();
+                        }))
+                        .unwrap_or_default();
                         let options = js_sys::JSON::parse(&opt_str).unwrap_or(JsValue::NULL);
                         let _ = add_worker.call4(
                             map,
@@ -181,9 +209,12 @@ pub fn MapLibreView(
                     for task in &tasks {
                         let geojson_str = serde_json::to_string(&task.geometry).unwrap_or_default();
                         let geojson = js_sys::JSON::parse(&geojson_str).unwrap_or(JsValue::NULL);
-                        let opt_str = serde_json::to_string(&serde_json::json!({"status": task.status})).unwrap_or_default();
+                        let opt_str =
+                            serde_json::to_string(&serde_json::json!({"status": task.status}))
+                                .unwrap_or_default();
                         let options = js_sys::JSON::parse(&opt_str).unwrap_or(JsValue::NULL);
-                        let _ = add_task.call3(map, &task.id.to_string().into(), &geojson, &options);
+                        let _ =
+                            add_task.call3(map, &task.id.to_string().into(), &geojson, &options);
                     }
                 }
 
@@ -197,13 +228,13 @@ pub fn MapLibreView(
                         let geojson = js_sys::JSON::parse(&geojson_str).unwrap_or(JsValue::NULL);
                         let opt_str = serde_json::to_string(&serde_json::json!({"color": site.color.clone().unwrap_or_else(|| "#3b82f6".to_string())})).unwrap_or_default();
                         let options = js_sys::JSON::parse(&opt_str).unwrap_or(JsValue::NULL);
-                        let _ = add_site.call3(map, &site.id.to_string().into(), &geojson, &options);
+                        let _ =
+                            add_site.call3(map, &site.id.to_string().into(), &geojson, &options);
                     }
                 }
             }
         }
     });
-
 
     view! {
         <div class="flex flex-col gap-4 h-full">

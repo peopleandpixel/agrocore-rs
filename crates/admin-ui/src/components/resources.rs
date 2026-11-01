@@ -1,9 +1,9 @@
 use crate::api;
 use crate::i18n::{I18n, Language};
+use crate::icon::Icon;
 use icondata_lu::*;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use crate::icon::Icon;
 
 #[component]
 pub fn ResourcesPage() -> impl IntoView {
