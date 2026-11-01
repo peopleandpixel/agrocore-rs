@@ -33,7 +33,12 @@ Legend: **P0** blocks operation · **P1** MVP · **P2** important · **P3** conv
   - **Compliance** (210 lines): Checklists, plant protection records, PAC/SIP export.
   - Sidebar navigation added for `/water`, `/harvest`, `/agriculture` (were missing).
 - [x] **H12 — Compliance and weather areas** — done (v0.71.0): Added `create_fertilizer_record` POST endpoint with validation; fertilizer records section in Compliance page with table, create modal, and delete. Weather station management: added `update_weather_station` and `delete_weather_station` API functions; create station modal and delete buttons in Weather page.
-- [ ] **H13 — Further unused areas** — `profitability`, `workflow`, `material`, `stations`, `sources`, `difficulty-surcharge`, `tree-crown-volume`, `nitrogen-demand`.
+- [x] **H13 — Further unused areas** — done (v0.72.0): All H13 areas are already fully integrated in the UI:
+  - **Profitability, Workflow, Material, Difficulty Surcharge, Tree Crown Volume, Nitrogen Demand** — all covered by `calculators.rs` (711 lines, 16 calculator tools) at `/calculators` with Sidebar navigation.
+  - **Stations** — IoT devices covered by `iot.rs` (423 lines) at `/iot` with Sidebar navigation; Weather stations covered by `weather.rs` at `/weather` with Sidebar navigation.
+  - **Sources** — Water sources covered by `water.rs` (546 lines, full CRUD) at `/water` with Sidebar navigation.
+  - All API functions exist in `api.rs` for all H13 endpoints.
+  - All components are routed in `lib.rs` and linked in the sidebar.
 
 ### Block I — Performance
 

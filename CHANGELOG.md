@@ -52,6 +52,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.72.0] — 2026-11-01
+
+### H13 — Further unused areas verified as complete
+
+All H13 areas were already fully integrated in the UI — no code changes needed:
+
+- **Profitability, Workflow, Material, Difficulty Surcharge, Tree Crown Volume, Nitrogen Demand** — all covered by `calculators.rs` (711 lines, 16 calculator tools) at `/calculators` with Sidebar navigation.
+- **Stations** — IoT devices covered by `iot.rs` (423 lines) at `/iot`; Weather stations covered by `weather.rs` at `/weather`. Both have Sidebar navigation.
+- **Sources** — Water sources covered by `water.rs` (546 lines, full CRUD) at `/water` with Sidebar navigation.
+- All API functions exist in `api.rs` for all H13 endpoints.
+- All components are routed in `lib.rs` and linked in the sidebar.
+
+### Verification
+
+- `cargo fmt --check` ✓
+- `cargo check --workspace` ✓ (0 errors)
+- `cargo clippy --workspace` ✓ (0 errors)
+- `cargo test --workspace` ✓ (all pass)
+
 ## [v0.71.0] — 2026-11-01
 
 ### H12 — Compliance Fertilizer & Weather Station Management
