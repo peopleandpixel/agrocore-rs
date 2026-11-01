@@ -59,10 +59,7 @@ pub fn configure_groups(cfg: &mut web::ServiceConfig) {
             .route(web::put().to(update_company_group)),
     )
     .service(web::resource("/groups").route(web::get().to(list_setting_groups)))
-    .service(
-        web::resource("/lpis/providers")
-            .route(web::get().to(list_lpis_providers)),
-    );
+    .service(web::resource("/lpis/providers").route(web::get().to(list_lpis_providers)));
 }
 
 /// Namespaces this module serves, with the fields each one owns.

@@ -52,6 +52,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.66.0] — 2026-11-01
+
+### Documentation
+
+- **tasks.md completely rewritten** — Removed all completed tasks (~800 lines of `[x]` items). The file now contains only open tasks, reduced from 1025 to 180 lines. History is preserved in the CHANGELOG.
+- **missing.md deleted** — All open items from missing.md were already tracked in tasks.md. The file is no longer needed.
+
 ## [0.63.0] - 2026-10-31
 
 Release focused on reactivating IoT Devices, MapPicker, and MapLibreView components for Leptos 0.9.0-rc0 compatibility.
